@@ -6,6 +6,7 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/typography.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/core/widgets/app_breadcrumbs.dart';
@@ -19,13 +20,15 @@ class DevToolsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PDS Explorer'),
+        title: Text(l10n.labelPdsExplorer),
         actions: [
           IconButton(
             icon: const Icon(Icons.open_in_new),
-            tooltip: 'Go to pds.ls',
+            tooltip: l10n.tooltipGoToPdsLs,
             onPressed: () => _openExternalUrl('https://pds.ls'),
           ),
         ],
@@ -100,6 +103,7 @@ class _SearchInputState extends State<_SearchInput> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final shouldShowTypeahead =
         _controller.text.trim().startsWith('@') &&
         (widget.state.isTypeaheadLoading || widget.state.typeaheadActors.isNotEmpty);
@@ -114,10 +118,10 @@ class _SearchInputState extends State<_SearchInput> {
               Expanded(
                 child: TextField(
                   controller: _controller,
-                  decoration: const InputDecoration(
-                    hintText: 'Handle, DID, or at:// URI',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  decoration: InputDecoration(
+                    hintText: l10n.placeholderHandleDidOrAtUri,
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     isDense: true,
                   ),
                   style: AppTypography.googleSansCode(fontSize: 13),
@@ -128,7 +132,7 @@ class _SearchInputState extends State<_SearchInput> {
               const SizedBox(width: 8),
               FilledButton(
                 onPressed: widget.state.isLoading ? null : () => _resolve(_controller.text),
-                child: const Text('Resolve'),
+                child: Text(l10n.buttonResolve),
               ),
             ],
           ),
@@ -243,7 +247,8 @@ class _BreadcrumbBar extends StatelessWidget {
 
   List<AppBreadcrumbItem> _items(BuildContext context) {
     final cubit = context.read<DevToolsCubit>();
-    final repoLabel = state.repoHandle ?? state.handle ?? state.did ?? 'Repository';
+    final l10n = context.l10n;
+    final repoLabel = state.repoHandle ?? state.handle ?? state.did ?? l10n.labelRepository;
     final items = <AppBreadcrumbItem>[
       AppBreadcrumbItem(
         label: repoLabel,
@@ -266,7 +271,7 @@ class _BreadcrumbBar extends StatelessWidget {
     if (state.selectedRecord != null) {
       items.add(
         AppBreadcrumbItem(
-          label: state.selectedRecord!.rkey.isEmpty ? 'Record JSON' : state.selectedRecord!.rkey,
+          label: state.selectedRecord!.rkey.isEmpty ? l10n.labelRecordJson : state.selectedRecord!.rkey,
           tooltip: state.selectedRecord!.uri,
           key: const ValueKey('dev-tools-breadcrumb-record'),
         ),
@@ -297,10 +302,10 @@ class _Content extends StatelessWidget {
             children: [
               Icon(Icons.error_outline, size: 48, color: context.colorScheme.error),
               const SizedBox(height: 16),
-              Text('Error', style: context.textTheme.titleMedium),
+              Text(context.l10n.labelLogLevelError, style: context.textTheme.titleMedium),
               const SizedBox(height: 8),
               Text(
-                state.errorMessage ?? 'Unknown error',
+                state.errorMessage ?? context.l10n.errorUnknown,
                 textAlign: TextAlign.center,
                 style: context.textTheme.bodyMedium,
               ),
@@ -343,11 +348,10 @@ class _EmptyState extends StatelessWidget {
                 children: [
                   Icon(Icons.explore_outlined, size: 64, color: context.colorScheme.outline),
                   const SizedBox(height: 16),
-                  Text('PDS Explorer', style: context.textTheme.titleMedium),
+                  Text(context.l10n.labelPdsExplorer, style: context.textTheme.titleMedium),
                   const SizedBox(height: 8),
                   Text(
-                    'Enter a handle, DID, or AT-URI to explore\n'
-                    'a user\'s repository.',
+                    context.l10n.messageDevtoolsEmptyState,
                     textAlign: TextAlign.center,
                     style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.outline),
                   ),
@@ -355,7 +359,7 @@ class _EmptyState extends StatelessWidget {
                   TextButton.icon(
                     onPressed: () => _openExternalUrl('https://pds.ls'),
                     icon: const Icon(Icons.open_in_new, size: 16),
-                    label: const Text('Inspired by pds.ls'),
+                    label: Text(context.l10n.buttonInspiredByPdsLs),
                   ),
                 ],
               ),
@@ -395,7 +399,10 @@ class _RepoOverview extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(state.repoHandle ?? state.handle ?? 'Unknown', style: context.textTheme.titleMedium),
+                        Text(
+                          state.repoHandle ?? state.handle ?? context.l10n.labelUnknown,
+                          style: context.textTheme.titleMedium,
+                        ),
                         const SizedBox(height: 2),
                         Text(
                           state.did ?? '',
@@ -413,13 +420,15 @@ class _RepoOverview extends StatelessWidget {
                 runSpacing: 4,
                 children: [
                   Text(
-                    '${state.collections.length} collections',
+                    context.l10n.formatCollectionsCount(state.collections.length),
                     style: theme.textTheme.bodySmall!.copyWith(color: theme.colorScheme.onSurface),
                   ),
                   Text(
                     totalRepoRecords == null
-                        ? (state.isCollectionCountsLoading ? 'Counting records...' : 'Record counts unavailable')
-                        : '$totalRepoRecords records',
+                        ? (state.isCollectionCountsLoading
+                              ? context.l10n.messageRecordCountsLoading
+                              : context.l10n.messageRecordCountsUnavailable)
+                        : context.l10n.formatRecordsCount(totalRepoRecords),
                     style: context.textTheme.bodySmall!.copyWith(color: context.colorScheme.onSurfaceVariant),
                   ),
                 ],
@@ -430,7 +439,7 @@ class _RepoOverview extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: Text(
-            'COLLECTIONS',
+            context.l10n.labelCollections,
             style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
           ),
         ),
@@ -556,8 +565,8 @@ class _RecordsListState extends State<_RecordsList> {
               ),
               Text(
                 selectedCollection?.recordCount == null
-                    ? '${records.length} loaded'
-                    : '${records.length} of ${selectedCollection!.recordCount}',
+                    ? context.l10n.formatLoadedRecordsCount(records.length)
+                    : context.l10n.formatLoadedRecordsOfTotal(records.length, selectedCollection!.recordCount!),
                 style: context.textTheme.bodySmall,
               ),
             ],
@@ -655,7 +664,7 @@ class _RecordInspector extends StatelessWidget {
               if (record.cid != null) ...[
                 const SizedBox(height: 2),
                 Text(
-                  'CID: ${record.cid!}',
+                  context.l10n.formatCid(record.cid!),
                   style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.secondary),
                 ),
               ],
@@ -666,11 +675,14 @@ class _RecordInspector extends StatelessWidget {
                 children: [
                   TextButton.icon(
                     icon: const Icon(Icons.copy, size: 16),
-                    label: const Text('Copy JSON'),
+                    label: Text(context.l10n.buttonCopyJson),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: jsonString));
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('JSON copied to clipboard'), behavior: SnackBarBehavior.floating),
+                        SnackBar(
+                          content: Text(context.l10n.messageJsonCopiedToClipboard),
+                          behavior: SnackBarBehavior.floating,
+                        ),
                       );
                     },
                   ),

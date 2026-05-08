@@ -2,6 +2,7 @@ import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
@@ -103,14 +104,14 @@ class _ProfileLikedPostsPaneState extends State<ProfileLikedPostsPane> {
           children: [
             Text(_error!),
             const SizedBox(height: 12),
-            FilledButton(onPressed: _loadInitial, child: const Text('Retry')),
+            FilledButton(onPressed: _loadInitial, child: Text(context.l10n.buttonRetry)),
           ],
         ),
       );
     }
 
     if (_entries.isEmpty) {
-      return const Center(child: Text('No liked posts yet'));
+      return Center(child: Text(context.l10n.messageNoLikedPostsYet));
     }
 
     final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
@@ -165,12 +166,12 @@ class _UnavailableLikedPostCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
         leading: const Icon(Icons.hide_source_outlined),
-        title: const Text('Unavailable liked post'),
+        title: Text(context.l10n.labelUnavailableLikedPost),
         subtitle: Text(reason),
         trailing: IconButton(
           icon: const Icon(Icons.open_in_new),
           onPressed: () => context.push('/post?uri=${Uri.encodeQueryComponent(subjectUri)}'),
-          tooltip: 'Open',
+          tooltip: context.l10n.buttonOpen,
         ),
       ),
     );

@@ -5,6 +5,7 @@ import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/cache/lazurite_image_cache.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
@@ -113,7 +114,7 @@ class _PostQuoteRepostSheetState extends State<PostQuoteRepostSheet> {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           children: [
             Text(
-              'QUOTE / REPOSTS',
+              context.l10n.labelQuoteReposts,
               style: context.textTheme.labelSmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
@@ -144,7 +145,10 @@ class _PostQuoteRepostSheetState extends State<PostQuoteRepostSheet> {
                 Icon(Icons.format_quote, size: 16, color: colorScheme.onSurfaceVariant),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text('Quotes', style: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  child: Text(
+                    context.l10n.labelQuotes,
+                    style: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                  ),
                 ),
                 Text(
                   '${widget.quoteCount}',
@@ -162,7 +166,7 @@ class _PostQuoteRepostSheetState extends State<PostQuoteRepostSheet> {
           else if (_quotesLoaded && _quotes.isEmpty)
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('No quotes yet', style: TextStyle(color: colorScheme.onSurfaceVariant)),
+              child: Text(context.l10n.messageNoQuotesYet, style: TextStyle(color: colorScheme.onSurfaceVariant)),
             )
           else
             Column(
@@ -173,7 +177,7 @@ class _PostQuoteRepostSheetState extends State<PostQuoteRepostSheet> {
                     onPressed: _loadingQuotes ? null : _loadQuotes,
                     child: _loadingQuotes
                         ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Load more quotes'),
+                        : Text(context.l10n.buttonLoadMoreQuotes),
                   ),
               ],
             ),
@@ -193,7 +197,10 @@ class _PostQuoteRepostSheetState extends State<PostQuoteRepostSheet> {
         iconColor: colorScheme.onSurfaceVariant,
         collapsedIconColor: colorScheme.onSurfaceVariant,
         leading: Icon(Icons.repeat, color: colorScheme.onSurfaceVariant),
-        title: Text('Reposts', style: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700)),
+        title: Text(
+          context.l10n.labelReposts,
+          style: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -212,7 +219,7 @@ class _PostQuoteRepostSheetState extends State<PostQuoteRepostSheet> {
           else if (_repostsLoaded && _reposters.isEmpty)
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('No reposts yet', style: TextStyle(color: colorScheme.onSurfaceVariant)),
+              child: Text(context.l10n.messageNoRepostsYet, style: TextStyle(color: colorScheme.onSurfaceVariant)),
             )
           else
             Column(
@@ -223,7 +230,7 @@ class _PostQuoteRepostSheetState extends State<PostQuoteRepostSheet> {
                     onPressed: _loadingReposts ? null : _loadReposts,
                     child: _loadingReposts
                         ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Load more reposts'),
+                        : Text(context.l10n.buttonLoadMoreReposts),
                   ),
               ],
             ),

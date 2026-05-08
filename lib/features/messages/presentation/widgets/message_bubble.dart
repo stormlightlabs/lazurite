@@ -1,6 +1,7 @@
 import 'package:bluesky/chat_bsky_convo_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 
 class MessageBubble extends StatelessWidget {
   const MessageBubble({super.key, required this.message, required this.isCurrentUser});
@@ -48,7 +49,7 @@ class MessageBubble extends StatelessWidget {
     Clipboard.setData(ClipboardData(text: message.text));
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Message copied'), duration: Duration(seconds: 2)));
+    ).showSnackBar(SnackBar(content: Text(context.l10n.messageCopied), duration: const Duration(seconds: 2)));
   }
 }
 
@@ -77,7 +78,7 @@ class DeletedMessageBubble extends StatelessWidget {
             ),
           ),
           child: Text(
-            'Message deleted',
+            context.l10n.messageDeleted,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
               fontStyle: FontStyle.italic,

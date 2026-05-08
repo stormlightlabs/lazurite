@@ -1,10 +1,12 @@
 import 'dart:ui';
-import 'package:lazurite/core/l10n/l10n.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
+
+const _defaultModerationFallbackLabel = 'Sensitive content';
 
 class ModeratedBlurOverlay extends StatefulWidget {
   const ModeratedBlurOverlay({
@@ -12,7 +14,7 @@ class ModeratedBlurOverlay extends StatefulWidget {
     required this.ui,
     required this.child,
     this.borderRadius,
-    this.fallbackLabel = 'Sensitive content',
+    this.fallbackLabel = _defaultModerationFallbackLabel,
     this.fillWidth = true,
     this.labelResolver,
   });
@@ -81,8 +83,11 @@ class _ModeratedBlurOverlayState extends State<ModeratedBlurOverlay> {
                       Text(
                         moderationOverlayTitle(
                           widget.ui,
-                          fallback: widget.fallbackLabel,
+                          fallback: widget.fallbackLabel == _defaultModerationFallbackLabel
+                              ? l10n.labelSensitiveContent
+                              : widget.fallbackLabel,
                           labelResolver: effectiveResolver,
+                          l10n: l10n,
                         ),
                         textAlign: TextAlign.center,
                         style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),

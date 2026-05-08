@@ -1,5 +1,6 @@
 import 'package:bluesky/chat_bsky_convo_defs.dart';
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/shared/presentation/widgets/actor_name_widget.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
@@ -23,9 +24,9 @@ class ConvoListItem extends StatelessWidget {
     final theme = Theme.of(context);
     final other = convo.members.where((m) => m.did != currentUserDid).firstOrNull;
     final displayName = other?.displayName;
-    final handle = other?.handle ?? 'unknown';
+    final handle = other?.handle ?? context.l10n.commonUnknown;
     final fallbackName = displayName ?? handle;
-    final lastMessageText = _lastMessageText();
+    final lastMessageText = _lastMessageText(context);
 
     return ListTile(
       onTap: onTap,
@@ -78,7 +79,7 @@ class ConvoListItem extends StatelessWidget {
         itemBuilder: (_) => [
           PopupMenuItem(
             value: convo.muted ? _ConvoAction.unmute : _ConvoAction.mute,
-            child: Text(convo.muted ? 'Unmute' : 'Mute'),
+            child: Text(convo.muted ? context.l10n.buttonUnmute : context.l10n.buttonMute),
           ),
         ],
         child: Icon(Icons.more_vert, color: theme.colorScheme.onSurfaceVariant),
@@ -95,13 +96,13 @@ class ConvoListItem extends StatelessWidget {
     );
   }
 
-  String? _lastMessageText() {
+  String? _lastMessageText(BuildContext context) {
     final lastMessage = convo.lastMessage;
     if (lastMessage == null) return null;
 
     return lastMessage.when(
       messageView: (data) => data.text.isNotEmpty ? data.text : null,
-      deletedMessageView: (_) => 'Message deleted',
+      deletedMessageView: (_) => context.l10n.messageDeleted,
       unknown: (_) => null,
     );
   }

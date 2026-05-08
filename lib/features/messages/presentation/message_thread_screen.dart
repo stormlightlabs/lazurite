@@ -2,6 +2,7 @@ import 'package:bluesky/chat_bsky_convo_getmessages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/bloc/message_bloc.dart';
 import 'package:lazurite/features/messages/presentation/widgets/message_bubble.dart';
@@ -66,7 +67,7 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
     Clipboard.setData(ClipboardData(text: lines));
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Thread copied'), duration: Duration(seconds: 2)));
+    ).showSnackBar(SnackBar(content: Text(context.l10n.messageThreadCopied), duration: const Duration(seconds: 2)));
   }
 
   ThemeData get _theme => Theme.of(context);
@@ -86,7 +87,9 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
                   _copyAllMessages(state.messages);
                 }
               },
-              itemBuilder: (_) => const [PopupMenuItem(value: _ThreadAction.copyAll, child: Text('Copy All'))],
+              itemBuilder: (_) => [
+                PopupMenuItem(value: _ThreadAction.copyAll, child: Text(context.l10n.buttonCopyAll)),
+              ],
             ),
           ),
         ],
@@ -106,7 +109,7 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
                 }
 
                 if (state.messages.isEmpty) {
-                  return Center(child: Text('No messages yet', style: _theme.textTheme.bodyLarge));
+                  return Center(child: Text(context.l10n.messageNoMessagesYet, style: _theme.textTheme.bodyLarge));
                 }
 
                 return ListView.builder(
@@ -157,7 +160,7 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
               maxLines: 5,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
-                hintText: 'Message…',
+                hintText: context.l10n.messagePlaceholder,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 isDense: true,
@@ -183,11 +186,11 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text('Failed to load messages', style: _theme.textTheme.titleMedium),
+        Text(context.l10n.errorFailedToLoadMessages, style: _theme.textTheme.titleMedium),
         const SizedBox(height: 16),
         FilledButton(
           onPressed: () => context.read<MessageBloc>().add(MessagesRequested(convoId: widget.convoId)),
-          child: const Text('Retry'),
+          child: Text(context.l10n.buttonRetry),
         ),
       ],
     ),

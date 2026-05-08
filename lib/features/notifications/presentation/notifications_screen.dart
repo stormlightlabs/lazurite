@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
 import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
@@ -12,8 +13,8 @@ class NotificationsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: LazuriteAppBar(
-        sectionLabel: 'Alerts',
-        actions: [TextButton(onPressed: () => _markAllRead(context), child: const Text('Mark All Read'))],
+        sectionLabel: context.l10n.labelAlertsTitle,
+        actions: [TextButton(onPressed: () => _markAllRead(context), child: Text(context.l10n.buttonMarkAllRead))],
       ),
       body: const NotificationsPane(),
     );

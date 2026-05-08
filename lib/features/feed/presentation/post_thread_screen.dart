@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
@@ -1036,9 +1037,9 @@ class _FocusedPostContent extends StatelessWidget {
   Future<void> _confirmDelete(BuildContext context) async {
     await showConfirmationDialog(
       context: context,
-      title: const Text('Delete Post?'),
-      content: const Text('This action cannot be undone.'),
-      confirmLabel: 'Delete',
+      title: Text(context.l10n.dialogDeletePostTitle),
+      content: Text(context.l10n.dialogDeletePostContent),
+      confirmLabel: context.l10n.buttonDelete,
       confirmDestructive: true,
       onConfirmed: () => context.read<PostActionCubit>().deletePost(),
     );

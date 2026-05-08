@@ -157,7 +157,7 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      await tester.tap(find.text('1 Reposts'));
+      await tester.tap(find.text('1 Repost'));
       await tester.pump();
       await tester.pump();
 

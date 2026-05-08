@@ -19,21 +19,16 @@
 
 ## M2 - Remaining Feature Surfaces
 
-- [ ] Localize feed cards, post menus, post actions, saved posts, and trending
-- [ ] Localize compose flow, media alt text editors, draft/schedule states, and validation
-- [ ] Localize profile screens, profile actions, reports, follows, lists, and starter packs
-- [ ] Localize messages, notifications, alerts, and account switching sheets
-- [ ] Localize moderation settings/detail screens and logs/devtools user-facing labels
+- [x] Localize feed cards, post menus, post actions, saved posts, and trending
+- [x] Localize compose flow, media alt text editors, draft/schedule states, and validation
+- [x] Localize profile screens, profile actions, reports, follows, lists, and starter packs
+- [x] Localize messages, notifications, alerts, and account switching sheets
+- [x] Localize moderation settings/detail screens and logs/devtools user-facing labels
 
-## M3 - Locale QA and Secondary-Locale Strategy
+## M3 - User-Facing Language Selection
 
 - [ ] Add a pseudo-locale or generated QA locale for layout stress testing
-- [ ] Audit hard-coded visible strings after M2
-- [ ] Add locale-aware golden/widget coverage for dense layouts
 - [ ] Decide first real non-English locale and translation ownership
-
-## M4 - User-Facing Language Selection
-
 - [ ] Add persisted language preference only after multiple real locales exist
 - [ ] Add settings UI for system/default language and supported overrides
 - [ ] Add tests for locale override persistence and app rebuild behavior

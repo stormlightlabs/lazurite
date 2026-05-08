@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
@@ -105,7 +106,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               actions: [
                 IconButton(
                   icon: const Icon(Icons.trending_up_outlined),
-                  tooltip: 'Trending',
+                  tooltip: context.l10n.labelTrending,
                   onPressed: () => context.push('/trending'),
                 ),
                 IconButton(

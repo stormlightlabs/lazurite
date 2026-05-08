@@ -3,6 +3,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
@@ -13,7 +16,6 @@ import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
 import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class NotificationsPane extends StatefulWidget {
   const NotificationsPane({super.key});
@@ -89,8 +91,8 @@ class _NotificationsPaneState extends State<NotificationsPane> {
             return const _OfflineNotificationsState();
           }
           return ErrorState(
-            title: 'Failed to load notifications',
-            message: state.errorMessage ?? 'Unknown error',
+            title: context.l10n.errorFailedToLoadNotifications,
+            message: state.errorMessage ?? context.l10n.errorUnknown,
             onRetry: () => context.read<NotificationBloc>().add(const NotificationsRequested()),
           );
         }
@@ -99,7 +101,7 @@ class _NotificationsPaneState extends State<NotificationsPane> {
           if (isOffline) {
             return const _OfflineNotificationsState();
           }
-          return const EmptyState(message: 'No notifications yet', icon: Icons.notifications_none_outlined);
+          return EmptyState(message: context.l10n.messageNoNotificationsYet, icon: Icons.notifications_none_outlined);
         }
 
         final groupedNotifications = _groupNotificationsByDay(state.notifications);
@@ -110,7 +112,7 @@ class _NotificationsPaneState extends State<NotificationsPane> {
             controller: _scrollController,
             itemCount: _calculateItemCount(groupedNotifications, state),
             itemBuilder: (context, index) {
-              final item = _getItemAtIndex(groupedNotifications, index);
+              final item = _getItemAtIndex(context, groupedNotifications, index);
 
               if (item is String) {
                 return _DayHeader(title: item);
@@ -185,12 +187,12 @@ class _NotificationsPaneState extends State<NotificationsPane> {
     return count;
   }
 
-  dynamic _getItemAtIndex(Map<DateTime, List<NotificationGroup>> grouped, int index) {
+  dynamic _getItemAtIndex(BuildContext context, Map<DateTime, List<NotificationGroup>> grouped, int index) {
     int currentIndex = 0;
 
     for (final entry in grouped.entries) {
       if (currentIndex == index) {
-        return _formatDayHeader(entry.key);
+        return _formatDayHeader(context, entry.key);
       }
       currentIndex++;
 
@@ -205,37 +207,23 @@ class _NotificationsPaneState extends State<NotificationsPane> {
     return null;
   }
 
-  String _formatDayHeader(DateTime date) {
+  String _formatDayHeader(BuildContext context, DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
 
     if (date == today) {
-      return 'Today';
+      return context.l10n.messageToday;
     } else if (date == yesterday) {
-      return 'Yesterday';
+      return context.l10n.messageYesterday;
     }
 
-    return _formatDate(date);
+    return _formatDate(context, date);
   }
 
-  String _formatDate(DateTime date) {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-
-    return '${months[date.month - 1]} ${date.day}';
+  String _formatDate(BuildContext context, DateTime date) {
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    return DateFormat.MMMMd(locale).format(date);
   }
 }
 
@@ -252,9 +240,13 @@ class _OfflineNotificationsState extends StatelessWidget {
           children: [
             Icon(Icons.cloud_off_outlined, size: 48, color: context.colorScheme.outline),
             const SizedBox(height: 12),
-            Text('No connection', style: context.textTheme.titleMedium),
+            Text(context.l10n.messageNoConnection, style: context.textTheme.titleMedium),
             const SizedBox(height: 8),
-            Text('Reconnect to load notifications.', textAlign: TextAlign.center, style: context.textTheme.bodyMedium),
+            Text(
+              context.l10n.messageReconnectToLoadNotifications,
+              textAlign: TextAlign.center,
+              style: context.textTheme.bodyMedium,
+            ),
           ],
         ),
       ),

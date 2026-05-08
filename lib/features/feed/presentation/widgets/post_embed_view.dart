@@ -9,6 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/cache/lazurite_image_cache.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
 import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
@@ -271,13 +272,13 @@ class PostEmbedView extends StatelessWidget {
     }
 
     if (record.isEmbedRecordViewNotFound) {
-      return _buildUnavailableQuote(context, 'Quoted post not found');
+      return _buildUnavailableQuote(context, context.l10n.messageQuotedPostNotFound);
     }
     if (record.isEmbedRecordViewBlocked) {
-      return _buildUnavailableQuote(context, 'Quoted post is blocked');
+      return _buildUnavailableQuote(context, context.l10n.messageQuotedPostBlocked);
     }
     if (record.isEmbedRecordViewDetached) {
-      return _buildUnavailableQuote(context, 'Quoted post is unavailable');
+      return _buildUnavailableQuote(context, context.l10n.messageQuotedPostUnavailable);
     }
 
     return const SizedBox.shrink();
@@ -359,9 +360,12 @@ class PostEmbedView extends StatelessWidget {
     final selected = await showMenu<_ImageThumbnailAction>(
       context: context,
       position: RelativeRect.fromLTRB(globalPosition.dx, globalPosition.dy, globalPosition.dx, globalPosition.dy),
-      items: const [
-        PopupMenuItem<_ImageThumbnailAction>(value: _ImageThumbnailAction.save, child: Text('Save image')),
-        PopupMenuItem<_ImageThumbnailAction>(value: _ImageThumbnailAction.share, child: Text('Share')),
+      items: [
+        PopupMenuItem<_ImageThumbnailAction>(
+          value: _ImageThumbnailAction.save,
+          child: Text(context.l10n.labelSaveImage),
+        ),
+        PopupMenuItem<_ImageThumbnailAction>(value: _ImageThumbnailAction.share, child: Text(context.l10n.buttonShare)),
       ],
     );
 

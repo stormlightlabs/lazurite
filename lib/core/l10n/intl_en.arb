@@ -13,6 +13,10 @@
   "@buttonCancel": {
     "description": "Cancel button label"
   },
+  "buttonCompose": "Compose",
+  "@buttonCompose": {
+    "description": "Tooltip for composing a post"
+  },
   "buttonClearCache": "Clear Cache",
   "@buttonClearCache": {
     "description": "Button label to clear local cache"
@@ -20,6 +24,26 @@
   "buttonContinue": "Continue",
   "@buttonContinue": {
     "description": "Continue button label"
+  },
+  "buttonClearLocal": "Clear Local",
+  "@buttonClearLocal": {
+    "description": "Button label to clear locally stored items"
+  },
+  "buttonDelete": "Delete",
+  "@buttonDelete": {
+    "description": "Delete button label"
+  },
+  "buttonDiscard": "Discard",
+  "@buttonDiscard": {
+    "description": "Discard button label"
+  },
+  "buttonLoadMoreQuotes": "Load more quotes",
+  "@buttonLoadMoreQuotes": {
+    "description": "Button label to load additional quote posts"
+  },
+  "buttonLoadMoreReposts": "Load more reposts",
+  "@buttonLoadMoreReposts": {
+    "description": "Button label to load additional repost users"
   },
   "buttonRemove": "Remove",
   "@buttonRemove": {
@@ -41,6 +65,14 @@
   "@buttonOpen": {
     "description": "Open button label"
   },
+  "buttonOk": "OK",
+  "@buttonOk": {
+    "description": "OK button label"
+  },
+  "buttonPost": "Post",
+  "@buttonPost": {
+    "description": "Button label to publish a post"
+  },
   "buttonResetSignInData": "Reset Sign-In Data",
   "@buttonResetSignInData": {
     "description": "Button label to clear local sign-in data"
@@ -49,6 +81,14 @@
   "@buttonRetry": {
     "description": "Retry button label"
   },
+  "buttonSave": "Save",
+  "@buttonSave": {
+    "description": "Save button label"
+  },
+  "buttonSaveChanges": "Save Changes",
+  "@buttonSaveChanges": {
+    "description": "Button label to save post edits"
+  },
   "buttonSignIn": "Sign In",
   "@buttonSignIn": {
     "description": "Sign in button label"
@@ -56,6 +96,10 @@
   "buttonShowContent": "Show content",
   "@buttonShowContent": {
     "description": "Button label to reveal moderated content"
+  },
+  "buttonShare": "Share",
+  "@buttonShare": {
+    "description": "Share button or menu label"
   },
   "buttonTryAgain": "Try again",
   "@buttonTryAgain": {
@@ -69,6 +113,14 @@
   "@commonNone": {
     "description": "Label for no value"
   },
+  "commonNow": "now",
+  "@commonNow": {
+    "description": "Lowercase relative time label for the current moment"
+  },
+  "commonJustNow": "Just now",
+  "@commonJustNow": {
+    "description": "Relative time label for the current moment"
+  },
   "commonNotCheckedYet": "Not checked yet",
   "@commonNotCheckedYet": {
     "description": "Label for a health check that has not run"
@@ -77,6 +129,10 @@
   "@commonOff": {
     "description": "Disabled option label"
   },
+  "commonUnknown": "unknown",
+  "@commonUnknown": {
+    "description": "Lowercase fallback for an unknown value"
+  },
   "dialogClearCacheContent": "This removes cached posts, profiles, images, feeds, threads, label data, and local semantic search data.\n\nAccounts, settings, drafts, bookmarks, and likes are kept.",
   "@dialogClearCacheContent": {
     "description": "Confirmation dialog body before clearing local cache"
@@ -84,6 +140,50 @@
   "dialogClearCacheTitle": "Clear cache?",
   "@dialogClearCacheTitle": {
     "description": "Confirmation dialog title before clearing local cache"
+  },
+  "dialogClearLocalBookmarksContent": "This removes only local bookmarks from this device. Bluesky cloud bookmarks will not be deleted.",
+  "@dialogClearLocalBookmarksContent": {
+    "description": "Confirmation dialog body before clearing local bookmarks"
+  },
+  "dialogClearLocalBookmarksTitle": "Clear local bookmarks?",
+  "@dialogClearLocalBookmarksTitle": {
+    "description": "Confirmation dialog title before clearing local bookmarks"
+  },
+  "dialogDeletePostContent": "This action cannot be undone.",
+  "@dialogDeletePostContent": {
+    "description": "Confirmation dialog body before deleting a post"
+  },
+  "dialogDeletePostTitle": "Delete Post?",
+  "@dialogDeletePostTitle": {
+    "description": "Confirmation dialog title before deleting a post"
+  },
+  "dialogDeleteDraftTitle": "Delete Draft?",
+  "@dialogDeleteDraftTitle": {
+    "description": "Confirmation dialog title before deleting a draft"
+  },
+  "dialogDiscardChangesContent": "You have unsaved edits. Discard them and leave?",
+  "@dialogDiscardChangesContent": {
+    "description": "Confirmation dialog body before leaving unsaved post edits"
+  },
+  "dialogDiscardChangesTitle": "Discard Changes?",
+  "@dialogDiscardChangesTitle": {
+    "description": "Confirmation dialog title before leaving unsaved post edits"
+  },
+  "dialogEditAlgorithmContent": "Lazurite saves edits by deleting and recreating the post record with the same URI. During re-indexing, ranking, counters, and search visibility can shift, and updates may take time to appear everywhere.",
+  "@dialogEditAlgorithmContent": {
+    "description": "Information dialog body explaining how post editing is implemented"
+  },
+  "dialogEditAlgorithmTitle": "How Post Editing Works",
+  "@dialogEditAlgorithmTitle": {
+    "description": "Information dialog title explaining how post editing works"
+  },
+  "dialogSaveDraftContent": "You have unsaved content. Would you like to save it as a draft?",
+  "@dialogSaveDraftContent": {
+    "description": "Confirmation dialog body before leaving compose with unsaved content"
+  },
+  "dialogSaveDraftTitle": "Save Draft?",
+  "@dialogSaveDraftTitle": {
+    "description": "Confirmation dialog title before leaving compose with unsaved content"
   },
   "dialogRemoveAccountContent": "Remove @{handle} from this device?",
   "@dialogRemoveAccountContent": {
@@ -139,6 +239,52 @@
   "@errorGenericTitle": {
     "description": "Generic error state title"
   },
+  "errorFailedToLoadBookmarks": "Failed to load bookmarks",
+  "@errorFailedToLoadBookmarks": {
+    "description": "Error title shown when bookmarks cannot load"
+  },
+  "errorFailedToLoadLikedPosts": "Failed to load liked posts",
+  "@errorFailedToLoadLikedPosts": {
+    "description": "Error title shown when liked posts cannot load"
+  },
+  "errorFailedToLoadLikedPostsDetails": "Failed to load liked posts: {error}",
+  "@errorFailedToLoadLikedPostsDetails": {
+    "description": "Error message shown when liked posts cannot load",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "errorFailedToRefreshLikedPosts": "Failed to refresh liked posts: {error}",
+  "@errorFailedToRefreshLikedPosts": {
+    "description": "Warning message shown when refreshing liked posts fails",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "errorFailedToLoadTrending": "Failed to load trending",
+  "@errorFailedToLoadTrending": {
+    "description": "Error title shown when trending content cannot load"
+  },
+  "errorFailedToLoadTrendingTopics": "Failed to load trending topics: {error}",
+  "@errorFailedToLoadTrendingTopics": {
+    "description": "Error message shown when trending topics cannot load",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "errorUnknown": "Unknown error",
+  "@errorUnknown": {
+    "description": "Fallback message when an error has no details"
+  },
   "errorUnableToRemoveAccount": "Unable to remove account right now.",
   "@errorUnableToRemoveAccount": {
     "description": "Snackbar message when a saved account cannot be removed"
@@ -186,6 +332,216 @@
         "example": "3"
       }
     }
+  },
+  "formatLikedOn": "Liked on {date}",
+  "@formatLikedOn": {
+    "description": "Fallback liked-post card subtitle showing when a post was liked",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "Mar 15"
+      }
+    }
+  },
+  "formatLikesCount": "{count, plural, =1{1 Like} other{{count} Likes}}",
+  "@formatLikesCount": {
+    "description": "Interaction sheet tab label showing like count",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "formatOfflineReconnectAction": "You are offline. Reconnect to {action}.",
+  "@formatOfflineReconnectAction": {
+    "description": "Message explaining that a post action requires reconnecting",
+    "placeholders": {
+      "action": {
+        "type": "String",
+        "example": "like this post"
+      }
+    }
+  },
+  "formatReplyingToHandle": "Replying to @{handle}",
+  "@formatReplyingToHandle": {
+    "description": "Post card reply context label showing the parent post author",
+    "placeholders": {
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "formatRepostsCount": "{count, plural, =1{1 Repost} other{{count} Reposts}}",
+  "@formatRepostsCount": {
+    "description": "Interaction sheet tab label showing repost count",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "8"
+      }
+    }
+  },
+  "formatSavedOn": "Saved on {date}",
+  "@formatSavedOn": {
+    "description": "Fallback saved-post card subtitle showing when a post was saved",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "Mar 15"
+      }
+    }
+  },
+  "formatTrendingCategory": "Category: {category}",
+  "@formatTrendingCategory": {
+    "description": "Trending topic category subtitle line",
+    "placeholders": {
+      "category": {
+        "type": "String",
+        "example": "Technology"
+      }
+    }
+  },
+  "formatTrendingPostCount": "{count, plural, =1{1 post} other{{count} posts}}",
+  "@formatTrendingPostCount": {
+    "description": "Trending topic post count subtitle line",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "1200"
+      }
+    }
+  },
+  "formatViewHandle": "View @{handle}",
+  "@formatViewHandle": {
+    "description": "Post overflow action label to view an author profile",
+    "placeholders": {
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "formatComposeFailedToPickImage": "Failed to pick image: {error}",
+  "@formatComposeFailedToPickImage": {
+    "description": "Snackbar message when the image picker fails",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "permission denied"
+      }
+    }
+  },
+  "formatComposeFailedToPickVideo": "Failed to pick video: {error}",
+  "@formatComposeFailedToPickVideo": {
+    "description": "Snackbar message when the video picker fails",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "permission denied"
+      }
+    }
+  },
+  "formatComposeFailedToSaveChanges": "Failed to save changes: {error}",
+  "@formatComposeFailedToSaveChanges": {
+    "description": "Compose error message when saving edits fails with details",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "formatComposeFailedToSubmitPost": "Failed to submit post: {error}",
+  "@formatComposeFailedToSubmitPost": {
+    "description": "Compose error message when post submission fails with details",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "formatComposeImageTooLarge": "Image \"{fileName}\" is {sizeMb} MB - max 1 MB.",
+  "@formatComposeImageTooLarge": {
+    "description": "Compose validation error when an attached image is too large",
+    "placeholders": {
+      "fileName": {
+        "type": "String",
+        "example": "photo.png"
+      },
+      "sizeMb": {
+        "type": "String",
+        "example": "1.4"
+      }
+    }
+  },
+  "formatComposeQuotingHandle": "Quoting @{handle}",
+  "@formatComposeQuotingHandle": {
+    "description": "Compose quote preview label with the quoted author's handle",
+    "placeholders": {
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "formatComposeScheduledFor": "Scheduled for {dateTime}",
+  "@formatComposeScheduledFor": {
+    "description": "Compose scheduled post pill label",
+    "placeholders": {
+      "dateTime": {
+        "type": "String",
+        "example": "May 8, 2:30 PM"
+      }
+    }
+  },
+  "formatComposeVideoReadyWithAltText": "Ready - \"{altText}\"",
+  "@formatComposeVideoReadyWithAltText": {
+    "description": "Video attachment status when ready and alt text exists",
+    "placeholders": {
+      "altText": {
+        "type": "String",
+        "example": "A dog running through a park"
+      }
+    }
+  },
+  "formatComposeVideoTooLarge": "Video is {sizeMb} MB - exceeds the 100 MB limit.",
+  "@formatComposeVideoTooLarge": {
+    "description": "Compose validation error when a video is too large",
+    "placeholders": {
+      "sizeMb": {
+        "type": "String",
+        "example": "125.4"
+      }
+    }
+  },
+  "formatDraftCount": "{count, plural, =1{1 draft} other{{count} drafts}}",
+  "@formatDraftCount": {
+    "description": "Compose drafts panel count label",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "actionLikeThisPost": "like this post",
+  "@actionLikeThisPost": {
+    "description": "Offline action phrase for liking a post"
+  },
+  "actionReplyToThisPost": "reply to this post",
+  "@actionReplyToThisPost": {
+    "description": "Offline action phrase for replying to a post"
+  },
+  "actionRepostThisPost": "repost this post",
+  "@actionRepostThisPost": {
+    "description": "Offline action phrase for reposting a post"
+  },
+  "actionPublishYourPost": "publish your post",
+  "@actionPublishYourPost": {
+    "description": "Offline action phrase for publishing a post"
   },
   "labelAbout": "About",
   "@labelAbout": {
@@ -255,6 +611,26 @@
   "@labelBookmarksAndLikes": {
     "description": "Settings item for bookmarked and liked posts"
   },
+  "labelBookmarkActions": "Bookmark actions",
+  "@labelBookmarkActions": {
+    "description": "Tooltip for bookmark actions menu"
+  },
+  "labelBookmarkedPost": "Bookmarked Post",
+  "@labelBookmarkedPost": {
+    "description": "Fallback saved-post card title"
+  },
+  "labelBookmarks": "Bookmarks",
+  "@labelBookmarks": {
+    "description": "Bookmarks tab label"
+  },
+  "labelBluesky": "Bluesky",
+  "@labelBluesky": {
+    "description": "Bluesky source tab label"
+  },
+  "labelAlt": "ALT",
+  "@labelAlt": {
+    "description": "Short all-caps label for media alt text controls"
+  },
   "labelCacheCleared": "Cache cleared",
   "@labelCacheCleared": {
     "description": "Snackbar message after clearing cache"
@@ -266,6 +642,10 @@
   "labelCleanFollows": "Clean Follows",
   "@labelCleanFollows": {
     "description": "Settings item for follow audit feature"
+  },
+  "labelClose": "Close",
+  "@labelClose": {
+    "description": "Close button tooltip"
   },
   "labelClearCache": "Clear Cache",
   "@labelClearCache": {
@@ -395,6 +775,10 @@
   "@labelNewPost": {
     "description": "New post menu label"
   },
+  "labelNow": "NOW",
+  "@labelNow": {
+    "description": "Uppercase compact relative time label for the current moment"
+  },
   "labelNotifications": "Notifications",
   "@labelNotifications": {
     "description": "Notifications menu label"
@@ -515,6 +899,106 @@
   "@labelClearUntil": {
     "description": "Button label to clear until date filter"
   },
+  "labelClearLocalBookmarks": "Clear local bookmarks",
+  "@labelClearLocalBookmarks": {
+    "description": "Bookmark menu item to clear local bookmarks"
+  },
+  "labelCopyLink": "Copy Link",
+  "@labelCopyLink": {
+    "description": "Post overflow menu item to copy a post link"
+  },
+  "labelDeletePost": "Delete Post",
+  "@labelDeletePost": {
+    "description": "Post overflow menu item to delete a post"
+  },
+  "labelDeleteDraft": "Delete draft",
+  "@labelDeleteDraft": {
+    "description": "Tooltip for deleting a draft"
+  },
+  "labelEditPost": "Edit Post",
+  "@labelEditPost": {
+    "description": "Post overflow menu item to edit a post"
+  },
+  "labelLiked": "Liked",
+  "@labelLiked": {
+    "description": "Liked posts tab label"
+  },
+  "labelLikedBy": "LIKED BY",
+  "@labelLikedBy": {
+    "description": "Post interactions sheet section label for users who liked a post"
+  },
+  "labelLikedPost": "Liked Post",
+  "@labelLikedPost": {
+    "description": "Fallback liked-post card title"
+  },
+  "labelMoreInfo": "More info",
+  "@labelMoreInfo": {
+    "description": "Tooltip for opening more information"
+  },
+  "labelLocal": "Local",
+  "@labelLocal": {
+    "description": "Local saved-post source tab label"
+  },
+  "labelOpenPost": "Open post",
+  "@labelOpenPost": {
+    "description": "Tooltip to open a post"
+  },
+  "labelQuotePost": "Quote Post",
+  "@labelQuotePost": {
+    "description": "Post action label to quote a post"
+  },
+  "labelQuoteReposts": "QUOTE / REPOSTS",
+  "@labelQuoteReposts": {
+    "description": "Heading for quote and repost bottom sheet"
+  },
+  "labelQuotes": "Quotes",
+  "@labelQuotes": {
+    "description": "Quotes section title"
+  },
+  "labelRemoveFromBluesky": "Remove from Bluesky",
+  "@labelRemoveFromBluesky": {
+    "description": "Post save menu item to remove a cloud bookmark"
+  },
+  "labelRemoveLocalSave": "Remove local save",
+  "@labelRemoveLocalSave": {
+    "description": "Post save menu item to remove a local bookmark"
+  },
+  "labelReportPost": "Report Post",
+  "@labelReportPost": {
+    "description": "Post overflow menu item to report a post"
+  },
+  "labelRepost": "Repost",
+  "@labelRepost": {
+    "description": "Post action label to repost a post"
+  },
+  "labelRepostedBy": "REPOSTED BY",
+  "@labelRepostedBy": {
+    "description": "Post interactions sheet section label for users who reposted a post"
+  },
+  "labelReposts": "Reposts",
+  "@labelReposts": {
+    "description": "Reposts section title"
+  },
+  "labelSaveImage": "Save image",
+  "@labelSaveImage": {
+    "description": "Image context menu item to save an image"
+  },
+  "labelSaveLocally": "Save locally",
+  "@labelSaveLocally": {
+    "description": "Post save menu item to create a local bookmark"
+  },
+  "labelSaveToBluesky": "Save to Bluesky",
+  "@labelSaveToBluesky": {
+    "description": "Post save menu item to create a cloud bookmark"
+  },
+  "labelSchedule": "Schedule",
+  "@labelSchedule": {
+    "description": "Compose toolbar schedule button tooltip"
+  },
+  "labelScheduled": "Scheduled",
+  "@labelScheduled": {
+    "description": "Scheduled draft badge label"
+  },
   "labelSavedAccounts": "Saved accounts",
   "@labelSavedAccounts": {
     "description": "Saved accounts section label on login screen"
@@ -526,6 +1010,14 @@
   "labelSemanticSearch": "Semantic Search",
   "@labelSemanticSearch": {
     "description": "Semantic search settings label"
+  },
+  "labelShowLikedUsers": "Show Liked Users",
+  "@labelShowLikedUsers": {
+    "description": "Post overflow menu item to open users who liked a post"
+  },
+  "labelShowQuoteRepostList": "Show Quote/Repost List",
+  "@labelShowQuoteRepostList": {
+    "description": "Post overflow menu item to open quote and repost lists"
   },
   "labelSettings": "Settings",
   "@labelSettings": {
@@ -566,6 +1058,30 @@
   "labelTroubleshooting": "Troubleshooting",
   "@labelTroubleshooting": {
     "description": "Troubleshooting settings section label"
+  },
+  "labelVideo": "Video",
+  "@labelVideo": {
+    "description": "Fallback video label"
+  },
+  "labelTopics": "Topics",
+  "@labelTopics": {
+    "description": "Trending topics section label"
+  },
+  "labelTrending": "Trending",
+  "@labelTrending": {
+    "description": "Trending screen title and tooltip label"
+  },
+  "labelSuggested": "Suggested",
+  "@labelSuggested": {
+    "description": "Trending suggested topics section label"
+  },
+  "labelSuggestedFollows": "Suggested Follows",
+  "@labelSuggestedFollows": {
+    "description": "Suggested follows sheet and menu label"
+  },
+  "labelUnrepost": "Unrepost",
+  "@labelUnrepost": {
+    "description": "Post action label to undo a repost"
   },
   "labelTypeaheadProvider": "Typeahead Provider",
   "@labelTypeaheadProvider": {
@@ -655,6 +1171,14 @@
   "@messageFeedsSubtitle": {
     "description": "Settings subtitle for feeds"
   },
+  "messageLinkCopiedToClipboard": "Link copied to clipboard",
+  "@messageLinkCopiedToClipboard": {
+    "description": "Snackbar message after copying a post link"
+  },
+  "messageLoadingTrendingTopics": "Loading trending topics",
+  "@messageLoadingTrendingTopics": {
+    "description": "Loading message while trending topics load"
+  },
   "messageForceNextXrpc401Subtitle": "Debug-only: next network request returns Unauthorized to test token refresh",
   "@messageForceNextXrpc401Subtitle": {
     "description": "Developer setting subtitle for forced 401"
@@ -663,12 +1187,14 @@
   "@messageManageSemanticSearchSubtitle": {
     "description": "Settings subtitle for semantic search management"
   },
-
+  "messageMetadataTemporarilyUnavailable": "Metadata temporarily unavailable",
+  "@messageMetadataTemporarilyUnavailable": {
+    "description": "Trending banner shown when supplemental metadata cannot be loaded"
+  },
   "messageModeratedContentCannotReveal": "Hidden by your moderation settings and cannot be revealed here.",
   "@messageModeratedContentCannotReveal": {
     "description": "Moderation overlay description when content cannot be revealed"
   },
-
   "messageModeratedContentCanReveal": "Hidden by your moderation settings. You can reveal it for this view.",
   "@messageModeratedContentCanReveal": {
     "description": "Moderation overlay description when content can be revealed"
@@ -676,6 +1202,274 @@
   "messageProviderDiagnosticsSubtitle": "Moderation/ranking can differ by provider. Verify health and recent fallback state.",
   "@messageProviderDiagnosticsSubtitle": {
     "description": "Settings subtitle for provider diagnostics"
+  },
+  "messageLikedPostsUnavailable": "Liked posts are unavailable right now.",
+  "@messageLikedPostsUnavailable": {
+    "description": "Message shown when liked posts dependencies are unavailable"
+  },
+  "messageChangesSaved": "Changes saved.",
+  "@messageChangesSaved": {
+    "description": "Snackbar message after post edits are saved"
+  },
+  "messageComposeAddAltText": "Add alt text",
+  "@messageComposeAddAltText": {
+    "description": "Tooltip for adding video alt text"
+  },
+  "messageComposeAddImage": "Add image",
+  "@messageComposeAddImage": {
+    "description": "Compose toolbar add image tooltip"
+  },
+  "messageComposeAddVideo": "Add video",
+  "@messageComposeAddVideo": {
+    "description": "Compose toolbar add video tooltip"
+  },
+  "messageComposeClearScheduledTime": "Clear scheduled time",
+  "@messageComposeClearScheduledTime": {
+    "description": "Tooltip for clearing scheduled compose time"
+  },
+  "messageComposeDescribeImage": "Describe the image",
+  "@messageComposeDescribeImage": {
+    "description": "Image alt text field placeholder"
+  },
+  "messageComposeDescribeVideo": "Describe the video",
+  "@messageComposeDescribeVideo": {
+    "description": "Video alt text field placeholder"
+  },
+  "messageComposeDraftSaved": "Draft saved",
+  "@messageComposeDraftSaved": {
+    "description": "Snackbar message after saving a draft"
+  },
+  "messageComposeDrafts": "Drafts",
+  "@messageComposeDrafts": {
+    "description": "Compose drafts panel title and toolbar tooltip"
+  },
+  "messageComposeEditNotice": "Edits are saved by replacing the record while keeping this post URI. Ranking, counts, and visibility may shift while networks re-index.",
+  "@messageComposeEditNotice": {
+    "description": "Compose edit mode notice banner"
+  },
+  "messageComposeImageAltTextTitle": "Alt text",
+  "@messageComposeImageAltTextTitle": {
+    "description": "Image alt text dialog title"
+  },
+  "messageComposeImageMaxCount": "Maximum 4 images allowed",
+  "@messageComposeImageMaxCount": {
+    "description": "Compose validation message when too many images are attached"
+  },
+  "messageComposeImageMustBeJpegPngWebp": "Image must be JPEG, PNG, or WebP",
+  "@messageComposeImageMustBeJpegPngWebp": {
+    "description": "Compose validation message for unsupported image extensions"
+  },
+  "messageComposeImageMustBeUnder1Mb": "Image must be smaller than 1MB",
+  "@messageComposeImageMustBeUnder1Mb": {
+    "description": "Compose validation message for image picker size validation"
+  },
+  "messageComposeNoDraftsSaved": "No drafts saved",
+  "@messageComposeNoDraftsSaved": {
+    "description": "Empty state text in compose drafts panel"
+  },
+  "messageComposeNoText": "(No text)",
+  "@messageComposeNoText": {
+    "description": "Fallback draft content label when a draft has no text"
+  },
+  "messageComposePlaceholder": "What''s on your mind?",
+  "@messageComposePlaceholder": {
+    "description": "Compose text field placeholder"
+  },
+  "messageComposePreviewUnavailable": "Preview unavailable",
+  "@messageComposePreviewUnavailable": {
+    "description": "Video alt text preview unavailable message"
+  },
+  "messageComposeQuotingPost": "Quoting post",
+  "@messageComposeQuotingPost": {
+    "description": "Compose quote preview label without an author handle"
+  },
+  "messageComposeRemoveExistingMediaBeforeVideo": "Remove existing media before adding a video",
+  "@messageComposeRemoveExistingMediaBeforeVideo": {
+    "description": "Compose validation message when a video cannot be added because other media exists"
+  },
+  "messageComposeRemoveImage": "Remove image",
+  "@messageComposeRemoveImage": {
+    "description": "Tooltip for removing an image attachment"
+  },
+  "messageComposeRemoveQuotedPost": "Remove quoted post",
+  "@messageComposeRemoveQuotedPost": {
+    "description": "Tooltip for removing a quoted post from compose"
+  },
+  "messageComposeSaveDraft": "Save draft",
+  "@messageComposeSaveDraft": {
+    "description": "Compose toolbar save draft tooltip"
+  },
+  "messageComposeVideoAltTextTitle": "Video alt text",
+  "@messageComposeVideoAltTextTitle": {
+    "description": "Video alt text dialog title"
+  },
+  "messageVideoCheckingUploadLimits": "Checking upload limits...",
+  "@messageVideoCheckingUploadLimits": {
+    "description": "Video attachment status while checking upload limits"
+  },
+  "messageVideoDailyUploadLimitReached": "Daily video upload limit reached.",
+  "@messageVideoDailyUploadLimitReached": {
+    "description": "Video upload validation message when the daily limit is reached"
+  },
+  "messageVideoProcessing": "Processing...",
+  "@messageVideoProcessing": {
+    "description": "Video attachment processing status"
+  },
+  "messageVideoProcessingFailed": "Video processing failed.",
+  "@messageVideoProcessingFailed": {
+    "description": "Video attachment error when processing fails"
+  },
+  "messageVideoProcessingTimedOut": "Video processing timed out.",
+  "@messageVideoProcessingTimedOut": {
+    "description": "Video attachment error when processing times out"
+  },
+  "messageVideoReady": "Ready",
+  "@messageVideoReady": {
+    "description": "Video attachment ready status"
+  },
+  "messageVideoReadyToUpload": "Ready to upload",
+  "@messageVideoReadyToUpload": {
+    "description": "Video attachment ready-to-upload status"
+  },
+  "messageVideoUploadFailed": "Upload failed - please try again.",
+  "@messageVideoUploadFailed": {
+    "description": "Video upload generic failure message"
+  },
+  "messageVideoUploading": "Uploading...",
+  "@messageVideoUploading": {
+    "description": "Video attachment uploading status"
+  },
+  "errorComposeChangedElsewhere": "This post was changed elsewhere. Reopen it and try editing again.",
+  "@errorComposeChangedElsewhere": {
+    "description": "Compose edit error when the post changed remotely"
+  },
+  "errorComposeCouldNotConfirmEdit": "Edit was submitted but could not be confirmed yet. Please reopen the post and verify.",
+  "@errorComposeCouldNotConfirmEdit": {
+    "description": "Compose edit error when an edit cannot be confirmed"
+  },
+  "errorComposeCouldNotSaveAndConfirmRecovery": "Could not save changes and we could not confirm recovery. Reopen the thread and verify the post.",
+  "@errorComposeCouldNotSaveAndConfirmRecovery": {
+    "description": "Compose edit recovery error when save and recovery status are unknown"
+  },
+  "errorComposeEditContextMissing": "Edit context is missing. Please reopen the editor and try again.",
+  "@errorComposeEditContextMissing": {
+    "description": "Compose edit validation error when edit context is missing"
+  },
+  "errorComposeFailedToCreatePost": "Failed to create post. Please try again.",
+  "@errorComposeFailedToCreatePost": {
+    "description": "Compose error when creating a post fails"
+  },
+  "errorComposeFailedToSaveChanges": "Failed to save changes. Please try again.",
+  "@errorComposeFailedToSaveChanges": {
+    "description": "Compose error when saving post edits fails"
+  },
+  "errorComposeFailedToUploadImage": "Failed to upload image. Please try again.",
+  "@errorComposeFailedToUploadImage": {
+    "description": "Compose error when image upload fails"
+  },
+  "errorComposeImageFileNotFound": "Image file not found. Please re-attach and try again.",
+  "@errorComposeImageFileNotFound": {
+    "description": "Compose error when an attached image file is missing"
+  },
+  "errorComposeNetworkSavedAsDraft": "Network error - post saved as draft.",
+  "@errorComposeNetworkSavedAsDraft": {
+    "description": "Compose error when submission fails and is saved as a draft"
+  },
+  "errorComposeOriginalPostRestored": "Could not save changes. Your original post was restored.",
+  "@errorComposeOriginalPostRestored": {
+    "description": "Compose edit error when the original post was restored after failure"
+  },
+  "errorComposeUnsupportedImageFormat": "Unsupported image format. Use JPEG, PNG, or WebP.",
+  "@errorComposeUnsupportedImageFormat": {
+    "description": "Compose validation error for unsupported image bytes"
+  },
+  "messageNoBookmarks": "No bookmarks",
+  "@messageNoBookmarks": {
+    "description": "Empty state title when there are no bookmarks"
+  },
+  "messageNoBookmarksSubtitle": "Posts you bookmark will appear here",
+  "@messageNoBookmarksSubtitle": {
+    "description": "Empty state subtitle when there are no bookmarks"
+  },
+  "messageNoBookmarksInSource": "No bookmarks in this source",
+  "@messageNoBookmarksInSource": {
+    "description": "Empty state title when a bookmark source tab is empty"
+  },
+  "messageNoBookmarksInSourceSubtitle": "Try switching tabs or saving posts to this source",
+  "@messageNoBookmarksInSourceSubtitle": {
+    "description": "Empty state subtitle when a bookmark source tab is empty"
+  },
+  "messageNoInteractionsYet": "No interactions yet",
+  "@messageNoInteractionsYet": {
+    "description": "Empty state message when a post has no likes or reposts"
+  },
+  "messageNoLikedPosts": "No liked posts",
+  "@messageNoLikedPosts": {
+    "description": "Empty state title when there are no liked posts"
+  },
+  "messageNoLikedPostsSubtitle": "Posts you like will appear here after sync",
+  "@messageNoLikedPostsSubtitle": {
+    "description": "Empty state subtitle when there are no liked posts"
+  },
+  "messageNoLikedPostsYet": "No liked posts yet",
+  "@messageNoLikedPostsYet": {
+    "description": "Empty state when a profile has no liked posts"
+  },
+  "messageNoQuotesYet": "No quotes yet",
+  "@messageNoQuotesYet": {
+    "description": "Empty state message when a post has no quote posts"
+  },
+  "messageNoRepostsYet": "No reposts yet",
+  "@messageNoRepostsYet": {
+    "description": "Empty state message when a post has no reposts"
+  },
+  "messageNoTrendingTopicsRightNow": "No trending topics right now",
+  "@messageNoTrendingTopicsRightNow": {
+    "description": "Empty state message when there are no trending topics"
+  },
+  "messagePostDeleted": "Post deleted",
+  "@messagePostDeleted": {
+    "description": "Snackbar message after deleting a post"
+  },
+  "messageQuotePostSubtitle": "Quote this post with your own text",
+  "@messageQuotePostSubtitle": {
+    "description": "Post action subtitle for quote post"
+  },
+  "messageQuotedPostBlocked": "Quoted post is blocked",
+  "@messageQuotedPostBlocked": {
+    "description": "Quoted embed unavailable message for blocked quoted posts"
+  },
+  "messageQuotedPostNotFound": "Quoted post not found",
+  "@messageQuotedPostNotFound": {
+    "description": "Quoted embed unavailable message for missing quoted posts"
+  },
+  "messageQuotedPostUnavailable": "Quoted post is unavailable",
+  "@messageQuotedPostUnavailable": {
+    "description": "Quoted embed unavailable message for detached or unavailable quoted posts"
+  },
+  "messageRemoveRepostSubtitle": "Remove this repost",
+  "@messageRemoveRepostSubtitle": {
+    "description": "Post action subtitle for removing a repost"
+  },
+  "messageReplyInThread": "Reply in a thread",
+  "@messageReplyInThread": {
+    "description": "Post card reply context label when parent post details are unavailable"
+  },
+  "messageReplyingTo": "Replying to",
+  "@messageReplyingTo": {
+    "description": "Compose reply banner prefix before the replied-to handle"
+  },
+  "messageShareThisPostSubtitle": "Share this post",
+  "@messageShareThisPostSubtitle": {
+    "description": "Post action subtitle for reposting a post"
+  },
+  "messageShowLikedUsersSubtitle": "View who liked this post",
+  "@messageShowLikedUsersSubtitle": {
+    "description": "Post overflow subtitle for viewing users who liked a post"
+  },
+  "messageShowQuoteRepostListSubtitle": "View quote posts and expand reposts",
+  "@messageShowQuoteRepostListSubtitle": {
+    "description": "Post overflow subtitle for viewing quotes and reposts"
   },
   "messageRefreshProviderHealthSubtitle": "Probe public AppView endpoints now",
   "@messageRefreshProviderHealthSubtitle": {
@@ -733,6 +1527,10 @@
   "@messageSearchPeoplePlaceholder": {
     "description": "Search people field placeholder"
   },
+  "messageSearchForPeoplePlaceholder": "Search for people",
+  "@messageSearchForPeoplePlaceholder": {
+    "description": "Search field placeholder when adding list members"
+  },
   "messageSearchFeedsPlaceholder": "Search feeds",
   "@messageSearchFeedsPlaceholder": {
     "description": "Search feeds field placeholder"
@@ -769,8 +1567,1800 @@
   "@promptHandleOrDid": {
     "description": "Label for handle or DID sign-in field"
   },
+  "buttonAddFeed": "Add feed",
+  "@buttonAddFeed": {
+    "description": "Button label to add a feed"
+  },
+  "buttonAddMembers": "Add members",
+  "@buttonAddMembers": {
+    "description": "Button label to add members to a list"
+  },
+  "buttonBlock": "Block",
+  "@buttonBlock": {
+    "description": "Button label to block an account"
+  },
+  "buttonCreate": "Create",
+  "@buttonCreate": {
+    "description": "Create button label"
+  },
+  "buttonEdit": "Edit",
+  "@buttonEdit": {
+    "description": "Edit button label"
+  },
+  "buttonFollow": "Follow",
+  "@buttonFollow": {
+    "description": "Button label to follow an account"
+  },
+  "buttonFollowAll": "Follow all",
+  "@buttonFollowAll": {
+    "description": "Button label to follow all starter pack members"
+  },
+  "buttonFollowing": "Following",
+  "@buttonFollowing": {
+    "description": "Button label showing that an account is followed"
+  },
+  "buttonFollowingInProgress": "Following…",
+  "@buttonFollowingInProgress": {
+    "description": "Button label while following all starter pack members"
+  },
+  "buttonLoadMore": "Load more",
+  "@buttonLoadMore": {
+    "description": "Button label to load more results"
+  },
+  "buttonMute": "Mute",
+  "@buttonMute": {
+    "description": "Button label to mute an account or list"
+  },
+  "buttonScan": "Scan",
+  "@buttonScan": {
+    "description": "Button label to start a follow audit scan"
+  },
+  "buttonSeeAll": "See all",
+  "@buttonSeeAll": {
+    "description": "Button label to view all items"
+  },
+  "buttonShowAccounts": "Show accounts",
+  "@buttonShowAccounts": {
+    "description": "Button label to reveal blocked-by accounts"
+  },
+  "buttonSubmitReport": "Submit Report",
+  "@buttonSubmitReport": {
+    "description": "Button label to submit a moderation report"
+  },
+  "buttonUnblock": "Unblock",
+  "@buttonUnblock": {
+    "description": "Button label to unblock an account"
+  },
+  "buttonUnfollow": "Unfollow",
+  "@buttonUnfollow": {
+    "description": "Button label to unfollow an account"
+  },
+  "buttonUnfollowSelected": "Unfollow Selected ({count})",
+  "@buttonUnfollowSelected": {
+    "description": "Button label to unfollow selected audit results",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "buttonUnmute": "Unmute",
+  "@buttonUnmute": {
+    "description": "Button label to unmute an account or list"
+  },
+  "dialogBlockAccountContent": "They will not be able to see your posts or interact with you. They will not be notified that you blocked them.",
+  "@dialogBlockAccountContent": {
+    "description": "Confirmation dialog body before blocking an account"
+  },
+  "dialogBlockAccountTitle": "Block Account?",
+  "@dialogBlockAccountTitle": {
+    "description": "Confirmation dialog title before blocking an account"
+  },
+  "dialogDeleteListTitle": "Delete list?",
+  "@dialogDeleteListTitle": {
+    "description": "Confirmation dialog title before deleting a list"
+  },
+  "dialogDeleteStarterPackContent": "This will permanently delete this starter pack and its backing list. This cannot be undone.",
+  "@dialogDeleteStarterPackContent": {
+    "description": "Confirmation dialog body before deleting a starter pack"
+  },
+  "dialogDeleteStarterPackTitle": "Delete starter pack",
+  "@dialogDeleteStarterPackTitle": {
+    "description": "Confirmation dialog title before deleting a starter pack"
+  },
+  "dialogMuteAccountContent": "You will no longer see their posts or receive notifications from them.",
+  "@dialogMuteAccountContent": {
+    "description": "Confirmation dialog body before muting an account"
+  },
+  "dialogMuteAccountTitle": "Mute Account?",
+  "@dialogMuteAccountTitle": {
+    "description": "Confirmation dialog title before muting an account"
+  },
+  "dialogUnblockAccountContent": "They will be able to see your posts and interact with you again.",
+  "@dialogUnblockAccountContent": {
+    "description": "Confirmation dialog body before unblocking an account"
+  },
+  "dialogUnblockAccountTitle": "Unblock Account?",
+  "@dialogUnblockAccountTitle": {
+    "description": "Confirmation dialog title before unblocking an account"
+  },
+  "dialogUnfollowAccountContent": "You will no longer see their posts in your feed.",
+  "@dialogUnfollowAccountContent": {
+    "description": "Confirmation dialog body before unfollowing an account"
+  },
+  "dialogUnfollowAccountTitle": "Unfollow?",
+  "@dialogUnfollowAccountTitle": {
+    "description": "Confirmation dialog title before unfollowing an account"
+  },
+  "dialogUnmuteAccountContent": "You will see their posts and receive notifications again.",
+  "@dialogUnmuteAccountContent": {
+    "description": "Confirmation dialog body before unmuting an account"
+  },
+  "dialogUnmuteAccountTitle": "Unmute Account?",
+  "@dialogUnmuteAccountTitle": {
+    "description": "Confirmation dialog title before unmuting an account"
+  },
+  "errorFailedToCreateStarterPack": "Failed to create starter pack",
+  "@errorFailedToCreateStarterPack": {
+    "description": "Error message when starter pack creation fails"
+  },
+  "errorFailedToLoadAccounts": "Failed to load accounts",
+  "@errorFailedToLoadAccounts": {
+    "description": "Error message when accounts cannot load"
+  },
+  "errorFailedToLoadFeed": "Failed to load feed",
+  "@errorFailedToLoadFeed": {
+    "description": "Error message when a list feed cannot load"
+  },
+  "errorFailedToLoadFeeds": "Failed to load feeds",
+  "@errorFailedToLoadFeeds": {
+    "description": "Error message when feed picker suggestions cannot load"
+  },
+  "errorFailedToLoadList": "Failed to load list",
+  "@errorFailedToLoadList": {
+    "description": "Error message when a list cannot load"
+  },
+  "errorFailedToLoadLists": "Failed to load lists",
+  "@errorFailedToLoadLists": {
+    "description": "Error message when lists cannot load"
+  },
+  "errorFailedToLoadMembers": "Failed to load members",
+  "@errorFailedToLoadMembers": {
+    "description": "Error message when list members cannot load"
+  },
+  "errorFailedToLoadMore": "Failed to load more",
+  "@errorFailedToLoadMore": {
+    "description": "Error message when loading more results fails"
+  },
+  "errorFailedToLoadPosts": "Failed to load posts",
+  "@errorFailedToLoadPosts": {
+    "description": "Error message when posts cannot load"
+  },
+  "errorFailedToLoadProfile": "Unable to load profile",
+  "@errorFailedToLoadProfile": {
+    "description": "Error title when a profile cannot load"
+  },
+  "errorFailedToLoadStarterPack": "Failed to load starter pack",
+  "@errorFailedToLoadStarterPack": {
+    "description": "Error message when a starter pack cannot load"
+  },
+  "errorFailedToLoadStarterPacks": "Failed to load starter packs",
+  "@errorFailedToLoadStarterPacks": {
+    "description": "Error message when starter packs cannot load"
+  },
+  "errorFailedToLoadSuggestions": "Failed to load suggestions",
+  "@errorFailedToLoadSuggestions": {
+    "description": "Error title when suggested follows cannot load"
+  },
+  "errorFollowAuditFailed": "Failed to complete follow audit.",
+  "@errorFollowAuditFailed": {
+    "description": "Error message when follow audit fails"
+  },
+  "errorImageTooLarge": "Image must be smaller than 1MB",
+  "@errorImageTooLarge": {
+    "description": "Validation error when a profile image is too large"
+  },
+  "errorInvalidProfileImageType": "Use a JPEG or PNG image",
+  "@errorInvalidProfileImageType": {
+    "description": "Validation error when profile image file type is unsupported"
+  },
+  "errorProfileImageReadFailed": "Unable to read selected image",
+  "@errorProfileImageReadFailed": {
+    "description": "Error when a selected profile image cannot be read"
+  },
+  "errorReportFailed": "Unable to submit your report. Please try again later.",
+  "@errorReportFailed": {
+    "description": "Report submission failure dialog body"
+  },
+  "errorReportFailedTitle": "Report Failed",
+  "@errorReportFailedTitle": {
+    "description": "Report submission failure dialog title"
+  },
+  "errorUnableToLoadConnections": "Unable to load {tab}",
+  "@errorUnableToLoadConnections": {
+    "description": "Error title when a profile connection tab cannot load",
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "following"
+      }
+    }
+  },
+  "errorUnableToUpdateProfile": "Unable to update profile",
+  "@errorUnableToUpdateProfile": {
+    "description": "Snackbar message when profile update fails"
+  },
+  "formatAccountCount": "{count, plural, =1{1 account} other{{count} accounts}}",
+  "@formatAccountCount": {
+    "description": "Count of accounts",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "formatBlockedByAccountsUnavailable": "Found {count, plural, =1{1 blocked-by account} other{{count} blocked-by accounts}}, but public Bluesky profile details could not be loaded.",
+  "@formatBlockedByAccountsUnavailable": {
+    "description": "Message when blocked-by account count exists but profiles are unavailable",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "formatConnectionsLoading": "Loading {tab}...",
+  "@formatConnectionsLoading": {
+    "description": "Loading message for a profile connection tab",
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "followers"
+      }
+    }
+  },
+  "formatConnectionsNoMatches": "No {tab} match \"{query}\"",
+  "@formatConnectionsNoMatches": {
+    "description": "Empty search message for a profile connection tab",
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "followers"
+      },
+      "query": {
+        "type": "String",
+        "example": "alice"
+      }
+    }
+  },
+  "formatConnectionsNoneFound": "No {tab} found",
+  "@formatConnectionsNoneFound": {
+    "description": "Empty message for a profile connection tab",
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "followers"
+      }
+    }
+  },
+  "formatConnectionsSearching": "Searching {count} accounts...",
+  "@formatConnectionsSearching": {
+    "description": "Search progress message for profile connections",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "25"
+      }
+    }
+  },
+  "formatConnectionsSearched": "Searched {count} accounts",
+  "@formatConnectionsSearched": {
+    "description": "Completed search progress message for profile connections",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "25"
+      }
+    }
+  },
+  "formatConnectionsSearchStopped": "Search stopped after {count} accounts",
+  "@formatConnectionsSearchStopped": {
+    "description": "Stopped search progress message for profile connections",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "25"
+      }
+    }
+  },
+  "formatClassifyingProgress": "Classifying: {progress}/{total}",
+  "@formatClassifyingProgress": {
+    "description": "Follow audit classifying progress label",
+    "placeholders": {
+      "progress": {
+        "type": "int",
+        "example": "20"
+      },
+      "total": {
+        "type": "int",
+        "example": "120"
+      }
+    }
+  },
+  "formatDidCopied": "DID copied to clipboard",
+  "@formatDidCopied": {
+    "description": "Snackbar message after copying a DID"
+  },
+  "formatFetchingFollowsProgress": "Fetching follows: {progress}/{total}",
+  "@formatFetchingFollowsProgress": {
+    "description": "Follow audit fetching progress label",
+    "placeholders": {
+      "progress": {
+        "type": "int",
+        "example": "20"
+      },
+      "total": {
+        "type": "int",
+        "example": "120"
+      }
+    }
+  },
+  "formatFollowedMemberCount": "Followed {count, plural, =1{1 member} other{{count} members}}",
+  "@formatFollowedMemberCount": {
+    "description": "Snackbar message after following starter pack members",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "8"
+      }
+    }
+  },
+  "formatFollowsScanned": "{count, plural, =1{1 follow scanned for problematic accounts} other{{count} follows scanned for problematic accounts}}",
+  "@formatFollowsScanned": {
+    "description": "Follow audit summary after scanning follows",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "245"
+      }
+    }
+  },
+  "formatHideStatus": "Hide {status}",
+  "@formatHideStatus": {
+    "description": "Tooltip to hide a follow audit status",
+    "placeholders": {
+      "status": {
+        "type": "String",
+        "example": "Deleted"
+      }
+    }
+  },
+  "formatJoinedDate": "Joined {date}",
+  "@formatJoinedDate": {
+    "description": "Profile joined date label",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "March 2026"
+      }
+    }
+  },
+  "formatJoinedRelative": "Joined {relativeTime}",
+  "@formatJoinedRelative": {
+    "description": "Profile card joined relative time label",
+    "placeholders": {
+      "relativeTime": {
+        "type": "String",
+        "example": "2mo ago"
+      }
+    }
+  },
+  "formatListByHandle": "by @{handle}",
+  "@formatListByHandle": {
+    "description": "List creator attribution label",
+    "placeholders": {
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "formatMemberCount": "{count, plural, =1{1 member} other{{count} members}}",
+  "@formatMemberCount": {
+    "description": "Count of list or starter pack members",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "formatProfileReportTitle": "{title} by @{handle}",
+  "@formatProfileReportTitle": {
+    "description": "Report dialog title for a target handle",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Report Post"
+      },
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "formatProfileTextLimit": "{label} must be {count} characters or fewer",
+  "@formatProfileTextLimit": {
+    "description": "Profile edit validation message for a text length limit",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Display name"
+      },
+      "count": {
+        "type": "int",
+        "example": "64"
+      }
+    }
+  },
+  "formatProfileTextTooLong": "{label} is too long",
+  "@formatProfileTextTooLong": {
+    "description": "Profile edit validation message for byte length",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Description"
+      }
+    }
+  },
+  "formatProfilesFailedToLoad": "{count, plural, =1{1 profile could not be loaded.} other{{count} profiles could not be loaded.}}",
+  "@formatProfilesFailedToLoad": {
+    "description": "Follow audit warning when some profiles failed to load",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "formatReportSubmitted": "Thank you. Your report (ID: {reportId}) has been submitted.",
+  "@formatReportSubmitted": {
+    "description": "Report submission success dialog body",
+    "placeholders": {
+      "reportId": {
+        "type": "String",
+        "example": "3lkgvbn"
+      }
+    }
+  },
+  "formatSelectedCount": "Selected: {selected}/{total}",
+  "@formatSelectedCount": {
+    "description": "Follow audit selected count footer",
+    "placeholders": {
+      "selected": {
+        "type": "int",
+        "example": "2"
+      },
+      "total": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "formatShowStatus": "Show {status}",
+  "@formatShowStatus": {
+    "description": "Tooltip to show a follow audit status",
+    "placeholders": {
+      "status": {
+        "type": "String",
+        "example": "Deleted"
+      }
+    }
+  },
+  "formatUnavailableAccounts": "Unavailable accounts ({count})",
+  "@formatUnavailableAccounts": {
+    "description": "Title for unavailable accounts card",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "formatUnfollowedAccounts": "Unfollowed {count} account(s)",
+  "@formatUnfollowedAccounts": {
+    "description": "Follow audit completion message",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "formatValidationRequiredMaxCharacters": "Required, max {count} characters",
+  "@formatValidationRequiredMaxCharacters": {
+    "description": "Helper text for required character-limited fields",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "50"
+      }
+    }
+  },
+  "labelAddToList": "Add to list",
+  "@labelAddToList": {
+    "description": "Action label to add an account to a list"
+  },
+  "labelAuditFollowers": "Audit Followers",
+  "@labelAuditFollowers": {
+    "description": "Follow audit screen title"
+  },
+  "labelBanner": "Banner",
+  "@labelBanner": {
+    "description": "Profile banner image button label"
+  },
+  "labelBlockViaList": "Block via list",
+  "@labelBlockViaList": {
+    "description": "List action label to block accounts via a moderation list"
+  },
+  "labelBlockedBy": "Blocked By",
+  "@labelBlockedBy": {
+    "description": "Profile context tab label for accounts that blocked the user"
+  },
+  "labelBlocking": "Blocking",
+  "@labelBlocking": {
+    "description": "Profile context tab label for accounts the user is blocking"
+  },
+  "labelConnections": "Connections",
+  "@labelConnections": {
+    "description": "Profile connections screen title"
+  },
+  "labelCopyDid": "Copy DID",
+  "@labelCopyDid": {
+    "description": "Profile action label to copy DID"
+  },
+  "labelCreateList": "Create list",
+  "@labelCreateList": {
+    "description": "Create list dialog title"
+  },
+  "labelCreateStarterPack": "Create starter pack",
+  "@labelCreateStarterPack": {
+    "description": "Tooltip to create a starter pack"
+  },
+  "labelCurateShort": "CURATE",
+  "@labelCurateShort": {
+    "description": "Short curation list badge label"
+  },
+  "labelCurrentMembers": "Current Members",
+  "@labelCurrentMembers": {
+    "description": "List members section heading"
+  },
+  "labelCurationLists": "Curation Lists",
+  "@labelCurationLists": {
+    "description": "Profile context list section heading"
+  },
+  "labelDescription": "Description",
+  "@labelDescription": {
+    "description": "Description field label"
+  },
+  "labelDescriptionOptional": "Description (optional)",
+  "@labelDescriptionOptional": {
+    "description": "Optional description field label"
+  },
+  "labelDisplayName": "Display name",
+  "@labelDisplayName": {
+    "description": "Profile display name field label"
+  },
+  "labelEditList": "Edit list",
+  "@labelEditList": {
+    "description": "Edit list dialog or action title"
+  },
+  "labelEditProfile": "Edit profile",
+  "@labelEditProfile": {
+    "description": "Edit profile screen title or action label"
+  },
+  "labelEditStarterPack": "Edit starter pack",
+  "@labelEditStarterPack": {
+    "description": "Edit starter pack dialog title"
+  },
+  "labelFeed": "Feed",
+  "@labelFeed": {
+    "description": "Feed label"
+  },
+  "labelFollowers": "Followers",
+  "@labelFollowers": {
+    "description": "Followers label"
+  },
+  "labelJoinedThisWeek": "joined this week",
+  "@labelJoinedThisWeek": {
+    "description": "Starter pack statistic label for joins this week"
+  },
+  "labelJoinedTotal": "joined total",
+  "@labelJoinedTotal": {
+    "description": "Starter pack card statistic label for total joins"
+  },
+  "labelFollowing": "Following",
+  "@labelFollowing": {
+    "description": "Following label"
+  },
+  "labelList": "List",
+  "@labelList": {
+    "description": "Generic list title"
+  },
+  "labelLists": "Lists",
+  "@labelLists": {
+    "description": "Lists label"
+  },
+  "labelMedia": "Media",
+  "@labelMedia": {
+    "description": "Profile media tab label"
+  },
+  "labelMembers": "Members",
+  "@labelMembers": {
+    "description": "Members section label"
+  },
+  "labelModerationLists": "Moderation Lists",
+  "@labelModerationLists": {
+    "description": "Profile context moderation list section heading"
+  },
+  "labelModerationShort": "MOD",
+  "@labelModerationShort": {
+    "description": "Short moderation list badge label"
+  },
+  "labelMuteList": "Mute list",
+  "@labelMuteList": {
+    "description": "List action label to mute a list"
+  },
+  "labelMutuals": "Mutuals",
+  "@labelMutuals": {
+    "description": "Mutual follows label"
+  },
+  "labelMyLists": "My Lists",
+  "@labelMyLists": {
+    "description": "My lists screen title"
+  },
+  "labelName": "Name",
+  "@labelName": {
+    "description": "Name field label"
+  },
+  "labelNewStarterPack": "New Starter Pack",
+  "@labelNewStarterPack": {
+    "description": "New starter pack screen title"
+  },
+  "labelOtherLists": "Other Lists",
+  "@labelOtherLists": {
+    "description": "Profile context other list section heading"
+  },
+  "labelPronouns": "Pronouns",
+  "@labelPronouns": {
+    "description": "Pronouns field label"
+  },
+  "labelProfileContext": "Profile Context",
+  "@labelProfileContext": {
+    "description": "Profile context screen title and action label"
+  },
+  "labelProfileTitle": "Profile",
+  "@labelProfileTitle": {
+    "description": "Generic profile screen title"
+  },
+  "labelRecommendedFeeds": "Recommended Feeds",
+  "@labelRecommendedFeeds": {
+    "description": "Starter pack feeds section title"
+  },
+  "labelReferenceLists": "Reference Lists",
+  "@labelReferenceLists": {
+    "description": "Profile context reference list section heading"
+  },
+  "labelReferenceShort": "REFERENCE",
+  "@labelReferenceShort": {
+    "description": "Short reference list badge label"
+  },
+  "labelReplies": "Replies",
+  "@labelReplies": {
+    "description": "Profile replies tab label"
+  },
+  "labelReport": "Report",
+  "@labelReport": {
+    "description": "Report action label"
+  },
+  "labelReportAccount": "Report Account",
+  "@labelReportAccount": {
+    "description": "Report account dialog title"
+  },
+  "labelReportReason": "Reason",
+  "@labelReportReason": {
+    "description": "Report reason section label"
+  },
+  "labelReportReasonExplanationRequired": "Explanation (required)",
+  "@labelReportReasonExplanationRequired": {
+    "description": "Report explanation field label"
+  },
+  "labelReportReasonHarassment": "Harassment",
+  "@labelReportReasonHarassment": {
+    "description": "Report reason label for harassment"
+  },
+  "labelReportReasonMisleading": "Misleading",
+  "@labelReportReasonMisleading": {
+    "description": "Report reason label for misleading content"
+  },
+  "labelReportReasonOther": "Other",
+  "@labelReportReasonOther": {
+    "description": "Report reason label for other"
+  },
+  "labelReportReasonSexualContent": "Sexual Content",
+  "@labelReportReasonSexualContent": {
+    "description": "Report reason label for sexual content"
+  },
+  "labelReportReasonSpam": "Spam",
+  "@labelReportReasonSpam": {
+    "description": "Report reason label for spam"
+  },
+  "labelReportReasonViolation": "Violation",
+  "@labelReportReasonViolation": {
+    "description": "Report reason label for violations"
+  },
+  "labelReportSubmitted": "Report Submitted",
+  "@labelReportSubmitted": {
+    "description": "Report success dialog title"
+  },
+  "labelSelectAll": "Select All",
+  "@labelSelectAll": {
+    "description": "Select all checkbox label"
+  },
+  "labelSelectFeed": "Select a feed",
+  "@labelSelectFeed": {
+    "description": "Feed picker sheet title"
+  },
+  "labelShareProfile": "Share Profile",
+  "@labelShareProfile": {
+    "description": "Profile action label to share a profile"
+  },
+  "labelStarterPack": "Starter Pack",
+  "@labelStarterPack": {
+    "description": "Fallback starter pack title"
+  },
+  "labelType": "Type",
+  "@labelType": {
+    "description": "Type field label"
+  },
+  "labelTotalJoined": "total joined",
+  "@labelTotalJoined": {
+    "description": "Starter pack detail statistic label for total joins"
+  },
+  "labelUnavailableLikedPost": "Unavailable liked post",
+  "@labelUnavailableLikedPost": {
+    "description": "Profile liked posts unavailable entry title"
+  },
+  "labelUnblockViaList": "Unblock via list",
+  "@labelUnblockViaList": {
+    "description": "List action label to unblock accounts via a moderation list"
+  },
+  "labelUnmuteList": "Unmute list",
+  "@labelUnmuteList": {
+    "description": "List action label to unmute a list"
+  },
+  "labelUpToThree": "(up to 3)",
+  "@labelUpToThree": {
+    "description": "Helper label for selecting up to three starter pack feeds"
+  },
+  "labelWebsite": "Website",
+  "@labelWebsite": {
+    "description": "Website field label"
+  },
+  "labelYou": "You",
+  "@labelYou": {
+    "description": "Profile connection chip for the current user"
+  },
+  "messageBlockedByContextNotice": "Blocks are a normal part of social media. This data is public on the AT Protocol.",
+  "@messageBlockedByContextNotice": {
+    "description": "Profile context blocked-by explanatory copy"
+  },
+  "messageBlockingOnlyOwnProfile": "Blocking information is only available when viewing your own profile.",
+  "@messageBlockingOnlyOwnProfile": {
+    "description": "Profile context message when blocking list is not available"
+  },
+  "messageChangeAvatarImage": "Change avatar image",
+  "@messageChangeAvatarImage": {
+    "description": "Tooltip and semantics label for changing profile avatar"
+  },
+  "messageChangeBannerImage": "Change banner image",
+  "@messageChangeBannerImage": {
+    "description": "Tooltip and semantics label for changing profile banner"
+  },
+  "messageEnterValidWebsite": "Enter a valid website",
+  "@messageEnterValidWebsite": {
+    "description": "Profile edit validation error for invalid website"
+  },
+  "messageFeedUnavailableForModerationLists": "Feed not available for moderation lists",
+  "@messageFeedUnavailableForModerationLists": {
+    "description": "List detail message when moderation lists do not have feeds"
+  },
+  "messageFollowAuditIntro": "Scan your follows for deleted, suspended, blocked, and hidden accounts.",
+  "@messageFollowAuditIntro": {
+    "description": "Follow audit intro message before scanning"
+  },
+  "messageFollowAuditStartPrompt": "Tap Scan to audit your follow list.",
+  "@messageFollowAuditStartPrompt": {
+    "description": "Follow audit empty prompt before scanning"
+  },
+  "messageNoAccountsBlockedThisUser": "No accounts have blocked this user",
+  "@messageNoAccountsBlockedThisUser": {
+    "description": "Profile context empty blocked-by message"
+  },
+  "messageNoListsYet": "No lists yet",
+  "@messageNoListsYet": {
+    "description": "Empty state when no lists exist"
+  },
+  "messageNoMembers": "No members",
+  "@messageNoMembers": {
+    "description": "Empty starter pack members message"
+  },
+  "messageNoMembersYet": "No members yet",
+  "@messageNoMembersYet": {
+    "description": "Empty list members message"
+  },
+  "messageNoMembersYetSearch": "No members yet. Search above to add people.",
+  "@messageNoMembersYetSearch": {
+    "description": "Empty list members message with search instruction"
+  },
+  "messageNoMediaPostsYet": "No media posts yet",
+  "@messageNoMediaPostsYet": {
+    "description": "Empty profile media tab message"
+  },
+  "messageNoPostsYet": "No posts yet",
+  "@messageNoPostsYet": {
+    "description": "Empty profile/list feed message"
+  },
+  "messageNoProblematicFollows": "No problematic follows found",
+  "@messageNoProblematicFollows": {
+    "description": "Follow audit empty results message"
+  },
+  "messageNoRepliesYet": "No replies yet",
+  "@messageNoRepliesYet": {
+    "description": "Empty profile replies message"
+  },
+  "messageNoResultsForFilters": "No results visible for the current filters.",
+  "@messageNoResultsForFilters": {
+    "description": "Follow audit empty filtered results message"
+  },
+  "messageNoStarterPacksYet": "No starter packs yet",
+  "@messageNoStarterPacksYet": {
+    "description": "Empty starter packs message"
+  },
+  "messageNoSuggestionsFound": "No suggestions found",
+  "@messageNoSuggestionsFound": {
+    "description": "Empty suggested follows message"
+  },
+  "messageNotBlockingAnyone": "Not blocking anyone",
+  "@messageNotBlockingAnyone": {
+    "description": "Profile context empty blocking message"
+  },
+  "messageNotOnAnyLists": "Not on any lists",
+  "@messageNotOnAnyLists": {
+    "description": "Profile context empty lists-on message"
+  },
+  "messageProfileUnavailable": "Profile unavailable",
+  "@messageProfileUnavailable": {
+    "description": "Fallback unavailable profile reason"
+  },
+  "messageProfileUpdated": "Profile updated",
+  "@messageProfileUpdated": {
+    "description": "Snackbar after profile update succeeds"
+  },
+  "messageReportExplanationHint": "Please explain why you are reporting this...",
+  "@messageReportExplanationHint": {
+    "description": "Report explanation text field hint"
+  },
+  "messageReportReasonHarassmentDescription": "Harassment or rude behaviour",
+  "@messageReportReasonHarassmentDescription": {
+    "description": "Report reason description for harassment"
+  },
+  "messageReportReasonMisleadingDescription": "Misleading or deceptive content",
+  "@messageReportReasonMisleadingDescription": {
+    "description": "Report reason description for misleading content"
+  },
+  "messageReportReasonOtherDescription": "Other reason (requires explanation)",
+  "@messageReportReasonOtherDescription": {
+    "description": "Report reason description for other"
+  },
+  "messageReportReasonSexualContentDescription": "Unwanted sexual content",
+  "@messageReportReasonSexualContentDescription": {
+    "description": "Report reason description for sexual content"
+  },
+  "messageReportReasonSpamDescription": "Spam or unsolicited content",
+  "@messageReportReasonSpamDescription": {
+    "description": "Report reason description for spam"
+  },
+  "messageReportReasonViolationDescription": "Violates community guidelines",
+  "@messageReportReasonViolationDescription": {
+    "description": "Report reason description for violations"
+  },
+  "messageSearchConnectionsPlaceholder": "Search handle, name, or description",
+  "@messageSearchConnectionsPlaceholder": {
+    "description": "Profile connections search field placeholder"
+  },
+  "messageSearchPeopleToAddPlaceholder": "Search for people to add",
+  "@messageSearchPeopleToAddPlaceholder": {
+    "description": "Search field placeholder when adding people"
+  },
+  "messageSomeBlockedAccountsUnavailable": "Some blocked accounts are suspended or unavailable.",
+  "@messageSomeBlockedAccountsUnavailable": {
+    "description": "Profile context message when some blocked accounts are unavailable"
+  },
+  "messageSuggestedFollowsUnavailable": "Suggested follows are unavailable right now.",
+  "@messageSuggestedFollowsUnavailable": {
+    "description": "Suggested follows unavailable message"
+  },
+  "messageUnavailableAccountsDescription": "These accounts are suspended or their public profile could not be fetched.",
+  "@messageUnavailableAccountsDescription": {
+    "description": "Unavailable accounts card subtitle"
+  },
+  "statusBlockedBy": "Blocked by",
+  "@statusBlockedBy": {
+    "description": "Follow audit status label"
+  },
+  "statusBlocking": "Blocking",
+  "@statusBlocking": {
+    "description": "Follow audit status label"
+  },
+  "statusDeactivated": "Deactivated",
+  "@statusDeactivated": {
+    "description": "Follow audit status label"
+  },
+  "statusDeleted": "Deleted",
+  "@statusDeleted": {
+    "description": "Follow audit status label"
+  },
+  "statusHidden": "Hidden",
+  "@statusHidden": {
+    "description": "Follow audit status label"
+  },
+  "statusMutualBlock": "Mutual block",
+  "@statusMutualBlock": {
+    "description": "Follow audit status label"
+  },
+  "statusSelfFollow": "Self-follow",
+  "@statusSelfFollow": {
+    "description": "Follow audit status label"
+  },
+  "statusSuspended": "Suspended",
+  "@statusSuspended": {
+    "description": "Follow audit status label"
+  },
+  "tooltipClearSearch": "Clear search",
+  "@tooltipClearSearch": {
+    "description": "Tooltip for clearing a search field"
+  },
+  "tooltipJumpToTop": "Jump to top",
+  "@tooltipJumpToTop": {
+    "description": "Tooltip for jump to top button"
+  },
+  "validationEnterValidWebsite": "Enter a valid website",
+  "@validationEnterValidWebsite": {
+    "description": "Profile edit validation error for invalid website"
+  },
+  "accountSwitcherNoOtherAccounts": "No other signed-in accounts yet. Add an account to switch between profiles.",
+  "@accountSwitcherNoOtherAccounts": {
+    "description": "Empty state message in the account switcher sheet"
+  },
+  "buttonAddAccount": "Add Account",
+  "@buttonAddAccount": {
+    "description": "Button and dialog title to add another account"
+  },
+  "buttonCopyAll": "Copy All",
+  "@buttonCopyAll": {
+    "description": "Message thread menu item to copy all messages"
+  },
+  "buttonMarkAllRead": "Mark All Read",
+  "@buttonMarkAllRead": {
+    "description": "Button label to mark notifications read"
+  },
+  "errorFailedToAddAccount": "Failed to add account",
+  "@errorFailedToAddAccount": {
+    "description": "Snackbar message when adding an account fails"
+  },
+  "errorFailedToLoadMessages": "Failed to load messages",
+  "@errorFailedToLoadMessages": {
+    "description": "Error title when messages cannot load"
+  },
+  "errorFailedToLoadNotifications": "Failed to load notifications",
+  "@errorFailedToLoadNotifications": {
+    "description": "Error title when notifications cannot load"
+  },
+  "errorUnableToRemoveAccountNow": "Unable to remove account right now.",
+  "@errorUnableToRemoveAccountNow": {
+    "description": "Snackbar message when removing an account from account switcher fails"
+  },
+  "formatActorListTwo": "{first} and {second}",
+  "@formatActorListTwo": {
+    "description": "Two-person actor summary in grouped notifications",
+    "placeholders": {
+      "first": {
+        "type": "String",
+        "example": "Alice"
+      },
+      "second": {
+        "type": "String",
+        "example": "Bob"
+      }
+    }
+  },
+  "formatActorListWithOthers": "{first}, {second}, and {count} others",
+  "@formatActorListWithOthers": {
+    "description": "Multi-person actor summary in grouped notifications",
+    "placeholders": {
+      "first": {
+        "type": "String",
+        "example": "Alice"
+      },
+      "second": {
+        "type": "String",
+        "example": "Bob"
+      },
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "formatMonthDay": "{month} {day}",
+  "@formatMonthDay": {
+    "description": "Month and day label for notification sections",
+    "placeholders": {
+      "month": {
+        "type": "String",
+        "example": "January"
+      },
+      "day": {
+        "type": "int",
+        "example": "8"
+      }
+    }
+  },
+  "formatRemoveAccountContent": "Remove @{handle} from this device?",
+  "@formatRemoveAccountContent": {
+    "description": "Confirmation dialog body when removing an account from the account switcher",
+    "placeholders": {
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "labelAccounts": "Accounts",
+  "@labelAccounts": {
+    "description": "Account switcher sheet title"
+  },
+  "labelAlertsTitle": "Alerts",
+  "@labelAlertsTitle": {
+    "description": "Alerts screen title"
+  },
+  "labelConversation": "Conversation",
+  "@labelConversation": {
+    "description": "Fallback conversation title"
+  },
+  "labelFollows": "Follows",
+  "@labelFollows": {
+    "description": "Notification channel name for follows"
+  },
+  "labelLikes": "Likes",
+  "@labelLikes": {
+    "description": "Notification channel name for likes"
+  },
+  "labelMessageRequests": "Requests",
+  "@labelMessageRequests": {
+    "description": "Message requests tab label"
+  },
+  "labelOther": "Other",
+  "@labelOther": {
+    "description": "Other notification channel name"
+  },
+  "labelPrimary": "Primary",
+  "@labelPrimary": {
+    "description": "Primary messages tab label"
+  },
+  "labelSomeone": "Someone",
+  "@labelSomeone": {
+    "description": "Fallback actor summary for grouped notifications"
+  },
+  "messageCopied": "Message copied",
+  "@messageCopied": {
+    "description": "Snackbar message after copying a message"
+  },
+  "messageDeleted": "Message deleted",
+  "@messageDeleted": {
+    "description": "Deleted message placeholder"
+  },
+  "messageLocalNotificationFallbackBody": "sent a notification",
+  "@messageLocalNotificationFallbackBody": {
+    "description": "Local notification body fallback for unknown notification reasons"
+  },
+  "messageNewNotification": "New notification",
+  "@messageNewNotification": {
+    "description": "Local notification title fallback"
+  },
+  "messageNoConnection": "No connection",
+  "@messageNoConnection": {
+    "description": "Offline state title"
+  },
+  "messageNoConversationsYet": "No conversations yet",
+  "@messageNoConversationsYet": {
+    "description": "Empty primary conversations state"
+  },
+  "messageNoMessageRequests": "No message requests",
+  "@messageNoMessageRequests": {
+    "description": "Empty message requests state"
+  },
+  "messageNoMessagesYet": "No messages yet",
+  "@messageNoMessagesYet": {
+    "description": "Empty message thread state"
+  },
+  "messageNoNotificationsYet": "No notifications yet",
+  "@messageNoNotificationsYet": {
+    "description": "Empty notifications state"
+  },
+  "messageNotificationContactMatch": "joined from your contacts",
+  "@messageNotificationContactMatch": {
+    "description": "Notification summary for contact match"
+  },
+  "messageNotificationFollow": "followed you",
+  "@messageNotificationFollow": {
+    "description": "Notification summary for follows"
+  },
+  "messageNotificationInteracted": "interacted with you",
+  "@messageNotificationInteracted": {
+    "description": "Notification summary fallback"
+  },
+  "messageNotificationLike": "liked your post",
+  "@messageNotificationLike": {
+    "description": "Notification summary for likes"
+  },
+  "messageNotificationLikeViaRepost": "liked your repost",
+  "@messageNotificationLikeViaRepost": {
+    "description": "Notification summary for likes via repost"
+  },
+  "messageNotificationMention": "mentioned you",
+  "@messageNotificationMention": {
+    "description": "Notification summary for mentions"
+  },
+  "messageNotificationQuote": "quoted your post",
+  "@messageNotificationQuote": {
+    "description": "Notification summary for quotes"
+  },
+  "messageNotificationReply": "replied to your post",
+  "@messageNotificationReply": {
+    "description": "Notification summary for replies"
+  },
+  "messageNotificationRepost": "reposted your post",
+  "@messageNotificationRepost": {
+    "description": "Notification summary for reposts"
+  },
+  "messageNotificationRepostViaRepost": "reposted your repost",
+  "@messageNotificationRepostViaRepost": {
+    "description": "Notification summary for reposts via repost"
+  },
+  "messageNotificationStarterPackJoined": "joined via your starter pack",
+  "@messageNotificationStarterPackJoined": {
+    "description": "Notification summary for starter pack joins"
+  },
+  "messageNotificationSubscribedPost": "posted a new update",
+  "@messageNotificationSubscribedPost": {
+    "description": "Notification summary for subscribed posts"
+  },
+  "messageNotificationUnverified": "removed your verification",
+  "@messageNotificationUnverified": {
+    "description": "Notification summary for unverified account"
+  },
+  "messageNotificationVerified": "verified your account",
+  "@messageNotificationVerified": {
+    "description": "Notification summary for verified account"
+  },
+  "messagePlaceholder": "Message…",
+  "@messagePlaceholder": {
+    "description": "Message composer placeholder"
+  },
+  "messagePleaseSignInAgainForAccount": "Please sign in again for that account.",
+  "@messagePleaseSignInAgainForAccount": {
+    "description": "Snackbar when account switch requires reauthentication"
+  },
+  "messageReconnectToLoadMessages": "Reconnect to load messages.",
+  "@messageReconnectToLoadMessages": {
+    "description": "Offline message list explanation"
+  },
+  "messageReconnectToLoadNotifications": "Reconnect to load notifications.",
+  "@messageReconnectToLoadNotifications": {
+    "description": "Offline notifications explanation"
+  },
+  "messageThreadCopied": "Thread copied",
+  "@messageThreadCopied": {
+    "description": "Snackbar after copying a message thread"
+  },
+  "messageToday": "Today",
+  "@messageToday": {
+    "description": "Today date section label"
+  },
+  "messageYesterday": "Yesterday",
+  "@messageYesterday": {
+    "description": "Yesterday date section label"
+  },
+  "placeholderUsernameBskySocial": "username.bsky.social",
+  "@placeholderUsernameBskySocial": {
+    "description": "Handle placeholder in account switcher"
+  },
+  "validationEnterBlueskyHandleOrDid": "Enter a Bluesky handle or DID",
+  "@validationEnterBlueskyHandleOrDid": {
+    "description": "Account switcher validation error for empty handle or DID"
+  },
+  "validationEnterCompleteDid": "Enter a complete DID like did:plc:... or did:web:...",
+  "@validationEnterCompleteDid": {
+    "description": "Account switcher validation error for incomplete DID"
+  },
+  "validationEnterFullHandle": "Enter a full handle like username.bsky.social",
+  "@validationEnterFullHandle": {
+    "description": "Account switcher validation error for invalid handle"
+  },
+  "validationUseSupportedDid": "Use a did:plc:... or did:web:... identifier",
+  "@validationUseSupportedDid": {
+    "description": "Account switcher validation error for unsupported DID method"
+  },
   "validationEnterAppPassword": "Enter your app password",
   "@validationEnterAppPassword": {
     "description": "Validation error for missing app password"
+  },
+  "buttonAdd": "Add",
+  "@buttonAdd": {
+    "description": "Generic add button label"
+  },
+  "buttonAdding": "Adding...",
+  "@buttonAdding": {
+    "description": "Button label while an add action is in progress"
+  },
+  "buttonInspiredByPdsLs": "Inspired by pds.ls",
+  "@buttonInspiredByPdsLs": {
+    "description": "Devtools button label linking to pds.ls"
+  },
+  "buttonCopyJson": "Copy JSON",
+  "@buttonCopyJson": {
+    "description": "Button label to copy record JSON"
+  },
+  "buttonResolve": "Resolve",
+  "@buttonResolve": {
+    "description": "Button label to resolve a handle, DID, or AT URI"
+  },
+  "buttonUnsubscribe": "Unsubscribe",
+  "@buttonUnsubscribe": {
+    "description": "Button label to unsubscribe from a labeler"
+  },
+  "dialogAddLabelerTitle": "Add labeler",
+  "@dialogAddLabelerTitle": {
+    "description": "Dialog title for adding a moderation labeler"
+  },
+  "dialogClearAllLogsContent": "This will permanently delete all log files. This action cannot be undone.",
+  "@dialogClearAllLogsContent": {
+    "description": "Confirmation dialog body before clearing all log files"
+  },
+  "dialogClearAllLogsTitle": "Clear all logs?",
+  "@dialogClearAllLogsTitle": {
+    "description": "Confirmation dialog title before clearing all log files"
+  },
+  "errorFailedToLoadLogs": "Failed to load logs",
+  "@errorFailedToLoadLogs": {
+    "description": "Error title when logs cannot load"
+  },
+  "errorFailedToLoadModerationSettings": "Failed to load moderation settings",
+  "@errorFailedToLoadModerationSettings": {
+    "description": "Error title when moderation settings cannot load"
+  },
+  "errorFailedToUnsubscribeLabeler": "Failed to unsubscribe: {error}",
+  "@errorFailedToUnsubscribeLabeler": {
+    "description": "Snackbar message when unsubscribing from a labeler fails",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "errorFailedToUpdateAdultContent": "Failed to update adult content: {error}",
+  "@errorFailedToUpdateAdultContent": {
+    "description": "Snackbar message when adult content preference update fails",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "errorFailedToUpdateLabelPreference": "Failed to update preference: {error}",
+  "@errorFailedToUpdateLabelPreference": {
+    "description": "Snackbar message when a label preference update fails",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "errorFailedToUpdateLabelerSubscription": "Failed to update subscription: {error}",
+  "@errorFailedToUpdateLabelerSubscription": {
+    "description": "Snackbar message when a labeler subscription update fails",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "errorLabelerDidRequired": "Enter a labeler DID.",
+  "@errorLabelerDidRequired": {
+    "description": "Validation error when adding a labeler without a DID"
+  },
+  "errorLabelerNotFound": "Labeler not found.",
+  "@errorLabelerNotFound": {
+    "description": "Error thrown when a labeler DID cannot be loaded"
+  },
+  "errorNoLabelerFoundForDid": "No labeler found for that DID.",
+  "@errorNoLabelerFoundForDid": {
+    "description": "Validation error when no labeler exists for the entered DID"
+  },
+  "errorUnableToLoadLabeler": "Unable to load labeler",
+  "@errorUnableToLoadLabeler": {
+    "description": "Error title when a labeler detail screen cannot load"
+  },
+  "formatAddLabelerLimit": "Add ({current}/{max})",
+  "@formatAddLabelerLimit": {
+    "description": "Add labeler button showing current and maximum custom labelers",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "example": "1"
+      },
+      "max": {
+        "type": "int",
+        "example": "20"
+      }
+    }
+  },
+  "formatCollectionsCount": "{count, plural, =1{1 collection} other{{count} collections}}",
+  "@formatCollectionsCount": {
+    "description": "Devtools repository collection count",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "formatCid": "CID: {cid}",
+  "@formatCid": {
+    "description": "Devtools record CID label",
+    "placeholders": {
+      "cid": {
+        "type": "String",
+        "example": "bafyreicid"
+      }
+    }
+  },
+  "formatCustomLabelCount": "{count, plural, =1{1 custom label} other{{count} custom labels}}",
+  "@formatCustomLabelCount": {
+    "description": "Moderation labeler detail chip showing custom label count",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "formatDefinitionCount": "{count, plural, =1{1 definition} other{{count} definitions}}",
+  "@formatDefinitionCount": {
+    "description": "Moderation labeler card chip showing custom definition count",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "formatLoadedRecordsCount": "{count} loaded",
+  "@formatLoadedRecordsCount": {
+    "description": "Devtools record list count while total is unknown",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "20"
+      }
+    }
+  },
+  "formatLoadedRecordsOfTotal": "{loaded} of {total}",
+  "@formatLoadedRecordsOfTotal": {
+    "description": "Devtools record list count showing loaded and total records",
+    "placeholders": {
+      "loaded": {
+        "type": "int",
+        "example": "20"
+      },
+      "total": {
+        "type": "int",
+        "example": "100"
+      }
+    }
+  },
+  "formatModerationSourceLabel": "{source} label",
+  "@formatModerationSourceLabel": {
+    "description": "Tooltip description for a moderation label source",
+    "placeholders": {
+      "source": {
+        "type": "String",
+        "example": "Bluesky"
+      }
+    }
+  },
+  "formatPolicyBlur": "Blur {value}",
+  "@formatPolicyBlur": {
+    "description": "Moderation policy chip showing the blur behavior",
+    "placeholders": {
+      "value": {
+        "type": "String",
+        "example": "content"
+      }
+    }
+  },
+  "formatPolicyDefault": "Default {value}",
+  "@formatPolicyDefault": {
+    "description": "Moderation policy chip showing default preference",
+    "placeholders": {
+      "value": {
+        "type": "String",
+        "example": "warn"
+      }
+    }
+  },
+  "formatPolicyId": "ID {identifier}",
+  "@formatPolicyId": {
+    "description": "Moderation policy chip showing a label identifier",
+    "placeholders": {
+      "identifier": {
+        "type": "String",
+        "example": "graphic-media"
+      }
+    }
+  },
+  "formatPolicySeverity": "Severity {value}",
+  "@formatPolicySeverity": {
+    "description": "Moderation policy chip showing severity",
+    "placeholders": {
+      "value": {
+        "type": "String",
+        "example": "alert"
+      }
+    }
+  },
+  "formatPublishedValueCount": "{count, plural, =1{1 published value} other{{count} published values}}",
+  "@formatPublishedValueCount": {
+    "description": "Moderation labeler card chip showing published value count",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "formatRecordsCount": "{count, plural, =1{1 record} other{{count} records}}",
+  "@formatRecordsCount": {
+    "description": "Devtools repository record count",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "formatSubscribedToLabeler": "Subscribed to {name}",
+  "@formatSubscribedToLabeler": {
+    "description": "Snackbar after subscribing to a labeler",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Bluesky Safety"
+      }
+    }
+  },
+  "labelAdultContentSetting": "Adult content",
+  "@labelAdultContentSetting": {
+    "description": "Moderation settings adult content switch label"
+  },
+  "labelAdultOnlyShort": "18+",
+  "@labelAdultOnlyShort": {
+    "description": "Short chip label for adult-only moderation labels"
+  },
+  "labelAlwaysOn": "Always on",
+  "@labelAlwaysOn": {
+    "description": "Status label for always-on moderation labeler"
+  },
+  "labelAutoScroll": "Auto-scroll",
+  "@labelAutoScroll": {
+    "description": "Log viewer auto-scroll control label"
+  },
+  "labelBlueskyModeration": "Bluesky moderation",
+  "@labelBlueskyModeration": {
+    "description": "Built-in Bluesky moderation labeler title"
+  },
+  "labelBuiltIn": "Built-in",
+  "@labelBuiltIn": {
+    "description": "Chip label for a built-in item"
+  },
+  "labelBuiltInLabeler": "Built-in labeler",
+  "@labelBuiltInLabeler": {
+    "description": "Moderation settings section title for built-in labeler"
+  },
+  "labelBuiltInModeration": "Built-in moderation",
+  "@labelBuiltInModeration": {
+    "description": "Moderation labeler chip and switch label for built-in moderation"
+  },
+  "labelBlockedAccount": "Blocked account",
+  "@labelBlockedAccount": {
+    "description": "Moderation badge for blocked account content"
+  },
+  "labelBlockedByAccount": "Blocked by account",
+  "@labelBlockedByAccount": {
+    "description": "Moderation badge for content from an account that blocked the user"
+  },
+  "labelBlockedRelationship": "Blocked relationship",
+  "@labelBlockedRelationship": {
+    "description": "Moderation badge for content limited by a block relationship"
+  },
+  "labelCollections": "COLLECTIONS",
+  "@labelCollections": {
+    "description": "Devtools section heading for repository collections"
+  },
+  "labelContentPreferenceHide": "Hide",
+  "@labelContentPreferenceHide": {
+    "description": "Moderation label preference option to hide matching content"
+  },
+  "labelContentPreferenceIgnore": "Ignore",
+  "@labelContentPreferenceIgnore": {
+    "description": "Moderation label preference option to ignore matching content"
+  },
+  "labelContentPreferenceWarn": "Warn",
+  "@labelContentPreferenceWarn": {
+    "description": "Moderation label preference option to warn on matching content"
+  },
+  "labelCustomLabelers": "Custom labelers",
+  "@labelCustomLabelers": {
+    "description": "Moderation settings section title for custom labelers"
+  },
+  "labelLabeler": "Labeler",
+  "@labelLabeler": {
+    "description": "Labeler detail screen app bar title"
+  },
+  "labelLabelerDid": "Labeler DID",
+  "@labelLabelerDid": {
+    "description": "Input label for labeler DID"
+  },
+  "labelLabelersAndContentModeration": "Labelers and content moderation",
+  "@labelLabelersAndContentModeration": {
+    "description": "Moderation settings hero title"
+  },
+  "labelLabelPreferences": "Label preferences",
+  "@labelLabelPreferences": {
+    "description": "Labeler detail section heading for preferences"
+  },
+  "labelHiddenContent": "Hidden content",
+  "@labelHiddenContent": {
+    "description": "Moderation badge for hidden content"
+  },
+  "labelLogLevelDebug": "Debug",
+  "@labelLogLevelDebug": {
+    "description": "Log level filter chip for debug logs"
+  },
+  "labelLogLevelError": "Error",
+  "@labelLogLevelError": {
+    "description": "Log level filter chip for error logs"
+  },
+  "labelLogLevelFatal": "Fatal",
+  "@labelLogLevelFatal": {
+    "description": "Log level filter chip for fatal logs"
+  },
+  "labelLogLevelInfo": "Info",
+  "@labelLogLevelInfo": {
+    "description": "Log level filter chip for info logs"
+  },
+  "labelLogLevelTrace": "Trace",
+  "@labelLogLevelTrace": {
+    "description": "Log level filter chip for trace logs"
+  },
+  "labelLogLevelWarning": "Warning",
+  "@labelLogLevelWarning": {
+    "description": "Log level filter chip for warning logs"
+  },
+  "labelModerationNote": "Moderation note",
+  "@labelModerationNote": {
+    "description": "Fallback informational moderation badge label"
+  },
+  "labelModerationSourceBluesky": "Bluesky",
+  "@labelModerationSourceBluesky": {
+    "description": "Moderation source label for the built-in Bluesky labeler"
+  },
+  "labelModerationSourceSubscribedLabeler": "Subscribed labeler",
+  "@labelModerationSourceSubscribedLabeler": {
+    "description": "Moderation source label for a subscribed custom labeler"
+  },
+  "labelMutedAccount": "Muted account",
+  "@labelMutedAccount": {
+    "description": "Moderation badge for muted account content"
+  },
+  "labelMutedPhrase": "Muted phrase",
+  "@labelMutedPhrase": {
+    "description": "Moderation badge for muted phrase content"
+  },
+  "labelNoCustomLabelDefinitions": "No custom label definitions",
+  "@labelNoCustomLabelDefinitions": {
+    "description": "Empty state title when a labeler has no localized custom definitions"
+  },
+  "labelNoCustomLabelers": "No custom labelers",
+  "@labelNoCustomLabelers": {
+    "description": "Empty state title when no custom labelers are subscribed"
+  },
+  "labelPdsExplorer": "PDS Explorer",
+  "@labelPdsExplorer": {
+    "description": "Developer PDS Explorer screen title"
+  },
+  "labelPublishedPolicies": "Published policies",
+  "@labelPublishedPolicies": {
+    "description": "Labeler detail section heading for published policies"
+  },
+  "labelRecordJson": "Record JSON",
+  "@labelRecordJson": {
+    "description": "Devtools breadcrumb label for an empty record key"
+  },
+  "labelRefresh": "Refresh",
+  "@labelRefresh": {
+    "description": "Generic refresh tooltip label"
+  },
+  "labelRepository": "Repository",
+  "@labelRepository": {
+    "description": "Devtools breadcrumb fallback label for repository"
+  },
+  "labelSubscribed": "Subscribed",
+  "@labelSubscribed": {
+    "description": "Labeler detail switch label for subscribed labelers"
+  },
+  "labelSensitiveContent": "Sensitive content",
+  "@labelSensitiveContent": {
+    "description": "Fallback moderation label for sensitive content"
+  },
+  "labelUnknown": "Unknown",
+  "@labelUnknown": {
+    "description": "Generic fallback label when a name is unknown"
+  },
+  "messageAddLabelerDidHelper": "Paste a labeler DID to review and subscribe to its labels.",
+  "@messageAddLabelerDidHelper": {
+    "description": "Helper text in add labeler dialog"
+  },
+  "messageAdultContentRequiredForLabels": "Required before 18+ label preferences can be changed.",
+  "@messageAdultContentRequiredForLabels": {
+    "description": "Moderation settings adult content switch helper text"
+  },
+  "messageBuiltInLabelerActiveWhenUnavailable": "The built-in labeler is active even if its details cannot be loaded right now.",
+  "@messageBuiltInLabelerActiveWhenUnavailable": {
+    "description": "Moderation settings fallback subtitle when built-in labeler details are unavailable"
+  },
+  "messageBuiltInLabelerAlwaysActive": "This labeler is always active.",
+  "@messageBuiltInLabelerAlwaysActive": {
+    "description": "Labeler detail subtitle for built-in labeler subscription switch"
+  },
+  "messageDevtoolsEmptyState": "Enter a handle, DID, or AT-URI to explore\na user''s repository.",
+  "@messageDevtoolsEmptyState": {
+    "description": "Developer PDS Explorer empty state helper text"
+  },
+  "messageEnableAdultContentForLabel": "Enable adult content to change this 18+ label.",
+  "@messageEnableAdultContentForLabel": {
+    "description": "Helper text shown when adult content is required to edit a label preference"
+  },
+  "messageBlockedAccountDescription": "This account is blocked",
+  "@messageBlockedAccountDescription": {
+    "description": "Tooltip for blocked account moderation badge"
+  },
+  "messageBlockedByAccountDescription": "This account has blocked you",
+  "@messageBlockedByAccountDescription": {
+    "description": "Tooltip for blocked-by account moderation badge"
+  },
+  "messageBlockedRelationshipDescription": "This content is limited by a block relationship",
+  "@messageBlockedRelationshipDescription": {
+    "description": "Tooltip for blocked relationship moderation badge"
+  },
+  "messageHiddenContentDescription": "This content is hidden by moderation rules",
+  "@messageHiddenContentDescription": {
+    "description": "Tooltip for hidden content moderation badge"
+  },
+  "messageJsonCopiedToClipboard": "JSON copied to clipboard",
+  "@messageJsonCopiedToClipboard": {
+    "description": "Snackbar after copying record JSON"
+  },
+  "messageLogsEmpty": "No logs yet",
+  "@messageLogsEmpty": {
+    "description": "Log viewer empty state title"
+  },
+  "messageLogsEmptySubtitle": "Log entries will appear here",
+  "@messageLogsEmptySubtitle": {
+    "description": "Log viewer empty state subtitle"
+  },
+  "messageModerationSettingsHeroSubtitle": "Manage adult-content visibility, subscribed labelers, and the rules each labeler applies to posts and profiles.",
+  "@messageModerationSettingsHeroSubtitle": {
+    "description": "Moderation settings hero subtitle"
+  },
+  "messageModerationGuidanceApplies": "Moderation guidance applies here",
+  "@messageModerationGuidanceApplies": {
+    "description": "Fallback moderation badge tooltip"
+  },
+  "messageMutedAccountDescription": "Muted content is being downranked here",
+  "@messageMutedAccountDescription": {
+    "description": "Tooltip for muted account moderation badge"
+  },
+  "messageMutedPhraseDescription": "A muted phrase matched this content",
+  "@messageMutedPhraseDescription": {
+    "description": "Tooltip for muted phrase moderation badge"
+  },
+  "messageNoCustomLabelDefinitions": "This labeler publishes values, but not localized custom definitions.",
+  "@messageNoCustomLabelDefinitions": {
+    "description": "Labeler detail empty state subtitle when no localized custom definitions are available"
+  },
+  "messageNoCustomLabelers": "Add a labeler DID to subscribe and configure its custom labels.",
+  "@messageNoCustomLabelers": {
+    "description": "Moderation settings empty state subtitle when no custom labelers are subscribed"
+  },
+  "messageNoLabelDescriptionAvailable": "No description available for this label.",
+  "@messageNoLabelDescriptionAvailable": {
+    "description": "Fallback description for a label definition without localized description"
+  },
+  "messageNoLogFileAvailable": "No log file available",
+  "@messageNoLogFileAvailable": {
+    "description": "Snackbar when there is no log file to share"
+  },
+  "messageRecordCountsUnavailable": "Record counts unavailable",
+  "@messageRecordCountsUnavailable": {
+    "description": "Devtools repository count status when record counts cannot be loaded"
+  },
+  "messageRecordCountsLoading": "Counting records...",
+  "@messageRecordCountsLoading": {
+    "description": "Devtools repository count status while record counts are loading"
+  },
+  "messageSubscribedLabelersHeaders": "Subscribed labelers are added to your moderation headers and preferences.",
+  "@messageSubscribedLabelersHeaders": {
+    "description": "Labeler detail subtitle for custom labeler subscription switch"
+  },
+  "messageUnableToOpenShareSheet": "Unable to open share sheet. Please try again.",
+  "@messageUnableToOpenShareSheet": {
+    "description": "Snackbar when the log share sheet cannot open"
+  },
+  "placeholderHandleDidOrAtUri": "Handle, DID, or at:// URI",
+  "@placeholderHandleDidOrAtUri": {
+    "description": "Devtools search input placeholder"
+  },
+  "placeholderLabelerDid": "did:plc:examplelabeler",
+  "@placeholderLabelerDid": {
+    "description": "Placeholder DID in add labeler dialog"
+  },
+  "placeholderLogsFilter": "Filter logs...",
+  "@placeholderLogsFilter": {
+    "description": "Log viewer search field placeholder"
+  },
+  "subjectLazuriteLogs": "Lazurite logs",
+  "@subjectLazuriteLogs": {
+    "description": "Share sheet subject for log files"
+  },
+  "tooltipClearAllLogs": "Clear all logs",
+  "@tooltipClearAllLogs": {
+    "description": "Tooltip for clearing all log files"
+  },
+  "tooltipGoToPdsLs": "Go to pds.ls",
+  "@tooltipGoToPdsLs": {
+    "description": "Tooltip for opening pds.ls"
+  },
+  "tooltipShareLogFile": "Share log file",
+  "@tooltipShareLogFile": {
+    "description": "Tooltip for sharing a log file"
   }
 }

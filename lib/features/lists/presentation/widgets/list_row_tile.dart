@@ -1,5 +1,6 @@
 import 'package:bluesky/app_bsky_graph_defs.dart' as bsky_graph;
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 
@@ -15,7 +16,7 @@ class ListRowTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
     final isMod = list.purpose.knownValue == bsky_graph.KnownListPurpose.appBskyGraphDefsModlist;
-    final purposeLabel = isMod ? 'MOD' : 'FEED';
+    final purposeLabel = isMod ? context.l10n.labelModerationShort : context.l10n.labelFeed.toUpperCase();
     final purposeColor = isMod ? colorScheme.error : colorScheme.primary;
 
     return ListTile(
@@ -27,7 +28,10 @@ class ListRowTile extends StatelessWidget {
         fallbackBuilder: (_) => Icon(Icons.list, color: colorScheme.onSurfaceVariant),
       ),
       title: Text(list.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Text('${list.listItemCount ?? 0} members', style: TextStyle(color: colorScheme.onSurfaceVariant)),
+      subtitle: Text(
+        context.l10n.formatMemberCount(list.listItemCount ?? 0),
+        style: TextStyle(color: colorScheme.onSurfaceVariant),
+      ),
       trailing:
           trailing ??
           Container(

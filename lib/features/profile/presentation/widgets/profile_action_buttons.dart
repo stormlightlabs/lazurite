@@ -1,7 +1,7 @@
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:flutter/material.dart';
-import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 
@@ -56,50 +56,56 @@ class ProfileActionButtons extends StatelessWidget {
   }
 
   Widget _buildFollowButton(BuildContext context) {
+    final l10n = context.l10n;
     if (isBlocked) {
       return _ActionButton(
-        label: 'Unblock',
+        label: l10n.buttonUnblock,
         onPressed: isOffline || onUnblock == null ? null : () => _confirmUnblock(context),
         isLoading: isLoadingBlock,
         foregroundColor: context.colorScheme.onError,
         backgroundColor: context.colorScheme.error,
-        tooltip: isOffline ? offlineActionMessage('unblock this account') : null,
+        tooltip: isOffline ? l10n.formatOfflineReconnectAction(l10n.buttonUnblock.toLowerCase()) : null,
       );
     }
 
     if (isFollowing) {
       return _ActionButton(
-        label: 'Following',
+        label: l10n.buttonFollowing,
         onPressed: isOffline || onUnfollow == null ? null : () => _confirmUnfollow(context),
         isLoading: isLoadingFollow,
         isSecondary: true,
-        tooltip: isOffline ? offlineActionMessage('change your follow state') : null,
+        tooltip: isOffline ? l10n.formatOfflineReconnectAction('change your follow state') : null,
       );
     }
 
     return _ActionButton(
-      label: 'Follow',
+      label: l10n.buttonFollow,
       onPressed: isOffline ? null : onFollow,
       isLoading: isLoadingFollow,
-      tooltip: isOffline ? offlineActionMessage('follow this account') : null,
+      tooltip: isOffline ? l10n.formatOfflineReconnectAction('follow this account') : null,
     );
   }
 
   Widget _buildMoreButton(BuildContext context) {
+    final l10n = context.l10n;
     final List<PopupMenuEntry<void>> menuItems = [];
 
     if (!isBlocked) {
       if (isMuted) {
         menuItems.add(
           PopupMenuItem(
-            child: const Row(children: [Icon(Icons.volume_up_outlined), SizedBox(width: 8), Text('Unmute')]),
+            child: Row(
+              children: [const Icon(Icons.volume_up_outlined), const SizedBox(width: 8), Text(l10n.buttonUnmute)],
+            ),
             onTap: () => _confirmUnmute(context),
           ),
         );
       } else {
         menuItems.add(
           PopupMenuItem(
-            child: const Row(children: [Icon(Icons.volume_off_outlined), SizedBox(width: 8), Text('Mute')]),
+            child: Row(
+              children: [const Icon(Icons.volume_off_outlined), const SizedBox(width: 8), Text(l10n.buttonMute)],
+            ),
             onTap: () => _confirmMute(context),
           ),
         );
@@ -107,11 +113,11 @@ class ProfileActionButtons extends StatelessWidget {
 
       menuItems.add(
         PopupMenuItem(
-          child: const Row(
+          child: Row(
             children: [
-              Icon(Icons.block_outlined, color: Colors.red),
-              SizedBox(width: 8),
-              Text('Block', style: TextStyle(color: Colors.red)),
+              const Icon(Icons.block_outlined, color: Colors.red),
+              const SizedBox(width: 8),
+              Text(l10n.buttonBlock, style: const TextStyle(color: Colors.red)),
             ],
           ),
           onTap: () => _confirmBlock(context),
@@ -123,7 +129,9 @@ class ProfileActionButtons extends StatelessWidget {
       menuItems.add(
         PopupMenuItem(
           onTap: onAddToList,
-          child: const Row(children: [Icon(Icons.playlist_add_outlined), SizedBox(width: 8), Text('Add to list')]),
+          child: Row(
+            children: [const Icon(Icons.playlist_add_outlined), const SizedBox(width: 8), Text(l10n.labelAddToList)],
+          ),
         ),
       );
     }
@@ -132,11 +140,11 @@ class ProfileActionButtons extends StatelessWidget {
       const PopupMenuDivider(),
       PopupMenuItem(
         onTap: onMore,
-        child: const Row(
+        child: Row(
           children: [
-            Icon(Icons.report_outlined, color: Colors.orange),
-            SizedBox(width: 8),
-            Text('Report', style: TextStyle(color: Colors.orange)),
+            const Icon(Icons.report_outlined, color: Colors.orange),
+            const SizedBox(width: 8),
+            Text(l10n.labelReport, style: const TextStyle(color: Colors.orange)),
           ],
         ),
       ),
@@ -148,7 +156,7 @@ class ProfileActionButtons extends StatelessWidget {
       itemBuilder: (_) => menuItems,
     );
     if (isOffline) {
-      button = Tooltip(message: offlineActionMessage('manage this profile'), child: button);
+      button = Tooltip(message: l10n.formatOfflineReconnectAction('manage this profile'), child: button);
     }
     return button;
   }
@@ -157,9 +165,9 @@ class ProfileActionButtons extends StatelessWidget {
     HapticHelper.mediumImpact();
     await showConfirmationDialog(
       context: context,
-      title: const Text('Unfollow?'),
-      content: const Text('You will no longer see their posts in your feed.'),
-      confirmLabel: 'Unfollow',
+      title: Text(context.l10n.dialogUnfollowAccountTitle),
+      content: Text(context.l10n.dialogUnfollowAccountContent),
+      confirmLabel: context.l10n.buttonUnfollow,
       onConfirmed: onUnfollow,
     );
   }
@@ -168,9 +176,9 @@ class ProfileActionButtons extends StatelessWidget {
     HapticHelper.mediumImpact();
     await showConfirmationDialog(
       context: context,
-      title: const Text('Mute Account?'),
-      content: const Text('You will no longer see their posts or receive notifications from them.'),
-      confirmLabel: 'Mute',
+      title: Text(context.l10n.dialogMuteAccountTitle),
+      content: Text(context.l10n.dialogMuteAccountContent),
+      confirmLabel: context.l10n.buttonMute,
       onConfirmed: onMute,
     );
   }
@@ -179,9 +187,9 @@ class ProfileActionButtons extends StatelessWidget {
     HapticHelper.mediumImpact();
     await showConfirmationDialog(
       context: context,
-      title: const Text('Unmute Account?'),
-      content: const Text('You will see their posts and receive notifications again.'),
-      confirmLabel: 'Unmute',
+      title: Text(context.l10n.dialogUnmuteAccountTitle),
+      content: Text(context.l10n.dialogUnmuteAccountContent),
+      confirmLabel: context.l10n.buttonUnmute,
       onConfirmed: onUnmute,
     );
   }
@@ -194,13 +202,11 @@ class ProfileActionButtons extends StatelessWidget {
         children: [
           Icon(Icons.block, color: context.colorScheme.error),
           const SizedBox(width: 8),
-          const Text('Block Account?'),
+          Text(context.l10n.dialogBlockAccountTitle),
         ],
       ),
-      content: const Text(
-        'They will not be able to see your posts or interact with you. They will not be notified that you blocked them.',
-      ),
-      confirmLabel: 'Block',
+      content: Text(context.l10n.dialogBlockAccountContent),
+      confirmLabel: context.l10n.buttonBlock,
       confirmDestructive: true,
       onConfirmed: onBlock,
     );
@@ -210,9 +216,9 @@ class ProfileActionButtons extends StatelessWidget {
     HapticHelper.mediumImpact();
     await showConfirmationDialog(
       context: context,
-      title: const Text('Unblock Account?'),
-      content: const Text('They will be able to see your posts and interact with you again.'),
-      confirmLabel: 'Unblock',
+      title: Text(context.l10n.dialogUnblockAccountTitle),
+      content: Text(context.l10n.dialogUnblockAccountContent),
+      confirmLabel: context.l10n.buttonUnblock,
       onConfirmed: onUnblock,
     );
   }

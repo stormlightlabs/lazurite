@@ -3,13 +3,14 @@ import 'package:bluesky/app_bsky_labeler_getservices.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class ModerationSettingsScreen extends StatefulWidget {
   const ModerationSettingsScreen({super.key});
@@ -64,7 +65,7 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
       _reload();
     } catch (error) {
       if (mounted) {
-        showAppSnackBar(context, 'Failed to update adult content: $error', isError: true);
+        showAppSnackBar(context, context.l10n.errorFailedToUpdateAdultContent(error), isError: true);
       }
     } finally {
       if (mounted) {
@@ -79,13 +80,14 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
       _reload();
     } catch (error) {
       if (mounted) {
-        showAppSnackBar(context, 'Failed to unsubscribe: $error', isError: true);
+        showAppSnackBar(context, context.l10n.errorFailedToUnsubscribeLabeler(error), isError: true);
       }
     }
   }
 
   Future<void> _showAddLabelerDialog() async {
     final controller = TextEditingController();
+    final rootContext = context;
     String? errorText;
 
     await showDialog<void>(
@@ -94,11 +96,13 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
         var isSubmitting = false;
 
         return StatefulBuilder(
-          builder: (context, setDialogState) {
+          builder: (builderContext, setDialogState) {
+            final l10n = builderContext.l10n;
+
             Future<void> submit() async {
               final did = controller.text.trim();
               if (did.isEmpty) {
-                setDialogState(() => errorText = 'Enter a labeler DID.');
+                setDialogState(() => errorText = l10n.errorLabelerDidRequired);
                 return;
               }
 
@@ -110,7 +114,7 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
               try {
                 final details = await _service.getLabelerDetails(did);
                 if (details == null) {
-                  setDialogState(() => errorText = 'No labeler found for that DID.');
+                  setDialogState(() => errorText = l10n.errorNoLabelerFoundForDid);
                   return;
                 }
 
@@ -120,9 +124,9 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
                   Navigator.of(dialogContext).pop();
                   _reload();
 
-                  if (context.mounted) {
+                  if (rootContext.mounted) {
                     final name = details.creator.displayName ?? details.creator.handle;
-                    showAppSnackBar(context, 'Subscribed to $name');
+                    showAppSnackBar(rootContext, rootContext.l10n.formatSubscribedToLabeler(name));
                   }
                 }
               } catch (error) {
@@ -133,7 +137,7 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
             }
 
             return ConfirmationDialog(
-              title: const Text('Add labeler'),
+              title: Text(l10n.dialogAddLabelerTitle),
               content: SizedBox(
                 width: 420,
                 child: Column(
@@ -143,22 +147,19 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
                       controller: controller,
                       autofocus: true,
                       decoration: InputDecoration(
-                        labelText: 'Labeler DID',
-                        hintText: 'did:plc:examplelabeler',
+                        labelText: l10n.labelLabelerDid,
+                        hintText: l10n.placeholderLabelerDid,
                         errorText: errorText,
                         border: const OutlineInputBorder(),
                       ),
                       onSubmitted: (_) => isSubmitting ? null : submit(),
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      'Paste a labeler DID to review and subscribe to its labels.',
-                      style: context.textTheme.bodySmall,
-                    ),
+                    Text(l10n.messageAddLabelerDidHelper, style: builderContext.textTheme.bodySmall),
                   ],
                 ),
               ),
-              confirmLabel: isSubmitting ? 'Adding...' : 'Add',
+              confirmLabel: isSubmitting ? l10n.buttonAdding : l10n.buttonAdd,
               confirmEnabled: !isSubmitting,
               onCancel: isSubmitting ? null : () => Navigator.of(dialogContext).pop(),
               onConfirm: submit,
@@ -171,10 +172,12 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Moderation'),
-        actions: [IconButton(tooltip: 'Refresh', onPressed: _reload, icon: const Icon(Icons.refresh))],
+        title: Text(l10n.labelModeration),
+        actions: [IconButton(tooltip: l10n.labelRefresh, onPressed: _reload, icon: const Icon(Icons.refresh))],
       ),
       body: FutureBuilder<_ModerationSettingsData>(
         future: _loadFuture,
@@ -190,11 +193,11 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Failed to load moderation settings', style: context.textTheme.titleMedium),
+                    Text(l10n.errorFailedToLoadModerationSettings, style: context.textTheme.titleMedium),
                     const SizedBox(height: 8),
                     Text('${snapshot.error}', textAlign: TextAlign.center),
                     const SizedBox(height: 16),
-                    FilledButton(onPressed: _reload, child: const Text('Retry')),
+                    FilledButton(onPressed: _reload, child: Text(l10n.buttonRetry)),
                   ],
                 ),
               ),
@@ -209,26 +212,25 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                const _SettingsHero(
-                  title: 'Labelers and content moderation',
-                  subtitle:
-                      'Manage adult-content visibility, subscribed labelers, and the rules each labeler applies to posts and profiles.',
+                _SettingsHero(
+                  title: l10n.labelLabelersAndContentModeration,
+                  subtitle: l10n.messageModerationSettingsHeroSubtitle,
                 ),
                 const SizedBox(height: 16),
                 _SettingsCard(
                   child: SwitchListTile.adaptive(
                     value: data.adultContentEnabled,
                     onChanged: _isUpdatingAdultContent ? null : _toggleAdultContent,
-                    title: const Text('Adult content'),
-                    subtitle: const Text('Required before 18+ label preferences can be changed.'),
+                    title: Text(l10n.labelAdultContentSetting),
+                    subtitle: Text(l10n.messageAdultContentRequiredForLabels),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   ),
                 ),
                 const SizedBox(height: 24),
                 _SectionHeader(
-                  title: 'Built-in labeler',
+                  title: l10n.labelBuiltInLabeler,
                   trailing: Text(
-                    'Always on',
+                    l10n.labelAlwaysOn,
                     style: context.textTheme.labelMedium?.copyWith(color: context.colorScheme.primary),
                   ),
                 ),
@@ -243,27 +245,27 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
                     ),
                   )
                 else
-                  const _SettingsCard(
+                  _SettingsCard(
                     child: ListTile(
-                      title: Text('Bluesky moderation'),
-                      subtitle: Text('The built-in labeler is active even if its details cannot be loaded right now.'),
+                      title: Text(l10n.labelBlueskyModeration),
+                      subtitle: Text(l10n.messageBuiltInLabelerActiveWhenUnavailable),
                     ),
                   ),
                 const SizedBox(height: 24),
                 _SectionHeader(
-                  title: 'Custom labelers',
+                  title: l10n.labelCustomLabelers,
                   trailing: FilledButton.tonalIcon(
                     onPressed: _showAddLabelerDialog,
                     icon: const Icon(Icons.add),
-                    label: Text('Add (${labelers.length}/20)'),
+                    label: Text(l10n.formatAddLabelerLimit(labelers.length, 20)),
                   ),
                 ),
                 const SizedBox(height: 8),
                 if (labelers.isEmpty)
-                  const _SettingsCard(
+                  _SettingsCard(
                     child: ListTile(
-                      title: Text('No custom labelers'),
-                      subtitle: Text('Add a labeler DID to subscribe and configure its custom labels.'),
+                      title: Text(l10n.labelNoCustomLabelers),
+                      subtitle: Text(l10n.messageNoCustomLabelers),
                     ),
                   )
                 else
@@ -390,6 +392,7 @@ class _LabelerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final creator = labeler.creator;
     final definitions = labeler.policies.labelValueDefinitions ?? const [];
 
@@ -431,7 +434,7 @@ class _LabelerCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
-                              'Built-in',
+                              l10n.labelBuiltIn,
                               style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
                             ),
                           ),
@@ -456,8 +459,8 @@ class _LabelerCard extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _MetaChip(label: '${definitions.length} definitions'),
-                        _MetaChip(label: '${labeler.policies.labelValues.length} published values'),
+                        _MetaChip(label: l10n.formatDefinitionCount(definitions.length)),
+                        _MetaChip(label: l10n.formatPublishedValueCount(labeler.policies.labelValues.length)),
                       ],
                     ),
                   ],
@@ -468,7 +471,7 @@ class _LabelerCard extends StatelessWidget {
                 children: [
                   Icon(isSubscribed ? Icons.chevron_right : Icons.add_circle_outline),
                   if (!isOfficial && onUnsubscribe != null)
-                    TextButton(onPressed: onUnsubscribe, child: const Text('Unsubscribe')),
+                    TextButton(onPressed: onUnsubscribe, child: Text(l10n.buttonUnsubscribe)),
                 ],
               ),
             ],

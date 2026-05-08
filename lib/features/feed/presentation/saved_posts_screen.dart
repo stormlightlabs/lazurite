@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/app_view_web_links.dart';
@@ -22,6 +23,7 @@ import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
 import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 
 enum SavedPostsInitialTab { bookmarks, liked, search }
 
@@ -72,13 +74,13 @@ class _SavedPostsContentState extends State<_SavedPostsContent> with SingleTicke
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bookmarks & Likes'),
+        title: Text(context.l10n.labelBookmarksAndLikes),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Bookmarks'),
-            Tab(text: 'Liked'),
-            Tab(text: 'Search'),
+          tabs: [
+            Tab(text: context.l10n.labelBookmarks),
+            Tab(text: context.l10n.labelLiked),
+            Tab(text: context.l10n.labelSearch),
           ],
         ),
       ),
@@ -111,8 +113,8 @@ class _AllSavedTabState extends State<_AllSavedTab> {
 
         if (state.status == SavedPostsStatus.error) {
           return ErrorState(
-            title: 'Failed to load bookmarks',
-            message: state.error ?? 'Unknown error',
+            title: context.l10n.errorFailedToLoadBookmarks,
+            message: state.error ?? context.l10n.errorUnknown,
             onRetry: () => context.read<SavedPostsCubit>().loadSavedPosts(),
           );
         }
@@ -125,9 +127,9 @@ class _AllSavedTabState extends State<_AllSavedTab> {
             .toList(growable: false);
 
         if (localPosts.isEmpty && cloudPosts.isEmpty) {
-          return const EmptyState(
-            message: 'No bookmarks',
-            subtitle: 'Posts you bookmark will appear here',
+          return EmptyState(
+            message: context.l10n.messageNoBookmarks,
+            subtitle: context.l10n.messageNoBookmarksSubtitle,
             icon: Icons.bookmark_outline,
           );
         }
@@ -140,30 +142,30 @@ class _AllSavedTabState extends State<_AllSavedTab> {
                 padding: const EdgeInsets.fromLTRB(12, 8, 8, 0),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: TabBar(
                         isScrollable: true,
                         tabAlignment: TabAlignment.start,
                         tabs: [
-                          Tab(text: 'Local'),
-                          Tab(text: 'Bluesky'),
+                          Tab(text: context.l10n.labelLocal),
+                          Tab(text: context.l10n.labelBluesky),
                         ],
                       ),
                     ),
                     if (localPosts.isNotEmpty)
                       PopupMenuButton<_BookmarksMenuAction>(
-                        tooltip: 'Bookmark actions',
+                        tooltip: context.l10n.labelBookmarkActions,
                         onSelected: (action) {
                           if (action == _BookmarksMenuAction.clearLocal) {
                             _confirmClearLocal(context);
                           }
                         },
-                        itemBuilder: (context) => const [
+                        itemBuilder: (context) => [
                           PopupMenuItem(
                             value: _BookmarksMenuAction.clearLocal,
                             child: ListTile(
-                              leading: Icon(Icons.delete_sweep_outlined),
-                              title: Text('Clear local bookmarks'),
+                              leading: const Icon(Icons.delete_sweep_outlined),
+                              title: Text(context.l10n.labelClearLocalBookmarks),
                               contentPadding: EdgeInsets.zero,
                               dense: true,
                             ),
@@ -205,11 +207,11 @@ class _AllSavedTabState extends State<_AllSavedTab> {
       return AnimatedRefreshIndicator(
         onRefresh: onRefresh,
         child: ListView(
-          children: const [
-            SizedBox(height: 80),
+          children: [
+            const SizedBox(height: 80),
             EmptyState(
-              message: 'No bookmarks in this source',
-              subtitle: 'Try switching tabs or saving posts to this source',
+              message: context.l10n.messageNoBookmarksInSource,
+              subtitle: context.l10n.messageNoBookmarksInSourceSubtitle,
               icon: Icons.bookmark_border,
             ),
           ],
@@ -241,12 +243,10 @@ class _AllSavedTabState extends State<_AllSavedTab> {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Clear local bookmarks?'),
-        content: const Text(
-          'This removes only local bookmarks from this device. Bluesky cloud bookmarks will not be deleted.',
-        ),
+        title: Text(context.l10n.dialogClearLocalBookmarksTitle),
+        content: Text(context.l10n.dialogClearLocalBookmarksContent),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(context.l10n.buttonCancel)),
           FilledButton(
             onPressed: () {
               Navigator.pop(dialogContext);
@@ -256,7 +256,7 @@ class _AllSavedTabState extends State<_AllSavedTab> {
               backgroundColor: context.colorScheme.error,
               foregroundColor: context.colorScheme.onError,
             ),
-            child: const Text('Clear Local'),
+            child: Text(context.l10n.buttonClearLocal),
           ),
         ],
       ),
@@ -294,7 +294,7 @@ class _LikedPostsTabState extends State<_LikedPostsTab> {
     } catch (_) {
       setState(() {
         _isLoading = false;
-        _error = 'Liked posts are unavailable right now.';
+        _error = context.l10n.messageLikedPostsUnavailable;
       });
       return;
     }
@@ -325,7 +325,7 @@ class _LikedPostsTabState extends State<_LikedPostsTab> {
       }
       setState(() {
         _isLoading = false;
-        _error = 'Failed to load liked posts: $e';
+        _error = context.l10n.errorFailedToLoadLikedPostsDetails(e);
       });
     }
   }
@@ -368,14 +368,14 @@ class _LikedPostsTabState extends State<_LikedPostsTab> {
         setState(() {
           _isLoading = false;
           _isSyncing = false;
-          _syncWarning = 'Failed to refresh liked posts: $e';
+          _syncWarning = context.l10n.errorFailedToRefreshLikedPosts(e);
         });
         return;
       }
       setState(() {
         _isLoading = false;
         _isSyncing = false;
-        _error = 'Failed to load liked posts: $e';
+        _error = context.l10n.errorFailedToLoadLikedPostsDetails(e);
       });
     }
   }
@@ -398,18 +398,22 @@ class _LikedPostsTabState extends State<_LikedPostsTab> {
     }
 
     if (_error != null && _likedPosts.isEmpty) {
-      return ErrorState(title: 'Failed to load liked posts', message: _error!, onRetry: () => _syncAndReload());
+      return ErrorState(
+        title: context.l10n.errorFailedToLoadLikedPosts,
+        message: _error!,
+        onRetry: () => _syncAndReload(),
+      );
     }
 
     if (_likedPosts.isEmpty) {
       return AnimatedRefreshIndicator(
         onRefresh: _syncAndReload,
         child: ListView(
-          children: const [
-            SizedBox(height: 80),
+          children: [
+            const SizedBox(height: 80),
             EmptyState(
-              message: 'No liked posts',
-              subtitle: 'Posts you like will appear here after sync',
+              message: context.l10n.messageNoLikedPosts,
+              subtitle: context.l10n.messageNoLikedPostsSubtitle,
               icon: Icons.favorite_outline,
             ),
           ],
@@ -510,15 +514,18 @@ class _SavedPostCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
         leading: const Icon(Icons.bookmark),
-        title: const Text('Bookmarked Post'),
-        subtitle: Text('Saved on ${_formatDate(savedPost.savedAt)}', style: context.textTheme.bodySmall),
+        title: Text(context.l10n.labelBookmarkedPost),
+        subtitle: Text(
+          context.l10n.formatSavedOn(_formatDate(context, savedPost.savedAt)),
+          style: context.textTheme.bodySmall,
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
               icon: const Icon(Icons.open_in_new),
               onPressed: () => context.push('/post?uri=${Uri.encodeQueryComponent(savedPost.postUri)}'),
-              tooltip: 'Open post',
+              tooltip: context.l10n.labelOpenPost,
             ),
             IconButton(
               icon: const Icon(Icons.share_outlined),
@@ -526,9 +533,9 @@ class _SavedPostCard extends StatelessWidget {
                 context,
                 AppViewWebLinks.postFromAtUri(savedPost.postUri, appViewProvider: _resolveAppViewProvider(context)),
               ),
-              tooltip: 'Share',
+              tooltip: context.l10n.buttonShare,
             ),
-            IconButton(icon: const Icon(Icons.delete_outline), onPressed: onUnsave, tooltip: 'Remove'),
+            IconButton(icon: const Icon(Icons.delete_outline), onPressed: onUnsave, tooltip: context.l10n.buttonRemove),
           ],
         ),
       ),
@@ -589,17 +596,20 @@ class _LikedPostCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
         leading: const Icon(Icons.favorite_outline),
-        title: const Text('Liked Post'),
-        subtitle: Text('Liked on ${_formatDate(likedPost.likedAt)}', style: context.textTheme.bodySmall),
+        title: Text(context.l10n.labelLikedPost),
+        subtitle: Text(
+          context.l10n.formatLikedOn(_formatDate(context, likedPost.likedAt)),
+          style: context.textTheme.bodySmall,
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
               icon: const Icon(Icons.open_in_new),
               onPressed: () => context.push('/post?uri=${Uri.encodeQueryComponent(likedPost.postUri)}'),
-              tooltip: 'Open post',
+              tooltip: context.l10n.labelOpenPost,
             ),
-            IconButton(icon: const Icon(Icons.delete_outline), onPressed: onRemove, tooltip: 'Remove'),
+            IconButton(icon: const Icon(Icons.delete_outline), onPressed: onRemove, tooltip: context.l10n.buttonRemove),
           ],
         ),
       ),
@@ -607,13 +617,5 @@ class _LikedPostCard extends StatelessWidget {
   }
 }
 
-String _formatDate(DateTime date) {
-  final now = DateTime.now();
-  final difference = now.difference(date);
-
-  if (difference.inMinutes < 1) return 'just now';
-  if (difference.inHours < 1) return '${difference.inMinutes}m ago';
-  if (difference.inDays < 1) return '${difference.inHours}h ago';
-  if (difference.inDays < 7) return '${difference.inDays}d ago';
-  return '${date.month}/${date.day}/${date.year}';
-}
+String _formatDate(BuildContext context, DateTime date) =>
+    formatRelativeTime(date, includeAgo: true, locale: Localizations.localeOf(context).toString());

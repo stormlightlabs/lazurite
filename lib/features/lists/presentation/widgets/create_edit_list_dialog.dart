@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:bluesky/app_bsky_graph_defs.dart' show KnownListPurpose;
@@ -130,7 +131,7 @@ class _CreateEditListDialogState extends State<CreateEditListDialog> {
     final hasAvatar = _avatarBytes != null || widget.initialAvatarUrl != null;
 
     return AlertDialog(
-      title: Text(_isEditing ? 'Edit list' : 'Create list'),
+      title: Text(_isEditing ? context.l10n.labelEditList : context.l10n.labelCreateList),
       content: SizedBox(
         width: double.maxFinite,
         child: SingleChildScrollView(
@@ -176,33 +177,36 @@ class _CreateEditListDialogState extends State<CreateEditListDialog> {
               const SizedBox(height: 16),
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder()),
+                decoration: InputDecoration(labelText: context.l10n.labelName, border: const OutlineInputBorder()),
                 maxLength: 64,
                 textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _descController,
-                decoration: const InputDecoration(labelText: 'Description (optional)', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: context.l10n.labelDescriptionOptional,
+                  border: const OutlineInputBorder(),
+                ),
                 maxLength: 300,
                 maxLines: 3,
                 textCapitalization: TextCapitalization.sentences,
               ),
               if (!_isEditing) ...[
                 const SizedBox(height: 12),
-                Text('Type', style: context.textTheme.labelLarge),
+                Text(context.l10n.labelType, style: context.textTheme.labelLarge),
                 const SizedBox(height: 8),
                 SegmentedButton<KnownListPurpose>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: KnownListPurpose.appBskyGraphDefsCuratelist,
-                      label: Text('Feed'),
-                      icon: Icon(Icons.dynamic_feed_outlined),
+                      label: Text(context.l10n.labelFeed),
+                      icon: const Icon(Icons.dynamic_feed_outlined),
                     ),
                     ButtonSegment(
                       value: KnownListPurpose.appBskyGraphDefsModlist,
-                      label: Text('Moderation'),
-                      icon: Icon(Icons.shield_outlined),
+                      label: Text(context.l10n.labelModeration),
+                      icon: const Icon(Icons.shield_outlined),
                     ),
                   ],
                   selected: {_purpose},
@@ -214,10 +218,10 @@ class _CreateEditListDialogState extends State<CreateEditListDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.buttonCancel)),
         FilledButton(
           onPressed: _nameController.text.trim().isEmpty ? null : _save,
-          child: Text(_isEditing ? 'Save' : 'Create'),
+          child: Text(_isEditing ? context.l10n.buttonSave : context.l10n.buttonCreate),
         ),
       ],
     );

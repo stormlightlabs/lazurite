@@ -1,6 +1,7 @@
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/features/profile/cubit/suggested_follows_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
@@ -15,14 +16,14 @@ class SuggestedFollowsList extends StatelessWidget {
     required this.actor,
     this.scrollController,
     this.onProfileTap,
-    this.emptyMessage = 'No suggestions found',
+    this.emptyMessage,
     this.padding = EdgeInsets.zero,
   });
 
   final String actor;
   final ScrollController? scrollController;
   final ValueChanged<ProfileView>? onProfileTap;
-  final String emptyMessage;
+  final String? emptyMessage;
   final EdgeInsetsGeometry padding;
 
   @override
@@ -35,14 +36,17 @@ class SuggestedFollowsList extends StatelessWidget {
 
         if (state.hasError) {
           return ErrorState(
-            title: 'Failed to load suggestions',
-            message: state.errorMessage ?? 'Unknown error',
+            title: context.l10n.errorFailedToLoadSuggestions,
+            message: state.errorMessage ?? context.l10n.errorUnknown,
             onRetry: () => context.read<SuggestedFollowsCubit>().load(actor),
           );
         }
 
         if (state.isEmpty) {
-          return EmptyState(message: emptyMessage, icon: Icons.person_search_outlined);
+          return EmptyState(
+            message: emptyMessage ?? context.l10n.messageNoSuggestionsFound,
+            icon: Icons.person_search_outlined,
+          );
         }
 
         return ListView.builder(
@@ -162,9 +166,9 @@ class _FollowButton extends StatelessWidget {
     }
 
     if (isFollowing) {
-      return OutlinedButton(onPressed: onPressed, child: const Text('Following'));
+      return OutlinedButton(onPressed: onPressed, child: Text(context.l10n.buttonFollowing));
     }
 
-    return FilledButton(onPressed: onPressed, child: const Text('Follow'));
+    return FilledButton(onPressed: onPressed, child: Text(context.l10n.buttonFollow));
   }
 }

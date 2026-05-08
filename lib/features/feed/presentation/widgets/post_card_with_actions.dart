@@ -6,6 +6,7 @@ import 'package:bluesky/app_bsky_feed_post.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
@@ -145,7 +146,7 @@ class _PostCardWithActionsContent extends StatelessWidget {
           (previous.error != current.error && current.error != null) || (!previous.isDeleted && current.isDeleted),
       listener: (context, state) {
         if (state.isDeleted) {
-          showAppSnackBar(context, 'Post deleted', behavior: SnackBarBehavior.floating);
+          showAppSnackBar(context, context.l10n.messagePostDeleted, behavior: SnackBarBehavior.floating);
           onDeleted?.call();
           return;
         }
@@ -156,7 +157,7 @@ class _PostCardWithActionsContent extends StatelessWidget {
             context,
             error,
             behavior: SnackBarBehavior.floating,
-            actionLabel: 'Retry',
+            actionLabel: context.l10n.buttonRetry,
             onAction: () {
               if (error.contains('like')) {
                 cubit.toggleLike();
@@ -222,7 +223,7 @@ class _PostCardWithActionsContent extends StatelessWidget {
         return BlocBuilder<SavedPostsCubit, SavedPostsState>(
           builder: (context, savedState) {
             return PostCardFooter(
-              timestamp: formatPostTime(post.indexedAt),
+              timestamp: formatPostTime(post.indexedAt, nowLabel: context.l10n.labelNow),
               replyCount: post.replyCount ?? 0,
               repostCount: postActionState.repostCount,
               likeCount: postActionState.likeCount,
@@ -365,9 +366,9 @@ class _PostCardWithActionsContent extends StatelessWidget {
   Future<void> _confirmDelete(BuildContext context) async {
     await showConfirmationDialog(
       context: context,
-      title: const Text('Delete Post?'),
-      content: const Text('This action cannot be undone.'),
-      confirmLabel: 'Delete',
+      title: Text(context.l10n.dialogDeletePostTitle),
+      content: Text(context.l10n.dialogDeletePostContent),
+      confirmLabel: context.l10n.buttonDelete,
       confirmDestructive: true,
       onConfirmed: () => context.read<PostActionCubit>().deletePost(),
     );

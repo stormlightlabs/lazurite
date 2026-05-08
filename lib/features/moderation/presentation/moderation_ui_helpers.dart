@@ -3,6 +3,7 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/l10n/app_localizations.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 const officialBlueskyLabelerDid = 'did:plc:ar7c4by46qjdydhdevvrndac';
@@ -74,13 +75,14 @@ String formatLocalizedLabelDescription(
 List<ModerationBadgeDescriptor> moderationBadgesForUi(
   bsky_moderation.ModerationUI ui, {
   ModerationLabelResolver? labelResolver,
+  AppLocalizations? l10n,
 }) {
   final badges = <ModerationBadgeDescriptor>[];
   final seen = <String>{};
 
   void addDescriptors(List<bsky_moderation.ModerationCause> causes, ModerationBadgeTone tone) {
     for (final cause in causes) {
-      final descriptor = moderationDescriptorForCause(cause, tone: tone, labelResolver: labelResolver);
+      final descriptor = moderationDescriptorForCause(cause, tone: tone, labelResolver: labelResolver, l10n: l10n);
       final key = '${tone.name}:${descriptor.label}:${descriptor.description}';
       if (seen.add(key)) {
         badges.add(descriptor);
@@ -93,7 +95,11 @@ List<ModerationBadgeDescriptor> moderationBadgesForUi(
   return badges;
 }
 
-List<String> moderationBlurLabels(bsky_moderation.ModerationUI ui, {ModerationLabelResolver? labelResolver}) {
+List<String> moderationBlurLabels(
+  bsky_moderation.ModerationUI ui, {
+  ModerationLabelResolver? labelResolver,
+  AppLocalizations? l10n,
+}) {
   final labels = <String>[];
   final seen = <String>{};
 
@@ -102,6 +108,7 @@ List<String> moderationBlurLabels(bsky_moderation.ModerationUI ui, {ModerationLa
       cause,
       tone: ModerationBadgeTone.alert,
       labelResolver: labelResolver,
+      l10n: l10n,
     );
     if (seen.add(descriptor.label)) {
       labels.add(descriptor.label);
@@ -115,6 +122,7 @@ ModerationBadgeDescriptor moderationDescriptorForCause(
   bsky_moderation.ModerationCause cause, {
   required ModerationBadgeTone tone,
   ModerationLabelResolver? labelResolver,
+  AppLocalizations? l10n,
 }) {
   return cause.maybeWhen(
     label: (data) {
@@ -125,36 +133,50 @@ ModerationBadgeDescriptor moderationDescriptorForCause(
       final label = (resolvedLabel == null || resolvedLabel.isEmpty)
           ? humanizeModerationLabel(data.labelDef.identifier)
           : resolvedLabel;
-      final source = data.labelDef.definedBy == officialBlueskyLabelerDid ? 'Bluesky' : 'Subscribed labeler';
-      return ModerationBadgeDescriptor(label: label, description: '$source label', tone: tone);
+      final source = data.labelDef.definedBy == officialBlueskyLabelerDid
+          ? (l10n?.labelModerationSourceBluesky ?? 'Bluesky')
+          : (l10n?.labelModerationSourceSubscribedLabeler ?? 'Subscribed labeler');
+      return ModerationBadgeDescriptor(
+        label: label,
+        description: l10n?.formatModerationSourceLabel(source) ?? '$source label',
+        tone: tone,
+      );
     },
     muted: (_) => ModerationBadgeDescriptor(
-      label: 'Muted account',
-      description: 'Muted content is being downranked here',
+      label: l10n?.labelMutedAccount ?? 'Muted account',
+      description: l10n?.messageMutedAccountDescription ?? 'Muted content is being downranked here',
       tone: tone,
     ),
     muteWord: (_) => ModerationBadgeDescriptor(
-      label: 'Muted phrase',
-      description: 'A muted phrase matched this content',
+      label: l10n?.labelMutedPhrase ?? 'Muted phrase',
+      description: l10n?.messageMutedPhraseDescription ?? 'A muted phrase matched this content',
       tone: tone,
     ),
-    blocking: (_) =>
-        ModerationBadgeDescriptor(label: 'Blocked account', description: 'This account is blocked', tone: tone),
-    blockedBy: (_) =>
-        ModerationBadgeDescriptor(label: 'Blocked by account', description: 'This account has blocked you', tone: tone),
+    blocking: (_) => ModerationBadgeDescriptor(
+      label: l10n?.labelBlockedAccount ?? 'Blocked account',
+      description: l10n?.messageBlockedAccountDescription ?? 'This account is blocked',
+      tone: tone,
+    ),
+    blockedBy: (_) => ModerationBadgeDescriptor(
+      label: l10n?.labelBlockedByAccount ?? 'Blocked by account',
+      description: l10n?.messageBlockedByAccountDescription ?? 'This account has blocked you',
+      tone: tone,
+    ),
     blockOther: (_) => ModerationBadgeDescriptor(
-      label: 'Blocked relationship',
-      description: 'This content is limited by a block relationship',
+      label: l10n?.labelBlockedRelationship ?? 'Blocked relationship',
+      description: l10n?.messageBlockedRelationshipDescription ?? 'This content is limited by a block relationship',
       tone: tone,
     ),
     hidden: (_) => ModerationBadgeDescriptor(
-      label: 'Hidden content',
-      description: 'This content is hidden by moderation rules',
+      label: l10n?.labelHiddenContent ?? 'Hidden content',
+      description: l10n?.messageHiddenContentDescription ?? 'This content is hidden by moderation rules',
       tone: tone,
     ),
     orElse: () => ModerationBadgeDescriptor(
-      label: tone == ModerationBadgeTone.alert ? 'Sensitive content' : 'Moderation note',
-      description: 'Moderation guidance applies here',
+      label: tone == ModerationBadgeTone.alert
+          ? (l10n?.labelSensitiveContent ?? 'Sensitive content')
+          : (l10n?.labelModerationNote ?? 'Moderation note'),
+      description: l10n?.messageModerationGuidanceApplies ?? 'Moderation guidance applies here',
       tone: tone,
     ),
   );
@@ -164,8 +186,9 @@ String moderationOverlayTitle(
   bsky_moderation.ModerationUI ui, {
   String fallback = 'Sensitive content',
   ModerationLabelResolver? labelResolver,
+  AppLocalizations? l10n,
 }) {
-  final labels = moderationBlurLabels(ui, labelResolver: labelResolver);
+  final labels = moderationBlurLabels(ui, labelResolver: labelResolver, l10n: l10n);
   if (labels.isEmpty) {
     return fallback;
   }

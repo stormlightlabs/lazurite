@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/atproto_identifier.dart';
@@ -24,6 +25,25 @@ String? validateAtProtoIdentifierInput(String? value) {
 
   final code = validationError.code;
   return code.message;
+}
+
+String? validateAtProtoIdentifierInputLocalized(BuildContext context, String? value) {
+  final normalized = normalizeAtProtoIdentifierForAuth(value ?? '');
+  final validationError = validateAtProtoIdentifierForAuth(normalized);
+  if (validationError == null) {
+    return null;
+  }
+
+  return _localizedAtProtoIdentifierValidationMessage(context, validationError.code);
+}
+
+String _localizedAtProtoIdentifierValidationMessage(BuildContext context, AtProtoIdentifierValidationErrorCode code) {
+  return switch (code) {
+    AtProtoIdentifierValidationErrorCode.empty => context.l10n.validationEnterBlueskyHandleOrDid,
+    AtProtoIdentifierValidationErrorCode.unsupportedDid => context.l10n.validationUseSupportedDid,
+    AtProtoIdentifierValidationErrorCode.invalidDid => context.l10n.validationEnterCompleteDid,
+    AtProtoIdentifierValidationErrorCode.invalidHandle => context.l10n.validationEnterFullHandle,
+  };
 }
 
 void showAccountSwitcherSheet(BuildContext context) {
@@ -67,7 +87,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text('Accounts', style: textTheme.titleMedium),
+            child: Text(context.l10n.labelAccounts, style: textTheme.titleMedium),
           ),
           const Divider(),
           BlocBuilder<AccountSwitcherCubit, AccountSwitcherState>(
@@ -79,7 +99,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
                 );
               }
 
-              if (state.accounts.isEmpty) return _buildEmptyState(colorScheme, textTheme);
+              if (state.accounts.isEmpty) return _buildEmptyState(context, colorScheme, textTheme);
 
               return ListView.builder(
                 shrinkWrap: true,
@@ -99,7 +119,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
                       children: [
                         if (isActive) const Icon(Icons.check),
                         IconButton(
-                          tooltip: 'Remove account',
+                          tooltip: context.l10n.labelRemoveAccount,
                           icon: const Icon(Icons.delete_outline),
                           onPressed: () => _onRemoveAccount(context, account.did, account.handle),
                         ),
@@ -114,7 +134,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.person_add_outlined),
-            title: const Text('Add Account'),
+            title: Text(context.l10n.buttonAddAccount),
             onTap: () => _onAddAccount(context),
           ),
         ],
@@ -122,7 +142,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(ColorScheme colorScheme, TextTheme textTheme) => Padding(
+  Widget _buildEmptyState(BuildContext context, ColorScheme colorScheme, TextTheme textTheme) => Padding(
     padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
     child: Row(
       children: [
@@ -130,7 +150,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: Text(
-            'No other signed-in accounts yet. Add an account to switch between profiles.',
+            context.l10n.accountSwitcherNoOtherAccounts,
             style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
         ),
@@ -148,7 +168,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
     }
 
     if (parentContext.mounted) {
-      showAppSnackBar(parentContext, 'Please sign in again for that account.');
+      showAppSnackBar(parentContext, parentContext.l10n.messagePleaseSignInAgainForAccount);
       final router = GoRouter.maybeOf(parentContext);
       if (router != null) {
         unawaited(Future<void>.delayed(Duration.zero, () => router.go(_reauthLoginLocation(account.handle))));
@@ -170,7 +190,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
       context: parentContext,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) => ConfirmationDialog(
-          title: const Text('Add Account'),
+          title: Text(parentContext.l10n.buttonAddAccount),
           content: SizedBox(
             width: 420,
             child: Form(
@@ -186,9 +206,12 @@ class _AccountSwitcherSheet extends StatelessWidget {
                 minChars: 2,
                 debounceMs: 300,
                 limit: 8,
-                decoration: const InputDecoration(labelText: 'Handle or DID', hintText: 'username.bsky.social'),
+                decoration: InputDecoration(
+                  labelText: parentContext.l10n.promptHandleOrDid,
+                  hintText: parentContext.l10n.placeholderUsernameBskySocial,
+                ),
                 textInputAction: TextInputAction.done,
-                validator: validateAtProtoIdentifierInput,
+                validator: (value) => validateAtProtoIdentifierInputLocalized(parentContext, value),
                 onChanged: (_) => setDialogState(() {}),
                 onFieldSubmitted: (_) {
                   if ((formKey.currentState?.validate() ?? false)) {
@@ -199,7 +222,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
             ),
           ),
           confirmEnabled: _isIdentifierInputValid(controller.text.trim()),
-          confirmLabel: 'Continue',
+          confirmLabel: parentContext.l10n.buttonContinue,
           onCancel: () => Navigator.pop(dialogContext),
           onConfirm: () {
             if (!(formKey.currentState?.validate() ?? false)) {
@@ -219,7 +242,11 @@ class _AccountSwitcherSheet extends StatelessWidget {
     if (tokens != null) {
       authBloc.add(SessionRestored(tokens: tokens));
     } else if (parentContext.mounted) {
-      showAppSnackBar(parentContext, cubit.lastAddAccountErrorMessage ?? 'Failed to add account', isError: true);
+      showAppSnackBar(
+        parentContext,
+        cubit.lastAddAccountErrorMessage ?? parentContext.l10n.errorFailedToAddAccount,
+        isError: true,
+      );
     }
   }
 
@@ -228,9 +255,9 @@ class _AccountSwitcherSheet extends StatelessWidget {
     final remove = await showDialog<bool>(
       context: parentContext,
       builder: (dialogContext) => ConfirmationDialog(
-        title: const Text('Remove Account'),
-        content: Text('Remove @$handle from this device?'),
-        confirmLabel: 'Remove',
+        title: Text(parentContext.l10n.dialogRemoveAccountTitle),
+        content: Text(parentContext.l10n.formatRemoveAccountContent(handle)),
+        confirmLabel: parentContext.l10n.buttonRemove,
         onCancel: () => Navigator.pop(dialogContext, false),
         onConfirm: () => Navigator.pop(dialogContext, true),
       ),
@@ -243,7 +270,7 @@ class _AccountSwitcherSheet extends StatelessWidget {
     final result = await cubit.removeAccount(did);
     if (!result.removed) {
       if (parentContext.mounted) {
-        showAppSnackBar(parentContext, 'Unable to remove account right now.', isError: true);
+        showAppSnackBar(parentContext, parentContext.l10n.errorUnableToRemoveAccountNow, isError: true);
       }
       return;
     }

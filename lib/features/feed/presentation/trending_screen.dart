@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/app_view_router.dart';
 import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
@@ -22,7 +23,7 @@ class TrendingScreen extends StatefulWidget {
 class _TrendingScreenState extends State<TrendingScreen> {
   TrendingScreenData? _data;
   bool _loading = true;
-  String? _errorMessage;
+  Object? _error;
 
   @override
   void initState() {
@@ -37,7 +38,7 @@ class _TrendingScreenState extends State<TrendingScreen> {
 
     setState(() {
       _loading = true;
-      _errorMessage = null;
+      _error = null;
     });
 
     try {
@@ -56,7 +57,7 @@ class _TrendingScreenState extends State<TrendingScreen> {
       }
 
       setState(() {
-        _errorMessage = 'Failed to load trending topics: $error';
+        _error = error;
         _loading = false;
       });
     }
@@ -79,23 +80,28 @@ class _TrendingScreenState extends State<TrendingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const LazuriteAppBar(sectionLabel: 'Trending'),
+      appBar: LazuriteAppBar(sectionLabel: context.l10n.labelTrending),
       body: _buildBody(context),
     );
   }
 
   Widget _buildBody(BuildContext context) {
     if (_loading) {
-      return const LoadingState(message: 'Loading trending topics');
+      return LoadingState(message: context.l10n.messageLoadingTrendingTopics);
     }
 
-    if (_errorMessage != null) {
-      return ErrorState(title: 'Failed to load trending', message: _errorMessage!, onRetry: _load);
+    final error = _error;
+    if (error != null) {
+      return ErrorState(
+        title: context.l10n.errorFailedToLoadTrending,
+        message: context.l10n.errorFailedToLoadTrendingTopics(error),
+        onRetry: _load,
+      );
     }
 
     final data = _data;
     if (data == null || data.isEmpty) {
-      return const EmptyState(icon: Icons.trending_up_outlined, message: 'No trending topics right now');
+      return EmptyState(icon: Icons.trending_up_outlined, message: context.l10n.messageNoTrendingTopicsRightNow);
     }
 
     final rows = <Widget>[
@@ -109,12 +115,12 @@ class _TrendingScreenState extends State<TrendingScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: const Text('Metadata temporarily unavailable'),
+            child: Text(context.l10n.messageMetadataTemporarilyUnavailable),
           ),
         ),
-      const _SectionHeader(title: 'Topics'),
+      _SectionHeader(title: context.l10n.labelTopics),
       ...data.topics.map((item) => _TrendTile(item: item, onTap: () => _onTapTopic(item))),
-      if (data.suggested.isNotEmpty) const _SectionHeader(title: 'Suggested'),
+      if (data.suggested.isNotEmpty) _SectionHeader(title: context.l10n.labelSuggested),
       ...data.suggested.map((item) => _TrendTile(item: item, onTap: () => _onTapTopic(item))),
       const SizedBox(height: 16),
     ];
@@ -155,9 +161,9 @@ class _TrendTile extends StatelessWidget {
       subtitleLines.add(description);
     }
     if (trend != null) {
-      subtitleLines.add('${trend.postCount} posts');
+      subtitleLines.add(context.l10n.formatTrendingPostCount(trend.postCount));
       if (trend.category != null && trend.category!.trim().isNotEmpty) {
-        subtitleLines.add('Category: ${trend.category}');
+        subtitleLines.add(context.l10n.formatTrendingCategory(trend.category!));
       }
     }
 
