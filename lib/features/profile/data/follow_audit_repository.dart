@@ -90,21 +90,6 @@ class FollowAuditRepository {
   final dynamic _bluesky;
   final AppViewRequestContext _appViewContext;
 
-  Future<List<FollowRecord>> fetchAllFollows(String did, {void Function(int fetched)? onProgress}) async {
-    _assertCurrentSessionRepoAccess(did: did, operation: 'fetchAllFollows');
-    final records = <FollowRecord>[];
-    String? cursor;
-
-    do {
-      final page = await fetchFollowPage(did, cursor: cursor);
-      records.addAll(page.records);
-      cursor = page.cursor;
-      onProgress?.call(records.length);
-    } while (cursor != null);
-
-    return records;
-  }
-
   Future<FollowRecordPage> fetchFollowPage(String did, {String? cursor, int limit = 100}) async {
     _assertCurrentSessionRepoAccess(did: did, operation: 'fetchFollowPage');
     final response = await _bluesky.atproto.repo.listRecords(

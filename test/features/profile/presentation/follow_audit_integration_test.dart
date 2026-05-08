@@ -31,14 +31,6 @@ class _ScriptedFollowAuditRepository implements FollowAuditRepository {
   }
 
   @override
-  Future<List<FollowRecord>> fetchAllFollows(String did, {void Function(int fetched)? onProgress}) async {
-    for (var i = 1; i <= records.length; i++) {
-      onProgress?.call(i);
-    }
-    return records;
-  }
-
-  @override
   Stream<FollowAuditBatch> scanFollows(String did) async* {
     yield FollowAuditBatch(
       scannedCount: records.length,

@@ -7,54 +7,34 @@ import 'package:lazurite/features/profile/data/follow_audit_repository.dart';
 
 class _FakeFollowAuditRepository implements FollowAuditRepository {
   _FakeFollowAuditRepository({
-    List<FollowRecord> fetchResult = const [],
     List<ClassifiedFollow> classifyResult = const [],
     List<FollowAuditBatch>? scanBatches,
     int classifyFailedCount = 0,
     int batchUnfollowResult = 0,
-    Exception? fetchError,
     Exception? classifyError,
     Exception? scanError,
     Exception? unfollowError,
-    List<int>? fetchProgressValues,
     List<int>? classifyProgressValues,
     Completer<void>? scanGate,
-  }) : _fetchResult = fetchResult,
-       _classifyResult = classifyResult,
+  }) : _classifyResult = classifyResult,
        _scanBatches = scanBatches,
        _classifyFailedCount = classifyFailedCount,
        _batchUnfollowResult = batchUnfollowResult,
-       _fetchError = fetchError,
        _classifyError = classifyError,
        _scanError = scanError,
        _unfollowError = unfollowError,
-       _fetchProgressValues = fetchProgressValues,
        _classifyProgressValues = classifyProgressValues,
        _scanGate = scanGate;
 
-  final List<FollowRecord> _fetchResult;
   final List<ClassifiedFollow> _classifyResult;
   final List<FollowAuditBatch>? _scanBatches;
   final int _classifyFailedCount;
   final int _batchUnfollowResult;
-  final Exception? _fetchError;
   final Exception? _classifyError;
   final Exception? _scanError;
   final Exception? _unfollowError;
-  final List<int>? _fetchProgressValues;
   final List<int>? _classifyProgressValues;
   final Completer<void>? _scanGate;
-
-  @override
-  Future<List<FollowRecord>> fetchAllFollows(String did, {void Function(int fetched)? onProgress}) async {
-    if (_fetchError != null) throw _fetchError;
-    if (_fetchProgressValues != null) {
-      for (final v in _fetchProgressValues) {
-        onProgress?.call(v);
-      }
-    }
-    return _fetchResult;
-  }
 
   @override
   Future<({List<ClassifiedFollow> results, int failedCount})> classifyFollows(
@@ -91,12 +71,10 @@ class _FakeFollowAuditRepository implements FollowAuditRepository {
       return;
     }
 
-    if (_fetchError != null) throw _fetchError;
     if (_classifyError != null) throw _classifyError;
-    final scanned = _fetchResult.length;
     yield FollowAuditBatch(
-      scannedCount: scanned,
-      classifiedCount: scanned,
+      scannedCount: _classifyResult.length,
+      classifiedCount: _classifyResult.length,
       results: _classifyResult,
       failedCount: _classifyFailedCount,
       isComplete: true,
@@ -164,12 +142,8 @@ void main() {
   group('FollowAuditCubit.audit', () {
     blocTest<FollowAuditCubit, FollowAuditState>(
       'transitions initial → classifying → ready',
-      build: () => _cubit(
-        _FakeFollowAuditRepository(
-          fetchResult: [_record('did:plc:alice')],
-          classifyResult: [_classified('did:plc:alice', FollowStatus.blockedBy)],
-        ),
-      ),
+      build: () =>
+          _cubit(_FakeFollowAuditRepository(classifyResult: [_classified('did:plc:alice', FollowStatus.blockedBy)])),
       act: (cubit) => cubit.audit(),
       expect: () => [
         isA<FollowAuditState>()
@@ -273,7 +247,11 @@ void main() {
     blocTest<FollowAuditCubit, FollowAuditState>(
       'transitions to ready with empty results when no problematic follows found',
       build: () => _cubit(
-        _FakeFollowAuditRepository(fetchResult: [_record('did:plc:alice'), _record('did:plc:bob')], classifyResult: []),
+        _FakeFollowAuditRepository(
+          scanBatches: const [
+            FollowAuditBatch(scannedCount: 2, classifiedCount: 2, results: [], failedCount: 0, isComplete: true),
+          ],
+        ),
       ),
       act: (cubit) => cubit.audit(),
       expect: () => [
@@ -288,7 +266,11 @@ void main() {
     blocTest<FollowAuditCubit, FollowAuditState>(
       'records failedProfiles from classify',
       build: () => _cubit(
-        _FakeFollowAuditRepository(fetchResult: [_record('did:plc:alice')], classifyResult: [], classifyFailedCount: 3),
+        _FakeFollowAuditRepository(
+          scanBatches: const [
+            FollowAuditBatch(scannedCount: 1, classifiedCount: 1, results: [], failedCount: 3, isComplete: true),
+          ],
+        ),
       ),
       act: (cubit) => cubit.audit(),
       expect: () => [

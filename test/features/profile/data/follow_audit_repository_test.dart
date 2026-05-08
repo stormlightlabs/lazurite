@@ -263,61 +263,6 @@ void main() {
     });
   });
 
-  group('FollowAuditRepository.fetchAllFollows', () {
-    test('returns empty list when no follows', () async {
-      final client = _bluesky(pages: []);
-      final repo = _repo(client);
-
-      final result = await repo.fetchAllFollows(_ownerDid);
-
-      expect(result, isEmpty);
-    });
-
-    test('returns all records from a single page', () async {
-      final client = _bluesky(
-        pages: [
-          [(_uri('did:plc:alice'), 'did:plc:alice'), (_uri('did:plc:bob'), 'did:plc:bob')],
-        ],
-      );
-      final repo = _repo(client);
-
-      final result = await repo.fetchAllFollows(_ownerDid);
-
-      expect(result.length, 2);
-      expect(result[0].subjectDid, 'did:plc:alice');
-      expect(result[1].subjectDid, 'did:plc:bob');
-    });
-
-    test('extracts rkey from AT URI correctly', () async {
-      final client = _bluesky(
-        pages: [
-          [(_uri('did:plc:alice', 'rkey123'), 'did:plc:alice')],
-        ],
-      );
-      final repo = _repo(client);
-
-      final result = await repo.fetchAllFollows(_ownerDid);
-
-      expect(result.first.rkey, 'rkey123');
-    });
-
-    test('paginates across multiple pages until cursor is null', () async {
-      final client = _bluesky(
-        pages: [
-          [(_uri('did:plc:a1'), 'did:plc:a1')],
-          [(_uri('did:plc:a2'), 'did:plc:a2')],
-          [(_uri('did:plc:a3'), 'did:plc:a3')],
-        ],
-      );
-      final repo = _repo(client);
-
-      final result = await repo.fetchAllFollows(_ownerDid);
-
-      expect(result.length, 3);
-      expect(result.map((r) => r.subjectDid), containsAll(['did:plc:a1', 'did:plc:a2', 'did:plc:a3']));
-    });
-  });
-
   group('FollowAuditRepository.fetchFollowPage', () {
     test('returns one page of follow records and cursor', () async {
       final client = _bluesky(
