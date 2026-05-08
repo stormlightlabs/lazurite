@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lazurite/core/error_reporting/crash_report_bundle.dart';
+import 'package:lazurite/core/l10n/app_localizations.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -29,12 +31,15 @@ class CrashReportScreen extends StatefulWidget {
 }
 
 class _CrashReportScreenState extends State<CrashReportScreen> {
+  static const int _maxEmailStackTraceCharacters = 4000;
+
   late Future<CrashReportBundle> _reportFuture;
+  var _reportBuildFailed = false;
 
   @override
   void initState() {
     super.initState();
-    _reportFuture = _buildReport();
+    _reportFuture = _createReportFuture();
   }
 
   Future<CrashReportBundle> _buildReport() {
@@ -45,21 +50,39 @@ class _CrashReportScreenState extends State<CrashReportScreen> {
     return CrashReportBundle.fromFlutterErrorDetails(widget.details, todaysLogFileProvider: log.getTodaysLogFile);
   }
 
+  Future<CrashReportBundle> _createReportFuture() async {
+    await Future<void>.delayed(Duration.zero);
+    try {
+      return await _buildReport();
+    } catch (error, stackTrace) {
+      _reportBuildFailed = true;
+      return CrashReportBundle.fallbackFromFlutterErrorDetails(
+        widget.details,
+        reportError: error,
+        reportStackTrace: stackTrace,
+      );
+    }
+  }
+
   Future<void> _copyReport(CrashReportBundle report) async {
     final messenger = ScaffoldMessenger.maybeOf(context);
     await Clipboard.setData(ClipboardData(text: report.copyText));
     if (!mounted) {
       return;
     }
-    messenger?.showSnackBar(const SnackBar(content: Text('Crash report copied')));
+    messenger?.showSnackBar(SnackBar(content: Text(context.l10n.messageCrashReportCopied)));
   }
 
   Future<void> _emailReport(CrashReportBundle report) async {
     final messenger = ScaffoldMessenger.maybeOf(context);
+    final l10n = context.l10n;
     final uri = Uri(
       scheme: 'mailto',
       path: CrashReportScreen.supportEmail,
-      queryParameters: {'subject': 'Lazurite crash report', 'body': report.copyText},
+      queryParameters: {
+        'subject': l10n.subjectLazuriteCrashReport,
+        'body': l10n.formatCrashReportEmailBody(report.error, _stackTraceForEmail(report.stackTrace, l10n)),
+      },
     );
 
     final launcher = widget._emailLauncher ?? ((uri) => launchUrl(uri, mode: LaunchMode.externalApplication));
@@ -68,14 +91,29 @@ class _CrashReportScreenState extends State<CrashReportScreen> {
       return;
     }
     if (!launched) {
-      messenger?.showSnackBar(const SnackBar(content: Text('Unable to open email app')));
+      messenger?.showSnackBar(SnackBar(content: Text(l10n.messageUnableToOpenEmailApp)));
     }
+  }
+
+  void _retryReport() {
+    setState(() {
+      _reportBuildFailed = false;
+      _reportFuture = _createReportFuture();
+    });
+  }
+
+  String _stackTraceForEmail(String stackTrace, AppLocalizations l10n) {
+    if (stackTrace.length <= _maxEmailStackTraceCharacters) {
+      return stackTrace;
+    }
+    return '${stackTrace.substring(0, _maxEmailStackTraceCharacters)}\n${l10n.messageCrashReportEmailStackTraceTruncated}';
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final l10n = context.l10n;
 
     return Material(
       color: colorScheme.surface,
@@ -83,8 +121,17 @@ class _CrashReportScreenState extends State<CrashReportScreen> {
         child: FutureBuilder<CrashReportBundle>(
           future: _reportFuture,
           builder: (context, snapshot) {
-            final report = snapshot.data;
+            final report =
+                snapshot.data ??
+                (snapshot.hasError
+                    ? CrashReportBundle.fallbackFromFlutterErrorDetails(
+                        widget.details,
+                        reportError: snapshot.error,
+                        reportStackTrace: snapshot.stackTrace,
+                      )
+                    : null);
             final errorText = report?.error ?? widget.details.exceptionAsString();
+            final reportBuildFailed = snapshot.hasError || _reportBuildFailed;
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -95,13 +142,21 @@ class _CrashReportScreenState extends State<CrashReportScreen> {
                   children: [
                     Icon(Icons.error_outline, size: 48, color: colorScheme.error),
                     const SizedBox(height: 16),
-                    Text('Something went wrong', style: theme.textTheme.headlineSmall, textAlign: TextAlign.center),
+                    Text(l10n.errorGenericTitle, style: theme.textTheme.headlineSmall, textAlign: TextAlign.center),
                     const SizedBox(height: 8),
                     Text(
-                      'You can copy the crash report or open an email to send it to Stormlight Labs.',
+                      l10n.messageCrashReportInstructions,
                       style: theme.textTheme.bodyMedium,
                       textAlign: TextAlign.center,
                     ),
+                    if (reportBuildFailed) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        l10n.messageCrashReportPartial,
+                        style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.error),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                     const SizedBox(height: 20),
                     Wrap(
                       alignment: WrapAlignment.center,
@@ -111,26 +166,32 @@ class _CrashReportScreenState extends State<CrashReportScreen> {
                         FilledButton.icon(
                           onPressed: report == null ? null : () => unawaited(_copyReport(report)),
                           icon: const Icon(Icons.copy_outlined),
-                          label: const Text('Copy report'),
+                          label: Text(l10n.buttonCopyReport),
                         ),
                         OutlinedButton.icon(
                           onPressed: report == null ? null : () => unawaited(_emailReport(report)),
                           icon: const Icon(Icons.email_outlined),
-                          label: const Text('Email report'),
+                          label: Text(l10n.buttonEmailReport),
                         ),
+                        if (reportBuildFailed)
+                          TextButton.icon(
+                            onPressed: _retryReport,
+                            icon: const Icon(Icons.refresh_outlined),
+                            label: Text(l10n.buttonRetry),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 20),
-                    _ReportPreview(title: 'Error', text: errorText),
+                    _ReportPreview(title: l10n.labelCrashReportError, text: errorText),
                     const SizedBox(height: 12),
                     if (report == null)
                       const Center(child: CircularProgressIndicator())
                     else ...[
-                      _ReportPreview(title: 'Stack trace', text: report.stackTrace),
+                      _ReportPreview(title: l10n.labelCrashReportStackTrace, text: report.stackTrace),
                       const SizedBox(height: 12),
                       _ReportPreview(
-                        title: 'Relevant logs',
-                        text: report.relevantLogs.isEmpty ? 'No recent log lines were available.' : report.relevantLogs,
+                        title: l10n.labelCrashReportRelevantLogs,
+                        text: report.relevantLogs.isEmpty ? l10n.messageNoRecentLogLinesAvailable : report.relevantLogs,
                       ),
                     ],
                   ],

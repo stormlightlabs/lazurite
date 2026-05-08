@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:lazurite/core/logging/log_redactor.dart';
@@ -14,8 +16,30 @@ class CrashReportBundle {
     required this.relevantLogs,
   });
 
+  factory CrashReportBundle.fallbackFromFlutterErrorDetails(
+    FlutterErrorDetails details, {
+    Object? reportError,
+    StackTrace? reportStackTrace,
+    DateTime? generatedAt,
+  }) {
+    return CrashReportBundle(
+      generatedAt: generatedAt ?? DateTime.now(),
+      error: LogRedactor.redact(details.exceptionAsString()),
+      stackTrace: LogRedactor.redact(details.stack?.toString() ?? StackTrace.current.toString()),
+      library: _redactNullable(details.library),
+      context: _redactNullable(details.context?.toDescription()),
+      information: [
+        ..._collectInformation(details),
+        if (reportError != null) LogRedactor.redact('Crash report generation failed: $reportError'),
+        if (reportStackTrace != null) LogRedactor.redact(reportStackTrace.toString()),
+      ],
+      relevantLogs: '',
+    );
+  }
+
   static const int maxLogLines = 160;
   static const int maxLogCharacters = 24000;
+  static const int _maxLogBytesToRead = 96 * 1024;
 
   final DateTime generatedAt;
   final String error;
@@ -107,7 +131,19 @@ class CrashReportBundle {
       return '';
     }
 
-    final lines = (await file.readAsString())
+    final bytes = await _readTailBytes(file);
+    if (bytes.isEmpty) {
+      return '';
+    }
+
+    final fileLength = await file.length();
+    var decoded = utf8.decode(bytes, allowMalformed: true);
+    if (fileLength > bytes.length) {
+      final firstNewline = decoded.indexOf('\n');
+      decoded = firstNewline == -1 ? '' : decoded.substring(firstNewline + 1);
+    }
+
+    final lines = decoded
         .split('\n')
         .where((line) => line.trim().isNotEmpty)
         .map(LogRedactor.redact)
@@ -127,5 +163,22 @@ class CrashReportBundle {
     joined = firstNewline == -1 ? trimmed : trimmed.substring(firstNewline + 1);
     selected = joined.split('\n');
     return '[Earlier log lines omitted]\n${selected.join('\n')}';
+  }
+
+  static Future<List<int>> _readTailBytes(File file) async {
+    final fileLength = await file.length();
+    if (fileLength <= 0) {
+      return const [];
+    }
+
+    final bytesToRead = math.min(fileLength, _maxLogBytesToRead);
+    final start = fileLength - bytesToRead;
+    final randomAccessFile = await file.open();
+    try {
+      await randomAccessFile.setPosition(start);
+      return await randomAccessFile.read(bytesToRead);
+    } finally {
+      await randomAccessFile.close();
+    }
   }
 }

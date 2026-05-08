@@ -50,7 +50,13 @@ void main() {
     test('tails long log files to the latest relevant lines', () async {
       final tempDir = await Directory.systemTemp.createTemp('lazurite_crash_report_tail_test_');
       final logFile = File('${tempDir.path}/lazurite_2026-05-08.log');
-      await logFile.writeAsString(List.generate(200, (index) => '[I] line $index').join('\n'));
+      await logFile.writeAsString(
+        [
+          '[I] very early line',
+          ...List.generate(6000, (index) => '[I] filler line $index ${List.filled(80, 'x').join()}'),
+          ...List.generate(200, (index) => '[I] tail line $index'),
+        ].join('\n'),
+      );
       addTearDown(() async {
         if (await tempDir.exists()) {
           await tempDir.delete(recursive: true);
@@ -62,9 +68,27 @@ void main() {
         todaysLogFileProvider: () async => logFile,
       );
 
-      expect(report.relevantLogs, isNot(contains('[I] line 0')));
-      expect(report.relevantLogs, contains('[I] line 199'));
+      expect(report.relevantLogs, isNot(contains('[I] very early line')));
+      expect(report.relevantLogs, isNot(contains('[I] filler line 0')));
+      expect(report.relevantLogs, contains('[I] tail line 199'));
       expect(report.relevantLogs.split('\n'), hasLength(CrashReportBundle.maxLogLines));
+    });
+
+    test('builds fallback report when full report generation fails', () {
+      final details = FlutterErrorDetails(
+        exception: Exception('screen failed token=secret'),
+        stack: StackTrace.fromString('#0 BrokenWidget.build'),
+      );
+
+      final report = CrashReportBundle.fallbackFromFlutterErrorDetails(
+        details,
+        reportError: const FileSystemException('cannot read log', '/tmp/log'),
+      );
+
+      expect(report.error, contains('token: [REDACTED]'));
+      expect(report.stackTrace, contains('#0 BrokenWidget.build'));
+      expect(report.relevantLogs, isEmpty);
+      expect(report.information.single, contains('Crash report generation failed'));
     });
   });
 }

@@ -257,7 +257,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('AT Protocol Connection'), findsOneWidget);
-    expect(find.text('HANDLE'), findsOneWidget);
+    expect(find.text('Handle'), findsOneWidget);
     expect(find.text('@owais.bsky.social'), findsOneWidget);
     expect(find.text('DID'), findsOneWidget);
     expect(find.text('did:plc:lazurite123'), findsOneWidget);
