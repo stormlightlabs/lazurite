@@ -29,6 +29,10 @@
   "@buttonDelete": {
     "description": "Delete button label"
   },
+  "buttonDiscard": "Discard",
+  "@buttonDiscard": {
+    "description": "Discard button label"
+  },
   "buttonLoadMoreQuotes": "Load more quotes",
   "@buttonLoadMoreQuotes": {
     "description": "Button label to load additional quote posts"
@@ -57,6 +61,14 @@
   "@buttonOpen": {
     "description": "Open button label"
   },
+  "buttonOk": "OK",
+  "@buttonOk": {
+    "description": "OK button label"
+  },
+  "buttonPost": "Post",
+  "@buttonPost": {
+    "description": "Button label to publish a post"
+  },
   "buttonResetSignInData": "Reset Sign-In Data",
   "@buttonResetSignInData": {
     "description": "Button label to clear local sign-in data"
@@ -64,6 +76,14 @@
   "buttonRetry": "Retry",
   "@buttonRetry": {
     "description": "Retry button label"
+  },
+  "buttonSave": "Save",
+  "@buttonSave": {
+    "description": "Save button label"
+  },
+  "buttonSaveChanges": "Save Changes",
+  "@buttonSaveChanges": {
+    "description": "Button label to save post edits"
   },
   "buttonSignIn": "Sign In",
   "@buttonSignIn": {
@@ -92,6 +112,10 @@
   "commonNow": "now",
   "@commonNow": {
     "description": "Lowercase relative time label for the current moment"
+  },
+  "commonJustNow": "Just now",
+  "@commonJustNow": {
+    "description": "Relative time label for the current moment"
   },
   "commonNotCheckedYet": "Not checked yet",
   "@commonNotCheckedYet": {
@@ -124,6 +148,34 @@
   "dialogDeletePostTitle": "Delete Post?",
   "@dialogDeletePostTitle": {
     "description": "Confirmation dialog title before deleting a post"
+  },
+  "dialogDeleteDraftTitle": "Delete Draft?",
+  "@dialogDeleteDraftTitle": {
+    "description": "Confirmation dialog title before deleting a draft"
+  },
+  "dialogDiscardChangesContent": "You have unsaved edits. Discard them and leave?",
+  "@dialogDiscardChangesContent": {
+    "description": "Confirmation dialog body before leaving unsaved post edits"
+  },
+  "dialogDiscardChangesTitle": "Discard Changes?",
+  "@dialogDiscardChangesTitle": {
+    "description": "Confirmation dialog title before leaving unsaved post edits"
+  },
+  "dialogEditAlgorithmContent": "Lazurite saves edits by deleting and recreating the post record with the same URI. During re-indexing, ranking, counters, and search visibility can shift, and updates may take time to appear everywhere.",
+  "@dialogEditAlgorithmContent": {
+    "description": "Information dialog body explaining how post editing is implemented"
+  },
+  "dialogEditAlgorithmTitle": "How Post Editing Works",
+  "@dialogEditAlgorithmTitle": {
+    "description": "Information dialog title explaining how post editing works"
+  },
+  "dialogSaveDraftContent": "You have unsaved content. Would you like to save it as a draft?",
+  "@dialogSaveDraftContent": {
+    "description": "Confirmation dialog body before leaving compose with unsaved content"
+  },
+  "dialogSaveDraftTitle": "Save Draft?",
+  "@dialogSaveDraftTitle": {
+    "description": "Confirmation dialog title before leaving compose with unsaved content"
   },
   "dialogRemoveAccountContent": "Remove @{handle} from this device?",
   "@dialogRemoveAccountContent": {
@@ -363,6 +415,110 @@
       }
     }
   },
+  "formatComposeFailedToPickImage": "Failed to pick image: {error}",
+  "@formatComposeFailedToPickImage": {
+    "description": "Snackbar message when the image picker fails",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "permission denied"
+      }
+    }
+  },
+  "formatComposeFailedToPickVideo": "Failed to pick video: {error}",
+  "@formatComposeFailedToPickVideo": {
+    "description": "Snackbar message when the video picker fails",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "permission denied"
+      }
+    }
+  },
+  "formatComposeFailedToSaveChanges": "Failed to save changes: {error}",
+  "@formatComposeFailedToSaveChanges": {
+    "description": "Compose error message when saving edits fails with details",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "formatComposeFailedToSubmitPost": "Failed to submit post: {error}",
+  "@formatComposeFailedToSubmitPost": {
+    "description": "Compose error message when post submission fails with details",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "formatComposeImageTooLarge": "Image \"{fileName}\" is {sizeMb} MB - max 1 MB.",
+  "@formatComposeImageTooLarge": {
+    "description": "Compose validation error when an attached image is too large",
+    "placeholders": {
+      "fileName": {
+        "type": "String",
+        "example": "photo.png"
+      },
+      "sizeMb": {
+        "type": "String",
+        "example": "1.4"
+      }
+    }
+  },
+  "formatComposeQuotingHandle": "Quoting @{handle}",
+  "@formatComposeQuotingHandle": {
+    "description": "Compose quote preview label with the quoted author's handle",
+    "placeholders": {
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "formatComposeScheduledFor": "Scheduled for {dateTime}",
+  "@formatComposeScheduledFor": {
+    "description": "Compose scheduled post pill label",
+    "placeholders": {
+      "dateTime": {
+        "type": "String",
+        "example": "May 8, 2:30 PM"
+      }
+    }
+  },
+  "formatComposeVideoReadyWithAltText": "Ready - \"{altText}\"",
+  "@formatComposeVideoReadyWithAltText": {
+    "description": "Video attachment status when ready and alt text exists",
+    "placeholders": {
+      "altText": {
+        "type": "String",
+        "example": "A dog running through a park"
+      }
+    }
+  },
+  "formatComposeVideoTooLarge": "Video is {sizeMb} MB - exceeds the 100 MB limit.",
+  "@formatComposeVideoTooLarge": {
+    "description": "Compose validation error when a video is too large",
+    "placeholders": {
+      "sizeMb": {
+        "type": "String",
+        "example": "125.4"
+      }
+    }
+  },
+  "formatDraftCount": "{count, plural, =1{1 draft} other{{count} drafts}}",
+  "@formatDraftCount": {
+    "description": "Compose drafts panel count label",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
   "actionLikeThisPost": "like this post",
   "@actionLikeThisPost": {
     "description": "Offline action phrase for liking a post"
@@ -374,6 +530,10 @@
   "actionRepostThisPost": "repost this post",
   "@actionRepostThisPost": {
     "description": "Offline action phrase for reposting a post"
+  },
+  "actionPublishYourPost": "publish your post",
+  "@actionPublishYourPost": {
+    "description": "Offline action phrase for publishing a post"
   },
   "labelAbout": "About",
   "@labelAbout": {
@@ -459,6 +619,10 @@
   "@labelBluesky": {
     "description": "Bluesky source tab label"
   },
+  "labelAlt": "ALT",
+  "@labelAlt": {
+    "description": "Short all-caps label for media alt text controls"
+  },
   "labelCacheCleared": "Cache cleared",
   "@labelCacheCleared": {
     "description": "Snackbar message after clearing cache"
@@ -470,6 +634,10 @@
   "labelCleanFollows": "Clean Follows",
   "@labelCleanFollows": {
     "description": "Settings item for follow audit feature"
+  },
+  "labelClose": "Close",
+  "@labelClose": {
+    "description": "Close button tooltip"
   },
   "labelClearCache": "Clear Cache",
   "@labelClearCache": {
@@ -735,6 +903,10 @@
   "@labelDeletePost": {
     "description": "Post overflow menu item to delete a post"
   },
+  "labelDeleteDraft": "Delete draft",
+  "@labelDeleteDraft": {
+    "description": "Tooltip for deleting a draft"
+  },
   "labelEditPost": "Edit Post",
   "@labelEditPost": {
     "description": "Post overflow menu item to edit a post"
@@ -750,6 +922,10 @@
   "labelLikedPost": "Liked Post",
   "@labelLikedPost": {
     "description": "Fallback liked-post card title"
+  },
+  "labelMoreInfo": "More info",
+  "@labelMoreInfo": {
+    "description": "Tooltip for opening more information"
   },
   "labelLocal": "Local",
   "@labelLocal": {
@@ -806,6 +982,14 @@
   "labelSaveToBluesky": "Save to Bluesky",
   "@labelSaveToBluesky": {
     "description": "Post save menu item to create a cloud bookmark"
+  },
+  "labelSchedule": "Schedule",
+  "@labelSchedule": {
+    "description": "Compose toolbar schedule button tooltip"
+  },
+  "labelScheduled": "Scheduled",
+  "@labelScheduled": {
+    "description": "Scheduled draft badge label"
   },
   "labelSavedAccounts": "Saved accounts",
   "@labelSavedAccounts": {
@@ -866,6 +1050,10 @@
   "labelTroubleshooting": "Troubleshooting",
   "@labelTroubleshooting": {
     "description": "Troubleshooting settings section label"
+  },
+  "labelVideo": "Video",
+  "@labelVideo": {
+    "description": "Fallback video label"
   },
   "labelTopics": "Topics",
   "@labelTopics": {
@@ -1007,6 +1195,182 @@
   "@messageLikedPostsUnavailable": {
     "description": "Message shown when liked posts dependencies are unavailable"
   },
+  "messageChangesSaved": "Changes saved.",
+  "@messageChangesSaved": {
+    "description": "Snackbar message after post edits are saved"
+  },
+  "messageComposeAddAltText": "Add alt text",
+  "@messageComposeAddAltText": {
+    "description": "Tooltip for adding video alt text"
+  },
+  "messageComposeAddImage": "Add image",
+  "@messageComposeAddImage": {
+    "description": "Compose toolbar add image tooltip"
+  },
+  "messageComposeAddVideo": "Add video",
+  "@messageComposeAddVideo": {
+    "description": "Compose toolbar add video tooltip"
+  },
+  "messageComposeClearScheduledTime": "Clear scheduled time",
+  "@messageComposeClearScheduledTime": {
+    "description": "Tooltip for clearing scheduled compose time"
+  },
+  "messageComposeDescribeImage": "Describe the image",
+  "@messageComposeDescribeImage": {
+    "description": "Image alt text field placeholder"
+  },
+  "messageComposeDescribeVideo": "Describe the video",
+  "@messageComposeDescribeVideo": {
+    "description": "Video alt text field placeholder"
+  },
+  "messageComposeDraftSaved": "Draft saved",
+  "@messageComposeDraftSaved": {
+    "description": "Snackbar message after saving a draft"
+  },
+  "messageComposeDrafts": "Drafts",
+  "@messageComposeDrafts": {
+    "description": "Compose drafts panel title and toolbar tooltip"
+  },
+  "messageComposeEditNotice": "Edits are saved by replacing the record while keeping this post URI. Ranking, counts, and visibility may shift while networks re-index.",
+  "@messageComposeEditNotice": {
+    "description": "Compose edit mode notice banner"
+  },
+  "messageComposeImageAltTextTitle": "Alt text",
+  "@messageComposeImageAltTextTitle": {
+    "description": "Image alt text dialog title"
+  },
+  "messageComposeImageMaxCount": "Maximum 4 images allowed",
+  "@messageComposeImageMaxCount": {
+    "description": "Compose validation message when too many images are attached"
+  },
+  "messageComposeImageMustBeJpegPngWebp": "Image must be JPEG, PNG, or WebP",
+  "@messageComposeImageMustBeJpegPngWebp": {
+    "description": "Compose validation message for unsupported image extensions"
+  },
+  "messageComposeImageMustBeUnder1Mb": "Image must be smaller than 1MB",
+  "@messageComposeImageMustBeUnder1Mb": {
+    "description": "Compose validation message for image picker size validation"
+  },
+  "messageComposeNoDraftsSaved": "No drafts saved",
+  "@messageComposeNoDraftsSaved": {
+    "description": "Empty state text in compose drafts panel"
+  },
+  "messageComposeNoText": "(No text)",
+  "@messageComposeNoText": {
+    "description": "Fallback draft content label when a draft has no text"
+  },
+  "messageComposePlaceholder": "What''s on your mind?",
+  "@messageComposePlaceholder": {
+    "description": "Compose text field placeholder"
+  },
+  "messageComposePreviewUnavailable": "Preview unavailable",
+  "@messageComposePreviewUnavailable": {
+    "description": "Video alt text preview unavailable message"
+  },
+  "messageComposeQuotingPost": "Quoting post",
+  "@messageComposeQuotingPost": {
+    "description": "Compose quote preview label without an author handle"
+  },
+  "messageComposeRemoveExistingMediaBeforeVideo": "Remove existing media before adding a video",
+  "@messageComposeRemoveExistingMediaBeforeVideo": {
+    "description": "Compose validation message when a video cannot be added because other media exists"
+  },
+  "messageComposeRemoveImage": "Remove image",
+  "@messageComposeRemoveImage": {
+    "description": "Tooltip for removing an image attachment"
+  },
+  "messageComposeRemoveQuotedPost": "Remove quoted post",
+  "@messageComposeRemoveQuotedPost": {
+    "description": "Tooltip for removing a quoted post from compose"
+  },
+  "messageComposeSaveDraft": "Save draft",
+  "@messageComposeSaveDraft": {
+    "description": "Compose toolbar save draft tooltip"
+  },
+  "messageComposeVideoAltTextTitle": "Video alt text",
+  "@messageComposeVideoAltTextTitle": {
+    "description": "Video alt text dialog title"
+  },
+  "messageVideoCheckingUploadLimits": "Checking upload limits...",
+  "@messageVideoCheckingUploadLimits": {
+    "description": "Video attachment status while checking upload limits"
+  },
+  "messageVideoDailyUploadLimitReached": "Daily video upload limit reached.",
+  "@messageVideoDailyUploadLimitReached": {
+    "description": "Video upload validation message when the daily limit is reached"
+  },
+  "messageVideoProcessing": "Processing...",
+  "@messageVideoProcessing": {
+    "description": "Video attachment processing status"
+  },
+  "messageVideoProcessingFailed": "Video processing failed.",
+  "@messageVideoProcessingFailed": {
+    "description": "Video attachment error when processing fails"
+  },
+  "messageVideoProcessingTimedOut": "Video processing timed out.",
+  "@messageVideoProcessingTimedOut": {
+    "description": "Video attachment error when processing times out"
+  },
+  "messageVideoReady": "Ready",
+  "@messageVideoReady": {
+    "description": "Video attachment ready status"
+  },
+  "messageVideoReadyToUpload": "Ready to upload",
+  "@messageVideoReadyToUpload": {
+    "description": "Video attachment ready-to-upload status"
+  },
+  "messageVideoUploadFailed": "Upload failed - please try again.",
+  "@messageVideoUploadFailed": {
+    "description": "Video upload generic failure message"
+  },
+  "messageVideoUploading": "Uploading...",
+  "@messageVideoUploading": {
+    "description": "Video attachment uploading status"
+  },
+  "errorComposeChangedElsewhere": "This post was changed elsewhere. Reopen it and try editing again.",
+  "@errorComposeChangedElsewhere": {
+    "description": "Compose edit error when the post changed remotely"
+  },
+  "errorComposeCouldNotConfirmEdit": "Edit was submitted but could not be confirmed yet. Please reopen the post and verify.",
+  "@errorComposeCouldNotConfirmEdit": {
+    "description": "Compose edit error when an edit cannot be confirmed"
+  },
+  "errorComposeCouldNotSaveAndConfirmRecovery": "Could not save changes and we could not confirm recovery. Reopen the thread and verify the post.",
+  "@errorComposeCouldNotSaveAndConfirmRecovery": {
+    "description": "Compose edit recovery error when save and recovery status are unknown"
+  },
+  "errorComposeEditContextMissing": "Edit context is missing. Please reopen the editor and try again.",
+  "@errorComposeEditContextMissing": {
+    "description": "Compose edit validation error when edit context is missing"
+  },
+  "errorComposeFailedToCreatePost": "Failed to create post. Please try again.",
+  "@errorComposeFailedToCreatePost": {
+    "description": "Compose error when creating a post fails"
+  },
+  "errorComposeFailedToSaveChanges": "Failed to save changes. Please try again.",
+  "@errorComposeFailedToSaveChanges": {
+    "description": "Compose error when saving post edits fails"
+  },
+  "errorComposeFailedToUploadImage": "Failed to upload image. Please try again.",
+  "@errorComposeFailedToUploadImage": {
+    "description": "Compose error when image upload fails"
+  },
+  "errorComposeImageFileNotFound": "Image file not found. Please re-attach and try again.",
+  "@errorComposeImageFileNotFound": {
+    "description": "Compose error when an attached image file is missing"
+  },
+  "errorComposeNetworkSavedAsDraft": "Network error - post saved as draft.",
+  "@errorComposeNetworkSavedAsDraft": {
+    "description": "Compose error when submission fails and is saved as a draft"
+  },
+  "errorComposeOriginalPostRestored": "Could not save changes. Your original post was restored.",
+  "@errorComposeOriginalPostRestored": {
+    "description": "Compose edit error when the original post was restored after failure"
+  },
+  "errorComposeUnsupportedImageFormat": "Unsupported image format. Use JPEG, PNG, or WebP.",
+  "@errorComposeUnsupportedImageFormat": {
+    "description": "Compose validation error for unsupported image bytes"
+  },
   "messageNoBookmarks": "No bookmarks",
   "@messageNoBookmarks": {
     "description": "Empty state title when there are no bookmarks"
@@ -1074,6 +1438,10 @@
   "messageReplyInThread": "Reply in a thread",
   "@messageReplyInThread": {
     "description": "Post card reply context label when parent post details are unavailable"
+  },
+  "messageReplyingTo": "Replying to",
+  "@messageReplyingTo": {
+    "description": "Compose reply banner prefix before the replied-to handle"
   },
   "messageShareThisPostSubtitle": "Share this post",
   "@messageShareThisPostSubtitle": {

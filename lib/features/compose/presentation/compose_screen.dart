@@ -10,12 +10,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/data/link_preview_service.dart';
-import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
@@ -24,6 +24,7 @@ import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/external_link_preview_card.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
+import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:video_player/video_player.dart';
 
 class ComposeScreen extends StatefulWidget {
@@ -407,7 +408,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
     final state = context.read<ComposeBloc>().state;
     if (!state.canAddMoreMedia) {
       if (mounted) {
-        showAppSnackBar(context, 'Maximum 4 images allowed', isError: true);
+        showAppSnackBar(context, context.l10n.messageComposeImageMaxCount, isError: true);
       }
       return;
     }
@@ -426,7 +427,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
         const maxSize = 1 * 1024 * 1024;
         if (fileSize > maxSize) {
           if (mounted) {
-            showAppSnackBar(context, 'Image must be smaller than 1MB', isError: true);
+            showAppSnackBar(context, context.l10n.messageComposeImageMustBeUnder1Mb, isError: true);
           }
           return;
         }
@@ -435,7 +436,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
         const validExtensions = ['jpg', 'jpeg', 'png', 'webp'];
         if (!validExtensions.contains(extension)) {
           if (mounted) {
-            showAppSnackBar(context, 'Image must be JPEG, PNG, or WebP', isError: true);
+            showAppSnackBar(context, context.l10n.messageComposeImageMustBeJpegPngWebp, isError: true);
           }
           return;
         }
@@ -452,7 +453,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackBar(context, 'Failed to pick image: $e', isError: true);
+        showAppSnackBar(context, context.l10n.formatComposeFailedToPickImage(e), isError: true);
       }
     }
   }
@@ -461,7 +462,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
     final state = context.read<ComposeBloc>().state;
     if (!state.canAddVideo) {
       if (mounted) {
-        showAppSnackBar(context, 'Remove existing media before adding a video', isError: true);
+        showAppSnackBar(context, context.l10n.messageComposeRemoveExistingMediaBeforeVideo, isError: true);
       }
       return;
     }
@@ -473,7 +474,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackBar(context, 'Failed to pick video: $e', isError: true);
+        showAppSnackBar(context, context.l10n.formatComposeFailedToPickVideo(e), isError: true);
       }
     }
   }
@@ -544,35 +545,35 @@ class _ComposeScreenState extends State<ComposeScreen> {
     }
   }
 
-  String _formatDraftTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.isNegative) {
-      return 'Just now';
-    }
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    } else {
-      return DateFormat('MMM d').format(dateTime);
-    }
+  String _formatDraftTime(BuildContext context, DateTime dateTime) {
+    return formatRelativeTime(
+      dateTime,
+      nowLabel: context.l10n.commonJustNow,
+      includeAgo: true,
+      locale: Localizations.localeOf(context).toString(),
+    );
   }
 
-  String _videoStatusLabel(VideoAttachment video) {
+  String _videoStatusLabel(BuildContext context, VideoAttachment video) {
     return switch (video.status) {
-      VideoUploadStatus.idle => 'Ready to upload',
-      VideoUploadStatus.checkingLimits => 'Checking upload limits…',
-      VideoUploadStatus.uploading => video.uploadProgress > 0 ? 'Uploading… ${video.uploadProgress}%' : 'Uploading…',
-      VideoUploadStatus.processing => video.uploadProgress > 0 ? 'Processing… ${video.uploadProgress}%' : 'Processing…',
-      VideoUploadStatus.ready => video.altText.isNotEmpty ? 'Ready · "${video.altText}"' : 'Ready',
-      VideoUploadStatus.error => video.errorMessage ?? 'Upload failed',
+      VideoUploadStatus.idle => context.l10n.messageVideoReadyToUpload,
+      VideoUploadStatus.checkingLimits => context.l10n.messageVideoCheckingUploadLimits,
+      VideoUploadStatus.uploading =>
+        video.uploadProgress > 0
+            ? '${context.l10n.messageVideoUploading} ${video.uploadProgress}%'
+            : context.l10n.messageVideoUploading,
+      VideoUploadStatus.processing =>
+        video.uploadProgress > 0
+            ? '${context.l10n.messageVideoProcessing} ${video.uploadProgress}%'
+            : context.l10n.messageVideoProcessing,
+      VideoUploadStatus.ready =>
+        video.altText.isNotEmpty
+            ? context.l10n.formatComposeVideoReadyWithAltText(video.altText)
+            : context.l10n.messageVideoReady,
+      VideoUploadStatus.error => _localizedComposeError(
+        context,
+        video.errorMessage ?? context.l10n.messageVideoUploadFailed,
+      ),
     };
   }
 
@@ -607,9 +608,12 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Drafts', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                         Text(
-                          '${state.drafts.length} draft${state.drafts.length == 1 ? '' : 's'}',
+                          context.l10n.messageComposeDrafts,
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        Text(
+                          context.l10n.formatDraftCount(state.drafts.length),
                           style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                       ],
@@ -625,7 +629,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 26),
                       child: Center(
                         child: Text(
-                          'No drafts saved',
+                          context.l10n.messageComposeNoDraftsSaved,
                           style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                       ),
@@ -640,7 +644,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                           final draft = state.drafts[index];
                           return _DraftListItem(
                             draft: draft,
-                            formattedTime: _formatDraftTime(draft.updatedAt),
+                            formattedTime: _formatDraftTime(context, draft.updatedAt),
                             onTap: () {
                               setState(() => _showDrafts = false);
                               context.read<ComposeBloc>().add(DraftLoaded(draft.id));
@@ -649,9 +653,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
                               final bloc = context.read<ComposeBloc>();
                               showConfirmationDialog(
                                 context: context,
-                                title: const Text('Delete Draft?'),
-                                content: const Text('This action cannot be undone.'),
-                                confirmLabel: 'Delete',
+                                title: Text(context.l10n.dialogDeleteDraftTitle),
+                                content: Text(context.l10n.dialogDeletePostContent),
+                                confirmLabel: context.l10n.buttonDelete,
                                 confirmDestructive: true,
                               ).then((confirmed) {
                                 if (confirmed && mounted) {
@@ -748,7 +752,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  quotedHandle != null && quotedHandle.isNotEmpty ? 'Quoting @$quotedHandle' : 'Quoting post',
+                  quotedHandle != null && quotedHandle.isNotEmpty
+                      ? context.l10n.formatComposeQuotingHandle(quotedHandle)
+                      : context.l10n.messageComposeQuotingPost,
                   style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 if (quotedText.isNotEmpty) ...[
@@ -767,7 +773,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
             onPressed: () => context.read<ComposeBloc>().add(const QuoteContextCleared()),
             icon: const Icon(Icons.close),
             visualDensity: VisualDensity.compact,
-            tooltip: 'Remove quoted post',
+            tooltip: context.l10n.messageComposeRemoveQuotedPost,
           ),
         ],
       ),
@@ -807,19 +813,16 @@ class _ComposeScreenState extends State<ComposeScreen> {
     if (context.read<ComposeBloc>().state.isEditing) return;
     context.read<ComposeBloc>().add(const DraftSaved());
     if (mounted) {
-      showAppSnackBar(context, 'Draft saved');
+      showAppSnackBar(context, context.l10n.messageComposeDraftSaved);
     }
   }
 
   Future<void> _showEditAlgorithmInfo() async {
     await showConfirmationDialog(
       context: context,
-      title: const Text('How Post Editing Works'),
-      content: const Text(
-        'Lazurite saves edits by deleting and recreating the post record with the same URI. During re-indexing, '
-        'ranking, counters, and search visibility can shift, and updates may take time to appear everywhere.',
-      ),
-      confirmLabel: 'OK',
+      title: Text(context.l10n.dialogEditAlgorithmTitle),
+      content: Text(context.l10n.dialogEditAlgorithmContent),
+      confirmLabel: context.l10n.buttonOk,
       showCancel: false,
     );
   }
@@ -834,9 +837,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
       if (state.isDraftDirty) {
         showConfirmationDialog(
           context: context,
-          title: const Text('Discard Changes?'),
-          content: const Text('You have unsaved edits. Discard them and leave?'),
-          confirmLabel: 'Discard',
+          title: Text(context.l10n.dialogDiscardChangesTitle),
+          content: Text(context.l10n.dialogDiscardChangesContent),
+          confirmLabel: context.l10n.buttonDiscard,
         ).then((shouldDiscard) {
           if (shouldDiscard && mounted) {
             navigator.pop(false);
@@ -851,10 +854,10 @@ class _ComposeScreenState extends State<ComposeScreen> {
     if (hasContent && state.isDraftDirty) {
       showConfirmationDialog(
         context: context,
-        title: const Text('Save Draft?'),
-        content: const Text('You have unsaved content. Would you like to save it as a draft?'),
-        cancelLabel: 'Discard',
-        confirmLabel: 'Save',
+        title: Text(context.l10n.dialogSaveDraftTitle),
+        content: Text(context.l10n.dialogSaveDraftContent),
+        cancelLabel: context.l10n.buttonDiscard,
+        confirmLabel: context.l10n.buttonSave,
       ).then((shouldSave) {
         if (shouldSave) {
           _saveDraft();
@@ -887,7 +890,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
       }
     }
 
-    return 'Lazurite';
+    return context.l10n.appTitle;
   }
 
   Widget _buildComposerAvatar() {
@@ -926,37 +929,35 @@ class _ComposeScreenState extends State<ComposeScreen> {
     );
   }
 
-  Widget _buildComposerTextArea() {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildComposerAvatar(),
-            const SizedBox(width: 12),
-            Expanded(
-              child: TextField(
-                controller: _textController,
-                focusNode: _textFocusNode,
-                autofocus: true,
-                maxLines: null,
-                expands: true,
-                textAlignVertical: TextAlignVertical.top,
-                decoration: InputDecoration(
-                  hintText: "What's on your mind?",
-                  hintStyle: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.zero,
-                ),
-                style: theme.textTheme.bodyLarge?.copyWith(height: 1.5, fontSize: 16),
+  Widget _buildComposerTextArea() => Expanded(
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildComposerAvatar(),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              controller: _textController,
+              focusNode: _textFocusNode,
+              autofocus: true,
+              maxLines: null,
+              expands: true,
+              textAlignVertical: TextAlignVertical.top,
+              decoration: InputDecoration(
+                hintText: context.l10n.messageComposePlaceholder,
+                hintStyle: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
               ),
+              style: theme.textTheme.bodyLarge?.copyWith(height: 1.5, fontSize: 16),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 
   Widget _buildScheduledPill(ComposeState state) {
     if (!state.hasScheduledTime) {
@@ -980,14 +981,16 @@ class _ComposeScreenState extends State<ComposeScreen> {
             Icon(Icons.schedule, size: 15, color: colorScheme.onPrimary),
             const SizedBox(width: 7),
             Text(
-              'Scheduled for ${DateFormat('MMM d, h:mm a').format(state.scheduledAt!)}',
+              context.l10n.formatComposeScheduledFor(
+                DateFormat.yMMMd(Localizations.localeOf(context).toString()).add_jm().format(state.scheduledAt!),
+              ),
               style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onPrimary, fontWeight: FontWeight.w600),
             ),
             const SizedBox(width: 2),
             IconButton(
               onPressed: () => context.read<ComposeBloc>().add(const ScheduleCleared()),
               icon: Icon(Icons.close, size: 16, color: colorScheme.onPrimary),
-              tooltip: 'Clear scheduled time',
+              tooltip: context.l10n.messageComposeClearScheduledTime,
               constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
               padding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
@@ -1038,7 +1041,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
 
         if (state.isSuccess) {
           if (state.isEditing) {
-            showAppSnackBar(context, 'Changes saved.', behavior: SnackBarBehavior.floating);
+            showAppSnackBar(context, context.l10n.messageChangesSaved, behavior: SnackBarBehavior.floating);
           }
           Navigator.of(context).pop(
             state.isEditing
@@ -1053,7 +1056,12 @@ class _ComposeScreenState extends State<ComposeScreen> {
         }
 
         if (state.hasError && state.errorMessage != null) {
-          showAppSnackBar(context, state.errorMessage!, behavior: SnackBarBehavior.floating, isError: true);
+          showAppSnackBar(
+            context,
+            _localizedComposeError(context, state.errorMessage!),
+            behavior: SnackBarBehavior.floating,
+            isError: true,
+          );
         }
       },
       child: PopScope(
@@ -1069,11 +1077,14 @@ class _ComposeScreenState extends State<ComposeScreen> {
             backgroundColor: theme.colorScheme.surface,
             surfaceTintColor: Colors.transparent,
             shape: Border(bottom: BorderSide(color: theme.colorScheme.outlineVariant)),
-            leading: TextButton(onPressed: () => _handleBackNavigation(context), child: const Text('Cancel')),
+            leading: TextButton(
+              onPressed: () => _handleBackNavigation(context),
+              child: Text(context.l10n.buttonCancel),
+            ),
             leadingWidth: 80,
             title: BlocBuilder<ComposeBloc, ComposeState>(
               builder: (context, state) => Text(
-                state.isEditing ? 'Edit Post' : 'New Post',
+                state.isEditing ? context.l10n.labelEditPost : context.l10n.labelNewPost,
                 style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
@@ -1091,13 +1102,16 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     ),
                     child: state.isSubmitting
                         ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                        : Text(state.isEditing ? 'Save Changes' : 'Post'),
+                        : Text(state.isEditing ? context.l10n.buttonSaveChanges : context.l10n.buttonPost),
                   );
 
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: isOffline
-                        ? Tooltip(message: offlineActionMessage('publish your post'), child: button)
+                        ? Tooltip(
+                            message: context.l10n.formatOfflineReconnectAction(context.l10n.actionPublishYourPost),
+                            child: button,
+                          )
                         : button,
                   );
                 },
@@ -1124,15 +1138,14 @@ class _ComposeScreenState extends State<ComposeScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'Edits are saved by replacing the record while keeping this post URI. Ranking, '
-                                'counts, and visibility may shift while networks re-index.',
+                                context.l10n.messageComposeEditNotice,
                                 style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                               ),
                             ),
                             IconButton(
                               onPressed: _showEditAlgorithmInfo,
                               icon: const Icon(Icons.help_outline),
-                              tooltip: 'More info',
+                              tooltip: context.l10n.labelMoreInfo,
                             ),
                           ],
                         ),
@@ -1155,7 +1168,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                               Icon(Icons.reply, size: 16, color: theme.colorScheme.onSurfaceVariant),
                               const SizedBox(width: 8),
                               Text(
-                                'Replying to ',
+                                '${context.l10n.messageReplyingTo} ',
                                 style: Theme.of(
                                   context,
                                 ).textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -1237,7 +1250,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                                       constraints: const BoxConstraints(minWidth: 40, minHeight: 30),
                                       child: Center(
                                         child: Text(
-                                          'ALT',
+                                          context.l10n.labelAlt,
                                           style: theme.textTheme.labelSmall?.copyWith(
                                             color: attachment.altText.isNotEmpty
                                                 ? theme.colorScheme.onPrimary
@@ -1261,7 +1274,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                                     style: IconButton.styleFrom(backgroundColor: Colors.black54),
                                     onPressed: () => context.read<ComposeBloc>().add(MediaRemoved(index)),
                                     icon: const Icon(Icons.close, size: 16, color: Colors.white),
-                                    tooltip: 'Remove image',
+                                    tooltip: context.l10n.messageComposeRemoveImage,
                                   ),
                                 ),
                               ),
@@ -1327,7 +1340,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  _videoStatusLabel(video),
+                                  _videoStatusLabel(context, video),
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: video.hasError
                                         ? theme.colorScheme.error
@@ -1349,7 +1362,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                           if (video.isReady) ...[
                             IconButton(
                               icon: const Icon(Icons.subtitles_outlined),
-                              tooltip: 'Add alt text',
+                              tooltip: context.l10n.messageComposeAddAltText,
                               onPressed: () => _showVideoAltTextDialog(video),
                               color: video.altText.isNotEmpty
                                   ? theme.colorScheme.primary
@@ -1360,6 +1373,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                             icon: const Icon(Icons.close),
                             onPressed: () => context.read<ComposeBloc>().add(const VideoRemoved()),
                             color: theme.colorScheme.onSurfaceVariant,
+                            tooltip: context.l10n.buttonRemove,
                           ),
                         ],
                       ),
@@ -1388,7 +1402,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                             if (state.isEditing) return const SizedBox.shrink();
                             return _buildToolbarIconButton(
                               icon: Icons.image_outlined,
-                              tooltip: 'Add image',
+                              tooltip: context.l10n.messageComposeAddImage,
                               onPressed: state.canAddMoreMedia ? _pickImage : null,
                             );
                           },
@@ -1398,7 +1412,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                             if (state.isEditing) return const SizedBox.shrink();
                             return _buildToolbarIconButton(
                               icon: Icons.videocam_outlined,
-                              tooltip: 'Add video',
+                              tooltip: context.l10n.messageComposeAddVideo,
                               onPressed: state.canAddVideo ? _pickVideo : null,
                             );
                           },
@@ -1413,7 +1427,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                                 state.hasScheduledTime;
                             return _buildToolbarIconButton(
                               icon: Icons.save_outlined,
-                              tooltip: 'Save draft',
+                              tooltip: context.l10n.messageComposeSaveDraft,
                               onPressed: hasDraftableContent ? _saveDraft : null,
                             );
                           },
@@ -1423,7 +1437,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                             if (state.isEditing) return const SizedBox.shrink();
                             return _buildToolbarIconButton(
                               icon: Icons.drive_file_rename_outline,
-                              tooltip: 'Drafts',
+                              tooltip: context.l10n.messageComposeDrafts,
                               onPressed: _toggleDrafts,
                               isActive: _showDrafts,
                             );
@@ -1434,7 +1448,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                             if (state.isEditing) return const SizedBox.shrink();
                             return _buildToolbarIconButton(
                               icon: Icons.schedule,
-                              tooltip: 'Schedule',
+                              tooltip: context.l10n.labelSchedule,
                               onPressed: _showSchedulePicker,
                               isActive: state.hasScheduledTime,
                             );
@@ -1456,6 +1470,55 @@ class _ComposeScreenState extends State<ComposeScreen> {
         ),
       ),
     );
+  }
+
+  String _localizedComposeError(BuildContext context, String message) {
+    final imageTooLarge = RegExp(r'^Image "(.+)" is ([0-9.]+) MB .+ max 1 MB\.$').firstMatch(message);
+    if (imageTooLarge != null) {
+      return context.l10n.formatComposeImageTooLarge(imageTooLarge.group(1)!, imageTooLarge.group(2)!);
+    }
+
+    final videoTooLarge = RegExp(r'^Video is ([0-9.]+) MB .+ exceeds the 100 MB limit\.$').firstMatch(message);
+    if (videoTooLarge != null) {
+      return context.l10n.formatComposeVideoTooLarge(videoTooLarge.group(1)!);
+    }
+
+    if (message.startsWith('Failed to pick image: ')) {
+      return context.l10n.formatComposeFailedToPickImage(message.substring('Failed to pick image: '.length));
+    }
+    if (message.startsWith('Failed to pick video: ')) {
+      return context.l10n.formatComposeFailedToPickVideo(message.substring('Failed to pick video: '.length));
+    }
+    if (message.startsWith('Failed to save changes: ')) {
+      return context.l10n.formatComposeFailedToSaveChanges(message.substring('Failed to save changes: '.length));
+    }
+    if (message.startsWith('Failed to submit post: ')) {
+      return context.l10n.formatComposeFailedToSubmitPost(message.substring('Failed to submit post: '.length));
+    }
+    if (message.startsWith('Upload failed: ')) {
+      return context.l10n.messageVideoUploadFailed;
+    }
+
+    return switch (message) {
+      'Daily video upload limit reached.' => context.l10n.messageVideoDailyUploadLimitReached,
+      'Upload failed — please try again.' => context.l10n.messageVideoUploadFailed,
+      'Video processing failed.' => context.l10n.messageVideoProcessingFailed,
+      'Video processing timed out.' => context.l10n.messageVideoProcessingTimedOut,
+      'Edit context is missing. Please reopen the editor and try again.' => context.l10n.errorComposeEditContextMissing,
+      'Failed to save changes. Please try again.' => context.l10n.errorComposeFailedToSaveChanges,
+      'Image file not found. Please re-attach and try again.' => context.l10n.errorComposeImageFileNotFound,
+      'Unsupported image format. Use JPEG, PNG, or WebP.' => context.l10n.errorComposeUnsupportedImageFormat,
+      'Failed to upload image. Please try again.' => context.l10n.errorComposeFailedToUploadImage,
+      'Failed to create post. Please try again.' => context.l10n.errorComposeFailedToCreatePost,
+      'Network error — post saved as draft.' => context.l10n.errorComposeNetworkSavedAsDraft,
+      'This post was changed elsewhere. Reopen it and try editing again.' => context.l10n.errorComposeChangedElsewhere,
+      'Could not save changes. Your original post was restored.' => context.l10n.errorComposeOriginalPostRestored,
+      'Could not save changes and we could not confirm recovery. Reopen the thread and verify the post.' =>
+        context.l10n.errorComposeCouldNotSaveAndConfirmRecovery,
+      'Edit was submitted but could not be confirmed yet. Please reopen the post and verify.' =>
+        context.l10n.errorComposeCouldNotConfirmEdit,
+      _ => message,
+    };
   }
 }
 
@@ -1484,7 +1547,7 @@ class _DraftListItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    draft.content.isEmpty ? '(No text)' : draft.content,
+                    draft.content.isEmpty ? context.l10n.messageComposeNoText : draft.content,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyMedium?.copyWith(height: 1.35),
@@ -1502,7 +1565,7 @@ class _DraftListItem extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(color: colorScheme.primary, borderRadius: BorderRadius.circular(4)),
                           child: Text(
-                            'Scheduled',
+                            context.l10n.labelScheduled,
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: colorScheme.onPrimary,
                               fontWeight: FontWeight.w700,
@@ -1518,7 +1581,7 @@ class _DraftListItem extends StatelessWidget {
             IconButton(
               icon: Icon(Icons.delete_outline, color: colorScheme.error),
               onPressed: onDelete,
-              tooltip: 'Delete draft',
+              tooltip: context.l10n.labelDeleteDraft,
               visualDensity: VisualDensity.compact,
             ),
           ],
@@ -1636,8 +1699,14 @@ class _ImageAltTextDialogState extends State<_ImageAltTextDialog> {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text('Alt text', style: theme.textTheme.titleLarge)),
-                  IconButton(tooltip: 'Close', onPressed: widget.onCancel, icon: const Icon(Icons.close)),
+                  Expanded(
+                    child: Text(context.l10n.messageComposeImageAltTextTitle, style: theme.textTheme.titleLarge),
+                  ),
+                  IconButton(
+                    tooltip: context.l10n.labelClose,
+                    onPressed: widget.onCancel,
+                    icon: const Icon(Icons.close),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -1665,15 +1734,18 @@ class _ImageAltTextDialogState extends State<_ImageAltTextDialog> {
                 maxLines: 5,
                 maxLength: 1000,
                 textInputAction: TextInputAction.newline,
-                decoration: const InputDecoration(hintText: 'Describe the image', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  hintText: context.l10n.messageComposeDescribeImage,
+                  border: const OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(onPressed: widget.onCancel, child: const Text('Cancel')),
+                  TextButton(onPressed: widget.onCancel, child: Text(context.l10n.buttonCancel)),
                   const SizedBox(width: 8),
-                  FilledButton(onPressed: () => widget.onSave(_controller.text), child: const Text('Save')),
+                  FilledButton(onPressed: () => widget.onSave(_controller.text), child: Text(context.l10n.buttonSave)),
                 ],
               ),
             ],
@@ -1723,8 +1795,14 @@ class _VideoAltTextDialogState extends State<_VideoAltTextDialog> {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text('Video alt text', style: theme.textTheme.titleLarge)),
-                  IconButton(tooltip: 'Close', onPressed: widget.onCancel, icon: const Icon(Icons.close)),
+                  Expanded(
+                    child: Text(context.l10n.messageComposeVideoAltTextTitle, style: theme.textTheme.titleLarge),
+                  ),
+                  IconButton(
+                    tooltip: context.l10n.labelClose,
+                    onPressed: widget.onCancel,
+                    icon: const Icon(Icons.close),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -1737,15 +1815,18 @@ class _VideoAltTextDialogState extends State<_VideoAltTextDialog> {
                 maxLines: 5,
                 maxLength: 1000,
                 textInputAction: TextInputAction.newline,
-                decoration: const InputDecoration(hintText: 'Describe the video', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  hintText: context.l10n.messageComposeDescribeVideo,
+                  border: const OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(onPressed: widget.onCancel, child: const Text('Cancel')),
+                  TextButton(onPressed: widget.onCancel, child: Text(context.l10n.buttonCancel)),
                   const SizedBox(width: 8),
-                  FilledButton(onPressed: () => widget.onSave(_controller.text), child: const Text('Save')),
+                  FilledButton(onPressed: () => widget.onSave(_controller.text), child: Text(context.l10n.buttonSave)),
                 ],
               ),
             ],
@@ -1911,7 +1992,7 @@ class _VideoPreviewFallback extends StatelessWidget {
               Icon(Icons.videocam_outlined, size: 40, color: colorScheme.onSurfaceVariant),
             const SizedBox(height: 10),
             Text(
-              filename.isEmpty ? 'Video' : filename,
+              filename.isEmpty ? context.l10n.labelVideo : filename,
               key: const ValueKey('video-alt-preview-filename'),
               style: theme.textTheme.bodyMedium,
               maxLines: 1,
@@ -1921,7 +2002,7 @@ class _VideoPreviewFallback extends StatelessWidget {
             if (error != null) ...[
               const SizedBox(height: 4),
               Text(
-                'Preview unavailable',
+                context.l10n.messageComposePreviewUnavailable,
                 style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),

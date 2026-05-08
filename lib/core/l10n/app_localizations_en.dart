@@ -30,6 +30,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buttonDelete => 'Delete';
 
   @override
+  String get buttonDiscard => 'Discard';
+
+  @override
   String get buttonLoadMoreQuotes => 'Load more quotes';
 
   @override
@@ -51,10 +54,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buttonOpen => 'Open';
 
   @override
+  String get buttonOk => 'OK';
+
+  @override
+  String get buttonPost => 'Post';
+
+  @override
   String get buttonResetSignInData => 'Reset Sign-In Data';
 
   @override
   String get buttonRetry => 'Retry';
+
+  @override
+  String get buttonSave => 'Save';
+
+  @override
+  String get buttonSaveChanges => 'Save Changes';
 
   @override
   String get buttonSignIn => 'Sign In';
@@ -76,6 +91,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonNow => 'now';
+
+  @override
+  String get commonJustNow => 'Just now';
 
   @override
   String get commonNotCheckedYet => 'Not checked yet';
@@ -102,6 +120,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dialogDeletePostTitle => 'Delete Post?';
+
+  @override
+  String get dialogDeleteDraftTitle => 'Delete Draft?';
+
+  @override
+  String get dialogDiscardChangesContent => 'You have unsaved edits. Discard them and leave?';
+
+  @override
+  String get dialogDiscardChangesTitle => 'Discard Changes?';
+
+  @override
+  String get dialogEditAlgorithmContent =>
+      'Lazurite saves edits by deleting and recreating the post record with the same URI. During re-indexing, ranking, counters, and search visibility can shift, and updates may take time to appear everywhere.';
+
+  @override
+  String get dialogEditAlgorithmTitle => 'How Post Editing Works';
+
+  @override
+  String get dialogSaveDraftContent => 'You have unsaved content. Would you like to save it as a draft?';
+
+  @override
+  String get dialogSaveDraftTitle => 'Save Draft?';
 
   @override
   String dialogRemoveAccountContent(String handle) {
@@ -253,6 +293,57 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String formatComposeFailedToPickImage(Object error) {
+    return 'Failed to pick image: $error';
+  }
+
+  @override
+  String formatComposeFailedToPickVideo(Object error) {
+    return 'Failed to pick video: $error';
+  }
+
+  @override
+  String formatComposeFailedToSaveChanges(Object error) {
+    return 'Failed to save changes: $error';
+  }
+
+  @override
+  String formatComposeFailedToSubmitPost(Object error) {
+    return 'Failed to submit post: $error';
+  }
+
+  @override
+  String formatComposeImageTooLarge(String fileName, String sizeMb) {
+    return 'Image \"$fileName\" is $sizeMb MB - max 1 MB.';
+  }
+
+  @override
+  String formatComposeQuotingHandle(String handle) {
+    return 'Quoting @$handle';
+  }
+
+  @override
+  String formatComposeScheduledFor(String dateTime) {
+    return 'Scheduled for $dateTime';
+  }
+
+  @override
+  String formatComposeVideoReadyWithAltText(String altText) {
+    return 'Ready - \"$altText\"';
+  }
+
+  @override
+  String formatComposeVideoTooLarge(String sizeMb) {
+    return 'Video is $sizeMb MB - exceeds the 100 MB limit.';
+  }
+
+  @override
+  String formatDraftCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count drafts', one: '1 draft');
+    return '$_temp0';
+  }
+
+  @override
   String get actionLikeThisPost => 'like this post';
 
   @override
@@ -260,6 +351,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get actionRepostThisPost => 'repost this post';
+
+  @override
+  String get actionPublishYourPost => 'publish your post';
 
   @override
   String get labelAbout => 'About';
@@ -325,6 +419,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get labelBluesky => 'Bluesky';
 
   @override
+  String get labelAlt => 'ALT';
+
+  @override
   String get labelCacheCleared => 'Cache cleared';
 
   @override
@@ -332,6 +429,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get labelCleanFollows => 'Clean Follows';
+
+  @override
+  String get labelClose => 'Close';
 
   @override
   String get labelClearCache => 'Clear Cache';
@@ -532,6 +632,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get labelDeletePost => 'Delete Post';
 
   @override
+  String get labelDeleteDraft => 'Delete draft';
+
+  @override
   String get labelEditPost => 'Edit Post';
 
   @override
@@ -542,6 +645,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get labelLikedPost => 'Liked Post';
+
+  @override
+  String get labelMoreInfo => 'More info';
 
   @override
   String get labelLocal => 'Local';
@@ -584,6 +690,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get labelSaveToBluesky => 'Save to Bluesky';
+
+  @override
+  String get labelSchedule => 'Schedule';
+
+  @override
+  String get labelScheduled => 'Scheduled';
 
   @override
   String get labelSavedAccounts => 'Saved accounts';
@@ -629,6 +741,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get labelTroubleshooting => 'Troubleshooting';
+
+  @override
+  String get labelVideo => 'Video';
 
   @override
   String get labelTopics => 'Topics';
@@ -741,6 +856,141 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messageLikedPostsUnavailable => 'Liked posts are unavailable right now.';
 
   @override
+  String get messageChangesSaved => 'Changes saved.';
+
+  @override
+  String get messageComposeAddAltText => 'Add alt text';
+
+  @override
+  String get messageComposeAddImage => 'Add image';
+
+  @override
+  String get messageComposeAddVideo => 'Add video';
+
+  @override
+  String get messageComposeClearScheduledTime => 'Clear scheduled time';
+
+  @override
+  String get messageComposeDescribeImage => 'Describe the image';
+
+  @override
+  String get messageComposeDescribeVideo => 'Describe the video';
+
+  @override
+  String get messageComposeDraftSaved => 'Draft saved';
+
+  @override
+  String get messageComposeDrafts => 'Drafts';
+
+  @override
+  String get messageComposeEditNotice =>
+      'Edits are saved by replacing the record while keeping this post URI. Ranking, counts, and visibility may shift while networks re-index.';
+
+  @override
+  String get messageComposeImageAltTextTitle => 'Alt text';
+
+  @override
+  String get messageComposeImageMaxCount => 'Maximum 4 images allowed';
+
+  @override
+  String get messageComposeImageMustBeJpegPngWebp => 'Image must be JPEG, PNG, or WebP';
+
+  @override
+  String get messageComposeImageMustBeUnder1Mb => 'Image must be smaller than 1MB';
+
+  @override
+  String get messageComposeNoDraftsSaved => 'No drafts saved';
+
+  @override
+  String get messageComposeNoText => '(No text)';
+
+  @override
+  String get messageComposePlaceholder => 'What\'s on your mind?';
+
+  @override
+  String get messageComposePreviewUnavailable => 'Preview unavailable';
+
+  @override
+  String get messageComposeQuotingPost => 'Quoting post';
+
+  @override
+  String get messageComposeRemoveExistingMediaBeforeVideo => 'Remove existing media before adding a video';
+
+  @override
+  String get messageComposeRemoveImage => 'Remove image';
+
+  @override
+  String get messageComposeRemoveQuotedPost => 'Remove quoted post';
+
+  @override
+  String get messageComposeSaveDraft => 'Save draft';
+
+  @override
+  String get messageComposeVideoAltTextTitle => 'Video alt text';
+
+  @override
+  String get messageVideoCheckingUploadLimits => 'Checking upload limits...';
+
+  @override
+  String get messageVideoDailyUploadLimitReached => 'Daily video upload limit reached.';
+
+  @override
+  String get messageVideoProcessing => 'Processing...';
+
+  @override
+  String get messageVideoProcessingFailed => 'Video processing failed.';
+
+  @override
+  String get messageVideoProcessingTimedOut => 'Video processing timed out.';
+
+  @override
+  String get messageVideoReady => 'Ready';
+
+  @override
+  String get messageVideoReadyToUpload => 'Ready to upload';
+
+  @override
+  String get messageVideoUploadFailed => 'Upload failed - please try again.';
+
+  @override
+  String get messageVideoUploading => 'Uploading...';
+
+  @override
+  String get errorComposeChangedElsewhere => 'This post was changed elsewhere. Reopen it and try editing again.';
+
+  @override
+  String get errorComposeCouldNotConfirmEdit =>
+      'Edit was submitted but could not be confirmed yet. Please reopen the post and verify.';
+
+  @override
+  String get errorComposeCouldNotSaveAndConfirmRecovery =>
+      'Could not save changes and we could not confirm recovery. Reopen the thread and verify the post.';
+
+  @override
+  String get errorComposeEditContextMissing => 'Edit context is missing. Please reopen the editor and try again.';
+
+  @override
+  String get errorComposeFailedToCreatePost => 'Failed to create post. Please try again.';
+
+  @override
+  String get errorComposeFailedToSaveChanges => 'Failed to save changes. Please try again.';
+
+  @override
+  String get errorComposeFailedToUploadImage => 'Failed to upload image. Please try again.';
+
+  @override
+  String get errorComposeImageFileNotFound => 'Image file not found. Please re-attach and try again.';
+
+  @override
+  String get errorComposeNetworkSavedAsDraft => 'Network error - post saved as draft.';
+
+  @override
+  String get errorComposeOriginalPostRestored => 'Could not save changes. Your original post was restored.';
+
+  @override
+  String get errorComposeUnsupportedImageFormat => 'Unsupported image format. Use JPEG, PNG, or WebP.';
+
+  @override
   String get messageNoBookmarks => 'No bookmarks';
 
   @override
@@ -790,6 +1040,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messageReplyInThread => 'Reply in a thread';
+
+  @override
+  String get messageReplyingTo => 'Replying to';
 
   @override
   String get messageShareThisPostSubtitle => 'Share this post';

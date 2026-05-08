@@ -133,6 +133,12 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get buttonDelete;
 
+  /// Discard button label
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get buttonDiscard;
+
   /// Button label to load additional quote posts
   ///
   /// In en, this message translates to:
@@ -175,6 +181,18 @@ abstract class AppLocalizations {
   /// **'Open'**
   String get buttonOpen;
 
+  /// OK button label
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get buttonOk;
+
+  /// Button label to publish a post
+  ///
+  /// In en, this message translates to:
+  /// **'Post'**
+  String get buttonPost;
+
   /// Button label to clear local sign-in data
   ///
   /// In en, this message translates to:
@@ -186,6 +204,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get buttonRetry;
+
+  /// Save button label
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get buttonSave;
+
+  /// Button label to save post edits
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get buttonSaveChanges;
 
   /// Sign in button label
   ///
@@ -228,6 +258,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'now'**
   String get commonNow;
+
+  /// Relative time label for the current moment
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get commonJustNow;
 
   /// Label for a health check that has not run
   ///
@@ -276,6 +312,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete Post?'**
   String get dialogDeletePostTitle;
+
+  /// Confirmation dialog title before deleting a draft
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Draft?'**
+  String get dialogDeleteDraftTitle;
+
+  /// Confirmation dialog body before leaving unsaved post edits
+  ///
+  /// In en, this message translates to:
+  /// **'You have unsaved edits. Discard them and leave?'**
+  String get dialogDiscardChangesContent;
+
+  /// Confirmation dialog title before leaving unsaved post edits
+  ///
+  /// In en, this message translates to:
+  /// **'Discard Changes?'**
+  String get dialogDiscardChangesTitle;
+
+  /// Information dialog body explaining how post editing is implemented
+  ///
+  /// In en, this message translates to:
+  /// **'Lazurite saves edits by deleting and recreating the post record with the same URI. During re-indexing, ranking, counters, and search visibility can shift, and updates may take time to appear everywhere.'**
+  String get dialogEditAlgorithmContent;
+
+  /// Information dialog title explaining how post editing works
+  ///
+  /// In en, this message translates to:
+  /// **'How Post Editing Works'**
+  String get dialogEditAlgorithmTitle;
+
+  /// Confirmation dialog body before leaving compose with unsaved content
+  ///
+  /// In en, this message translates to:
+  /// **'You have unsaved content. Would you like to save it as a draft?'**
+  String get dialogSaveDraftContent;
+
+  /// Confirmation dialog title before leaving compose with unsaved content
+  ///
+  /// In en, this message translates to:
+  /// **'Save Draft?'**
+  String get dialogSaveDraftTitle;
 
   /// Confirmation dialog body before removing a saved account from this device
   ///
@@ -463,6 +541,66 @@ abstract class AppLocalizations {
   /// **'View @{handle}'**
   String formatViewHandle(String handle);
 
+  /// Snackbar message when the image picker fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to pick image: {error}'**
+  String formatComposeFailedToPickImage(Object error);
+
+  /// Snackbar message when the video picker fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to pick video: {error}'**
+  String formatComposeFailedToPickVideo(Object error);
+
+  /// Compose error message when saving edits fails with details
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save changes: {error}'**
+  String formatComposeFailedToSaveChanges(Object error);
+
+  /// Compose error message when post submission fails with details
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to submit post: {error}'**
+  String formatComposeFailedToSubmitPost(Object error);
+
+  /// Compose validation error when an attached image is too large
+  ///
+  /// In en, this message translates to:
+  /// **'Image \"{fileName}\" is {sizeMb} MB - max 1 MB.'**
+  String formatComposeImageTooLarge(String fileName, String sizeMb);
+
+  /// Compose quote preview label with the quoted author's handle
+  ///
+  /// In en, this message translates to:
+  /// **'Quoting @{handle}'**
+  String formatComposeQuotingHandle(String handle);
+
+  /// Compose scheduled post pill label
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled for {dateTime}'**
+  String formatComposeScheduledFor(String dateTime);
+
+  /// Video attachment status when ready and alt text exists
+  ///
+  /// In en, this message translates to:
+  /// **'Ready - \"{altText}\"'**
+  String formatComposeVideoReadyWithAltText(String altText);
+
+  /// Compose validation error when a video is too large
+  ///
+  /// In en, this message translates to:
+  /// **'Video is {sizeMb} MB - exceeds the 100 MB limit.'**
+  String formatComposeVideoTooLarge(String sizeMb);
+
+  /// Compose drafts panel count label
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 draft} other{{count} drafts}}'**
+  String formatDraftCount(int count);
+
   /// Offline action phrase for liking a post
   ///
   /// In en, this message translates to:
@@ -480,6 +618,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'repost this post'**
   String get actionRepostThisPost;
+
+  /// Offline action phrase for publishing a post
+  ///
+  /// In en, this message translates to:
+  /// **'publish your post'**
+  String get actionPublishYourPost;
 
   /// About page or settings label
   ///
@@ -607,6 +751,12 @@ abstract class AppLocalizations {
   /// **'Bluesky'**
   String get labelBluesky;
 
+  /// Short all-caps label for media alt text controls
+  ///
+  /// In en, this message translates to:
+  /// **'ALT'**
+  String get labelAlt;
+
   /// Snackbar message after clearing cache
   ///
   /// In en, this message translates to:
@@ -624,6 +774,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clean Follows'**
   String get labelCleanFollows;
+
+  /// Close button tooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get labelClose;
 
   /// Settings item for clearing cache
   ///
@@ -1021,6 +1177,12 @@ abstract class AppLocalizations {
   /// **'Delete Post'**
   String get labelDeletePost;
 
+  /// Tooltip for deleting a draft
+  ///
+  /// In en, this message translates to:
+  /// **'Delete draft'**
+  String get labelDeleteDraft;
+
   /// Post overflow menu item to edit a post
   ///
   /// In en, this message translates to:
@@ -1044,6 +1206,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Liked Post'**
   String get labelLikedPost;
+
+  /// Tooltip for opening more information
+  ///
+  /// In en, this message translates to:
+  /// **'More info'**
+  String get labelMoreInfo;
 
   /// Local saved-post source tab label
   ///
@@ -1128,6 +1296,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save to Bluesky'**
   String get labelSaveToBluesky;
+
+  /// Compose toolbar schedule button tooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get labelSchedule;
+
+  /// Scheduled draft badge label
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get labelScheduled;
 
   /// Saved accounts section label on login screen
   ///
@@ -1218,6 +1398,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Troubleshooting'**
   String get labelTroubleshooting;
+
+  /// Fallback video label
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get labelVideo;
 
   /// Trending topics section label
   ///
@@ -1429,6 +1615,270 @@ abstract class AppLocalizations {
   /// **'Liked posts are unavailable right now.'**
   String get messageLikedPostsUnavailable;
 
+  /// Snackbar message after post edits are saved
+  ///
+  /// In en, this message translates to:
+  /// **'Changes saved.'**
+  String get messageChangesSaved;
+
+  /// Tooltip for adding video alt text
+  ///
+  /// In en, this message translates to:
+  /// **'Add alt text'**
+  String get messageComposeAddAltText;
+
+  /// Compose toolbar add image tooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Add image'**
+  String get messageComposeAddImage;
+
+  /// Compose toolbar add video tooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Add video'**
+  String get messageComposeAddVideo;
+
+  /// Tooltip for clearing scheduled compose time
+  ///
+  /// In en, this message translates to:
+  /// **'Clear scheduled time'**
+  String get messageComposeClearScheduledTime;
+
+  /// Image alt text field placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Describe the image'**
+  String get messageComposeDescribeImage;
+
+  /// Video alt text field placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Describe the video'**
+  String get messageComposeDescribeVideo;
+
+  /// Snackbar message after saving a draft
+  ///
+  /// In en, this message translates to:
+  /// **'Draft saved'**
+  String get messageComposeDraftSaved;
+
+  /// Compose drafts panel title and toolbar tooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Drafts'**
+  String get messageComposeDrafts;
+
+  /// Compose edit mode notice banner
+  ///
+  /// In en, this message translates to:
+  /// **'Edits are saved by replacing the record while keeping this post URI. Ranking, counts, and visibility may shift while networks re-index.'**
+  String get messageComposeEditNotice;
+
+  /// Image alt text dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Alt text'**
+  String get messageComposeImageAltTextTitle;
+
+  /// Compose validation message when too many images are attached
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum 4 images allowed'**
+  String get messageComposeImageMaxCount;
+
+  /// Compose validation message for unsupported image extensions
+  ///
+  /// In en, this message translates to:
+  /// **'Image must be JPEG, PNG, or WebP'**
+  String get messageComposeImageMustBeJpegPngWebp;
+
+  /// Compose validation message for image picker size validation
+  ///
+  /// In en, this message translates to:
+  /// **'Image must be smaller than 1MB'**
+  String get messageComposeImageMustBeUnder1Mb;
+
+  /// Empty state text in compose drafts panel
+  ///
+  /// In en, this message translates to:
+  /// **'No drafts saved'**
+  String get messageComposeNoDraftsSaved;
+
+  /// Fallback draft content label when a draft has no text
+  ///
+  /// In en, this message translates to:
+  /// **'(No text)'**
+  String get messageComposeNoText;
+
+  /// Compose text field placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'What\'\'s on your mind?'**
+  String get messageComposePlaceholder;
+
+  /// Video alt text preview unavailable message
+  ///
+  /// In en, this message translates to:
+  /// **'Preview unavailable'**
+  String get messageComposePreviewUnavailable;
+
+  /// Compose quote preview label without an author handle
+  ///
+  /// In en, this message translates to:
+  /// **'Quoting post'**
+  String get messageComposeQuotingPost;
+
+  /// Compose validation message when a video cannot be added because other media exists
+  ///
+  /// In en, this message translates to:
+  /// **'Remove existing media before adding a video'**
+  String get messageComposeRemoveExistingMediaBeforeVideo;
+
+  /// Tooltip for removing an image attachment
+  ///
+  /// In en, this message translates to:
+  /// **'Remove image'**
+  String get messageComposeRemoveImage;
+
+  /// Tooltip for removing a quoted post from compose
+  ///
+  /// In en, this message translates to:
+  /// **'Remove quoted post'**
+  String get messageComposeRemoveQuotedPost;
+
+  /// Compose toolbar save draft tooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Save draft'**
+  String get messageComposeSaveDraft;
+
+  /// Video alt text dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Video alt text'**
+  String get messageComposeVideoAltTextTitle;
+
+  /// Video attachment status while checking upload limits
+  ///
+  /// In en, this message translates to:
+  /// **'Checking upload limits...'**
+  String get messageVideoCheckingUploadLimits;
+
+  /// Video upload validation message when the daily limit is reached
+  ///
+  /// In en, this message translates to:
+  /// **'Daily video upload limit reached.'**
+  String get messageVideoDailyUploadLimitReached;
+
+  /// Video attachment processing status
+  ///
+  /// In en, this message translates to:
+  /// **'Processing...'**
+  String get messageVideoProcessing;
+
+  /// Video attachment error when processing fails
+  ///
+  /// In en, this message translates to:
+  /// **'Video processing failed.'**
+  String get messageVideoProcessingFailed;
+
+  /// Video attachment error when processing times out
+  ///
+  /// In en, this message translates to:
+  /// **'Video processing timed out.'**
+  String get messageVideoProcessingTimedOut;
+
+  /// Video attachment ready status
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get messageVideoReady;
+
+  /// Video attachment ready-to-upload status
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to upload'**
+  String get messageVideoReadyToUpload;
+
+  /// Video upload generic failure message
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed - please try again.'**
+  String get messageVideoUploadFailed;
+
+  /// Video attachment uploading status
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading...'**
+  String get messageVideoUploading;
+
+  /// Compose edit error when the post changed remotely
+  ///
+  /// In en, this message translates to:
+  /// **'This post was changed elsewhere. Reopen it and try editing again.'**
+  String get errorComposeChangedElsewhere;
+
+  /// Compose edit error when an edit cannot be confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'Edit was submitted but could not be confirmed yet. Please reopen the post and verify.'**
+  String get errorComposeCouldNotConfirmEdit;
+
+  /// Compose edit recovery error when save and recovery status are unknown
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save changes and we could not confirm recovery. Reopen the thread and verify the post.'**
+  String get errorComposeCouldNotSaveAndConfirmRecovery;
+
+  /// Compose edit validation error when edit context is missing
+  ///
+  /// In en, this message translates to:
+  /// **'Edit context is missing. Please reopen the editor and try again.'**
+  String get errorComposeEditContextMissing;
+
+  /// Compose error when creating a post fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create post. Please try again.'**
+  String get errorComposeFailedToCreatePost;
+
+  /// Compose error when saving post edits fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save changes. Please try again.'**
+  String get errorComposeFailedToSaveChanges;
+
+  /// Compose error when image upload fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to upload image. Please try again.'**
+  String get errorComposeFailedToUploadImage;
+
+  /// Compose error when an attached image file is missing
+  ///
+  /// In en, this message translates to:
+  /// **'Image file not found. Please re-attach and try again.'**
+  String get errorComposeImageFileNotFound;
+
+  /// Compose error when submission fails and is saved as a draft
+  ///
+  /// In en, this message translates to:
+  /// **'Network error - post saved as draft.'**
+  String get errorComposeNetworkSavedAsDraft;
+
+  /// Compose edit error when the original post was restored after failure
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save changes. Your original post was restored.'**
+  String get errorComposeOriginalPostRestored;
+
+  /// Compose validation error for unsupported image bytes
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported image format. Use JPEG, PNG, or WebP.'**
+  String get errorComposeUnsupportedImageFormat;
+
   /// Empty state title when there are no bookmarks
   ///
   /// In en, this message translates to:
@@ -1530,6 +1980,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reply in a thread'**
   String get messageReplyInThread;
+
+  /// Compose reply banner prefix before the replied-to handle
+  ///
+  /// In en, this message translates to:
+  /// **'Replying to'**
+  String get messageReplyingTo;
 
   /// Post action subtitle for reposting a post
   ///
