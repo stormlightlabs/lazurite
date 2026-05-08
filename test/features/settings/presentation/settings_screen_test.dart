@@ -450,6 +450,28 @@ void main() {
     expect(crashReportingService.crashCalls, 1);
   });
 
+  testWidgets('developer recoverable crash row opens Flutter error route without Crashlytics crash', (tester) async {
+    final previousErrorWidgetBuilder = ErrorWidget.builder;
+    ErrorWidget.builder = (_) => const Text('Recoverable crash report rendered');
+
+    try {
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(find.text('Crash Report Screen Test'), 300);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Crash Report Screen Test'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isA<StateError>());
+      expect(find.text('Recoverable crash report rendered'), findsOneWidget);
+      expect(crashReportingService.crashCalls, 0);
+    } finally {
+      ErrorWidget.builder = previousErrorWidgetBuilder;
+    }
+  });
+
   testWidgets('provider change confirmation can be cancelled', (tester) async {
     when(() => settingsCubit.state).thenReturn(
       const SettingsState(

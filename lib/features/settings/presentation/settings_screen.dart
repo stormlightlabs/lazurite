@@ -137,7 +137,7 @@ class SettingsScreen extends StatelessWidget {
           _buildSectionHeader(context, l10n.labelTroubleshooting),
           _buildTroubleshootingSettings(context),
           const SizedBox(height: 24),
-          if (!kReleaseMode || kDebugMode) ...[
+          if (!kReleaseMode) ...[
             _buildSectionHeader(context, l10n.labelDeveloper),
             _buildDeveloperSettings(context),
             const SizedBox(height: 24),
@@ -411,6 +411,18 @@ class SettingsScreen extends StatelessWidget {
                 subtitle: l10n.messageCrashlyticsTestCrashSubtitle,
                 trailing: const Icon(Icons.warning_amber_rounded),
                 onTap: crashReportingService?.crash,
+              ),
+              const Divider(height: 1),
+              _SettingsTile(
+                icon: Icons.integration_instructions_outlined,
+                title: l10n.labelCrashReportScreenTest,
+                subtitle: l10n.messageCrashReportScreenTestSubtitle,
+                trailing: const Icon(Icons.open_in_new_outlined),
+                onTap: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute<void>(
+                    builder: (_) => _RecoverableCrashTestScreen(title: l10n.labelCrashReportScreenTest),
+                  ),
+                ),
               ),
               if (kDebugMode || kProfileMode) ...[
                 const Divider(height: 1),
@@ -974,6 +986,29 @@ class _ConstellationUrlTile extends StatelessWidget {
       title: const Text('Constellation URL'),
       subtitle: Text(currentUrl, maxLines: 1, overflow: TextOverflow.ellipsis),
     );
+  }
+}
+
+class _RecoverableCrashTestScreen extends StatelessWidget {
+  const _RecoverableCrashTestScreen({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: const _RecoverableCrashTestBody(),
+    );
+  }
+}
+
+class _RecoverableCrashTestBody extends StatelessWidget {
+  const _RecoverableCrashTestBody();
+
+  @override
+  Widget build(BuildContext context) {
+    throw StateError('Recoverable crash report screen test');
   }
 }
 

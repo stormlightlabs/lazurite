@@ -675,6 +675,10 @@
   "@labelCrashlyticsTestCrash": {
     "description": "Developer setting to trigger a test crash"
   },
+  "labelCrashReportScreenTest": "Crash Report Screen Test",
+  "@labelCrashReportScreenTest": {
+    "description": "Developer setting to trigger a recoverable Flutter crash report screen"
+  },
   "labelCrossProviderFallback": "Cross-Provider Fallback",
   "@labelCrossProviderFallback": {
     "description": "Cross-provider fallback setting label"
@@ -1146,6 +1150,10 @@
   "messageCrashlyticsTestCrashSubtitle": "Intentionally crash to validate Crashlytics reports",
   "@messageCrashlyticsTestCrashSubtitle": {
     "description": "Developer setting subtitle for test crash"
+  },
+  "messageCrashReportScreenTestSubtitle": "Open a recoverable Flutter error screen with copy and email actions",
+  "@messageCrashReportScreenTestSubtitle": {
+    "description": "Developer setting subtitle for testing the in-app crash report screen"
   },
   "messageCrossProviderFallbackSubtitle": "Retry public reads on the alternate AppView when transient errors occur",
   "@messageCrossProviderFallbackSubtitle": {

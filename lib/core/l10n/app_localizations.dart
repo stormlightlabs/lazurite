@@ -835,6 +835,12 @@ abstract class AppLocalizations {
   /// **'Crashlytics Test Crash'**
   String get labelCrashlyticsTestCrash;
 
+  /// Developer setting to trigger a recoverable Flutter crash report screen
+  ///
+  /// In en, this message translates to:
+  /// **'Crash Report Screen Test'**
+  String get labelCrashReportScreenTest;
+
   /// Cross-provider fallback setting label
   ///
   /// In en, this message translates to:
@@ -1542,6 +1548,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Intentionally crash to validate Crashlytics reports'**
   String get messageCrashlyticsTestCrashSubtitle;
+
+  /// Developer setting subtitle for testing the in-app crash report screen
+  ///
+  /// In en, this message translates to:
+  /// **'Open a recoverable Flutter error screen with copy and email actions'**
+  String get messageCrashReportScreenTestSubtitle;
 
   /// Settings subtitle for cross-provider fallback
   ///

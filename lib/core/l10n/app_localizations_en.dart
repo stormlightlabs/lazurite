@@ -461,6 +461,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get labelCrashlyticsTestCrash => 'Crashlytics Test Crash';
 
   @override
+  String get labelCrashReportScreenTest => 'Crash Report Screen Test';
+
+  @override
   String get labelCrossProviderFallback => 'Cross-Provider Fallback';
 
   @override
@@ -815,6 +818,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messageCrashlyticsTestCrashSubtitle => 'Intentionally crash to validate Crashlytics reports';
+
+  @override
+  String get messageCrashReportScreenTestSubtitle =>
+      'Open a recoverable Flutter error screen with copy and email actions';
 
   @override
   String get messageCrossProviderFallbackSubtitle =>
