@@ -1984,4 +1984,384 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get validationEnterAppPassword => 'Enter your app password';
+
+  @override
+  String get buttonAdd => 'Add';
+
+  @override
+  String get buttonAdding => 'Adding...';
+
+  @override
+  String get buttonInspiredByPdsLs => 'Inspired by pds.ls';
+
+  @override
+  String get buttonCopyJson => 'Copy JSON';
+
+  @override
+  String get buttonResolve => 'Resolve';
+
+  @override
+  String get buttonUnsubscribe => 'Unsubscribe';
+
+  @override
+  String get dialogAddLabelerTitle => 'Add labeler';
+
+  @override
+  String get dialogClearAllLogsContent => 'This will permanently delete all log files. This action cannot be undone.';
+
+  @override
+  String get dialogClearAllLogsTitle => 'Clear all logs?';
+
+  @override
+  String get errorFailedToLoadLogs => 'Failed to load logs';
+
+  @override
+  String get errorFailedToLoadModerationSettings => 'Failed to load moderation settings';
+
+  @override
+  String errorFailedToUnsubscribeLabeler(Object error) {
+    return 'Failed to unsubscribe: $error';
+  }
+
+  @override
+  String errorFailedToUpdateAdultContent(Object error) {
+    return 'Failed to update adult content: $error';
+  }
+
+  @override
+  String errorFailedToUpdateLabelPreference(Object error) {
+    return 'Failed to update preference: $error';
+  }
+
+  @override
+  String errorFailedToUpdateLabelerSubscription(Object error) {
+    return 'Failed to update subscription: $error';
+  }
+
+  @override
+  String get errorLabelerDidRequired => 'Enter a labeler DID.';
+
+  @override
+  String get errorLabelerNotFound => 'Labeler not found.';
+
+  @override
+  String get errorNoLabelerFoundForDid => 'No labeler found for that DID.';
+
+  @override
+  String get errorUnableToLoadLabeler => 'Unable to load labeler';
+
+  @override
+  String formatAddLabelerLimit(int current, int max) {
+    return 'Add ($current/$max)';
+  }
+
+  @override
+  String formatCollectionsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count collections', one: '1 collection');
+    return '$_temp0';
+  }
+
+  @override
+  String formatCid(String cid) {
+    return 'CID: $cid';
+  }
+
+  @override
+  String formatCustomLabelCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count custom labels',
+      one: '1 custom label',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String formatDefinitionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count definitions', one: '1 definition');
+    return '$_temp0';
+  }
+
+  @override
+  String formatLoadedRecordsCount(int count) {
+    return '$count loaded';
+  }
+
+  @override
+  String formatLoadedRecordsOfTotal(int loaded, int total) {
+    return '$loaded of $total';
+  }
+
+  @override
+  String formatModerationSourceLabel(String source) {
+    return '$source label';
+  }
+
+  @override
+  String formatPolicyBlur(String value) {
+    return 'Blur $value';
+  }
+
+  @override
+  String formatPolicyDefault(String value) {
+    return 'Default $value';
+  }
+
+  @override
+  String formatPolicyId(String identifier) {
+    return 'ID $identifier';
+  }
+
+  @override
+  String formatPolicySeverity(String value) {
+    return 'Severity $value';
+  }
+
+  @override
+  String formatPublishedValueCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count published values',
+      one: '1 published value',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String formatRecordsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count records', one: '1 record');
+    return '$_temp0';
+  }
+
+  @override
+  String formatSubscribedToLabeler(String name) {
+    return 'Subscribed to $name';
+  }
+
+  @override
+  String get labelAdultContentSetting => 'Adult content';
+
+  @override
+  String get labelAdultOnlyShort => '18+';
+
+  @override
+  String get labelAlwaysOn => 'Always on';
+
+  @override
+  String get labelAutoScroll => 'Auto-scroll';
+
+  @override
+  String get labelBlueskyModeration => 'Bluesky moderation';
+
+  @override
+  String get labelBuiltIn => 'Built-in';
+
+  @override
+  String get labelBuiltInLabeler => 'Built-in labeler';
+
+  @override
+  String get labelBuiltInModeration => 'Built-in moderation';
+
+  @override
+  String get labelBlockedAccount => 'Blocked account';
+
+  @override
+  String get labelBlockedByAccount => 'Blocked by account';
+
+  @override
+  String get labelBlockedRelationship => 'Blocked relationship';
+
+  @override
+  String get labelCollections => 'COLLECTIONS';
+
+  @override
+  String get labelContentPreferenceHide => 'Hide';
+
+  @override
+  String get labelContentPreferenceIgnore => 'Ignore';
+
+  @override
+  String get labelContentPreferenceWarn => 'Warn';
+
+  @override
+  String get labelCustomLabelers => 'Custom labelers';
+
+  @override
+  String get labelLabeler => 'Labeler';
+
+  @override
+  String get labelLabelerDid => 'Labeler DID';
+
+  @override
+  String get labelLabelersAndContentModeration => 'Labelers and content moderation';
+
+  @override
+  String get labelLabelPreferences => 'Label preferences';
+
+  @override
+  String get labelHiddenContent => 'Hidden content';
+
+  @override
+  String get labelLogLevelDebug => 'Debug';
+
+  @override
+  String get labelLogLevelError => 'Error';
+
+  @override
+  String get labelLogLevelFatal => 'Fatal';
+
+  @override
+  String get labelLogLevelInfo => 'Info';
+
+  @override
+  String get labelLogLevelTrace => 'Trace';
+
+  @override
+  String get labelLogLevelWarning => 'Warning';
+
+  @override
+  String get labelModerationNote => 'Moderation note';
+
+  @override
+  String get labelModerationSourceBluesky => 'Bluesky';
+
+  @override
+  String get labelModerationSourceSubscribedLabeler => 'Subscribed labeler';
+
+  @override
+  String get labelMutedAccount => 'Muted account';
+
+  @override
+  String get labelMutedPhrase => 'Muted phrase';
+
+  @override
+  String get labelNoCustomLabelDefinitions => 'No custom label definitions';
+
+  @override
+  String get labelNoCustomLabelers => 'No custom labelers';
+
+  @override
+  String get labelPdsExplorer => 'PDS Explorer';
+
+  @override
+  String get labelPublishedPolicies => 'Published policies';
+
+  @override
+  String get labelRecordJson => 'Record JSON';
+
+  @override
+  String get labelRefresh => 'Refresh';
+
+  @override
+  String get labelRepository => 'Repository';
+
+  @override
+  String get labelSubscribed => 'Subscribed';
+
+  @override
+  String get labelSensitiveContent => 'Sensitive content';
+
+  @override
+  String get labelUnknown => 'Unknown';
+
+  @override
+  String get messageAddLabelerDidHelper => 'Paste a labeler DID to review and subscribe to its labels.';
+
+  @override
+  String get messageAdultContentRequiredForLabels => 'Required before 18+ label preferences can be changed.';
+
+  @override
+  String get messageBuiltInLabelerActiveWhenUnavailable =>
+      'The built-in labeler is active even if its details cannot be loaded right now.';
+
+  @override
+  String get messageBuiltInLabelerAlwaysActive => 'This labeler is always active.';
+
+  @override
+  String get messageDevtoolsEmptyState => 'Enter a handle, DID, or AT-URI to explore\na user\'s repository.';
+
+  @override
+  String get messageEnableAdultContentForLabel => 'Enable adult content to change this 18+ label.';
+
+  @override
+  String get messageBlockedAccountDescription => 'This account is blocked';
+
+  @override
+  String get messageBlockedByAccountDescription => 'This account has blocked you';
+
+  @override
+  String get messageBlockedRelationshipDescription => 'This content is limited by a block relationship';
+
+  @override
+  String get messageHiddenContentDescription => 'This content is hidden by moderation rules';
+
+  @override
+  String get messageJsonCopiedToClipboard => 'JSON copied to clipboard';
+
+  @override
+  String get messageLogsEmpty => 'No logs yet';
+
+  @override
+  String get messageLogsEmptySubtitle => 'Log entries will appear here';
+
+  @override
+  String get messageModerationSettingsHeroSubtitle =>
+      'Manage adult-content visibility, subscribed labelers, and the rules each labeler applies to posts and profiles.';
+
+  @override
+  String get messageModerationGuidanceApplies => 'Moderation guidance applies here';
+
+  @override
+  String get messageMutedAccountDescription => 'Muted content is being downranked here';
+
+  @override
+  String get messageMutedPhraseDescription => 'A muted phrase matched this content';
+
+  @override
+  String get messageNoCustomLabelDefinitions => 'This labeler publishes values, but not localized custom definitions.';
+
+  @override
+  String get messageNoCustomLabelers => 'Add a labeler DID to subscribe and configure its custom labels.';
+
+  @override
+  String get messageNoLabelDescriptionAvailable => 'No description available for this label.';
+
+  @override
+  String get messageNoLogFileAvailable => 'No log file available';
+
+  @override
+  String get messageRecordCountsUnavailable => 'Record counts unavailable';
+
+  @override
+  String get messageRecordCountsLoading => 'Counting records...';
+
+  @override
+  String get messageSubscribedLabelersHeaders =>
+      'Subscribed labelers are added to your moderation headers and preferences.';
+
+  @override
+  String get messageUnableToOpenShareSheet => 'Unable to open share sheet. Please try again.';
+
+  @override
+  String get placeholderHandleDidOrAtUri => 'Handle, DID, or at:// URI';
+
+  @override
+  String get placeholderLabelerDid => 'did:plc:examplelabeler';
+
+  @override
+  String get placeholderLogsFilter => 'Filter logs...';
+
+  @override
+  String get subjectLazuriteLogs => 'Lazurite logs';
+
+  @override
+  String get tooltipClearAllLogs => 'Clear all logs';
+
+  @override
+  String get tooltipGoToPdsLs => 'Go to pds.ls';
+
+  @override
+  String get tooltipShareLogFile => 'Share log file';
 }

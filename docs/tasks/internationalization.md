@@ -23,7 +23,7 @@
 - [x] Localize compose flow, media alt text editors, draft/schedule states, and validation
 - [x] Localize profile screens, profile actions, reports, follows, lists, and starter packs
 - [x] Localize messages, notifications, alerts, and account switching sheets
-- [ ] Localize moderation settings/detail screens and logs/devtools user-facing labels
+- [x] Localize moderation settings/detail screens and logs/devtools user-facing labels
 
 ## M3 - User-Facing Language Selection
 

@@ -3678,6 +3678,654 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter your app password'**
   String get validationEnterAppPassword;
+
+  /// Generic add button label
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get buttonAdd;
+
+  /// Button label while an add action is in progress
+  ///
+  /// In en, this message translates to:
+  /// **'Adding...'**
+  String get buttonAdding;
+
+  /// Devtools button label linking to pds.ls
+  ///
+  /// In en, this message translates to:
+  /// **'Inspired by pds.ls'**
+  String get buttonInspiredByPdsLs;
+
+  /// Button label to copy record JSON
+  ///
+  /// In en, this message translates to:
+  /// **'Copy JSON'**
+  String get buttonCopyJson;
+
+  /// Button label to resolve a handle, DID, or AT URI
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve'**
+  String get buttonResolve;
+
+  /// Button label to unsubscribe from a labeler
+  ///
+  /// In en, this message translates to:
+  /// **'Unsubscribe'**
+  String get buttonUnsubscribe;
+
+  /// Dialog title for adding a moderation labeler
+  ///
+  /// In en, this message translates to:
+  /// **'Add labeler'**
+  String get dialogAddLabelerTitle;
+
+  /// Confirmation dialog body before clearing all log files
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently delete all log files. This action cannot be undone.'**
+  String get dialogClearAllLogsContent;
+
+  /// Confirmation dialog title before clearing all log files
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all logs?'**
+  String get dialogClearAllLogsTitle;
+
+  /// Error title when logs cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load logs'**
+  String get errorFailedToLoadLogs;
+
+  /// Error title when moderation settings cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load moderation settings'**
+  String get errorFailedToLoadModerationSettings;
+
+  /// Snackbar message when unsubscribing from a labeler fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to unsubscribe: {error}'**
+  String errorFailedToUnsubscribeLabeler(Object error);
+
+  /// Snackbar message when adult content preference update fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update adult content: {error}'**
+  String errorFailedToUpdateAdultContent(Object error);
+
+  /// Snackbar message when a label preference update fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update preference: {error}'**
+  String errorFailedToUpdateLabelPreference(Object error);
+
+  /// Snackbar message when a labeler subscription update fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update subscription: {error}'**
+  String errorFailedToUpdateLabelerSubscription(Object error);
+
+  /// Validation error when adding a labeler without a DID
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a labeler DID.'**
+  String get errorLabelerDidRequired;
+
+  /// Error thrown when a labeler DID cannot be loaded
+  ///
+  /// In en, this message translates to:
+  /// **'Labeler not found.'**
+  String get errorLabelerNotFound;
+
+  /// Validation error when no labeler exists for the entered DID
+  ///
+  /// In en, this message translates to:
+  /// **'No labeler found for that DID.'**
+  String get errorNoLabelerFoundForDid;
+
+  /// Error title when a labeler detail screen cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load labeler'**
+  String get errorUnableToLoadLabeler;
+
+  /// Add labeler button showing current and maximum custom labelers
+  ///
+  /// In en, this message translates to:
+  /// **'Add ({current}/{max})'**
+  String formatAddLabelerLimit(int current, int max);
+
+  /// Devtools repository collection count
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 collection} other{{count} collections}}'**
+  String formatCollectionsCount(int count);
+
+  /// Devtools record CID label
+  ///
+  /// In en, this message translates to:
+  /// **'CID: {cid}'**
+  String formatCid(String cid);
+
+  /// Moderation labeler detail chip showing custom label count
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 custom label} other{{count} custom labels}}'**
+  String formatCustomLabelCount(int count);
+
+  /// Moderation labeler card chip showing custom definition count
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 definition} other{{count} definitions}}'**
+  String formatDefinitionCount(int count);
+
+  /// Devtools record list count while total is unknown
+  ///
+  /// In en, this message translates to:
+  /// **'{count} loaded'**
+  String formatLoadedRecordsCount(int count);
+
+  /// Devtools record list count showing loaded and total records
+  ///
+  /// In en, this message translates to:
+  /// **'{loaded} of {total}'**
+  String formatLoadedRecordsOfTotal(int loaded, int total);
+
+  /// Tooltip description for a moderation label source
+  ///
+  /// In en, this message translates to:
+  /// **'{source} label'**
+  String formatModerationSourceLabel(String source);
+
+  /// Moderation policy chip showing the blur behavior
+  ///
+  /// In en, this message translates to:
+  /// **'Blur {value}'**
+  String formatPolicyBlur(String value);
+
+  /// Moderation policy chip showing default preference
+  ///
+  /// In en, this message translates to:
+  /// **'Default {value}'**
+  String formatPolicyDefault(String value);
+
+  /// Moderation policy chip showing a label identifier
+  ///
+  /// In en, this message translates to:
+  /// **'ID {identifier}'**
+  String formatPolicyId(String identifier);
+
+  /// Moderation policy chip showing severity
+  ///
+  /// In en, this message translates to:
+  /// **'Severity {value}'**
+  String formatPolicySeverity(String value);
+
+  /// Moderation labeler card chip showing published value count
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 published value} other{{count} published values}}'**
+  String formatPublishedValueCount(int count);
+
+  /// Devtools repository record count
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 record} other{{count} records}}'**
+  String formatRecordsCount(int count);
+
+  /// Snackbar after subscribing to a labeler
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribed to {name}'**
+  String formatSubscribedToLabeler(String name);
+
+  /// Moderation settings adult content switch label
+  ///
+  /// In en, this message translates to:
+  /// **'Adult content'**
+  String get labelAdultContentSetting;
+
+  /// Short chip label for adult-only moderation labels
+  ///
+  /// In en, this message translates to:
+  /// **'18+'**
+  String get labelAdultOnlyShort;
+
+  /// Status label for always-on moderation labeler
+  ///
+  /// In en, this message translates to:
+  /// **'Always on'**
+  String get labelAlwaysOn;
+
+  /// Log viewer auto-scroll control label
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-scroll'**
+  String get labelAutoScroll;
+
+  /// Built-in Bluesky moderation labeler title
+  ///
+  /// In en, this message translates to:
+  /// **'Bluesky moderation'**
+  String get labelBlueskyModeration;
+
+  /// Chip label for a built-in item
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in'**
+  String get labelBuiltIn;
+
+  /// Moderation settings section title for built-in labeler
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in labeler'**
+  String get labelBuiltInLabeler;
+
+  /// Moderation labeler chip and switch label for built-in moderation
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in moderation'**
+  String get labelBuiltInModeration;
+
+  /// Moderation badge for blocked account content
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked account'**
+  String get labelBlockedAccount;
+
+  /// Moderation badge for content from an account that blocked the user
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked by account'**
+  String get labelBlockedByAccount;
+
+  /// Moderation badge for content limited by a block relationship
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked relationship'**
+  String get labelBlockedRelationship;
+
+  /// Devtools section heading for repository collections
+  ///
+  /// In en, this message translates to:
+  /// **'COLLECTIONS'**
+  String get labelCollections;
+
+  /// Moderation label preference option to hide matching content
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get labelContentPreferenceHide;
+
+  /// Moderation label preference option to ignore matching content
+  ///
+  /// In en, this message translates to:
+  /// **'Ignore'**
+  String get labelContentPreferenceIgnore;
+
+  /// Moderation label preference option to warn on matching content
+  ///
+  /// In en, this message translates to:
+  /// **'Warn'**
+  String get labelContentPreferenceWarn;
+
+  /// Moderation settings section title for custom labelers
+  ///
+  /// In en, this message translates to:
+  /// **'Custom labelers'**
+  String get labelCustomLabelers;
+
+  /// Labeler detail screen app bar title
+  ///
+  /// In en, this message translates to:
+  /// **'Labeler'**
+  String get labelLabeler;
+
+  /// Input label for labeler DID
+  ///
+  /// In en, this message translates to:
+  /// **'Labeler DID'**
+  String get labelLabelerDid;
+
+  /// Moderation settings hero title
+  ///
+  /// In en, this message translates to:
+  /// **'Labelers and content moderation'**
+  String get labelLabelersAndContentModeration;
+
+  /// Labeler detail section heading for preferences
+  ///
+  /// In en, this message translates to:
+  /// **'Label preferences'**
+  String get labelLabelPreferences;
+
+  /// Moderation badge for hidden content
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden content'**
+  String get labelHiddenContent;
+
+  /// Log level filter chip for debug logs
+  ///
+  /// In en, this message translates to:
+  /// **'Debug'**
+  String get labelLogLevelDebug;
+
+  /// Log level filter chip for error logs
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get labelLogLevelError;
+
+  /// Log level filter chip for fatal logs
+  ///
+  /// In en, this message translates to:
+  /// **'Fatal'**
+  String get labelLogLevelFatal;
+
+  /// Log level filter chip for info logs
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get labelLogLevelInfo;
+
+  /// Log level filter chip for trace logs
+  ///
+  /// In en, this message translates to:
+  /// **'Trace'**
+  String get labelLogLevelTrace;
+
+  /// Log level filter chip for warning logs
+  ///
+  /// In en, this message translates to:
+  /// **'Warning'**
+  String get labelLogLevelWarning;
+
+  /// Fallback informational moderation badge label
+  ///
+  /// In en, this message translates to:
+  /// **'Moderation note'**
+  String get labelModerationNote;
+
+  /// Moderation source label for the built-in Bluesky labeler
+  ///
+  /// In en, this message translates to:
+  /// **'Bluesky'**
+  String get labelModerationSourceBluesky;
+
+  /// Moderation source label for a subscribed custom labeler
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribed labeler'**
+  String get labelModerationSourceSubscribedLabeler;
+
+  /// Moderation badge for muted account content
+  ///
+  /// In en, this message translates to:
+  /// **'Muted account'**
+  String get labelMutedAccount;
+
+  /// Moderation badge for muted phrase content
+  ///
+  /// In en, this message translates to:
+  /// **'Muted phrase'**
+  String get labelMutedPhrase;
+
+  /// Empty state title when a labeler has no localized custom definitions
+  ///
+  /// In en, this message translates to:
+  /// **'No custom label definitions'**
+  String get labelNoCustomLabelDefinitions;
+
+  /// Empty state title when no custom labelers are subscribed
+  ///
+  /// In en, this message translates to:
+  /// **'No custom labelers'**
+  String get labelNoCustomLabelers;
+
+  /// Developer PDS Explorer screen title
+  ///
+  /// In en, this message translates to:
+  /// **'PDS Explorer'**
+  String get labelPdsExplorer;
+
+  /// Labeler detail section heading for published policies
+  ///
+  /// In en, this message translates to:
+  /// **'Published policies'**
+  String get labelPublishedPolicies;
+
+  /// Devtools breadcrumb label for an empty record key
+  ///
+  /// In en, this message translates to:
+  /// **'Record JSON'**
+  String get labelRecordJson;
+
+  /// Generic refresh tooltip label
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get labelRefresh;
+
+  /// Devtools breadcrumb fallback label for repository
+  ///
+  /// In en, this message translates to:
+  /// **'Repository'**
+  String get labelRepository;
+
+  /// Labeler detail switch label for subscribed labelers
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribed'**
+  String get labelSubscribed;
+
+  /// Fallback moderation label for sensitive content
+  ///
+  /// In en, this message translates to:
+  /// **'Sensitive content'**
+  String get labelSensitiveContent;
+
+  /// Generic fallback label when a name is unknown
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get labelUnknown;
+
+  /// Helper text in add labeler dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a labeler DID to review and subscribe to its labels.'**
+  String get messageAddLabelerDidHelper;
+
+  /// Moderation settings adult content switch helper text
+  ///
+  /// In en, this message translates to:
+  /// **'Required before 18+ label preferences can be changed.'**
+  String get messageAdultContentRequiredForLabels;
+
+  /// Moderation settings fallback subtitle when built-in labeler details are unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'The built-in labeler is active even if its details cannot be loaded right now.'**
+  String get messageBuiltInLabelerActiveWhenUnavailable;
+
+  /// Labeler detail subtitle for built-in labeler subscription switch
+  ///
+  /// In en, this message translates to:
+  /// **'This labeler is always active.'**
+  String get messageBuiltInLabelerAlwaysActive;
+
+  /// Developer PDS Explorer empty state helper text
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a handle, DID, or AT-URI to explore\na user\'\'s repository.'**
+  String get messageDevtoolsEmptyState;
+
+  /// Helper text shown when adult content is required to edit a label preference
+  ///
+  /// In en, this message translates to:
+  /// **'Enable adult content to change this 18+ label.'**
+  String get messageEnableAdultContentForLabel;
+
+  /// Tooltip for blocked account moderation badge
+  ///
+  /// In en, this message translates to:
+  /// **'This account is blocked'**
+  String get messageBlockedAccountDescription;
+
+  /// Tooltip for blocked-by account moderation badge
+  ///
+  /// In en, this message translates to:
+  /// **'This account has blocked you'**
+  String get messageBlockedByAccountDescription;
+
+  /// Tooltip for blocked relationship moderation badge
+  ///
+  /// In en, this message translates to:
+  /// **'This content is limited by a block relationship'**
+  String get messageBlockedRelationshipDescription;
+
+  /// Tooltip for hidden content moderation badge
+  ///
+  /// In en, this message translates to:
+  /// **'This content is hidden by moderation rules'**
+  String get messageHiddenContentDescription;
+
+  /// Snackbar after copying record JSON
+  ///
+  /// In en, this message translates to:
+  /// **'JSON copied to clipboard'**
+  String get messageJsonCopiedToClipboard;
+
+  /// Log viewer empty state title
+  ///
+  /// In en, this message translates to:
+  /// **'No logs yet'**
+  String get messageLogsEmpty;
+
+  /// Log viewer empty state subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Log entries will appear here'**
+  String get messageLogsEmptySubtitle;
+
+  /// Moderation settings hero subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Manage adult-content visibility, subscribed labelers, and the rules each labeler applies to posts and profiles.'**
+  String get messageModerationSettingsHeroSubtitle;
+
+  /// Fallback moderation badge tooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Moderation guidance applies here'**
+  String get messageModerationGuidanceApplies;
+
+  /// Tooltip for muted account moderation badge
+  ///
+  /// In en, this message translates to:
+  /// **'Muted content is being downranked here'**
+  String get messageMutedAccountDescription;
+
+  /// Tooltip for muted phrase moderation badge
+  ///
+  /// In en, this message translates to:
+  /// **'A muted phrase matched this content'**
+  String get messageMutedPhraseDescription;
+
+  /// Labeler detail empty state subtitle when no localized custom definitions are available
+  ///
+  /// In en, this message translates to:
+  /// **'This labeler publishes values, but not localized custom definitions.'**
+  String get messageNoCustomLabelDefinitions;
+
+  /// Moderation settings empty state subtitle when no custom labelers are subscribed
+  ///
+  /// In en, this message translates to:
+  /// **'Add a labeler DID to subscribe and configure its custom labels.'**
+  String get messageNoCustomLabelers;
+
+  /// Fallback description for a label definition without localized description
+  ///
+  /// In en, this message translates to:
+  /// **'No description available for this label.'**
+  String get messageNoLabelDescriptionAvailable;
+
+  /// Snackbar when there is no log file to share
+  ///
+  /// In en, this message translates to:
+  /// **'No log file available'**
+  String get messageNoLogFileAvailable;
+
+  /// Devtools repository count status when record counts cannot be loaded
+  ///
+  /// In en, this message translates to:
+  /// **'Record counts unavailable'**
+  String get messageRecordCountsUnavailable;
+
+  /// Devtools repository count status while record counts are loading
+  ///
+  /// In en, this message translates to:
+  /// **'Counting records...'**
+  String get messageRecordCountsLoading;
+
+  /// Labeler detail subtitle for custom labeler subscription switch
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribed labelers are added to your moderation headers and preferences.'**
+  String get messageSubscribedLabelersHeaders;
+
+  /// Snackbar when the log share sheet cannot open
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open share sheet. Please try again.'**
+  String get messageUnableToOpenShareSheet;
+
+  /// Devtools search input placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Handle, DID, or at:// URI'**
+  String get placeholderHandleDidOrAtUri;
+
+  /// Placeholder DID in add labeler dialog
+  ///
+  /// In en, this message translates to:
+  /// **'did:plc:examplelabeler'**
+  String get placeholderLabelerDid;
+
+  /// Log viewer search field placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Filter logs...'**
+  String get placeholderLogsFilter;
+
+  /// Share sheet subject for log files
+  ///
+  /// In en, this message translates to:
+  /// **'Lazurite logs'**
+  String get subjectLazuriteLogs;
+
+  /// Tooltip for clearing all log files
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all logs'**
+  String get tooltipClearAllLogs;
+
+  /// Tooltip for opening pds.ls
+  ///
+  /// In en, this message translates to:
+  /// **'Go to pds.ls'**
+  String get tooltipGoToPdsLs;
+
+  /// Tooltip for sharing a log file
+  ///
+  /// In en, this message translates to:
+  /// **'Share log file'**
+  String get tooltipShareLogFile;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -2808,5 +2808,559 @@
   "validationEnterAppPassword": "Enter your app password",
   "@validationEnterAppPassword": {
     "description": "Validation error for missing app password"
+  },
+  "buttonAdd": "Add",
+  "@buttonAdd": {
+    "description": "Generic add button label"
+  },
+  "buttonAdding": "Adding...",
+  "@buttonAdding": {
+    "description": "Button label while an add action is in progress"
+  },
+  "buttonInspiredByPdsLs": "Inspired by pds.ls",
+  "@buttonInspiredByPdsLs": {
+    "description": "Devtools button label linking to pds.ls"
+  },
+  "buttonCopyJson": "Copy JSON",
+  "@buttonCopyJson": {
+    "description": "Button label to copy record JSON"
+  },
+  "buttonResolve": "Resolve",
+  "@buttonResolve": {
+    "description": "Button label to resolve a handle, DID, or AT URI"
+  },
+  "buttonUnsubscribe": "Unsubscribe",
+  "@buttonUnsubscribe": {
+    "description": "Button label to unsubscribe from a labeler"
+  },
+  "dialogAddLabelerTitle": "Add labeler",
+  "@dialogAddLabelerTitle": {
+    "description": "Dialog title for adding a moderation labeler"
+  },
+  "dialogClearAllLogsContent": "This will permanently delete all log files. This action cannot be undone.",
+  "@dialogClearAllLogsContent": {
+    "description": "Confirmation dialog body before clearing all log files"
+  },
+  "dialogClearAllLogsTitle": "Clear all logs?",
+  "@dialogClearAllLogsTitle": {
+    "description": "Confirmation dialog title before clearing all log files"
+  },
+  "errorFailedToLoadLogs": "Failed to load logs",
+  "@errorFailedToLoadLogs": {
+    "description": "Error title when logs cannot load"
+  },
+  "errorFailedToLoadModerationSettings": "Failed to load moderation settings",
+  "@errorFailedToLoadModerationSettings": {
+    "description": "Error title when moderation settings cannot load"
+  },
+  "errorFailedToUnsubscribeLabeler": "Failed to unsubscribe: {error}",
+  "@errorFailedToUnsubscribeLabeler": {
+    "description": "Snackbar message when unsubscribing from a labeler fails",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "errorFailedToUpdateAdultContent": "Failed to update adult content: {error}",
+  "@errorFailedToUpdateAdultContent": {
+    "description": "Snackbar message when adult content preference update fails",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "errorFailedToUpdateLabelPreference": "Failed to update preference: {error}",
+  "@errorFailedToUpdateLabelPreference": {
+    "description": "Snackbar message when a label preference update fails",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "errorFailedToUpdateLabelerSubscription": "Failed to update subscription: {error}",
+  "@errorFailedToUpdateLabelerSubscription": {
+    "description": "Snackbar message when a labeler subscription update fails",
+    "placeholders": {
+      "error": {
+        "type": "Object",
+        "example": "network unavailable"
+      }
+    }
+  },
+  "errorLabelerDidRequired": "Enter a labeler DID.",
+  "@errorLabelerDidRequired": {
+    "description": "Validation error when adding a labeler without a DID"
+  },
+  "errorLabelerNotFound": "Labeler not found.",
+  "@errorLabelerNotFound": {
+    "description": "Error thrown when a labeler DID cannot be loaded"
+  },
+  "errorNoLabelerFoundForDid": "No labeler found for that DID.",
+  "@errorNoLabelerFoundForDid": {
+    "description": "Validation error when no labeler exists for the entered DID"
+  },
+  "errorUnableToLoadLabeler": "Unable to load labeler",
+  "@errorUnableToLoadLabeler": {
+    "description": "Error title when a labeler detail screen cannot load"
+  },
+  "formatAddLabelerLimit": "Add ({current}/{max})",
+  "@formatAddLabelerLimit": {
+    "description": "Add labeler button showing current and maximum custom labelers",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "example": "1"
+      },
+      "max": {
+        "type": "int",
+        "example": "20"
+      }
+    }
+  },
+  "formatCollectionsCount": "{count, plural, =1{1 collection} other{{count} collections}}",
+  "@formatCollectionsCount": {
+    "description": "Devtools repository collection count",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "formatCid": "CID: {cid}",
+  "@formatCid": {
+    "description": "Devtools record CID label",
+    "placeholders": {
+      "cid": {
+        "type": "String",
+        "example": "bafyreicid"
+      }
+    }
+  },
+  "formatCustomLabelCount": "{count, plural, =1{1 custom label} other{{count} custom labels}}",
+  "@formatCustomLabelCount": {
+    "description": "Moderation labeler detail chip showing custom label count",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "formatDefinitionCount": "{count, plural, =1{1 definition} other{{count} definitions}}",
+  "@formatDefinitionCount": {
+    "description": "Moderation labeler card chip showing custom definition count",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "formatLoadedRecordsCount": "{count} loaded",
+  "@formatLoadedRecordsCount": {
+    "description": "Devtools record list count while total is unknown",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "20"
+      }
+    }
+  },
+  "formatLoadedRecordsOfTotal": "{loaded} of {total}",
+  "@formatLoadedRecordsOfTotal": {
+    "description": "Devtools record list count showing loaded and total records",
+    "placeholders": {
+      "loaded": {
+        "type": "int",
+        "example": "20"
+      },
+      "total": {
+        "type": "int",
+        "example": "100"
+      }
+    }
+  },
+  "formatModerationSourceLabel": "{source} label",
+  "@formatModerationSourceLabel": {
+    "description": "Tooltip description for a moderation label source",
+    "placeholders": {
+      "source": {
+        "type": "String",
+        "example": "Bluesky"
+      }
+    }
+  },
+  "formatPolicyBlur": "Blur {value}",
+  "@formatPolicyBlur": {
+    "description": "Moderation policy chip showing the blur behavior",
+    "placeholders": {
+      "value": {
+        "type": "String",
+        "example": "content"
+      }
+    }
+  },
+  "formatPolicyDefault": "Default {value}",
+  "@formatPolicyDefault": {
+    "description": "Moderation policy chip showing default preference",
+    "placeholders": {
+      "value": {
+        "type": "String",
+        "example": "warn"
+      }
+    }
+  },
+  "formatPolicyId": "ID {identifier}",
+  "@formatPolicyId": {
+    "description": "Moderation policy chip showing a label identifier",
+    "placeholders": {
+      "identifier": {
+        "type": "String",
+        "example": "graphic-media"
+      }
+    }
+  },
+  "formatPolicySeverity": "Severity {value}",
+  "@formatPolicySeverity": {
+    "description": "Moderation policy chip showing severity",
+    "placeholders": {
+      "value": {
+        "type": "String",
+        "example": "alert"
+      }
+    }
+  },
+  "formatPublishedValueCount": "{count, plural, =1{1 published value} other{{count} published values}}",
+  "@formatPublishedValueCount": {
+    "description": "Moderation labeler card chip showing published value count",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "formatRecordsCount": "{count, plural, =1{1 record} other{{count} records}}",
+  "@formatRecordsCount": {
+    "description": "Devtools repository record count",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "formatSubscribedToLabeler": "Subscribed to {name}",
+  "@formatSubscribedToLabeler": {
+    "description": "Snackbar after subscribing to a labeler",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Bluesky Safety"
+      }
+    }
+  },
+  "labelAdultContentSetting": "Adult content",
+  "@labelAdultContentSetting": {
+    "description": "Moderation settings adult content switch label"
+  },
+  "labelAdultOnlyShort": "18+",
+  "@labelAdultOnlyShort": {
+    "description": "Short chip label for adult-only moderation labels"
+  },
+  "labelAlwaysOn": "Always on",
+  "@labelAlwaysOn": {
+    "description": "Status label for always-on moderation labeler"
+  },
+  "labelAutoScroll": "Auto-scroll",
+  "@labelAutoScroll": {
+    "description": "Log viewer auto-scroll control label"
+  },
+  "labelBlueskyModeration": "Bluesky moderation",
+  "@labelBlueskyModeration": {
+    "description": "Built-in Bluesky moderation labeler title"
+  },
+  "labelBuiltIn": "Built-in",
+  "@labelBuiltIn": {
+    "description": "Chip label for a built-in item"
+  },
+  "labelBuiltInLabeler": "Built-in labeler",
+  "@labelBuiltInLabeler": {
+    "description": "Moderation settings section title for built-in labeler"
+  },
+  "labelBuiltInModeration": "Built-in moderation",
+  "@labelBuiltInModeration": {
+    "description": "Moderation labeler chip and switch label for built-in moderation"
+  },
+  "labelBlockedAccount": "Blocked account",
+  "@labelBlockedAccount": {
+    "description": "Moderation badge for blocked account content"
+  },
+  "labelBlockedByAccount": "Blocked by account",
+  "@labelBlockedByAccount": {
+    "description": "Moderation badge for content from an account that blocked the user"
+  },
+  "labelBlockedRelationship": "Blocked relationship",
+  "@labelBlockedRelationship": {
+    "description": "Moderation badge for content limited by a block relationship"
+  },
+  "labelCollections": "COLLECTIONS",
+  "@labelCollections": {
+    "description": "Devtools section heading for repository collections"
+  },
+  "labelContentPreferenceHide": "Hide",
+  "@labelContentPreferenceHide": {
+    "description": "Moderation label preference option to hide matching content"
+  },
+  "labelContentPreferenceIgnore": "Ignore",
+  "@labelContentPreferenceIgnore": {
+    "description": "Moderation label preference option to ignore matching content"
+  },
+  "labelContentPreferenceWarn": "Warn",
+  "@labelContentPreferenceWarn": {
+    "description": "Moderation label preference option to warn on matching content"
+  },
+  "labelCustomLabelers": "Custom labelers",
+  "@labelCustomLabelers": {
+    "description": "Moderation settings section title for custom labelers"
+  },
+  "labelLabeler": "Labeler",
+  "@labelLabeler": {
+    "description": "Labeler detail screen app bar title"
+  },
+  "labelLabelerDid": "Labeler DID",
+  "@labelLabelerDid": {
+    "description": "Input label for labeler DID"
+  },
+  "labelLabelersAndContentModeration": "Labelers and content moderation",
+  "@labelLabelersAndContentModeration": {
+    "description": "Moderation settings hero title"
+  },
+  "labelLabelPreferences": "Label preferences",
+  "@labelLabelPreferences": {
+    "description": "Labeler detail section heading for preferences"
+  },
+  "labelHiddenContent": "Hidden content",
+  "@labelHiddenContent": {
+    "description": "Moderation badge for hidden content"
+  },
+  "labelLogLevelDebug": "Debug",
+  "@labelLogLevelDebug": {
+    "description": "Log level filter chip for debug logs"
+  },
+  "labelLogLevelError": "Error",
+  "@labelLogLevelError": {
+    "description": "Log level filter chip for error logs"
+  },
+  "labelLogLevelFatal": "Fatal",
+  "@labelLogLevelFatal": {
+    "description": "Log level filter chip for fatal logs"
+  },
+  "labelLogLevelInfo": "Info",
+  "@labelLogLevelInfo": {
+    "description": "Log level filter chip for info logs"
+  },
+  "labelLogLevelTrace": "Trace",
+  "@labelLogLevelTrace": {
+    "description": "Log level filter chip for trace logs"
+  },
+  "labelLogLevelWarning": "Warning",
+  "@labelLogLevelWarning": {
+    "description": "Log level filter chip for warning logs"
+  },
+  "labelModerationNote": "Moderation note",
+  "@labelModerationNote": {
+    "description": "Fallback informational moderation badge label"
+  },
+  "labelModerationSourceBluesky": "Bluesky",
+  "@labelModerationSourceBluesky": {
+    "description": "Moderation source label for the built-in Bluesky labeler"
+  },
+  "labelModerationSourceSubscribedLabeler": "Subscribed labeler",
+  "@labelModerationSourceSubscribedLabeler": {
+    "description": "Moderation source label for a subscribed custom labeler"
+  },
+  "labelMutedAccount": "Muted account",
+  "@labelMutedAccount": {
+    "description": "Moderation badge for muted account content"
+  },
+  "labelMutedPhrase": "Muted phrase",
+  "@labelMutedPhrase": {
+    "description": "Moderation badge for muted phrase content"
+  },
+  "labelNoCustomLabelDefinitions": "No custom label definitions",
+  "@labelNoCustomLabelDefinitions": {
+    "description": "Empty state title when a labeler has no localized custom definitions"
+  },
+  "labelNoCustomLabelers": "No custom labelers",
+  "@labelNoCustomLabelers": {
+    "description": "Empty state title when no custom labelers are subscribed"
+  },
+  "labelPdsExplorer": "PDS Explorer",
+  "@labelPdsExplorer": {
+    "description": "Developer PDS Explorer screen title"
+  },
+  "labelPublishedPolicies": "Published policies",
+  "@labelPublishedPolicies": {
+    "description": "Labeler detail section heading for published policies"
+  },
+  "labelRecordJson": "Record JSON",
+  "@labelRecordJson": {
+    "description": "Devtools breadcrumb label for an empty record key"
+  },
+  "labelRefresh": "Refresh",
+  "@labelRefresh": {
+    "description": "Generic refresh tooltip label"
+  },
+  "labelRepository": "Repository",
+  "@labelRepository": {
+    "description": "Devtools breadcrumb fallback label for repository"
+  },
+  "labelSubscribed": "Subscribed",
+  "@labelSubscribed": {
+    "description": "Labeler detail switch label for subscribed labelers"
+  },
+  "labelSensitiveContent": "Sensitive content",
+  "@labelSensitiveContent": {
+    "description": "Fallback moderation label for sensitive content"
+  },
+  "labelUnknown": "Unknown",
+  "@labelUnknown": {
+    "description": "Generic fallback label when a name is unknown"
+  },
+  "messageAddLabelerDidHelper": "Paste a labeler DID to review and subscribe to its labels.",
+  "@messageAddLabelerDidHelper": {
+    "description": "Helper text in add labeler dialog"
+  },
+  "messageAdultContentRequiredForLabels": "Required before 18+ label preferences can be changed.",
+  "@messageAdultContentRequiredForLabels": {
+    "description": "Moderation settings adult content switch helper text"
+  },
+  "messageBuiltInLabelerActiveWhenUnavailable": "The built-in labeler is active even if its details cannot be loaded right now.",
+  "@messageBuiltInLabelerActiveWhenUnavailable": {
+    "description": "Moderation settings fallback subtitle when built-in labeler details are unavailable"
+  },
+  "messageBuiltInLabelerAlwaysActive": "This labeler is always active.",
+  "@messageBuiltInLabelerAlwaysActive": {
+    "description": "Labeler detail subtitle for built-in labeler subscription switch"
+  },
+  "messageDevtoolsEmptyState": "Enter a handle, DID, or AT-URI to explore\na user''s repository.",
+  "@messageDevtoolsEmptyState": {
+    "description": "Developer PDS Explorer empty state helper text"
+  },
+  "messageEnableAdultContentForLabel": "Enable adult content to change this 18+ label.",
+  "@messageEnableAdultContentForLabel": {
+    "description": "Helper text shown when adult content is required to edit a label preference"
+  },
+  "messageBlockedAccountDescription": "This account is blocked",
+  "@messageBlockedAccountDescription": {
+    "description": "Tooltip for blocked account moderation badge"
+  },
+  "messageBlockedByAccountDescription": "This account has blocked you",
+  "@messageBlockedByAccountDescription": {
+    "description": "Tooltip for blocked-by account moderation badge"
+  },
+  "messageBlockedRelationshipDescription": "This content is limited by a block relationship",
+  "@messageBlockedRelationshipDescription": {
+    "description": "Tooltip for blocked relationship moderation badge"
+  },
+  "messageHiddenContentDescription": "This content is hidden by moderation rules",
+  "@messageHiddenContentDescription": {
+    "description": "Tooltip for hidden content moderation badge"
+  },
+  "messageJsonCopiedToClipboard": "JSON copied to clipboard",
+  "@messageJsonCopiedToClipboard": {
+    "description": "Snackbar after copying record JSON"
+  },
+  "messageLogsEmpty": "No logs yet",
+  "@messageLogsEmpty": {
+    "description": "Log viewer empty state title"
+  },
+  "messageLogsEmptySubtitle": "Log entries will appear here",
+  "@messageLogsEmptySubtitle": {
+    "description": "Log viewer empty state subtitle"
+  },
+  "messageModerationSettingsHeroSubtitle": "Manage adult-content visibility, subscribed labelers, and the rules each labeler applies to posts and profiles.",
+  "@messageModerationSettingsHeroSubtitle": {
+    "description": "Moderation settings hero subtitle"
+  },
+  "messageModerationGuidanceApplies": "Moderation guidance applies here",
+  "@messageModerationGuidanceApplies": {
+    "description": "Fallback moderation badge tooltip"
+  },
+  "messageMutedAccountDescription": "Muted content is being downranked here",
+  "@messageMutedAccountDescription": {
+    "description": "Tooltip for muted account moderation badge"
+  },
+  "messageMutedPhraseDescription": "A muted phrase matched this content",
+  "@messageMutedPhraseDescription": {
+    "description": "Tooltip for muted phrase moderation badge"
+  },
+  "messageNoCustomLabelDefinitions": "This labeler publishes values, but not localized custom definitions.",
+  "@messageNoCustomLabelDefinitions": {
+    "description": "Labeler detail empty state subtitle when no localized custom definitions are available"
+  },
+  "messageNoCustomLabelers": "Add a labeler DID to subscribe and configure its custom labels.",
+  "@messageNoCustomLabelers": {
+    "description": "Moderation settings empty state subtitle when no custom labelers are subscribed"
+  },
+  "messageNoLabelDescriptionAvailable": "No description available for this label.",
+  "@messageNoLabelDescriptionAvailable": {
+    "description": "Fallback description for a label definition without localized description"
+  },
+  "messageNoLogFileAvailable": "No log file available",
+  "@messageNoLogFileAvailable": {
+    "description": "Snackbar when there is no log file to share"
+  },
+  "messageRecordCountsUnavailable": "Record counts unavailable",
+  "@messageRecordCountsUnavailable": {
+    "description": "Devtools repository count status when record counts cannot be loaded"
+  },
+  "messageRecordCountsLoading": "Counting records...",
+  "@messageRecordCountsLoading": {
+    "description": "Devtools repository count status while record counts are loading"
+  },
+  "messageSubscribedLabelersHeaders": "Subscribed labelers are added to your moderation headers and preferences.",
+  "@messageSubscribedLabelersHeaders": {
+    "description": "Labeler detail subtitle for custom labeler subscription switch"
+  },
+  "messageUnableToOpenShareSheet": "Unable to open share sheet. Please try again.",
+  "@messageUnableToOpenShareSheet": {
+    "description": "Snackbar when the log share sheet cannot open"
+  },
+  "placeholderHandleDidOrAtUri": "Handle, DID, or at:// URI",
+  "@placeholderHandleDidOrAtUri": {
+    "description": "Devtools search input placeholder"
+  },
+  "placeholderLabelerDid": "did:plc:examplelabeler",
+  "@placeholderLabelerDid": {
+    "description": "Placeholder DID in add labeler dialog"
+  },
+  "placeholderLogsFilter": "Filter logs...",
+  "@placeholderLogsFilter": {
+    "description": "Log viewer search field placeholder"
+  },
+  "subjectLazuriteLogs": "Lazurite logs",
+  "@subjectLazuriteLogs": {
+    "description": "Share sheet subject for log files"
+  },
+  "tooltipClearAllLogs": "Clear all logs",
+  "@tooltipClearAllLogs": {
+    "description": "Tooltip for clearing all log files"
+  },
+  "tooltipGoToPdsLs": "Go to pds.ls",
+  "@tooltipGoToPdsLs": {
+    "description": "Tooltip for opening pds.ls"
+  },
+  "tooltipShareLogFile": "Share log file",
+  "@tooltipShareLogFile": {
+    "description": "Tooltip for sharing a log file"
   }
 }

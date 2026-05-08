@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/logs/cubit/log_viewer_cubit.dart';
 import 'package:lazurite/features/logs/data/log_entry.dart';
 import 'package:lazurite/shared/presentation/helpers/share_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class LogsScreen extends StatelessWidget {
   const LogsScreen({super.key});
@@ -71,6 +72,8 @@ class _LogsScreenContentState extends State<_LogsScreenContent> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return BlocListener<LogViewerCubit, LogViewerState>(
       listenWhen: (previous, current) =>
           previous.filteredEntries != current.filteredEntries || previous.status != current.status,
@@ -83,12 +86,16 @@ class _LogsScreenContentState extends State<_LogsScreenContent> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Logs'),
+          title: Text(l10n.labelLogs),
           actions: [
-            IconButton(icon: const Icon(Icons.share_outlined), tooltip: 'Share log file', onPressed: _shareLogs),
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              tooltip: l10n.tooltipShareLogFile,
+              onPressed: _shareLogs,
+            ),
             IconButton(
               icon: Icon(Icons.delete_outline, color: context.colorScheme.error),
-              tooltip: 'Clear all logs',
+              tooltip: l10n.tooltipClearAllLogs,
               onPressed: () => _confirmClearLogs(context),
             ),
           ],
@@ -115,6 +122,7 @@ class _LogsScreenContentState extends State<_LogsScreenContent> {
     final cubit = context.read<LogViewerCubit>();
     final messenger = ScaffoldMessenger.of(context);
     final shareOrigin = ShareHelper.sharePositionOriginForContext(context);
+    final l10n = context.l10n;
 
     final file = await cubit.getTodaysLogFile();
     if (!mounted) {
@@ -125,7 +133,7 @@ class _LogsScreenContentState extends State<_LogsScreenContent> {
       if (!mounted) {
         return;
       }
-      messenger.showSnackBar(const SnackBar(content: Text('No log file available')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.messageNoLogFileAvailable)));
       return;
     }
 
@@ -134,13 +142,13 @@ class _LogsScreenContentState extends State<_LogsScreenContent> {
     }
 
     try {
-      await ShareHelper.shareFilePathsAtOrigin(shareOrigin, [file.path], subject: 'Lazurite logs');
+      await ShareHelper.shareFilePathsAtOrigin(shareOrigin, [file.path], subject: l10n.subjectLazuriteLogs);
     } catch (error, stackTrace) {
       log.e('LogsScreen: Failed to open share sheet for log file', error: error, stackTrace: stackTrace);
       if (!mounted) {
         return;
       }
-      messenger.showSnackBar(const SnackBar(content: Text('Unable to open share sheet. Please try again.')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.messageUnableToOpenShareSheet)));
     }
   }
 
@@ -148,13 +156,13 @@ class _LogsScreenContentState extends State<_LogsScreenContent> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear all logs?'),
-        content: const Text('This will permanently delete all log files. This action cannot be undone.'),
+        title: Text(context.l10n.dialogClearAllLogsTitle),
+        content: Text(context.l10n.dialogClearAllLogsContent),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.l10n.buttonCancel)),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Clear', style: TextStyle(color: context.colorScheme.error)),
+            child: Text(context.l10n.buttonClear, style: TextStyle(color: context.colorScheme.error)),
           ),
         ],
       ),
@@ -196,7 +204,7 @@ class _AutoScrollIndicator extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                'Auto-scroll',
+                context.l10n.labelAutoScroll,
                 style: TextStyle(fontSize: 12, color: isActive ? colorScheme.primary : colorScheme.outline),
               ),
             ],
@@ -214,7 +222,7 @@ class _SearchBar extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       child: TextField(
         decoration: InputDecoration(
-          hintText: 'Filter logs...',
+          hintText: context.l10n.placeholderLogsFilter,
           prefixIcon: const Icon(Icons.search, size: 20),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -229,12 +237,12 @@ class _SearchBar extends StatelessWidget {
 
 class _LevelFilterChips extends StatelessWidget {
   static const _levels = [
-    (Level.fatal, 'Fatal', Colors.orange),
-    (Level.error, 'Error', Colors.red),
-    (Level.warning, 'Warning', Colors.yellow),
-    (Level.info, 'Info', Colors.blue),
-    (Level.debug, 'Debug', Colors.green),
-    (Level.trace, 'Trace', Colors.purple),
+    (Level.fatal, Colors.orange),
+    (Level.error, Colors.red),
+    (Level.warning, Colors.yellow),
+    (Level.info, Colors.blue),
+    (Level.debug, Colors.green),
+    (Level.trace, Colors.purple),
   ];
 
   @override
@@ -250,10 +258,10 @@ class _LevelFilterChips extends StatelessWidget {
             itemCount: _levels.length,
             separatorBuilder: (context, index) => const SizedBox(width: 6),
             itemBuilder: (context, index) {
-              final (level, label, color) = _levels[index];
+              final (level, color) = _levels[index];
               final isEnabled = state.enabledLevels.contains(level);
               return FilterChip(
-                label: Text(label),
+                label: Text(_labelForLevel(context, level)),
                 selected: isEnabled,
                 onSelected: (selected) => context.read<LogViewerCubit>().toggleLevel(level),
                 avatar: Container(
@@ -294,16 +302,16 @@ class _LogList extends StatelessWidget {
 
         if (state.status == LogViewerStatus.error) {
           return ErrorState(
-            title: 'Failed to load logs',
-            message: state.errorMessage ?? 'Unknown error',
+            title: context.l10n.errorFailedToLoadLogs,
+            message: state.errorMessage ?? context.l10n.errorUnknown,
             onRetry: () => context.read<LogViewerCubit>().loadLogs(),
           );
         }
 
         if (state.filteredEntries.isEmpty) {
-          return const EmptyState(
-            message: 'No logs yet',
-            subtitle: 'Log entries will appear here',
+          return EmptyState(
+            message: context.l10n.messageLogsEmpty,
+            subtitle: context.l10n.messageLogsEmptySubtitle,
             icon: Icons.description_outlined,
           );
         }
@@ -319,6 +327,19 @@ class _LogList extends StatelessWidget {
       },
     );
   }
+}
+
+String _labelForLevel(BuildContext context, Level level) {
+  final l10n = context.l10n;
+  return switch (level) {
+    Level.fatal => l10n.labelLogLevelFatal,
+    Level.error => l10n.labelLogLevelError,
+    Level.warning => l10n.labelLogLevelWarning,
+    Level.info => l10n.labelLogLevelInfo,
+    Level.debug => l10n.labelLogLevelDebug,
+    Level.trace => l10n.labelLogLevelTrace,
+    _ => level.name,
+  };
 }
 
 class _LogEntryTile extends StatefulWidget {

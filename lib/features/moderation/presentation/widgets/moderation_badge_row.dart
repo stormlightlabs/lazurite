@@ -1,7 +1,8 @@
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
-import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
+import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 
 class ModerationBadgeRow extends StatelessWidget {
   const ModerationBadgeRow({super.key, required this.ui, this.padding = EdgeInsets.zero, this.labelResolver});
@@ -12,6 +13,7 @@ class ModerationBadgeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final moderationService = maybeModerationService(context);
     final locale = Localizations.localeOf(context);
     final effectiveResolver =
@@ -24,7 +26,7 @@ class ModerationBadgeRow extends StatelessWidget {
                 preferredLanguages: [locale.toLanguageTag(), locale.languageCode],
               ));
 
-    final badges = moderationBadgesForUi(ui, labelResolver: effectiveResolver);
+    final badges = moderationBadgesForUi(ui, labelResolver: effectiveResolver, l10n: l10n);
     if (badges.isEmpty) {
       return const SizedBox.shrink();
     }

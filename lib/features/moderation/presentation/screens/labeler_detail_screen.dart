@@ -2,6 +2,7 @@ import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:bluesky/app_bsky_labeler_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
@@ -39,7 +40,7 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
     await _service.ensureInitialized();
     final details = await _service.getLabelerDetails(widget.did);
     if (details == null) {
-      throw Exception('Labeler not found.');
+      throw const _LabelerNotFoundException();
     }
 
     final currentLabelers = _service.currentPrefs?.labelers.map((labeler) => labeler.did).toSet() ?? const <String>{};
@@ -63,7 +64,9 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
       _reload();
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$error')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.errorFailedToUpdateLabelerSubscription(error))));
       }
     } finally {
       if (mounted) {
@@ -78,15 +81,19 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
       _reload();
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update preference: $error')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.errorFailedToUpdateLabelPreference(error))));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Labeler')),
+      appBar: AppBar(title: Text(l10n.labelLabeler)),
       body: FutureBuilder<_LabelerDetailData>(
         future: _loadFuture,
         builder: (context, snapshot) {
@@ -101,11 +108,11 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Unable to load labeler', style: context.textTheme.titleMedium),
+                    Text(l10n.errorUnableToLoadLabeler, style: context.textTheme.titleMedium),
                     const SizedBox(height: 8),
-                    Text('${snapshot.error}', textAlign: TextAlign.center),
+                    Text(_errorMessageFor(context, snapshot.error), textAlign: TextAlign.center),
                     const SizedBox(height: 16),
-                    FilledButton(onPressed: _reload, child: const Text('Retry')),
+                    FilledButton(onPressed: _reload, child: Text(l10n.buttonRetry)),
                   ],
                 ),
               ),
@@ -171,20 +178,18 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _PolicyChip(label: '${definitions.length} custom labels'),
-                        _PolicyChip(label: '${labeler.policies.labelValues.length} published values'),
-                        if (isOfficial) const _PolicyChip(label: 'Built-in moderation'),
+                        _PolicyChip(label: l10n.formatCustomLabelCount(definitions.length)),
+                        _PolicyChip(label: l10n.formatPublishedValueCount(labeler.policies.labelValues.length)),
+                        if (isOfficial) _PolicyChip(label: l10n.labelBuiltInModeration),
                       ],
                     ),
                     const SizedBox(height: 16),
                     SwitchListTile.adaptive(
                       value: data.isSubscribed || isOfficial,
                       onChanged: isOfficial || _isUpdatingSubscription ? null : _toggleSubscription,
-                      title: Text(isOfficial ? 'Built-in moderation' : 'Subscribed'),
+                      title: Text(isOfficial ? l10n.labelBuiltInModeration : l10n.labelSubscribed),
                       subtitle: Text(
-                        isOfficial
-                            ? 'This labeler is always active.'
-                            : 'Subscribed labelers are added to your moderation headers and preferences.',
+                        isOfficial ? l10n.messageBuiltInLabelerAlwaysActive : l10n.messageSubscribedLabelersHeaders,
                       ),
                       contentPadding: EdgeInsets.zero,
                     ),
@@ -193,7 +198,7 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                'Published policies'.toUpperCase(),
+                l10n.labelPublishedPolicies.toUpperCase(),
                 style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
               ),
               const SizedBox(height: 8),
@@ -212,15 +217,15 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                'Label preferences'.toUpperCase(),
+                l10n.labelLabelPreferences.toUpperCase(),
                 style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
               ),
               const SizedBox(height: 8),
               if (definitions.isEmpty)
-                const _PreferenceCard(
+                _PreferenceCard(
                   child: ListTile(
-                    title: Text('No custom label definitions'),
-                    subtitle: Text('This labeler publishes values, but not localized custom definitions.'),
+                    title: Text(l10n.labelNoCustomLabelDefinitions),
+                    subtitle: Text(l10n.messageNoCustomLabelDefinitions),
                   ),
                 )
               else
@@ -240,7 +245,7 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
                             formatLocalizedLabelDescription(
                               definition.locales,
                               locale,
-                              fallback: 'No description available for this label.',
+                              fallback: l10n.messageNoLabelDescriptionAvailable,
                             ),
                             style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant),
                           ),
@@ -249,21 +254,32 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
                             spacing: 8,
                             runSpacing: 8,
                             children: [
-                              _PolicyChip(label: 'ID ${definition.identifier}'),
-                              _PolicyChip(label: 'Blur ${definition.blurs.toJson()}'),
-                              _PolicyChip(label: 'Severity ${definition.severity.toJson()}'),
+                              _PolicyChip(label: l10n.formatPolicyId(definition.identifier)),
+                              _PolicyChip(label: l10n.formatPolicyBlur(definition.blurs.toJson())),
+                              _PolicyChip(label: l10n.formatPolicySeverity(definition.severity.toJson())),
                               _PolicyChip(
-                                label: 'Default ${visibilityFromDefaultSetting(definition.defaultSetting).name}',
+                                label: l10n.formatPolicyDefault(
+                                  visibilityFromDefaultSetting(definition.defaultSetting).name,
+                                ),
                               ),
-                              if (definition.adultOnly ?? false) const _PolicyChip(label: '18+'),
+                              if (definition.adultOnly ?? false) _PolicyChip(label: l10n.labelAdultOnlyShort),
                             ],
                           ),
                           const SizedBox(height: 16),
                           SegmentedButton<KnownContentLabelPrefVisibility>(
-                            segments: const [
-                              ButtonSegment(value: KnownContentLabelPrefVisibility.ignore, label: Text('Ignore')),
-                              ButtonSegment(value: KnownContentLabelPrefVisibility.warn, label: Text('Warn')),
-                              ButtonSegment(value: KnownContentLabelPrefVisibility.hide, label: Text('Hide')),
+                            segments: [
+                              ButtonSegment(
+                                value: KnownContentLabelPrefVisibility.ignore,
+                                label: Text(l10n.labelContentPreferenceIgnore),
+                              ),
+                              ButtonSegment(
+                                value: KnownContentLabelPrefVisibility.warn,
+                                label: Text(l10n.labelContentPreferenceWarn),
+                              ),
+                              ButtonSegment(
+                                value: KnownContentLabelPrefVisibility.hide,
+                                label: Text(l10n.labelContentPreferenceHide),
+                              ),
                             ],
                             selected: {
                               resolveLabelPreference(
@@ -281,7 +297,7 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
                           if ((definition.adultOnly ?? false) && !data.adultContentEnabled) ...[
                             const SizedBox(height: 10),
                             Text(
-                              'Enable adult content to change this 18+ label.',
+                              l10n.messageEnableAdultContentForLabel,
                               style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                             ),
                           ],
@@ -311,6 +327,17 @@ class _LabelerDetailData {
   final bool adultContentEnabled;
   final List<UPreferences> currentPreferences;
   final bool isSubscribed;
+}
+
+class _LabelerNotFoundException implements Exception {
+  const _LabelerNotFoundException();
+}
+
+String _errorMessageFor(BuildContext context, Object? error) {
+  if (error is _LabelerNotFoundException) {
+    return context.l10n.errorLabelerNotFound;
+  }
+  return '$error';
 }
 
 class _PolicyChip extends StatelessWidget {
