@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/features/starter_packs/cubit/actor_starter_packs_cubit.dart';
@@ -40,11 +41,11 @@ class _ActorStarterPacksView extends StatelessWidget {
     final isOwnProfile = currentUserDid != null && currentUserDid == actor;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Starter Packs')),
+      appBar: AppBar(title: Text(context.l10n.labelStarterPacks)),
       floatingActionButton: isOwnProfile
           ? FloatingActionButton(
               onPressed: () => context.push('/create-starter-pack'),
-              tooltip: 'Create starter pack',
+              tooltip: context.l10n.labelCreateStarterPack,
               child: const Icon(Icons.add),
             ).animateIfAllowed(
               context,
@@ -65,11 +66,11 @@ class _ActorStarterPacksView extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(state.errorMessage ?? 'Failed to load starter packs'),
+                  Text(state.errorMessage ?? context.l10n.errorFailedToLoadStarterPacks),
                   const SizedBox(height: 12),
                   FilledButton(
                     onPressed: () => context.read<ActorStarterPacksCubit>().load(actor: actor),
-                    child: const Text('Retry'),
+                    child: Text(context.l10n.buttonRetry),
                   ),
                 ],
               ),
@@ -77,7 +78,7 @@ class _ActorStarterPacksView extends StatelessWidget {
           }
 
           if (state.starterPacks.isEmpty) {
-            return const Center(child: Text('No starter packs yet'));
+            return Center(child: Text(context.l10n.messageNoStarterPacksYet));
           }
 
           return AnimatedRefreshIndicator(

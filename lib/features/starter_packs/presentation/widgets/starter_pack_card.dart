@@ -1,8 +1,9 @@
 import 'package:bluesky/app_bsky_graph_defs.dart';
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class StarterPackCard extends StatelessWidget {
   const StarterPackCard({super.key, required this.pack, this.onTap});
@@ -15,7 +16,7 @@ class StarterPackCard extends StatelessWidget {
     final colorScheme = context.colorScheme;
     final textTheme = context.textTheme;
 
-    final name = (pack.record['name'] as String?) ?? 'Starter Pack';
+    final name = (pack.record['name'] as String?) ?? context.l10n.labelStarterPack;
     final memberCount = pack.listItemCount;
     final joinedWeek = pack.joinedWeekCount;
     final joinedAll = pack.joinedAllTimeCount;
@@ -50,7 +51,7 @@ class StarterPackCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          'by @${pack.creator.handle}',
+                          context.l10n.formatListByHandle(pack.creator.handle),
                           style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                       ],
@@ -63,9 +64,9 @@ class StarterPackCard extends StatelessWidget {
               Wrap(
                 spacing: 16,
                 children: [
-                  if (memberCount != null) _buildStat(context, memberCount, 'members'),
-                  if (joinedWeek != null) _buildStat(context, joinedWeek, 'joined this week'),
-                  if (joinedAll != null) _buildStat(context, joinedAll, 'joined total'),
+                  if (memberCount != null) _buildStat(context, memberCount, context.l10n.labelMembers.toLowerCase()),
+                  if (joinedWeek != null) _buildStat(context, joinedWeek, context.l10n.labelJoinedThisWeek),
+                  if (joinedAll != null) _buildStat(context, joinedAll, context.l10n.labelJoinedTotal),
                 ],
               ),
             ],

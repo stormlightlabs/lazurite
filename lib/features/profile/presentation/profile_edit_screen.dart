@@ -7,6 +7,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
@@ -91,7 +92,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       final size = await image.length();
       if (size > ProfileImageUpload.maxBytes) {
         if (mounted) {
-          showAppSnackBar(context, 'Image must be smaller than 1MB', isError: true);
+          showAppSnackBar(context, context.l10n.errorImageTooLarge, isError: true);
         }
         return;
       }
@@ -99,7 +100,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       final mimeType = profileImageMimeTypeFor(reportedMimeType: image.mimeType, path: image.path);
       if (mimeType == null) {
         if (mounted) {
-          showAppSnackBar(context, 'Use a JPEG or PNG image', isError: true);
+          showAppSnackBar(context, context.l10n.errorInvalidProfileImageType, isError: true);
         }
         return;
       }
@@ -119,7 +120,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     } catch (error, stackTrace) {
       log.w('ProfileEditScreen: failed to pick profile image', error: error, stackTrace: stackTrace);
       if (mounted) {
-        showAppSnackBar(context, 'Unable to read selected image', isError: true);
+        showAppSnackBar(context, context.l10n.errorProfileImageReadFailed, isError: true);
       }
     } finally {
       if (mounted) {
@@ -160,12 +161,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         return;
       }
       context.read<ProfileBloc>().add(ProfileLoadRequested(actor: did));
-      showAppSnackBar(context, 'Profile updated', behavior: SnackBarBehavior.floating);
+      showAppSnackBar(context, context.l10n.messageProfileUpdated, behavior: SnackBarBehavior.floating);
       context.go('/profile/me');
     } catch (error, stackTrace) {
       log.w('ProfileEditScreen: failed to save profile', error: error, stackTrace: stackTrace);
       if (mounted) {
-        showAppSnackBar(context, 'Unable to update profile', isError: true);
+        showAppSnackBar(context, context.l10n.errorUnableToUpdateProfile, isError: true);
       }
     } finally {
       if (mounted) {
@@ -197,10 +198,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       return null;
     }
     if (text.characters.length > maxGraphemes) {
-      return '$label must be $maxGraphemes characters or fewer';
+      return context.l10n.formatProfileTextLimit(label, maxGraphemes);
     }
     if (utf8.encode(text).length > maxUtf8Bytes) {
-      return '$label is too long';
+      return context.l10n.formatProfileTextTooLong(label);
     }
     return null;
   }
@@ -212,7 +213,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     }
     final uri = Uri.tryParse(normalized);
     if (uri == null || !uri.hasScheme || uri.host.isEmpty || (uri.scheme != 'http' && uri.scheme != 'https')) {
-      return 'Enter a valid website';
+      return context.l10n.validationEnterValidWebsite;
     }
     return null;
   }
@@ -227,10 +228,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     return AppScreenEntrance(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Edit profile'),
+          title: Text(context.l10n.labelEditProfile),
           leading: IconButton(
             icon: const Icon(Icons.close),
-            tooltip: 'Cancel',
+            tooltip: context.l10n.buttonCancel,
             onPressed: _saving ? null : () => context.go('/profile/me'),
           ),
           actions: [
@@ -240,7 +241,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               icon: _saving
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.check),
-              label: const Text('Save'),
+              label: Text(context.l10n.buttonSave),
             ),
           ],
         ),
@@ -279,9 +280,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Tooltip(
-          message: 'Change banner image',
+          message: context.l10n.messageChangeBannerImage,
           child: Semantics(
-            label: 'Change banner image',
+            label: context.l10n.messageChangeBannerImage,
             button: true,
             child: AspectRatio(
               aspectRatio: 3,
@@ -302,7 +303,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           icon: _pickingBanner
                               ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                               : const Icon(Icons.image_outlined),
-                          label: const Text('Banner'),
+                          label: Text(context.l10n.labelBanner),
                         ),
                       ),
                     ],
@@ -317,9 +318,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           child: Padding(
             padding: const EdgeInsets.only(left: 16),
             child: Tooltip(
-              message: 'Change avatar image',
+              message: context.l10n.messageChangeAvatarImage,
               child: Semantics(
-                label: 'Change avatar image',
+                label: context.l10n.messageChangeAvatarImage,
                 button: true,
                 child: InkWell(
                   key: const ValueKey('profile_edit_avatar_picker'),
@@ -404,8 +405,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         key: const ValueKey('profile_edit_display_name_field'),
         controller: _displayNameController,
         textInputAction: TextInputAction.next,
-        decoration: const InputDecoration(labelText: 'Display name', prefixIcon: Icon(Icons.badge_outlined)),
-        validator: (value) => _validateTextLimit(value, 'Display name', maxGraphemes: 64, maxUtf8Bytes: 640),
+        decoration: InputDecoration(
+          labelText: context.l10n.labelDisplayName,
+          prefixIcon: const Icon(Icons.badge_outlined),
+        ),
+        validator: (value) =>
+            _validateTextLimit(value, context.l10n.labelDisplayName, maxGraphemes: 64, maxUtf8Bytes: 640),
       ),
       const SizedBox(height: 16),
       TextFormField(
@@ -414,16 +419,24 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         minLines: 3,
         maxLines: 6,
         textInputAction: TextInputAction.newline,
-        decoration: const InputDecoration(labelText: 'Description', prefixIcon: Icon(Icons.notes_outlined)),
-        validator: (value) => _validateTextLimit(value, 'Description', maxGraphemes: 256, maxUtf8Bytes: 2560),
+        decoration: InputDecoration(
+          labelText: context.l10n.labelDescription,
+          prefixIcon: const Icon(Icons.notes_outlined),
+        ),
+        validator: (value) =>
+            _validateTextLimit(value, context.l10n.labelDescription, maxGraphemes: 256, maxUtf8Bytes: 2560),
       ),
       const SizedBox(height: 16),
       TextFormField(
         key: const ValueKey('profile_edit_pronouns_field'),
         controller: _pronounsController,
         textInputAction: TextInputAction.next,
-        decoration: const InputDecoration(labelText: 'Pronouns', prefixIcon: Icon(Icons.record_voice_over_outlined)),
-        validator: (value) => _validateTextLimit(value, 'Pronouns', maxGraphemes: 20, maxUtf8Bytes: 200),
+        decoration: InputDecoration(
+          labelText: context.l10n.labelPronouns,
+          prefixIcon: const Icon(Icons.record_voice_over_outlined),
+        ),
+        validator: (value) =>
+            _validateTextLimit(value, context.l10n.labelPronouns, maxGraphemes: 20, maxUtf8Bytes: 200),
       ),
       const SizedBox(height: 16),
       TextFormField(
@@ -431,7 +444,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         controller: _websiteController,
         keyboardType: TextInputType.url,
         textInputAction: TextInputAction.done,
-        decoration: const InputDecoration(labelText: 'Website', prefixIcon: Icon(Icons.link_outlined)),
+        decoration: InputDecoration(labelText: context.l10n.labelWebsite, prefixIcon: const Icon(Icons.link_outlined)),
         validator: _validateWebsite,
         onFieldSubmitted: (_) {
           final profile = context.read<ProfileBloc>().state.profile;

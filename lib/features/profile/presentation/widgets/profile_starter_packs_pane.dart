@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/features/starter_packs/cubit/actor_starter_packs_cubit.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/features/starter_packs/presentation/widgets/starter_pack_card.dart';
@@ -53,11 +54,11 @@ class _ProfileStarterPacksPaneState extends State<ProfileStarterPacksPane> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(state.errorMessage ?? 'Failed to load starter packs'),
+                Text(state.errorMessage ?? context.l10n.errorFailedToLoadStarterPacks),
                 const SizedBox(height: 12),
                 FilledButton(
                   onPressed: () => _cubit.load(actor: widget.actor),
-                  child: const Text('Retry'),
+                  child: Text(context.l10n.buttonRetry),
                 ),
               ],
             ),
@@ -65,7 +66,7 @@ class _ProfileStarterPacksPaneState extends State<ProfileStarterPacksPane> {
         }
 
         if (state.starterPacks.isEmpty) {
-          return const Center(child: Text('No starter packs yet'));
+          return Center(child: Text(context.l10n.messageNoStarterPacksYet));
         }
 
         return RefreshIndicator(

@@ -2,9 +2,10 @@ import 'package:atproto/com_atproto_moderation_defs.dart';
 import 'package:atproto_core/atproto_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 enum _ReportType { post, actor }
 
@@ -34,39 +35,6 @@ class _ReportDialogState extends State<ReportDialog> {
   ReasonType? _selectedReason;
   bool _isSubmitting = false;
 
-  static const _reasonOptions = [
-    (
-      type: ReasonType.knownValue(data: KnownReasonType.comAtprotoModerationDefsReasonSpam),
-      label: 'Spam',
-      description: 'Spam or unsolicited content',
-    ),
-    (
-      type: ReasonType.knownValue(data: KnownReasonType.comAtprotoModerationDefsReasonViolation),
-      label: 'Violation',
-      description: 'Violates community guidelines',
-    ),
-    (
-      type: ReasonType.knownValue(data: KnownReasonType.comAtprotoModerationDefsReasonMisleading),
-      label: 'Misleading',
-      description: 'Misleading or deceptive content',
-    ),
-    (
-      type: ReasonType.knownValue(data: KnownReasonType.comAtprotoModerationDefsReasonSexual),
-      label: 'Sexual Content',
-      description: 'Unwanted sexual content',
-    ),
-    (
-      type: ReasonType.knownValue(data: KnownReasonType.comAtprotoModerationDefsReasonRude),
-      label: 'Harassment',
-      description: 'Harassment or rude behaviour',
-    ),
-    (
-      type: ReasonType.knownValue(data: KnownReasonType.comAtprotoModerationDefsReasonOther),
-      label: 'Other',
-      description: 'Other reason (requires explanation)',
-    ),
-  ];
-
   @override
   void dispose() {
     _reasonController.dispose();
@@ -75,24 +43,25 @@ class _ReportDialogState extends State<ReportDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final title = widget._type == _ReportType.post ? 'Report Post' : 'Report Account';
+    final l10n = context.l10n;
+    final title = widget._type == _ReportType.post ? l10n.labelReportPost : l10n.labelReportAccount;
     final target = widget.authorHandle;
 
     return AlertDialog(
-      title: Text('$title by @$target'),
+      title: Text(l10n.formatProfileReportTitle(title, target)),
       content: SizedBox(
         width: double.maxFinite,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Reason', style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+            Text(l10n.labelReportReason, style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-            ..._reasonOptions.map((option) => _buildReasonOption(option)),
+            ..._reasonOptions(context).map((option) => _buildReasonOption(option)),
             if (_requiresExplanation) ...[
               const SizedBox(height: 16),
               Text(
-                'Explanation (required)',
+                l10n.labelReportReasonExplanationRequired,
                 style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
@@ -100,9 +69,9 @@ class _ReportDialogState extends State<ReportDialog> {
                 controller: _reasonController,
                 maxLines: 3,
                 maxLength: 2000,
-                decoration: const InputDecoration(
-                  hintText: 'Please explain why you are reporting this...',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hintText: l10n.messageReportExplanationHint,
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ],
@@ -110,15 +79,51 @@ class _ReportDialogState extends State<ReportDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: _isSubmitting ? null : () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(onPressed: _isSubmitting ? null : () => Navigator.pop(context), child: Text(l10n.buttonCancel)),
         FilledButton(
           onPressed: _canSubmit ? _submit : null,
           child: _isSubmitting
               ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Submit Report'),
+              : Text(l10n.buttonSubmitReport),
         ),
       ],
     );
+  }
+
+  List<({ReasonType type, String label, String description})> _reasonOptions(BuildContext context) {
+    final l10n = context.l10n;
+    return [
+      (
+        type: const ReasonType.knownValue(data: KnownReasonType.comAtprotoModerationDefsReasonSpam),
+        label: l10n.labelReportReasonSpam,
+        description: l10n.messageReportReasonSpamDescription,
+      ),
+      (
+        type: const ReasonType.knownValue(data: KnownReasonType.comAtprotoModerationDefsReasonViolation),
+        label: l10n.labelReportReasonViolation,
+        description: l10n.messageReportReasonViolationDescription,
+      ),
+      (
+        type: const ReasonType.knownValue(data: KnownReasonType.comAtprotoModerationDefsReasonMisleading),
+        label: l10n.labelReportReasonMisleading,
+        description: l10n.messageReportReasonMisleadingDescription,
+      ),
+      (
+        type: const ReasonType.knownValue(data: KnownReasonType.comAtprotoModerationDefsReasonSexual),
+        label: l10n.labelReportReasonSexualContent,
+        description: l10n.messageReportReasonSexualContentDescription,
+      ),
+      (
+        type: const ReasonType.knownValue(data: KnownReasonType.comAtprotoModerationDefsReasonRude),
+        label: l10n.labelReportReasonHarassment,
+        description: l10n.messageReportReasonHarassmentDescription,
+      ),
+      (
+        type: const ReasonType.knownValue(data: KnownReasonType.comAtprotoModerationDefsReasonOther),
+        label: l10n.labelReportReasonOther,
+        description: l10n.messageReportReasonOtherDescription,
+      ),
+    ];
   }
 
   Widget _buildReasonOption(({ReasonType type, String label, String description}) option) {
@@ -225,15 +230,15 @@ class _ReportDialogState extends State<ReportDialog> {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.green),
-            SizedBox(width: 8),
-            Text('Report Submitted'),
+            const Icon(Icons.check_circle, color: Colors.green),
+            const SizedBox(width: 8),
+            Text(context.l10n.labelReportSubmitted),
           ],
         ),
-        content: Text('Thank you. Your report (ID: $reportId) has been submitted.'),
-        actions: [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+        content: Text(context.l10n.formatReportSubmitted(reportId)),
+        actions: [FilledButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.buttonOk))],
       ),
     );
   }
@@ -242,15 +247,15 @@ class _ReportDialogState extends State<ReportDialog> {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.error_outline, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Report Failed'),
+            const Icon(Icons.error_outline, color: Colors.red),
+            const SizedBox(width: 8),
+            Text(context.l10n.errorReportFailedTitle),
           ],
         ),
-        content: const Text('Unable to submit your report. Please try again later.'),
-        actions: [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+        content: Text(context.l10n.errorReportFailed),
+        actions: [FilledButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.buttonOk))],
       ),
     );
   }

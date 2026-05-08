@@ -21,7 +21,7 @@
 
 - [x] Localize feed cards, post menus, post actions, saved posts, and trending
 - [x] Localize compose flow, media alt text editors, draft/schedule states, and validation
-- [ ] Localize profile screens, profile actions, reports, follows, lists, and starter packs
+- [x] Localize profile screens, profile actions, reports, follows, lists, and starter packs
 - [ ] Localize messages, notifications, alerts, and account switching sheets
 - [ ] Localize moderation settings/detail screens and logs/devtools user-facing labels
 

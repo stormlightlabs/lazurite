@@ -5,11 +5,12 @@ import 'package:flutter/material.dart' hide ListView;
 import 'package:flutter/material.dart' as material show ListView;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/starter_packs/bloc/starter_pack_bloc.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class StarterPackDetailScreen extends StatelessWidget {
   const StarterPackDetailScreen({super.key, required this.packUri});
@@ -50,7 +51,7 @@ class _StarterPackDetailView extends StatelessWidget {
         if (state.followedCount != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Followed ${state.followedCount} member${state.followedCount == 1 ? '' : 's'}'),
+              content: Text(context.l10n.formatFollowedMemberCount(state.followedCount!)),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -75,7 +76,11 @@ class _StarterPackDetailView extends StatelessWidget {
                 floating: true,
                 pinned: true,
                 snap: true,
-                title: Text(pack != null ? ((pack.record['name'] as String?) ?? 'Starter Pack') : 'Starter Pack'),
+                title: Text(
+                  pack != null
+                      ? ((pack.record['name'] as String?) ?? context.l10n.labelStarterPack)
+                      : context.l10n.labelStarterPack,
+                ),
                 actions: [
                   if (state.isMutating)
                     const Padding(
@@ -85,9 +90,9 @@ class _StarterPackDetailView extends StatelessWidget {
                   else if (isCreator && pack != null)
                     PopupMenuButton<_PackAction>(
                       onSelected: (action) => _handleAction(context, action, state, pack),
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(value: _PackAction.edit, child: Text('Edit')),
-                        PopupMenuItem(value: _PackAction.delete, child: Text('Delete')),
+                      itemBuilder: (_) => [
+                        PopupMenuItem(value: _PackAction.edit, child: Text(context.l10n.buttonEdit)),
+                        PopupMenuItem(value: _PackAction.delete, child: Text(context.l10n.buttonDelete)),
                       ],
                     ),
                 ],
@@ -102,13 +107,13 @@ class _StarterPackDetailView extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(state.errorMessage ?? 'Failed to load starter pack'),
+                          Text(state.errorMessage ?? context.l10n.errorFailedToLoadStarterPack),
                           const SizedBox(height: 12),
                           FilledButton(
                             onPressed: () => context.read<StarterPackBloc>().add(
                               StarterPackRequested(starterPackUri: state.packUri!),
                             ),
-                            child: const Text('Retry'),
+                            child: Text(context.l10n.buttonRetry),
                           ),
                         ],
                       ),
@@ -167,16 +172,14 @@ class _StarterPackDetailView extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Delete starter pack'),
-        content: const Text(
-          'This will permanently delete this starter pack and its backing list. This cannot be undone.',
-        ),
+        title: Text(context.l10n.dialogDeleteStarterPackTitle),
+        content: Text(context.l10n.dialogDeleteStarterPackContent),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.l10n.buttonCancel)),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: context.colorScheme.error),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: Text(context.l10n.buttonDelete),
           ),
         ],
       ),
@@ -258,7 +261,7 @@ class _EditStarterPackDialogState extends State<_EditStarterPackDialog> {
     final colorScheme = context.colorScheme;
 
     return AlertDialog(
-      title: const Text('Edit starter pack'),
+      title: Text(context.l10n.labelEditStarterPack),
       content: SizedBox(
         width: double.maxFinite,
         child: SingleChildScrollView(
@@ -268,20 +271,23 @@ class _EditStarterPackDialogState extends State<_EditStarterPackDialog> {
             children: [
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder()),
+                decoration: InputDecoration(labelText: context.l10n.labelName, border: const OutlineInputBorder()),
                 maxLength: 50,
                 textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _descController,
-                decoration: const InputDecoration(labelText: 'Description (optional)', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: context.l10n.labelDescriptionOptional,
+                  border: const OutlineInputBorder(),
+                ),
                 maxLength: 300,
                 maxLines: 3,
                 textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: 12),
-              Text('Feeds', style: context.textTheme.labelLarge),
+              Text(context.l10n.labelFeeds, style: context.textTheme.labelLarge),
               const SizedBox(height: 8),
               for (final feed in _feeds)
                 ListTile(
@@ -300,14 +306,21 @@ class _EditStarterPackDialogState extends State<_EditStarterPackDialog> {
                   ),
                 ),
               if (_feeds.length < 3)
-                TextButton.icon(onPressed: _showFeedPicker, icon: const Icon(Icons.add), label: const Text('Add feed')),
+                TextButton.icon(
+                  onPressed: _showFeedPicker,
+                  icon: const Icon(Icons.add),
+                  label: Text(context.l10n.buttonAddFeed),
+                ),
             ],
           ),
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        FilledButton(onPressed: _nameController.text.trim().isEmpty ? null : _save, child: const Text('Save')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.buttonCancel)),
+        FilledButton(
+          onPressed: _nameController.text.trim().isEmpty ? null : _save,
+          child: Text(context.l10n.buttonSave),
+        ),
       ],
     );
   }
@@ -338,7 +351,7 @@ class _FeedPickerSheetState extends State<_FeedPickerSheet> {
       final feeds = await widget.starterPackRepository.getSuggestedFeeds(limit: 50);
       if (mounted) setState(() => _feeds = feeds);
     } catch (e) {
-      if (mounted) setState(() => _error = 'Failed to load feeds');
+      if (mounted) setState(() => _error = context.l10n.errorFailedToLoadFeeds);
     }
   }
 
@@ -358,7 +371,7 @@ class _FeedPickerSheetState extends State<_FeedPickerSheet> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Row(
                 children: [
-                  Text('Select a feed', style: context.textTheme.titleMedium),
+                  Text(context.l10n.labelSelectFeed, style: context.textTheme.titleMedium),
                   const Spacer(),
                   IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
                 ],
@@ -412,7 +425,7 @@ class _StarterPackContent extends StatelessWidget {
     final colorScheme = context.colorScheme;
     final textTheme = context.textTheme;
 
-    final name = (pack.record['name'] as String?) ?? 'Starter Pack';
+    final name = (pack.record['name'] as String?) ?? context.l10n.labelStarterPack;
     final description = pack.record['description'] as String?;
 
     return Padding(
@@ -466,10 +479,11 @@ class _StarterPackContent extends StatelessWidget {
             Row(
               children: [
                 if (pack.joinedWeekCount != null) ...[
-                  _buildStatChip(context, pack.joinedWeekCount!, 'joined this week'),
+                  _buildStatChip(context, pack.joinedWeekCount!, context.l10n.labelJoinedThisWeek),
                   const SizedBox(width: 12),
                 ],
-                if (pack.joinedAllTimeCount != null) _buildStatChip(context, pack.joinedAllTimeCount!, 'total joined'),
+                if (pack.joinedAllTimeCount != null)
+                  _buildStatChip(context, pack.joinedAllTimeCount!, context.l10n.labelTotalJoined),
               ],
             ),
             const SizedBox(height: 16),
@@ -516,19 +530,22 @@ class _StarterPackContent extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text('Members', style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            Text(context.l10n.labelMembers, style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
             if (refListUri != null) ...[
               const Spacer(),
               TextButton(
                 onPressed: () => context.push('/list?uri=${Uri.encodeComponent(refListUri.toString())}'),
-                child: const Text('See all'),
+                child: Text(context.l10n.buttonSeeAll),
               ),
             ],
           ],
         ),
         const SizedBox(height: 8),
         if (sample.isEmpty)
-          Text('No members', style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant))
+          Text(
+            context.l10n.messageNoMembers,
+            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+          )
         else
           SizedBox(
             height: 72,
@@ -586,7 +603,7 @@ class _StarterPackContent extends StatelessWidget {
               icon: state.isFollowingAll
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.group_add_outlined),
-              label: Text(state.isFollowingAll ? 'Following…' : 'Follow all'),
+              label: Text(state.isFollowingAll ? context.l10n.buttonFollowingInProgress : context.l10n.buttonFollowAll),
             ),
           ),
       ],
@@ -602,7 +619,7 @@ class _StarterPackContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Recommended Feeds', style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+        Text(context.l10n.labelRecommendedFeeds, style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
         for (final feed in feeds.take(3))
           ListTile(

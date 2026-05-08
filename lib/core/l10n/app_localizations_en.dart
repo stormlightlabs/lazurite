@@ -18,6 +18,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buttonCancel => 'Cancel';
 
   @override
+  String get buttonCompose => 'Compose';
+
+  @override
   String get buttonClearCache => 'Clear Cache';
 
   @override
@@ -755,6 +758,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get labelSuggested => 'Suggested';
 
   @override
+  String get labelSuggestedFollows => 'Suggested Follows';
+
+  @override
   String get labelUnrepost => 'Unrepost';
 
   @override
@@ -1012,6 +1018,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messageNoLikedPostsSubtitle => 'Posts you like will appear here after sync';
 
   @override
+  String get messageNoLikedPostsYet => 'No liked posts yet';
+
+  @override
   String get messageNoQuotesYet => 'No quotes yet';
 
   @override
@@ -1098,6 +1107,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messageSearchPeoplePlaceholder => 'Search people';
 
   @override
+  String get messageSearchForPeoplePlaceholder => 'Search for people';
+
+  @override
   String get messageSearchFeedsPlaceholder => 'Search feeds';
 
   @override
@@ -1124,6 +1136,671 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get promptHandleOrDid => 'Handle or DID';
+
+  @override
+  String get buttonAddFeed => 'Add feed';
+
+  @override
+  String get buttonAddMembers => 'Add members';
+
+  @override
+  String get buttonBlock => 'Block';
+
+  @override
+  String get buttonCreate => 'Create';
+
+  @override
+  String get buttonEdit => 'Edit';
+
+  @override
+  String get buttonFollow => 'Follow';
+
+  @override
+  String get buttonFollowAll => 'Follow all';
+
+  @override
+  String get buttonFollowing => 'Following';
+
+  @override
+  String get buttonFollowingInProgress => 'Following…';
+
+  @override
+  String get buttonLoadMore => 'Load more';
+
+  @override
+  String get buttonMute => 'Mute';
+
+  @override
+  String get buttonScan => 'Scan';
+
+  @override
+  String get buttonSeeAll => 'See all';
+
+  @override
+  String get buttonShowAccounts => 'Show accounts';
+
+  @override
+  String get buttonSubmitReport => 'Submit Report';
+
+  @override
+  String get buttonUnblock => 'Unblock';
+
+  @override
+  String get buttonUnfollow => 'Unfollow';
+
+  @override
+  String buttonUnfollowSelected(int count) {
+    return 'Unfollow Selected ($count)';
+  }
+
+  @override
+  String get buttonUnmute => 'Unmute';
+
+  @override
+  String get dialogBlockAccountContent =>
+      'They will not be able to see your posts or interact with you. They will not be notified that you blocked them.';
+
+  @override
+  String get dialogBlockAccountTitle => 'Block Account?';
+
+  @override
+  String get dialogDeleteListTitle => 'Delete list?';
+
+  @override
+  String get dialogDeleteStarterPackContent =>
+      'This will permanently delete this starter pack and its backing list. This cannot be undone.';
+
+  @override
+  String get dialogDeleteStarterPackTitle => 'Delete starter pack';
+
+  @override
+  String get dialogMuteAccountContent => 'You will no longer see their posts or receive notifications from them.';
+
+  @override
+  String get dialogMuteAccountTitle => 'Mute Account?';
+
+  @override
+  String get dialogUnblockAccountContent => 'They will be able to see your posts and interact with you again.';
+
+  @override
+  String get dialogUnblockAccountTitle => 'Unblock Account?';
+
+  @override
+  String get dialogUnfollowAccountContent => 'You will no longer see their posts in your feed.';
+
+  @override
+  String get dialogUnfollowAccountTitle => 'Unfollow?';
+
+  @override
+  String get dialogUnmuteAccountContent => 'You will see their posts and receive notifications again.';
+
+  @override
+  String get dialogUnmuteAccountTitle => 'Unmute Account?';
+
+  @override
+  String get errorFailedToCreateStarterPack => 'Failed to create starter pack';
+
+  @override
+  String get errorFailedToLoadAccounts => 'Failed to load accounts';
+
+  @override
+  String get errorFailedToLoadFeed => 'Failed to load feed';
+
+  @override
+  String get errorFailedToLoadFeeds => 'Failed to load feeds';
+
+  @override
+  String get errorFailedToLoadList => 'Failed to load list';
+
+  @override
+  String get errorFailedToLoadLists => 'Failed to load lists';
+
+  @override
+  String get errorFailedToLoadMembers => 'Failed to load members';
+
+  @override
+  String get errorFailedToLoadMore => 'Failed to load more';
+
+  @override
+  String get errorFailedToLoadPosts => 'Failed to load posts';
+
+  @override
+  String get errorFailedToLoadProfile => 'Unable to load profile';
+
+  @override
+  String get errorFailedToLoadStarterPack => 'Failed to load starter pack';
+
+  @override
+  String get errorFailedToLoadStarterPacks => 'Failed to load starter packs';
+
+  @override
+  String get errorFailedToLoadSuggestions => 'Failed to load suggestions';
+
+  @override
+  String get errorFollowAuditFailed => 'Failed to complete follow audit.';
+
+  @override
+  String get errorImageTooLarge => 'Image must be smaller than 1MB';
+
+  @override
+  String get errorInvalidProfileImageType => 'Use a JPEG or PNG image';
+
+  @override
+  String get errorProfileImageReadFailed => 'Unable to read selected image';
+
+  @override
+  String get errorReportFailed => 'Unable to submit your report. Please try again later.';
+
+  @override
+  String get errorReportFailedTitle => 'Report Failed';
+
+  @override
+  String errorUnableToLoadConnections(String tab) {
+    return 'Unable to load $tab';
+  }
+
+  @override
+  String get errorUnableToUpdateProfile => 'Unable to update profile';
+
+  @override
+  String formatAccountCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count accounts', one: '1 account');
+    return '$_temp0';
+  }
+
+  @override
+  String formatBlockedByAccountsUnavailable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count blocked-by accounts',
+      one: '1 blocked-by account',
+    );
+    return 'Found $_temp0, but public Bluesky profile details could not be loaded.';
+  }
+
+  @override
+  String formatConnectionsLoading(String tab) {
+    return 'Loading $tab...';
+  }
+
+  @override
+  String formatConnectionsNoMatches(String tab, String query) {
+    return 'No $tab match \"$query\"';
+  }
+
+  @override
+  String formatConnectionsNoneFound(String tab) {
+    return 'No $tab found';
+  }
+
+  @override
+  String formatConnectionsSearching(int count) {
+    return 'Searching $count accounts...';
+  }
+
+  @override
+  String formatConnectionsSearched(int count) {
+    return 'Searched $count accounts';
+  }
+
+  @override
+  String formatConnectionsSearchStopped(int count) {
+    return 'Search stopped after $count accounts';
+  }
+
+  @override
+  String formatClassifyingProgress(int progress, int total) {
+    return 'Classifying: $progress/$total';
+  }
+
+  @override
+  String get formatDidCopied => 'DID copied to clipboard';
+
+  @override
+  String formatFetchingFollowsProgress(int progress, int total) {
+    return 'Fetching follows: $progress/$total';
+  }
+
+  @override
+  String formatFollowedMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count members', one: '1 member');
+    return 'Followed $_temp0';
+  }
+
+  @override
+  String formatFollowsScanned(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count follows scanned for problematic accounts',
+      one: '1 follow scanned for problematic accounts',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String formatHideStatus(String status) {
+    return 'Hide $status';
+  }
+
+  @override
+  String formatJoinedDate(String date) {
+    return 'Joined $date';
+  }
+
+  @override
+  String formatJoinedRelative(String relativeTime) {
+    return 'Joined $relativeTime';
+  }
+
+  @override
+  String formatListByHandle(String handle) {
+    return 'by @$handle';
+  }
+
+  @override
+  String formatMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count members', one: '1 member');
+    return '$_temp0';
+  }
+
+  @override
+  String formatProfileReportTitle(String title, String handle) {
+    return '$title by @$handle';
+  }
+
+  @override
+  String formatProfileTextLimit(String label, int count) {
+    return '$label must be $count characters or fewer';
+  }
+
+  @override
+  String formatProfileTextTooLong(String label) {
+    return '$label is too long';
+  }
+
+  @override
+  String formatProfilesFailedToLoad(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count profiles could not be loaded.',
+      one: '1 profile could not be loaded.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String formatReportSubmitted(String reportId) {
+    return 'Thank you. Your report (ID: $reportId) has been submitted.';
+  }
+
+  @override
+  String formatSelectedCount(int selected, int total) {
+    return 'Selected: $selected/$total';
+  }
+
+  @override
+  String formatShowStatus(String status) {
+    return 'Show $status';
+  }
+
+  @override
+  String formatUnavailableAccounts(int count) {
+    return 'Unavailable accounts ($count)';
+  }
+
+  @override
+  String formatUnfollowedAccounts(int count) {
+    return 'Unfollowed $count account(s)';
+  }
+
+  @override
+  String formatValidationRequiredMaxCharacters(int count) {
+    return 'Required, max $count characters';
+  }
+
+  @override
+  String get labelAddToList => 'Add to list';
+
+  @override
+  String get labelAuditFollowers => 'Audit Followers';
+
+  @override
+  String get labelBanner => 'Banner';
+
+  @override
+  String get labelBlockViaList => 'Block via list';
+
+  @override
+  String get labelBlockedBy => 'Blocked By';
+
+  @override
+  String get labelBlocking => 'Blocking';
+
+  @override
+  String get labelConnections => 'Connections';
+
+  @override
+  String get labelCopyDid => 'Copy DID';
+
+  @override
+  String get labelCreateList => 'Create list';
+
+  @override
+  String get labelCreateStarterPack => 'Create starter pack';
+
+  @override
+  String get labelCurateShort => 'CURATE';
+
+  @override
+  String get labelCurrentMembers => 'Current Members';
+
+  @override
+  String get labelCurationLists => 'Curation Lists';
+
+  @override
+  String get labelDescription => 'Description';
+
+  @override
+  String get labelDescriptionOptional => 'Description (optional)';
+
+  @override
+  String get labelDisplayName => 'Display name';
+
+  @override
+  String get labelEditList => 'Edit list';
+
+  @override
+  String get labelEditProfile => 'Edit profile';
+
+  @override
+  String get labelEditStarterPack => 'Edit starter pack';
+
+  @override
+  String get labelFeed => 'Feed';
+
+  @override
+  String get labelFollowers => 'Followers';
+
+  @override
+  String get labelJoinedThisWeek => 'joined this week';
+
+  @override
+  String get labelJoinedTotal => 'joined total';
+
+  @override
+  String get labelFollowing => 'Following';
+
+  @override
+  String get labelList => 'List';
+
+  @override
+  String get labelLists => 'Lists';
+
+  @override
+  String get labelMedia => 'Media';
+
+  @override
+  String get labelMembers => 'Members';
+
+  @override
+  String get labelModerationLists => 'Moderation Lists';
+
+  @override
+  String get labelModerationShort => 'MOD';
+
+  @override
+  String get labelMuteList => 'Mute list';
+
+  @override
+  String get labelMutuals => 'Mutuals';
+
+  @override
+  String get labelMyLists => 'My Lists';
+
+  @override
+  String get labelName => 'Name';
+
+  @override
+  String get labelNewStarterPack => 'New Starter Pack';
+
+  @override
+  String get labelOtherLists => 'Other Lists';
+
+  @override
+  String get labelPronouns => 'Pronouns';
+
+  @override
+  String get labelProfileContext => 'Profile Context';
+
+  @override
+  String get labelProfileTitle => 'Profile';
+
+  @override
+  String get labelRecommendedFeeds => 'Recommended Feeds';
+
+  @override
+  String get labelReferenceLists => 'Reference Lists';
+
+  @override
+  String get labelReferenceShort => 'REFERENCE';
+
+  @override
+  String get labelReplies => 'Replies';
+
+  @override
+  String get labelReport => 'Report';
+
+  @override
+  String get labelReportAccount => 'Report Account';
+
+  @override
+  String get labelReportReason => 'Reason';
+
+  @override
+  String get labelReportReasonExplanationRequired => 'Explanation (required)';
+
+  @override
+  String get labelReportReasonHarassment => 'Harassment';
+
+  @override
+  String get labelReportReasonMisleading => 'Misleading';
+
+  @override
+  String get labelReportReasonOther => 'Other';
+
+  @override
+  String get labelReportReasonSexualContent => 'Sexual Content';
+
+  @override
+  String get labelReportReasonSpam => 'Spam';
+
+  @override
+  String get labelReportReasonViolation => 'Violation';
+
+  @override
+  String get labelReportSubmitted => 'Report Submitted';
+
+  @override
+  String get labelSelectAll => 'Select All';
+
+  @override
+  String get labelSelectFeed => 'Select a feed';
+
+  @override
+  String get labelShareProfile => 'Share Profile';
+
+  @override
+  String get labelStarterPack => 'Starter Pack';
+
+  @override
+  String get labelType => 'Type';
+
+  @override
+  String get labelTotalJoined => 'total joined';
+
+  @override
+  String get labelUnavailableLikedPost => 'Unavailable liked post';
+
+  @override
+  String get labelUnblockViaList => 'Unblock via list';
+
+  @override
+  String get labelUnmuteList => 'Unmute list';
+
+  @override
+  String get labelUpToThree => '(up to 3)';
+
+  @override
+  String get labelWebsite => 'Website';
+
+  @override
+  String get labelYou => 'You';
+
+  @override
+  String get messageBlockedByContextNotice =>
+      'Blocks are a normal part of social media. This data is public on the AT Protocol.';
+
+  @override
+  String get messageBlockingOnlyOwnProfile => 'Blocking information is only available when viewing your own profile.';
+
+  @override
+  String get messageChangeAvatarImage => 'Change avatar image';
+
+  @override
+  String get messageChangeBannerImage => 'Change banner image';
+
+  @override
+  String get messageEnterValidWebsite => 'Enter a valid website';
+
+  @override
+  String get messageFeedUnavailableForModerationLists => 'Feed not available for moderation lists';
+
+  @override
+  String get messageFollowAuditIntro => 'Scan your follows for deleted, suspended, blocked, and hidden accounts.';
+
+  @override
+  String get messageFollowAuditStartPrompt => 'Tap Scan to audit your follow list.';
+
+  @override
+  String get messageNoAccountsBlockedThisUser => 'No accounts have blocked this user';
+
+  @override
+  String get messageNoListsYet => 'No lists yet';
+
+  @override
+  String get messageNoMembers => 'No members';
+
+  @override
+  String get messageNoMembersYet => 'No members yet';
+
+  @override
+  String get messageNoMembersYetSearch => 'No members yet. Search above to add people.';
+
+  @override
+  String get messageNoMediaPostsYet => 'No media posts yet';
+
+  @override
+  String get messageNoPostsYet => 'No posts yet';
+
+  @override
+  String get messageNoProblematicFollows => 'No problematic follows found';
+
+  @override
+  String get messageNoRepliesYet => 'No replies yet';
+
+  @override
+  String get messageNoResultsForFilters => 'No results visible for the current filters.';
+
+  @override
+  String get messageNoStarterPacksYet => 'No starter packs yet';
+
+  @override
+  String get messageNoSuggestionsFound => 'No suggestions found';
+
+  @override
+  String get messageNotBlockingAnyone => 'Not blocking anyone';
+
+  @override
+  String get messageNotOnAnyLists => 'Not on any lists';
+
+  @override
+  String get messageProfileUnavailable => 'Profile unavailable';
+
+  @override
+  String get messageProfileUpdated => 'Profile updated';
+
+  @override
+  String get messageReportExplanationHint => 'Please explain why you are reporting this...';
+
+  @override
+  String get messageReportReasonHarassmentDescription => 'Harassment or rude behaviour';
+
+  @override
+  String get messageReportReasonMisleadingDescription => 'Misleading or deceptive content';
+
+  @override
+  String get messageReportReasonOtherDescription => 'Other reason (requires explanation)';
+
+  @override
+  String get messageReportReasonSexualContentDescription => 'Unwanted sexual content';
+
+  @override
+  String get messageReportReasonSpamDescription => 'Spam or unsolicited content';
+
+  @override
+  String get messageReportReasonViolationDescription => 'Violates community guidelines';
+
+  @override
+  String get messageSearchConnectionsPlaceholder => 'Search handle, name, or description';
+
+  @override
+  String get messageSearchPeopleToAddPlaceholder => 'Search for people to add';
+
+  @override
+  String get messageSomeBlockedAccountsUnavailable => 'Some blocked accounts are suspended or unavailable.';
+
+  @override
+  String get messageSuggestedFollowsUnavailable => 'Suggested follows are unavailable right now.';
+
+  @override
+  String get messageUnavailableAccountsDescription =>
+      'These accounts are suspended or their public profile could not be fetched.';
+
+  @override
+  String get statusBlockedBy => 'Blocked by';
+
+  @override
+  String get statusBlocking => 'Blocking';
+
+  @override
+  String get statusDeactivated => 'Deactivated';
+
+  @override
+  String get statusDeleted => 'Deleted';
+
+  @override
+  String get statusHidden => 'Hidden';
+
+  @override
+  String get statusMutualBlock => 'Mutual block';
+
+  @override
+  String get statusSelfFollow => 'Self-follow';
+
+  @override
+  String get statusSuspended => 'Suspended';
+
+  @override
+  String get tooltipClearSearch => 'Clear search';
+
+  @override
+  String get tooltipJumpToTop => 'Jump to top';
+
+  @override
+  String get validationEnterValidWebsite => 'Enter a valid website';
 
   @override
   String get validationEnterAppPassword => 'Enter your app password';

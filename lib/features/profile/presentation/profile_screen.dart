@@ -8,6 +8,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/app_view_web_links.dart';
@@ -21,7 +22,6 @@ import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/core/widgets/sliver_tab_bar_delegate.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
-import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
@@ -58,17 +58,10 @@ import 'package:url_launcher/url_launcher.dart';
 enum _ProfileFeedSlice { posts, replies, quotes, reposts, media }
 
 class _ProfileFeedTabConfig {
-  const _ProfileFeedTabConfig({
-    required this.label,
-    required this.requestFilter,
-    required this.slice,
-    required this.emptyLabel,
-  });
+  const _ProfileFeedTabConfig({required this.requestFilter, required this.slice});
 
-  final String label;
   final FeedFilter requestFilter;
   final _ProfileFeedSlice slice;
-  final String emptyLabel;
 }
 
 class ProfileScreen extends StatefulWidget {
@@ -83,50 +76,15 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateMixin {
   static const _feedTabs = [
-    _ProfileFeedTabConfig(
-      label: 'Posts',
-      requestFilter: FeedFilter.postsNoReplies,
-      slice: _ProfileFeedSlice.posts,
-      emptyLabel: 'No posts yet',
-    ),
-    _ProfileFeedTabConfig(
-      label: 'Replies',
-      requestFilter: FeedFilter.postsWithReplies,
-      slice: _ProfileFeedSlice.replies,
-      emptyLabel: 'No replies yet',
-    ),
-    _ProfileFeedTabConfig(
-      label: 'Quotes',
-      requestFilter: FeedFilter.postsWithReplies,
-      slice: _ProfileFeedSlice.quotes,
-      emptyLabel: 'No quotes yet',
-    ),
-    _ProfileFeedTabConfig(
-      label: 'Reposts',
-      requestFilter: FeedFilter.postsWithReplies,
-      slice: _ProfileFeedSlice.reposts,
-      emptyLabel: 'No reposts yet',
-    ),
-    _ProfileFeedTabConfig(
-      label: 'Media',
-      requestFilter: FeedFilter.postsWithMedia,
-      slice: _ProfileFeedSlice.media,
-      emptyLabel: 'No media posts yet',
-    ),
+    _ProfileFeedTabConfig(requestFilter: FeedFilter.postsNoReplies, slice: _ProfileFeedSlice.posts),
+    _ProfileFeedTabConfig(requestFilter: FeedFilter.postsWithReplies, slice: _ProfileFeedSlice.replies),
+    _ProfileFeedTabConfig(requestFilter: FeedFilter.postsWithReplies, slice: _ProfileFeedSlice.quotes),
+    _ProfileFeedTabConfig(requestFilter: FeedFilter.postsWithReplies, slice: _ProfileFeedSlice.reposts),
+    _ProfileFeedTabConfig(requestFilter: FeedFilter.postsWithMedia, slice: _ProfileFeedSlice.media),
   ];
 
-  static const _baseTabLabelsOwn = ['POSTS', 'REPLIES', 'QUOTES', 'REPOSTS', 'MEDIA', 'LISTS', 'STARTER PACKS'];
-  static const _baseTabLabelsOther = [
-    'POSTS',
-    'REPLIES',
-    'QUOTES',
-    'REPOSTS',
-    'MEDIA',
-    'LIKED',
-    'LISTS',
-    'STARTER PACKS',
-  ];
-  static const _suggestedTabLabel = 'SUGGESTED';
+  static const _baseTabCountOwn = 7;
+  static const _baseTabCountOther = 8;
   static const _coverRefreshTriggerDistance = 72.0;
 
   late TabController _tabController;
@@ -151,7 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   void initState() {
     super.initState();
     _showSuggestedTab = _shouldShowSuggestedTab(context.read<ProfileBloc>().state.profile);
-    _tabController = TabController(length: _tabLabels.length, vsync: this);
+    _tabController = TabController(length: _tabCount, vsync: this);
     _loadProfileAndFeed();
   }
 
@@ -312,10 +270,36 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     });
   }
 
-  List<String> get _baseTabLabels => _showSuggestedTab ? _baseTabLabelsOther : _baseTabLabelsOwn;
+  int get _baseTabCount => _showSuggestedTab ? _baseTabCountOther : _baseTabCountOwn;
 
-  List<String> get _tabLabels =>
-      _showSuggestedTab ? [..._baseTabLabels, _suggestedTabLabel] : List<String>.of(_baseTabLabels);
+  int get _tabCount => _baseTabCount + (_showSuggestedTab ? 1 : 0);
+
+  List<String> _localizedTabLabels(BuildContext context) {
+    final l10n = context.l10n;
+    final labels = [
+      l10n.labelPosts.toUpperCase(),
+      l10n.labelReplies.toUpperCase(),
+      l10n.labelQuotes.toUpperCase(),
+      l10n.labelReposts.toUpperCase(),
+      l10n.labelMedia.toUpperCase(),
+      if (_showSuggestedTab) l10n.labelLiked.toUpperCase(),
+      l10n.labelLists.toUpperCase(),
+      l10n.labelStarterPacks.toUpperCase(),
+      if (_showSuggestedTab) l10n.labelSuggested.toUpperCase(),
+    ];
+    return labels;
+  }
+
+  String _emptyLabelForSlice(BuildContext context, _ProfileFeedSlice slice) {
+    final l10n = context.l10n;
+    return switch (slice) {
+      _ProfileFeedSlice.posts => l10n.messageNoPostsYet,
+      _ProfileFeedSlice.replies => l10n.messageNoRepliesYet,
+      _ProfileFeedSlice.quotes => l10n.messageNoQuotesYet,
+      _ProfileFeedSlice.reposts => l10n.messageNoRepostsYet,
+      _ProfileFeedSlice.media => l10n.messageNoMediaPostsYet,
+    };
+  }
 
   _ProfileFeedTabConfig get _currentFeedTab =>
       _feedTabs[_tabController.index < _feedTabs.length ? _tabController.index : 0];
@@ -362,11 +346,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       return;
     }
 
-    final maxIndex = show ? _baseTabLabelsOther.length : _baseTabLabelsOwn.length - 1;
+    final maxIndex = show ? _baseTabCountOther : _baseTabCountOwn - 1;
     final nextIndex = _tabController.index.clamp(0, maxIndex);
     final previousController = _tabController;
     _showSuggestedTab = show;
-    _tabController = TabController(length: _tabLabels.length, vsync: this, initialIndex: nextIndex);
+    _tabController = TabController(length: _tabCount, vsync: this, initialIndex: nextIndex);
     setState(() {});
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -376,7 +360,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   String _appBarTitle(ProfileViewDetailed? profile) {
     final authState = context.read<AuthBloc>().state;
-    return profile?.displayName ?? profile?.handle ?? widget.actor ?? authState.tokens?.handle ?? 'Profile';
+    return profile?.displayName ??
+        profile?.handle ??
+        widget.actor ??
+        authState.tokens?.handle ??
+        context.l10n.labelProfileTitle;
   }
 
   void _openProfilePostSearch(BuildContext context, ProfileViewDetailed profile) {
@@ -522,7 +510,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                         sourceState: stateForTab,
                         requestFilter: tab.requestFilter,
                         slice: tab.slice,
-                        emptyLabel: tab.emptyLabel,
+                        emptyLabel: _emptyLabelForSlice(context, tab.slice),
                         profile: actorScopedProfile,
                         expectedActor: expectedActor,
                       ),
@@ -587,7 +575,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                                   IconButton(
                                     key: const Key('profile_edit_header_button'),
                                     icon: const Icon(Icons.edit_outlined),
-                                    tooltip: 'Edit profile',
+                                    tooltip: context.l10n.labelEditProfile,
                                     onPressed: () => context.push('/profile/me/edit'),
                                   ),
                                 if (actorScopedProfile != null && isOwnProfile)
@@ -600,7 +588,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                                   IconButton(
                                     key: const Key('profile_search_posts_button'),
                                     icon: const Icon(Icons.search),
-                                    tooltip: 'Search this profile\'s posts',
+                                    tooltip: context.l10n.messageSearchThisProfilesPostsPlaceholder,
                                     onPressed: () => _openProfilePostSearch(context, actorScopedProfile),
                                   ),
                                 IconButton(
@@ -632,7 +620,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                               delegate: SliverTabBarDelegate(
                                 TabBar(
                                   controller: _tabController,
-                                  tabs: [for (final label in _tabLabels) Tab(text: label)],
+                                  tabs: [for (final label in _localizedTabLabels(context)) Tab(text: label)],
                                   onTap: (index) {
                                     if (index < _feedTabs.length) {
                                       _loadFeedOnly(filter: _feedTabs[index].requestFilter);
@@ -675,7 +663,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     final jumpToTopButton = FloatingActionButton.small(
       key: const ValueKey('profile-jump-top-fab'),
       heroTag: 'profile-jump-top-fab',
-      tooltip: 'Jump to top',
+      tooltip: context.l10n.tooltipJumpToTop,
       onPressed: _jumpToTop,
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
       foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -775,11 +763,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Unable to load profile', style: context.textTheme.titleLarge),
+          Text(context.l10n.errorFailedToLoadProfile, style: context.textTheme.titleLarge),
           const SizedBox(height: 8),
-          Text(errorMessage ?? 'Unknown error', style: context.textTheme.bodyMedium),
+          Text(errorMessage ?? context.l10n.errorUnknown, style: context.textTheme.bodyMedium),
           const SizedBox(height: 12),
-          FilledButton(onPressed: _loadProfileAndFeed, child: const Text('Try again')),
+          FilledButton(onPressed: _loadProfileAndFeed, child: Text(context.l10n.buttonTryAgain)),
         ],
       ),
     );
@@ -809,7 +797,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         _buildMetaChip(
           context,
           Icons.calendar_today_outlined,
-          'Joined ${DateFormat.yMMMM().format(profile.createdAt!)}',
+          context.l10n.formatJoinedDate(DateFormat.yMMMM().format(profile.createdAt!)),
         ),
     ];
 
@@ -866,7 +854,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 _buildStat(
                   context,
                   profile.followsCount ?? 0,
-                  'Following',
+                  context.l10n.labelFollowing,
                   key: const ValueKey('profile_following_stat'),
                   onTap: () => _openConnections(context, profile, ProfileConnectionsTab.following),
                 ),
@@ -874,12 +862,12 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 _buildStat(
                   context,
                   profile.followersCount ?? 0,
-                  'Followers',
+                  context.l10n.labelFollowers,
                   key: const ValueKey('profile_followers_stat'),
                   onTap: () => _openConnections(context, profile, ProfileConnectionsTab.followers),
                 ),
                 const SizedBox(width: 24),
-                _buildStat(context, profile.postsCount ?? 0, 'Posts'),
+                _buildStat(context, profile.postsCount ?? 0, context.l10n.labelPosts),
               ],
             ),
           ),
@@ -892,12 +880,12 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 OutlinedButton.icon(
                   onPressed: () => context.push('/bookmarks'),
                   icon: const Icon(Icons.bookmark_outline),
-                  label: const Text('Bookmarks'),
+                  label: Text(context.l10n.labelBookmarks),
                 ),
                 OutlinedButton.icon(
                   onPressed: () => context.push('/liked'),
                   icon: const Icon(Icons.favorite_outline),
-                  label: const Text('Liked'),
+                  label: Text(context.l10n.labelLiked),
                 ),
               ],
             ),
@@ -1024,14 +1012,14 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       items: [
         OptionsSheetItem(
           leading: const Icon(Icons.hub_outlined),
-          title: 'Profile Context',
+          title: context.l10n.labelProfileContext,
           onTap: () => context.push(
             '/profile-context?did=${Uri.encodeComponent(profile.did)}&handle=${Uri.encodeComponent(profile.handle)}',
           ),
         ),
         OptionsSheetItem(
           leading: const Icon(Icons.cleaning_services_outlined),
-          title: 'Clean Follows',
+          title: context.l10n.labelCleanFollows,
           onTap: () => context.push('/settings/clean-follows'),
         ),
       ],
@@ -1044,15 +1032,15 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       items: [
         OptionsSheetItem(
           leading: const Icon(Icons.copy),
-          title: 'Copy DID',
+          title: context.l10n.labelCopyDid,
           onTap: () {
             Clipboard.setData(ClipboardData(text: profile.did));
-            showAppSnackBar(context, 'DID copied to clipboard', behavior: SnackBarBehavior.floating);
+            showAppSnackBar(context, context.l10n.formatDidCopied, behavior: SnackBarBehavior.floating);
           },
         ),
         OptionsSheetItem(
           leading: const Icon(Icons.share_outlined),
-          title: 'Share Profile',
+          title: context.l10n.labelShareProfile,
           onTap: () => ShareHelper.shareText(
             context,
             AppViewWebLinks.profile(profile.handle, appViewProvider: _resolveAppViewProvider(context)),
@@ -1060,17 +1048,17 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         ),
         OptionsSheetItem(
           leading: const Icon(Icons.playlist_add_outlined),
-          title: 'Add to list',
+          title: context.l10n.labelAddToList,
           onTap: () => _showAddToList(context, profile),
         ),
         OptionsSheetItem(
           leading: const Icon(Icons.people_outline),
-          title: 'Suggested Follows',
+          title: context.l10n.labelSuggestedFollows,
           onTap: () => _showSuggestedFollows(context, profile),
         ),
         OptionsSheetItem(
           leading: const Icon(Icons.hub_outlined),
-          title: 'Profile Context',
+          title: context.l10n.labelProfileContext,
           onTap: () => context.push(
             '/profile-context?did=${Uri.encodeComponent(profile.did)}&handle=${Uri.encodeComponent(profile.handle)}',
           ),
@@ -1106,7 +1094,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text('Add to list', style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                child: Text(
+                  context.l10n.labelAddToList,
+                  style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                ),
               ),
               const Divider(height: 1),
               Expanded(
@@ -1117,11 +1108,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                     }
 
                     if (state.status == AddToListStatus.error) {
-                      return Center(child: Text(state.errorMessage ?? 'Failed to load lists'));
+                      return Center(child: Text(state.errorMessage ?? context.l10n.errorFailedToLoadLists));
                     }
 
                     if (state.lists.isEmpty) {
-                      return const Center(child: Text('No lists yet'));
+                      return Center(child: Text(context.l10n.messageNoListsYet));
                     }
 
                     return ListView.builder(
@@ -1215,7 +1206,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         return FloatingActionButton(
           key: const ValueKey('profile-compose-fab'),
           heroTag: 'profile-compose-fab',
-          tooltip: isOffline ? offlineActionMessage('compose a post') : 'Compose',
+          tooltip: isOffline ? context.l10n.formatOfflineReconnectAction('compose a post') : context.l10n.buttonCompose,
           onPressed: isOffline
               ? null
               : () => context.push('/compose', extra: ComposeRouteArgs(initialText: initialText)),
@@ -1263,11 +1254,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(sourceState.errorMessage ?? 'Failed to load posts'),
+            Text(sourceState.errorMessage ?? context.l10n.errorFailedToLoadPosts),
             const SizedBox(height: 12),
             FilledButton(
               onPressed: () => _loadFeedOnly(filter: requestFilter),
-              child: const Text('Retry'),
+              child: Text(context.l10n.buttonRetry),
             ),
           ],
         ),
@@ -1605,7 +1596,7 @@ class _SuggestedFollowsTabState extends State<_SuggestedFollowsTab> {
   Widget build(BuildContext context) {
     final cubit = _cubit;
     if (cubit == null) {
-      return const Center(child: Text('Suggested follows are unavailable right now.'));
+      return Center(child: Text(context.l10n.messageSuggestedFollowsUnavailable));
     }
 
     return BlocProvider.value(
@@ -1666,9 +1657,9 @@ class _ProfileListsPaneState extends State<_ProfileListsPane> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(state.errorMessage ?? 'Failed to load lists'),
+                  Text(state.errorMessage ?? context.l10n.errorFailedToLoadLists),
                   const SizedBox(height: 12),
-                  FilledButton(onPressed: () => _cubit.refresh(), child: const Text('Retry')),
+                  FilledButton(onPressed: () => _cubit.refresh(), child: Text(context.l10n.buttonRetry)),
                 ],
               ),
             );
@@ -1682,7 +1673,7 @@ class _ProfileListsPaneState extends State<_ProfileListsPane> {
                 .toList(growable: false);
 
             if (lists.isEmpty) {
-              return const Center(child: Text('No lists yet'));
+              return Center(child: Text(context.l10n.messageNoListsYet));
             }
 
             return RefreshIndicator(

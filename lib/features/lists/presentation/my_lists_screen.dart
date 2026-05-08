@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
@@ -82,12 +83,12 @@ class _MyListsViewState extends State<_MyListsView> with SingleTickerProviderSta
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Lists'),
+        title: Text(context.l10n.labelMyLists),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'FEEDS'),
-            Tab(text: 'MODERATION'),
+          tabs: [
+            Tab(text: context.l10n.labelFeeds.toUpperCase()),
+            Tab(text: context.l10n.labelModeration.toUpperCase()),
           ],
           labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 2.2),
           unselectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 2.2),
@@ -102,8 +103,8 @@ class _MyListsViewState extends State<_MyListsView> with SingleTickerProviderSta
 
           if (state.status == MyListsStatus.error) {
             return ErrorState(
-              title: 'Failed to load lists',
-              message: state.errorMessage ?? 'Unknown error',
+              title: context.l10n.errorFailedToLoadLists,
+              message: state.errorMessage ?? context.l10n.errorUnknown,
               onRetry: () => context.read<MyListsCubit>().refresh(),
             );
           }
@@ -131,7 +132,7 @@ class _MyListsViewState extends State<_MyListsView> with SingleTickerProviderSta
 
   Widget _buildListTab(BuildContext context, List<bsky_graph.ListView> lists) {
     if (lists.isEmpty) {
-      return const EmptyState(message: 'No lists yet', icon: Icons.list_alt_outlined);
+      return EmptyState(message: context.l10n.messageNoListsYet, icon: Icons.list_alt_outlined);
     }
 
     return AnimatedRefreshIndicator(

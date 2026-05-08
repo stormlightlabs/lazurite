@@ -4,10 +4,11 @@ import 'package:bluesky/app_bsky_feed_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/starter_packs/bloc/starter_pack_bloc.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 
 /// Full-screen form for creating a new starter pack.
@@ -127,7 +128,7 @@ class _CreateStarterPackScreenState extends State<CreateStarterPackScreen> {
         } else if (state.status == StarterPackStatus.error) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.errorMessage ?? 'Failed to create starter pack'),
+              content: Text(state.errorMessage ?? context.l10n.errorFailedToCreateStarterPack),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -139,7 +140,7 @@ class _CreateStarterPackScreenState extends State<CreateStarterPackScreen> {
 
           return Scaffold(
             appBar: AppBar(
-              title: const Text('New Starter Pack'),
+              title: Text(context.l10n.labelNewStarterPack),
               actions: [
                 if (isCreating)
                   const Padding(
@@ -147,7 +148,7 @@ class _CreateStarterPackScreenState extends State<CreateStarterPackScreen> {
                     child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                   )
                 else
-                  TextButton(onPressed: _canSave ? _save : null, child: const Text('Create')),
+                  TextButton(onPressed: _canSave ? _save : null, child: Text(context.l10n.buttonCreate)),
               ],
             ),
             body: ListView(
@@ -155,10 +156,10 @@ class _CreateStarterPackScreenState extends State<CreateStarterPackScreen> {
               children: [
                 TextField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Name',
-                    border: OutlineInputBorder(),
-                    helperText: 'Required, max 50 characters',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.labelName,
+                    border: const OutlineInputBorder(),
+                    helperText: context.l10n.formatValidationRequiredMaxCharacters(50),
                   ),
                   maxLength: 50,
                   textCapitalization: TextCapitalization.sentences,
@@ -167,7 +168,10 @@ class _CreateStarterPackScreenState extends State<CreateStarterPackScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: _descController,
-                  decoration: const InputDecoration(labelText: 'Description (optional)', border: OutlineInputBorder()),
+                  decoration: InputDecoration(
+                    labelText: context.l10n.labelDescriptionOptional,
+                    border: const OutlineInputBorder(),
+                  ),
                   maxLength: 300,
                   maxLines: 3,
                   textCapitalization: TextCapitalization.sentences,
@@ -192,12 +196,12 @@ class _CreateStarterPackScreenState extends State<CreateStarterPackScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Members', style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+        Text(context.l10n.labelMembers, style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         TextField(
           controller: _searchController,
           decoration: InputDecoration(
-            hintText: 'Search for people to add',
+            hintText: context.l10n.messageSearchPeopleToAddPlaceholder,
             prefixIcon: const Icon(Icons.search),
             suffixIcon: _isSearching
                 ? const Padding(
@@ -278,9 +282,12 @@ class _CreateStarterPackScreenState extends State<CreateStarterPackScreen> {
       children: [
         Row(
           children: [
-            Text('Feeds', style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+            Text(context.l10n.labelFeeds, style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(width: 8),
-            Text('(up to 3)', style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+            Text(
+              context.l10n.labelUpToThree,
+              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -308,7 +315,7 @@ class _CreateStarterPackScreenState extends State<CreateStarterPackScreen> {
           OutlinedButton.icon(
             onPressed: isCreating ? null : _showFeedPicker,
             icon: const Icon(Icons.add),
-            label: const Text('Add feed'),
+            label: Text(context.l10n.buttonAddFeed),
           ),
       ],
     );
@@ -340,7 +347,7 @@ class _FeedPickerSheetState extends State<_FeedPickerSheet> {
       final feeds = await widget.starterPackRepository.getSuggestedFeeds(limit: 50);
       if (mounted) setState(() => _feeds = feeds);
     } catch (e) {
-      if (mounted) setState(() => _error = 'Failed to load feeds');
+      if (mounted) setState(() => _error = context.l10n.errorFailedToLoadFeeds);
     }
   }
 
@@ -360,7 +367,7 @@ class _FeedPickerSheetState extends State<_FeedPickerSheet> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Row(
                 children: [
-                  Text('Select a feed', style: context.textTheme.titleMedium),
+                  Text(context.l10n.labelSelectFeed, style: context.textTheme.titleMedium),
                   const Spacer(),
                   IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
                 ],

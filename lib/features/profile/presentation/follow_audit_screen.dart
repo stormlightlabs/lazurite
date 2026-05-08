@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:flutter/material.dart';
@@ -15,7 +16,7 @@ class FollowAuditScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Audit Followers')),
+      appBar: AppBar(title: Text(context.l10n.labelAuditFollowers)),
       body: BlocBuilder<FollowAuditCubit, FollowAuditState>(
         builder: (context, state) {
           final visibleEntries = _visibleEntries(state);
@@ -43,21 +44,21 @@ class FollowAuditScreen extends StatelessWidget {
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      '${state.failedProfiles} profile(s) could not be loaded.',
+                      context.l10n.formatProfilesFailedToLoad(state.failedProfiles),
                       key: const Key('follow_audit_failed_warning'),
                       style: TextStyle(color: context.colorScheme.tertiary),
                     ),
                   ),
                 ),
               if (state.status == FollowAuditStatus.error)
-                _ErrorBanner(message: state.errorMessage ?? 'Failed to complete follow audit.'),
+                _ErrorBanner(message: state.errorMessage ?? context.l10n.errorFollowAuditFailed),
               if (state.status == FollowAuditStatus.complete && state.unfollowedCount > 0)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Unfollowed ${state.unfollowedCount} account(s)',
+                      context.l10n.formatUnfollowedAccounts(state.unfollowedCount),
                       key: const Key('follow_audit_complete_message'),
                       style: context.textTheme.titleMedium,
                     ),
@@ -147,14 +148,12 @@ class _HeaderCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'AUDIT FOLLOWERS',
+            context.l10n.labelAuditFollowers.toUpperCase(),
             style: context.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 1.1),
           ),
           const SizedBox(height: 6),
           Text(
-            totalFollows > 0
-                ? '$totalFollows follows scanned for problematic accounts'
-                : 'Scan your follows for deleted, suspended, blocked, and hidden accounts.',
+            totalFollows > 0 ? context.l10n.formatFollowsScanned(totalFollows) : context.l10n.messageFollowAuditIntro,
             style: context.textTheme.bodyMedium,
           ),
         ],
@@ -179,7 +178,7 @@ class _AuditActionButton extends StatelessWidget {
         key: const Key('follow_audit_scan_button'),
         onPressed: isBusy ? null : () => context.read<FollowAuditCubit>().audit(),
         icon: const Icon(Icons.manage_search_outlined),
-        label: const Text('Scan'),
+        label: Text(context.l10n.buttonScan),
       );
     }
 
@@ -187,7 +186,7 @@ class _AuditActionButton extends StatelessWidget {
       key: const Key('follow_audit_unfollow_button'),
       onPressed: selectedCount == 0 || isBusy ? null : () => context.read<FollowAuditCubit>().confirmUnfollow(),
       icon: const Icon(Icons.person_remove_outlined),
-      label: Text('Unfollow Selected ($selectedCount)'),
+      label: Text(context.l10n.buttonUnfollowSelected(selectedCount)),
     );
   }
 }
@@ -208,8 +207,8 @@ class _ProgressSection extends StatelessWidget {
     final shownTotal = totalFollows > 0 ? totalFollows : math.max(progress, 1);
     final value = (progress / shownTotal).clamp(0.0, 1.0);
     final label = status == FollowAuditStatus.fetching
-        ? 'Fetching follows: $progress/$shownTotal'
-        : 'Classifying: $progress/$shownTotal';
+        ? context.l10n.formatFetchingFollowsProgress(progress, shownTotal)
+        : context.l10n.formatClassifyingProgress(progress, shownTotal);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -255,7 +254,7 @@ class _ErrorBanner extends StatelessWidget {
                 OutlinedButton(
                   key: const Key('follow_audit_retry_button'),
                   onPressed: () => context.read<FollowAuditCubit>().audit(),
-                  child: const Text('Retry'),
+                  child: Text(context.l10n.buttonRetry),
                 ),
               ],
             ),
@@ -305,7 +304,7 @@ class _FilterControls extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
                   child: Text(
-                    'FILTERS',
+                    context.l10n.labelFilters.toUpperCase(),
                     style: context.textTheme.labelMedium?.copyWith(letterSpacing: 1.0, fontWeight: FontWeight.w700),
                   ),
                 ),
@@ -363,7 +362,7 @@ class _FilterTile extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  _labelForStatus(status).toUpperCase(),
+                  _labelForStatus(context, status).toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: context.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -387,7 +386,9 @@ class _FilterTile extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
                 icon: Icon(isVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                 onPressed: () => context.read<FollowAuditCubit>().toggleVisibility(status),
-                tooltip: isVisible ? 'Hide ${_labelForStatus(status)}' : 'Show ${_labelForStatus(status)}',
+                tooltip: isVisible
+                    ? context.l10n.formatHideStatus(_labelForStatus(context, status))
+                    : context.l10n.formatShowStatus(_labelForStatus(context, status)),
               ),
               Checkbox(
                 key: Key('follow_audit_select_all_${status.name}'),
@@ -405,7 +406,7 @@ class _FilterTile extends StatelessWidget {
               ),
               Expanded(
                 child: Text(
-                  'Select All',
+                  context.l10n.labelSelectAll,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: context.textTheme.bodySmall,
@@ -416,27 +417,6 @@ class _FilterTile extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _labelForStatus(FollowStatus status) {
-    switch (status) {
-      case FollowStatus.deleted:
-        return 'Deleted';
-      case FollowStatus.deactivated:
-        return 'Deactivated';
-      case FollowStatus.suspended:
-        return 'Suspended';
-      case FollowStatus.blockedBy:
-        return 'Blocked by';
-      case FollowStatus.blocking:
-        return 'Blocking';
-      case FollowStatus.mutualBlock:
-        return 'Mutual block';
-      case FollowStatus.hidden:
-        return 'Hidden';
-      case FollowStatus.selfFollow:
-        return 'Self-follow';
-    }
   }
 }
 
@@ -456,16 +436,18 @@ class _ResultsPanelState extends State<_ResultsPanel> {
   @override
   Widget build(BuildContext context) {
     if (widget.state.status == FollowAuditStatus.initial) {
-      return const Center(child: Text('Tap Scan to audit your follow list.'));
+      return Center(child: Text(context.l10n.messageFollowAuditStartPrompt));
     }
 
     if (widget.state.results.isEmpty &&
         (widget.state.status == FollowAuditStatus.ready || widget.state.status == FollowAuditStatus.complete)) {
-      return const Center(child: Text('No problematic follows found', key: Key('follow_audit_empty_message')));
+      return Center(
+        child: Text(context.l10n.messageNoProblematicFollows, key: const Key('follow_audit_empty_message')),
+      );
     }
 
     if (widget.visibleEntries.isEmpty && widget.state.results.isNotEmpty) {
-      return const Center(child: Text('No results visible for the current filters.'));
+      return Center(child: Text(context.l10n.messageNoResultsForFilters));
     }
 
     return ListView.separated(
@@ -535,8 +517,8 @@ class _ResultRow extends StatelessWidget {
                           await Clipboard.setData(ClipboardData(text: item.record.subjectDid));
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('DID copied to clipboard'),
+                              SnackBar(
+                                content: Text(context.l10n.formatDidCopied),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
@@ -556,7 +538,7 @@ class _ResultRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Chip(label: Text(item.statusLabel), visualDensity: VisualDensity.compact),
+                Chip(label: Text(_labelForStatus(context, item.status)), visualDensity: VisualDensity.compact),
               ],
             ),
           ),
@@ -592,9 +574,23 @@ class _SummaryFooter extends StatelessWidget {
         border: Border(top: BorderSide(color: context.colorScheme.outlineVariant)),
       ),
       child: Text(
-        'Selected: $selectedCount/$total',
+        context.l10n.formatSelectedCount(selectedCount, total),
         style: context.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
       ),
     );
   }
+}
+
+String _labelForStatus(BuildContext context, FollowStatus status) {
+  final l10n = context.l10n;
+  return switch (status) {
+    FollowStatus.deleted => l10n.statusDeleted,
+    FollowStatus.deactivated => l10n.statusDeactivated,
+    FollowStatus.suspended => l10n.statusSuspended,
+    FollowStatus.blockedBy => l10n.statusBlockedBy,
+    FollowStatus.blocking => l10n.statusBlocking,
+    FollowStatus.mutualBlock => l10n.statusMutualBlock,
+    FollowStatus.hidden => l10n.statusHidden,
+    FollowStatus.selfFollow => l10n.statusSelfFollow,
+  };
 }

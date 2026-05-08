@@ -3,11 +3,12 @@ import 'package:bluesky/app_bsky_graph_defs.dart' as bsky_graph;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/profile/cubit/profile_context_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_context_repository.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class ProfileContextScreen extends StatefulWidget {
   const ProfileContextScreen({super.key, required this.handle});
@@ -67,7 +68,7 @@ class _ProfileContextScreenState extends State<ProfileContextScreen> with Single
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Profile Context'),
+                Text(context.l10n.labelProfileContext),
                 Text(
                   '@${widget.handle}',
                   style: context.textTheme.labelSmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
@@ -77,9 +78,9 @@ class _ProfileContextScreenState extends State<ProfileContextScreen> with Single
             bottom: TabBar(
               controller: _tabController,
               tabs: [
-                Tab(text: 'Blocked By${state.blockedByCount > 0 ? ' (${state.blockedByCount})' : ''}'),
-                Tab(text: 'Blocking${state.blockingCount > 0 ? ' (${state.blockingCount})' : ''}'),
-                Tab(text: 'Lists${state.listsOnCount > 0 ? ' (${state.listsOnCount})' : ''}'),
+                Tab(text: _tabLabel(context.l10n.labelBlockedBy, state.blockedByCount)),
+                Tab(text: _tabLabel(context.l10n.labelBlocking, state.blockingCount)),
+                Tab(text: _tabLabel(context.l10n.labelLists, state.listsOnCount)),
               ],
             ),
           ),
@@ -119,14 +120,10 @@ class _BlockedByTab extends StatelessWidget {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Text(
-                  'Blocks are a normal part of social media. '
-                  'This data is public on the AT Protocol.',
-                  textAlign: TextAlign.center,
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Text(context.l10n.messageBlockedByContextNotice, textAlign: TextAlign.center),
               ),
             ),
             SliverToBoxAdapter(
@@ -135,7 +132,7 @@ class _BlockedByTab extends StatelessWidget {
                 child: Row(
                   children: [
                     Text(
-                      '${state.blockedByCount} account${state.blockedByCount == 1 ? '' : 's'}',
+                      context.l10n.formatAccountCount(state.blockedByCount),
                       style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const Spacer(),
@@ -144,7 +141,7 @@ class _BlockedByTab extends StatelessWidget {
                         key: const Key('blocked_by_show_accounts'),
                         onPressed: () => cubit.loadBlockedBy(),
                         icon: const Icon(Icons.expand_more),
-                        label: const Text('Show accounts'),
+                        label: Text(context.l10n.buttonShowAccounts),
                       ),
                   ],
                 ),
@@ -157,7 +154,7 @@ class _BlockedByTab extends StatelessWidget {
                 hasScrollBody: false,
                 child: Center(
                   child: _ErrorRetry(
-                    message: state.blockedByError ?? 'Failed to load accounts',
+                    message: state.blockedByError ?? context.l10n.errorFailedToLoadAccounts,
                     onRetry: () => cubit.loadBlockedBy(),
                   ),
                 ),
@@ -168,8 +165,8 @@ class _BlockedByTab extends StatelessWidget {
                 child: Center(
                   child: Text(
                     state.blockedByCount > 0
-                        ? 'Found ${state.blockedByCount} blocked-by accounts, but public Bluesky profile details could not be loaded.'
-                        : 'No accounts have blocked this user',
+                        ? context.l10n.formatBlockedByAccountsUnavailable(state.blockedByCount)
+                        : context.l10n.messageNoAccountsBlockedThisUser,
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -191,7 +188,7 @@ class _BlockedByTab extends StatelessWidget {
                   return _UnavailableProfileTile(
                     key: ValueKey('blocked_by_unavailable_${entry.did}'),
                     did: entry.did,
-                    reason: entry.unavailableReason ?? 'Profile unavailable',
+                    reason: entry.unavailableReason ?? context.l10n.messageProfileUnavailable,
                   );
                 },
               ),
@@ -207,7 +204,7 @@ class _BlockedByTab extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: _ErrorRetry(
-                      message: state.blockedByError ?? 'Failed to load more',
+                      message: state.blockedByError ?? context.l10n.errorFailedToLoadMore,
                       onRetry: () => cubit.loadBlockedBy(cursor: state.blockedByCursor),
                     ),
                   ),
@@ -230,13 +227,10 @@ class _BlockingTab extends StatelessWidget {
     final cubit = context.read<ProfileContextCubit>();
 
     if (!state.isOwnProfile) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            'Blocking information is only available when viewing your own profile.',
-            textAlign: TextAlign.center,
-          ),
+          padding: const EdgeInsets.all(24),
+          child: Text(context.l10n.messageBlockingOnlyOwnProfile, textAlign: TextAlign.center),
         ),
       );
     }
@@ -258,7 +252,7 @@ class _BlockingTab extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Text(
-                  '${state.blockingCount} account${state.blockingCount == 1 ? '' : 's'}',
+                  context.l10n.formatAccountCount(state.blockingCount),
                   style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
@@ -278,7 +272,7 @@ class _BlockingTab extends StatelessWidget {
                 hasScrollBody: false,
                 child: Center(
                   child: _ErrorRetry(
-                    message: state.blockingError ?? 'Failed to load accounts',
+                    message: state.blockingError ?? context.l10n.errorFailedToLoadAccounts,
                     onRetry: () => cubit.loadBlocking(),
                   ),
                 ),
@@ -289,8 +283,8 @@ class _BlockingTab extends StatelessWidget {
                 child: Center(
                   child: Text(
                     state.blockingUnavailable.isNotEmpty
-                        ? 'Some blocked accounts are suspended or unavailable.'
-                        : 'Not blocking anyone',
+                        ? context.l10n.messageSomeBlockedAccountsUnavailable
+                        : context.l10n.messageNotBlockingAnyone,
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -319,7 +313,7 @@ class _BlockingTab extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: _ErrorRetry(
-                      message: state.blockingError ?? 'Failed to load more',
+                      message: state.blockingError ?? context.l10n.errorFailedToLoadMore,
                       onRetry: () => cubit.loadBlocking(cursor: state.blockingCursor),
                     ),
                   ),
@@ -362,13 +356,13 @@ class _ListsOnTab extends StatelessWidget {
                 hasScrollBody: false,
                 child: Center(
                   child: _ErrorRetry(
-                    message: state.listsOnError ?? 'Failed to load lists',
+                    message: state.listsOnError ?? context.l10n.errorFailedToLoadLists,
                     onRetry: () => cubit.loadListsOn(),
                   ),
                 ),
               )
             else if (state.listsOnStatus == ProfileContextTabStatus.loaded && state.listsOn.isEmpty)
-              const SliverFillRemaining(hasScrollBody: false, child: Center(child: Text('Not on any lists')))
+              SliverFillRemaining(hasScrollBody: false, child: Center(child: Text(context.l10n.messageNotOnAnyLists)))
             else ...[
               ..._buildListSections(
                 context,
@@ -387,7 +381,7 @@ class _ListsOnTab extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: _ErrorRetry(
-                      message: state.listsOnError ?? 'Failed to load more',
+                      message: state.listsOnError ?? context.l10n.errorFailedToLoadMore,
                       onRetry: () => cubit.loadListsOn(cursor: state.listsOnCursor),
                     ),
                   ),
@@ -444,8 +438,8 @@ class _UnavailableAccountsCard extends StatelessWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.warning_amber_rounded),
-              title: Text('Unavailable accounts (${entries.length})'),
-              subtitle: const Text('These accounts are suspended or their public profile could not be fetched.'),
+              title: Text(context.l10n.formatUnavailableAccounts(entries.length)),
+              subtitle: Text(context.l10n.messageUnavailableAccountsDescription),
             ),
             for (final entry in entries)
               ListTile(
@@ -507,7 +501,7 @@ List<Widget> _buildListSections(
   List<bsky_graph.ListView> lists,
   ValueChanged<bsky_graph.ListView> onTap,
 ) {
-  final sections = _groupListsByPurpose(lists);
+  final sections = _groupListsByPurpose(context, lists);
   return [
     for (final section in sections) ...[
       SliverToBoxAdapter(
@@ -527,7 +521,10 @@ List<Widget> _buildListSections(
   ];
 }
 
-List<({String title, List<bsky_graph.ListView> lists})> _groupListsByPurpose(List<bsky_graph.ListView> lists) {
+List<({String title, List<bsky_graph.ListView> lists})> _groupListsByPurpose(
+  BuildContext context,
+  List<bsky_graph.ListView> lists,
+) {
   final buckets = <_ListPurposeGroup, List<bsky_graph.ListView>>{
     _ListPurposeGroup.curation: [],
     _ListPurposeGroup.moderation: [],
@@ -540,10 +537,10 @@ List<({String title, List<bsky_graph.ListView> lists})> _groupListsByPurpose(Lis
   }
 
   return [
-    (title: 'Curation Lists', lists: buckets[_ListPurposeGroup.curation]!),
-    (title: 'Moderation Lists', lists: buckets[_ListPurposeGroup.moderation]!),
-    (title: 'Reference Lists', lists: buckets[_ListPurposeGroup.reference]!),
-    (title: 'Other Lists', lists: buckets[_ListPurposeGroup.other]!),
+    (title: context.l10n.labelCurationLists, lists: buckets[_ListPurposeGroup.curation]!),
+    (title: context.l10n.labelModerationLists, lists: buckets[_ListPurposeGroup.moderation]!),
+    (title: context.l10n.labelReferenceLists, lists: buckets[_ListPurposeGroup.reference]!),
+    (title: context.l10n.labelOtherLists, lists: buckets[_ListPurposeGroup.other]!),
   ].where((section) => section.lists.isNotEmpty).toList();
 }
 
@@ -561,6 +558,8 @@ _ListPurposeGroup _purposeGroupFor(bsky_graph.ListView list) {
 }
 
 enum _ListPurposeGroup { curation, moderation, reference, other }
+
+String _tabLabel(String label, int count) => count > 0 ? '$label ($count)' : label;
 
 class _ListContextCard extends StatelessWidget {
   const _ListContextCard({super.key, required this.list, this.onTap});
@@ -616,7 +615,7 @@ class _ListContextCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 _ListMetaChip(
                   icon: Icons.group_outlined,
-                  label: '${list.listItemCount ?? 0} member${(list.listItemCount ?? 0) == 1 ? '' : 's'}',
+                  label: context.l10n.formatMemberCount(list.listItemCount ?? 0),
                 ),
                 if (description != null && description.isNotEmpty) ...[
                   const SizedBox(height: 12),
@@ -640,10 +639,13 @@ class _ListPurposeBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
     final (label, color) = switch (purpose) {
-      bsky_graph.KnownListPurpose.appBskyGraphDefsCuratelist => ('CURATE', colorScheme.primary),
-      bsky_graph.KnownListPurpose.appBskyGraphDefsModlist => ('MOD', colorScheme.error),
-      bsky_graph.KnownListPurpose.appBskyGraphDefsReferencelist => ('REFERENCE', colorScheme.tertiary),
-      null => ('LIST', colorScheme.secondary),
+      bsky_graph.KnownListPurpose.appBskyGraphDefsCuratelist => (context.l10n.labelCurateShort, colorScheme.primary),
+      bsky_graph.KnownListPurpose.appBskyGraphDefsModlist => (context.l10n.labelModerationShort, colorScheme.error),
+      bsky_graph.KnownListPurpose.appBskyGraphDefsReferencelist => (
+        context.l10n.labelReferenceShort,
+        colorScheme.tertiary,
+      ),
+      null => (context.l10n.labelList.toUpperCase(), colorScheme.secondary),
     };
 
     return Container(
@@ -788,7 +790,7 @@ class _ErrorRetry extends StatelessWidget {
       children: [
         Text(message, textAlign: TextAlign.center),
         const SizedBox(height: 12),
-        FilledButton(onPressed: onRetry, child: const Text('Retry')),
+        FilledButton(onPressed: onRetry, child: Text(context.l10n.buttonRetry)),
       ],
     );
   }

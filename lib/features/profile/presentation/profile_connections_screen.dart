@@ -1,10 +1,10 @@
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/theme/spacing.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
-import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/features/profile/cubit/profile_connections_cubit.dart';
@@ -68,7 +68,7 @@ class _ProfileConnectionsScreenState extends State<ProfileConnectionsScreen> wit
     final subtitle = widget.handle?.trim();
     return Scaffold(
       appBar: AppBar(
-        title: Text(subtitle == null || subtitle.isEmpty ? 'Connections' : '@$subtitle'),
+        title: Text(subtitle == null || subtitle.isEmpty ? context.l10n.labelConnections : '@$subtitle'),
         bottom: TabBar(
           controller: _tabController,
           onTap: (index) {
@@ -77,10 +77,10 @@ class _ProfileConnectionsScreenState extends State<ProfileConnectionsScreen> wit
             cubit.loadTab(tab);
             cubit.ensureSearchForTab(tab);
           },
-          tabs: const [
-            Tab(text: 'Following'),
-            Tab(text: 'Followers'),
-            Tab(text: 'Mutuals'),
+          tabs: [
+            Tab(text: context.l10n.labelFollowing),
+            Tab(text: context.l10n.labelFollowers),
+            Tab(text: context.l10n.labelMutuals),
           ],
         ),
       ),
@@ -131,7 +131,7 @@ class _ConnectionsSearchFieldState extends State<_ConnectionsSearchField> {
         onChanged: (query) => context.read<ProfileConnectionsCubit>().setSearchQuery(query, widget.activeTab()),
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
-          hintText: 'Search handle, name, or description',
+          hintText: context.l10n.messageSearchConnectionsPlaceholder,
           prefixIcon: const Icon(Icons.search),
           suffixIcon: BlocBuilder<ProfileConnectionsCubit, ProfileConnectionsState>(
             buildWhen: (previous, current) => previous.searchQuery != current.searchQuery,
@@ -140,7 +140,7 @@ class _ConnectionsSearchFieldState extends State<_ConnectionsSearchField> {
                 return const SizedBox.shrink();
               }
               return IconButton(
-                tooltip: 'Clear search',
+                tooltip: context.l10n.tooltipClearSearch,
                 icon: const Icon(Icons.close),
                 onPressed: () {
                   _controller.clear();
@@ -170,13 +170,15 @@ class _ConnectionsTabView extends StatelessWidget {
       builder: (context, state) {
         final data = state.dataFor(tab);
         if (data.isLoading && data.profiles.isEmpty) {
-          return LoadingState(message: 'Loading ${tab.title.toLowerCase()}...');
+          return LoadingState(
+            message: context.l10n.formatConnectionsLoading(_localizedTabTitle(context, tab, lowercase: true)),
+          );
         }
 
         if (data.hasError && data.profiles.isEmpty) {
           return ErrorState(
-            title: 'Unable to load ${tab.title.toLowerCase()}',
-            message: data.errorMessage ?? 'Unknown error',
+            title: context.l10n.errorUnableToLoadConnections(_localizedTabTitle(context, tab, lowercase: true)),
+            message: data.errorMessage ?? context.l10n.errorUnknown,
             onRetry: () => context.read<ProfileConnectionsCubit>().loadTab(tab, force: true),
           );
         }
@@ -185,12 +187,15 @@ class _ConnectionsTabView extends StatelessWidget {
         final isSearchMode = state.searchQuery.isNotEmpty;
         if (profiles.isEmpty) {
           if (isSearchMode && data.isSearching) {
-            return LoadingState(message: 'Searching ${data.searchedCount} accounts...');
+            return LoadingState(message: context.l10n.formatConnectionsSearching(data.searchedCount));
           }
 
           final message = state.searchQuery.isEmpty
-              ? 'No ${tab.title.toLowerCase()} found'
-              : 'No ${tab.title.toLowerCase()} match "${state.searchQuery}"';
+              ? context.l10n.formatConnectionsNoneFound(_localizedTabTitle(context, tab, lowercase: true))
+              : context.l10n.formatConnectionsNoMatches(
+                  _localizedTabTitle(context, tab, lowercase: true),
+                  state.searchQuery,
+                );
           return EmptyState(message: message, icon: Icons.person_search_outlined);
         }
 
@@ -295,7 +300,9 @@ class _ConnectionProfileTileBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = profile.displayName?.trim().isNotEmpty == true ? profile.displayName!.trim() : profile.handle;
     final description = profile.description?.trim();
-    final joined = profile.createdAt == null ? null : 'Joined ${_formatJoinedAgo(profile.createdAt!)}';
+    final joined = profile.createdAt == null
+        ? null
+        : context.l10n.formatJoinedRelative(_formatJoinedAgo(profile.createdAt!));
     final metaStyle = context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant);
 
     return Material(
@@ -362,13 +369,13 @@ class _InlineFollowButton extends StatelessWidget {
 
     final effectiveOnPressed = isOffline || isBlockedBy ? null : onPressed;
     final button = isFollowing
-        ? OutlinedButton(onPressed: effectiveOnPressed, child: const Text('Following'))
-        : FilledButton.tonal(onPressed: effectiveOnPressed, child: const Text('Follow'));
+        ? OutlinedButton(onPressed: effectiveOnPressed, child: Text(context.l10n.buttonFollowing))
+        : FilledButton.tonal(onPressed: effectiveOnPressed, child: Text(context.l10n.buttonFollow));
 
     if (!isOffline) {
       return button;
     }
-    return Tooltip(message: offlineActionMessage('change your follow state'), child: button);
+    return Tooltip(message: context.l10n.formatOfflineReconnectAction('change your follow state'), child: button);
   }
 }
 
@@ -380,7 +387,7 @@ class _YouPill extends StatelessWidget {
     return Chip(
       visualDensity: VisualDensity.compact,
       side: BorderSide(color: context.colorScheme.outlineVariant),
-      label: const Text('You'),
+      label: Text(context.l10n.labelYou),
     );
   }
 }
@@ -414,7 +421,7 @@ class _LoadMoreFooter extends StatelessWidget {
                   ],
                   OutlinedButton(
                     onPressed: () => context.read<ProfileConnectionsCubit>().loadMore(tab),
-                    child: Text(errorMessage == null ? 'Load more' : 'Retry'),
+                    child: Text(errorMessage == null ? context.l10n.buttonLoadMore : context.l10n.buttonRetry),
                   ),
                 ],
               ),
@@ -433,9 +440,9 @@ class _SearchProgressFooter extends StatelessWidget {
     final colorScheme = context.colorScheme;
     final textTheme = context.textTheme;
     final message = switch (data.searchStatus) {
-      ProfileConnectionsSearchStatus.searching => 'Searching ${data.searchedCount} accounts...',
-      ProfileConnectionsSearchStatus.complete => 'Searched ${data.searchedCount} accounts',
-      ProfileConnectionsSearchStatus.error => 'Search stopped after ${data.searchedCount} accounts',
+      ProfileConnectionsSearchStatus.searching => context.l10n.formatConnectionsSearching(data.searchedCount),
+      ProfileConnectionsSearchStatus.complete => context.l10n.formatConnectionsSearched(data.searchedCount),
+      ProfileConnectionsSearchStatus.error => context.l10n.formatConnectionsSearchStopped(data.searchedCount),
       ProfileConnectionsSearchStatus.idle => '',
     };
 
@@ -491,4 +498,13 @@ String _formatJoinedAgo(DateTime joinedAt) {
     return '${difference.inMinutes}m ago';
   }
   return 'now';
+}
+
+String _localizedTabTitle(BuildContext context, ProfileConnectionsTab tab, {bool lowercase = false}) {
+  final title = switch (tab) {
+    ProfileConnectionsTab.following => context.l10n.labelFollowing,
+    ProfileConnectionsTab.followers => context.l10n.labelFollowers,
+    ProfileConnectionsTab.mutuals => context.l10n.labelMutuals,
+  };
+  return lowercase ? title.toLowerCase() : title;
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/features/profile/presentation/widgets/suggested_follows_list.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -20,7 +21,7 @@ class SuggestedFollowsSheet extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(
-              'Suggested Follows',
+              context.l10n.labelSuggestedFollows,
               style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),

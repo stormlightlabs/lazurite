@@ -4,6 +4,8 @@ import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/core/widgets/sliver_tab_bar_delegate.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
@@ -14,7 +16,6 @@ import 'package:lazurite/features/lists/presentation/widgets/create_edit_list_di
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class ListDetailScreen extends StatelessWidget {
   const ListDetailScreen({super.key, required this.listUri});
@@ -99,9 +100,9 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
   Future<void> _confirmDelete(BuildContext context) async {
     final confirmed = await showConfirmationDialog(
       context: context,
-      title: const Text('Delete list?'),
-      content: const Text('This action cannot be undone.'),
-      confirmLabel: 'Delete',
+      title: Text(context.l10n.dialogDeleteListTitle),
+      content: Text(context.l10n.dialogDeletePostContent),
+      confirmLabel: context.l10n.buttonDelete,
       confirmDestructive: true,
     );
 
@@ -127,13 +128,13 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
         if (isOwn)
           OptionsSheetItem(
             leading: const Icon(Icons.edit_outlined),
-            title: 'Edit list',
+            title: context.l10n.labelEditList,
             onTap: () => _showEditDialog(context, list),
           ),
         if (isOwn)
           OptionsSheetItem(
             leading: const Icon(Icons.person_add_outlined),
-            title: 'Add members',
+            title: context.l10n.buttonAddMembers,
             onTap: () async {
               final listUriStr = Uri.encodeComponent(list.uri.toString());
               await context.push('/list/members?uri=$listUriStr');
@@ -145,19 +146,19 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
         if (isOwn)
           OptionsSheetItem(
             leading: Icon(Icons.delete_outline, color: context.colorScheme.error),
-            title: 'Delete list',
+            title: context.l10n.dialogDeleteListTitle,
             isDestructive: true,
             onTap: () => _confirmDelete(context),
           ),
         OptionsSheetItem(
           leading: Icon(isMuted ? Icons.volume_up_outlined : Icons.volume_off_outlined),
-          title: isMuted ? 'Unmute list' : 'Mute list',
+          title: isMuted ? context.l10n.labelUnmuteList : context.l10n.labelMuteList,
           onTap: () => context.read<ListBloc>().add(isMuted ? const ListUnmuted() : const ListMuted()),
         ),
         if (list.purpose.knownValue == bsky_graph.KnownListPurpose.appBskyGraphDefsModlist)
           OptionsSheetItem(
             leading: Icon(isBlocked ? Icons.block_flipped : Icons.block_outlined),
-            title: isBlocked ? 'Unblock via list' : 'Block via list',
+            title: isBlocked ? context.l10n.labelUnblockViaList : context.l10n.labelBlockViaList,
             onTap: () => context.read<ListBloc>().add(isBlocked ? const ListUnblocked() : const ListBlocked()),
           ),
       ],
@@ -188,7 +189,7 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
                     floating: true,
                     pinned: true,
                     snap: true,
-                    title: Text(list?.name ?? 'List'),
+                    title: Text(list?.name ?? context.l10n.labelList),
                     actions: [
                       if (state.isMutating)
                         const Padding(
@@ -215,7 +216,7 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.all(24),
-                        child: Center(child: Text(state.errorMessage ?? 'Failed to load list')),
+                        child: Center(child: Text(state.errorMessage ?? context.l10n.errorFailedToLoadList)),
                       ),
                     ),
                   SliverPersistentHeader(
@@ -223,9 +224,9 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
                     delegate: SliverTabBarDelegate(
                       TabBar(
                         controller: _tabController,
-                        tabs: const [
-                          Tab(text: 'FEED'),
-                          Tab(text: 'MEMBERS'),
+                        tabs: [
+                          Tab(text: context.l10n.labelFeed.toUpperCase()),
+                          Tab(text: context.l10n.labelMembers.toUpperCase()),
                         ],
                         labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 2.2),
                         unselectedLabelStyle: const TextStyle(
@@ -242,7 +243,7 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
               body: TabBarView(
                 controller: _tabController,
                 children: [
-                  isCuration ? _buildFeedTab(context) : _buildFeedUnavailableTab(),
+                  isCuration ? _buildFeedTab(context) : _buildFeedUnavailableTab(context),
                   _buildMembersTab(context, state),
                 ],
               ),
@@ -278,12 +279,12 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
                     Text(list.name, style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 2),
                     Text(
-                      'by @${list.creator.handle}',
+                      context.l10n.formatListByHandle(list.creator.handle),
                       style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${list.listItemCount ?? 0} members',
+                      context.l10n.formatMemberCount(list.listItemCount ?? 0),
                       style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                     ),
                   ],
@@ -308,11 +309,11 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
         }
 
         if (feedState.hasError) {
-          return Center(child: Text(feedState.errorMessage ?? 'Failed to load feed'));
+          return Center(child: Text(feedState.errorMessage ?? context.l10n.errorFailedToLoadFeed));
         }
 
         if (!feedState.hasPosts) {
-          return const Center(child: Text('No posts yet'));
+          return Center(child: Text(context.l10n.messageNoPostsYet));
         }
 
         final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
@@ -350,8 +351,8 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
     );
   }
 
-  Widget _buildFeedUnavailableTab() {
-    return const Center(child: Text('Feed not available for moderation lists'));
+  Widget _buildFeedUnavailableTab(BuildContext context) {
+    return Center(child: Text(context.l10n.messageFeedUnavailableForModerationLists));
   }
 
   Widget _buildMembersTab(BuildContext context, ListState state) {
@@ -360,11 +361,11 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
     }
 
     if (state.hasError && !state.hasItems) {
-      return Center(child: Text(state.errorMessage ?? 'Failed to load members'));
+      return Center(child: Text(state.errorMessage ?? context.l10n.errorFailedToLoadMembers));
     }
 
     if (!state.hasItems) {
-      return const Center(child: Text('No members yet'));
+      return Center(child: Text(context.l10n.messageNoMembersYet));
     }
 
     final isOwn = _isOwnList(context, state.list);

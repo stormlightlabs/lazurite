@@ -2,11 +2,12 @@ import 'package:atproto_core/atproto_core.dart' show AtUri;
 import 'package:bluesky/app_bsky_actor_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/lists/bloc/list_bloc.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 /// Screen for adding and removing members from a list.
 ///
@@ -67,7 +68,7 @@ class _ListMembersViewState extends State<_ListMembersView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add members')),
+      appBar: AppBar(title: Text(context.l10n.buttonAddMembers)),
       body: BlocBuilder<ListBloc, ListState>(
         builder: (context, state) {
           return Column(
@@ -77,7 +78,7 @@ class _ListMembersViewState extends State<_ListMembersView> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search for people',
+                    hintText: context.l10n.messageSearchForPeoplePlaceholder,
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _isSearching
                         ? const Padding(
@@ -162,7 +163,7 @@ class _ListMembersViewState extends State<_ListMembersView> {
     }
 
     if (!state.hasItems) {
-      return const Center(child: Text('No members yet. Search above to add people.'));
+      return Center(child: Text(context.l10n.messageNoMembersYetSearch));
     }
 
     final colorScheme = context.colorScheme;
@@ -173,7 +174,7 @@ class _ListMembersViewState extends State<_ListMembersView> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(
-            'CURRENT MEMBERS',
+            context.l10n.labelCurrentMembers.toUpperCase(),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,

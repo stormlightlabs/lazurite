@@ -109,6 +109,12 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get buttonCancel;
 
+  /// Tooltip for composing a post
+  ///
+  /// In en, this message translates to:
+  /// **'Compose'**
+  String get buttonCompose;
+
   /// Button label to clear local cache
   ///
   /// In en, this message translates to:
@@ -1423,6 +1429,12 @@ abstract class AppLocalizations {
   /// **'Suggested'**
   String get labelSuggested;
 
+  /// Suggested follows sheet and menu label
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested Follows'**
+  String get labelSuggestedFollows;
+
   /// Post action label to undo a repost
   ///
   /// In en, this message translates to:
@@ -1921,6 +1933,12 @@ abstract class AppLocalizations {
   /// **'Posts you like will appear here after sync'**
   String get messageNoLikedPostsSubtitle;
 
+  /// Empty state when a profile has no liked posts
+  ///
+  /// In en, this message translates to:
+  /// **'No liked posts yet'**
+  String get messageNoLikedPostsYet;
+
   /// Empty state message when a post has no quote posts
   ///
   /// In en, this message translates to:
@@ -2089,6 +2107,12 @@ abstract class AppLocalizations {
   /// **'Search people'**
   String get messageSearchPeoplePlaceholder;
 
+  /// Search field placeholder when adding list members
+  ///
+  /// In en, this message translates to:
+  /// **'Search for people'**
+  String get messageSearchForPeoplePlaceholder;
+
   /// Search feeds field placeholder
   ///
   /// In en, this message translates to:
@@ -2142,6 +2166,1170 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Handle or DID'**
   String get promptHandleOrDid;
+
+  /// Button label to add a feed
+  ///
+  /// In en, this message translates to:
+  /// **'Add feed'**
+  String get buttonAddFeed;
+
+  /// Button label to add members to a list
+  ///
+  /// In en, this message translates to:
+  /// **'Add members'**
+  String get buttonAddMembers;
+
+  /// Button label to block an account
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get buttonBlock;
+
+  /// Create button label
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get buttonCreate;
+
+  /// Edit button label
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get buttonEdit;
+
+  /// Button label to follow an account
+  ///
+  /// In en, this message translates to:
+  /// **'Follow'**
+  String get buttonFollow;
+
+  /// Button label to follow all starter pack members
+  ///
+  /// In en, this message translates to:
+  /// **'Follow all'**
+  String get buttonFollowAll;
+
+  /// Button label showing that an account is followed
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get buttonFollowing;
+
+  /// Button label while following all starter pack members
+  ///
+  /// In en, this message translates to:
+  /// **'Following…'**
+  String get buttonFollowingInProgress;
+
+  /// Button label to load more results
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get buttonLoadMore;
+
+  /// Button label to mute an account or list
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get buttonMute;
+
+  /// Button label to start a follow audit scan
+  ///
+  /// In en, this message translates to:
+  /// **'Scan'**
+  String get buttonScan;
+
+  /// Button label to view all items
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get buttonSeeAll;
+
+  /// Button label to reveal blocked-by accounts
+  ///
+  /// In en, this message translates to:
+  /// **'Show accounts'**
+  String get buttonShowAccounts;
+
+  /// Button label to submit a moderation report
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Report'**
+  String get buttonSubmitReport;
+
+  /// Button label to unblock an account
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get buttonUnblock;
+
+  /// Button label to unfollow an account
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow'**
+  String get buttonUnfollow;
+
+  /// Button label to unfollow selected audit results
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow Selected ({count})'**
+  String buttonUnfollowSelected(int count);
+
+  /// Button label to unmute an account or list
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get buttonUnmute;
+
+  /// Confirmation dialog body before blocking an account
+  ///
+  /// In en, this message translates to:
+  /// **'They will not be able to see your posts or interact with you. They will not be notified that you blocked them.'**
+  String get dialogBlockAccountContent;
+
+  /// Confirmation dialog title before blocking an account
+  ///
+  /// In en, this message translates to:
+  /// **'Block Account?'**
+  String get dialogBlockAccountTitle;
+
+  /// Confirmation dialog title before deleting a list
+  ///
+  /// In en, this message translates to:
+  /// **'Delete list?'**
+  String get dialogDeleteListTitle;
+
+  /// Confirmation dialog body before deleting a starter pack
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently delete this starter pack and its backing list. This cannot be undone.'**
+  String get dialogDeleteStarterPackContent;
+
+  /// Confirmation dialog title before deleting a starter pack
+  ///
+  /// In en, this message translates to:
+  /// **'Delete starter pack'**
+  String get dialogDeleteStarterPackTitle;
+
+  /// Confirmation dialog body before muting an account
+  ///
+  /// In en, this message translates to:
+  /// **'You will no longer see their posts or receive notifications from them.'**
+  String get dialogMuteAccountContent;
+
+  /// Confirmation dialog title before muting an account
+  ///
+  /// In en, this message translates to:
+  /// **'Mute Account?'**
+  String get dialogMuteAccountTitle;
+
+  /// Confirmation dialog body before unblocking an account
+  ///
+  /// In en, this message translates to:
+  /// **'They will be able to see your posts and interact with you again.'**
+  String get dialogUnblockAccountContent;
+
+  /// Confirmation dialog title before unblocking an account
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock Account?'**
+  String get dialogUnblockAccountTitle;
+
+  /// Confirmation dialog body before unfollowing an account
+  ///
+  /// In en, this message translates to:
+  /// **'You will no longer see their posts in your feed.'**
+  String get dialogUnfollowAccountContent;
+
+  /// Confirmation dialog title before unfollowing an account
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow?'**
+  String get dialogUnfollowAccountTitle;
+
+  /// Confirmation dialog body before unmuting an account
+  ///
+  /// In en, this message translates to:
+  /// **'You will see their posts and receive notifications again.'**
+  String get dialogUnmuteAccountContent;
+
+  /// Confirmation dialog title before unmuting an account
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute Account?'**
+  String get dialogUnmuteAccountTitle;
+
+  /// Error message when starter pack creation fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create starter pack'**
+  String get errorFailedToCreateStarterPack;
+
+  /// Error message when accounts cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load accounts'**
+  String get errorFailedToLoadAccounts;
+
+  /// Error message when a list feed cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load feed'**
+  String get errorFailedToLoadFeed;
+
+  /// Error message when feed picker suggestions cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load feeds'**
+  String get errorFailedToLoadFeeds;
+
+  /// Error message when a list cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load list'**
+  String get errorFailedToLoadList;
+
+  /// Error message when lists cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load lists'**
+  String get errorFailedToLoadLists;
+
+  /// Error message when list members cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load members'**
+  String get errorFailedToLoadMembers;
+
+  /// Error message when loading more results fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load more'**
+  String get errorFailedToLoadMore;
+
+  /// Error message when posts cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load posts'**
+  String get errorFailedToLoadPosts;
+
+  /// Error title when a profile cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load profile'**
+  String get errorFailedToLoadProfile;
+
+  /// Error message when a starter pack cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load starter pack'**
+  String get errorFailedToLoadStarterPack;
+
+  /// Error message when starter packs cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load starter packs'**
+  String get errorFailedToLoadStarterPacks;
+
+  /// Error title when suggested follows cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load suggestions'**
+  String get errorFailedToLoadSuggestions;
+
+  /// Error message when follow audit fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to complete follow audit.'**
+  String get errorFollowAuditFailed;
+
+  /// Validation error when a profile image is too large
+  ///
+  /// In en, this message translates to:
+  /// **'Image must be smaller than 1MB'**
+  String get errorImageTooLarge;
+
+  /// Validation error when profile image file type is unsupported
+  ///
+  /// In en, this message translates to:
+  /// **'Use a JPEG or PNG image'**
+  String get errorInvalidProfileImageType;
+
+  /// Error when a selected profile image cannot be read
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to read selected image'**
+  String get errorProfileImageReadFailed;
+
+  /// Report submission failure dialog body
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to submit your report. Please try again later.'**
+  String get errorReportFailed;
+
+  /// Report submission failure dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Report Failed'**
+  String get errorReportFailedTitle;
+
+  /// Error title when a profile connection tab cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load {tab}'**
+  String errorUnableToLoadConnections(String tab);
+
+  /// Snackbar message when profile update fails
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to update profile'**
+  String get errorUnableToUpdateProfile;
+
+  /// Count of accounts
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 account} other{{count} accounts}}'**
+  String formatAccountCount(int count);
+
+  /// Message when blocked-by account count exists but profiles are unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'Found {count, plural, =1{1 blocked-by account} other{{count} blocked-by accounts}}, but public Bluesky profile details could not be loaded.'**
+  String formatBlockedByAccountsUnavailable(int count);
+
+  /// Loading message for a profile connection tab
+  ///
+  /// In en, this message translates to:
+  /// **'Loading {tab}...'**
+  String formatConnectionsLoading(String tab);
+
+  /// Empty search message for a profile connection tab
+  ///
+  /// In en, this message translates to:
+  /// **'No {tab} match \"{query}\"'**
+  String formatConnectionsNoMatches(String tab, String query);
+
+  /// Empty message for a profile connection tab
+  ///
+  /// In en, this message translates to:
+  /// **'No {tab} found'**
+  String formatConnectionsNoneFound(String tab);
+
+  /// Search progress message for profile connections
+  ///
+  /// In en, this message translates to:
+  /// **'Searching {count} accounts...'**
+  String formatConnectionsSearching(int count);
+
+  /// Completed search progress message for profile connections
+  ///
+  /// In en, this message translates to:
+  /// **'Searched {count} accounts'**
+  String formatConnectionsSearched(int count);
+
+  /// Stopped search progress message for profile connections
+  ///
+  /// In en, this message translates to:
+  /// **'Search stopped after {count} accounts'**
+  String formatConnectionsSearchStopped(int count);
+
+  /// Follow audit classifying progress label
+  ///
+  /// In en, this message translates to:
+  /// **'Classifying: {progress}/{total}'**
+  String formatClassifyingProgress(int progress, int total);
+
+  /// Snackbar message after copying a DID
+  ///
+  /// In en, this message translates to:
+  /// **'DID copied to clipboard'**
+  String get formatDidCopied;
+
+  /// Follow audit fetching progress label
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching follows: {progress}/{total}'**
+  String formatFetchingFollowsProgress(int progress, int total);
+
+  /// Snackbar message after following starter pack members
+  ///
+  /// In en, this message translates to:
+  /// **'Followed {count, plural, =1{1 member} other{{count} members}}'**
+  String formatFollowedMemberCount(int count);
+
+  /// Follow audit summary after scanning follows
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 follow scanned for problematic accounts} other{{count} follows scanned for problematic accounts}}'**
+  String formatFollowsScanned(int count);
+
+  /// Tooltip to hide a follow audit status
+  ///
+  /// In en, this message translates to:
+  /// **'Hide {status}'**
+  String formatHideStatus(String status);
+
+  /// Profile joined date label
+  ///
+  /// In en, this message translates to:
+  /// **'Joined {date}'**
+  String formatJoinedDate(String date);
+
+  /// Profile card joined relative time label
+  ///
+  /// In en, this message translates to:
+  /// **'Joined {relativeTime}'**
+  String formatJoinedRelative(String relativeTime);
+
+  /// List creator attribution label
+  ///
+  /// In en, this message translates to:
+  /// **'by @{handle}'**
+  String formatListByHandle(String handle);
+
+  /// Count of list or starter pack members
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 member} other{{count} members}}'**
+  String formatMemberCount(int count);
+
+  /// Report dialog title for a target handle
+  ///
+  /// In en, this message translates to:
+  /// **'{title} by @{handle}'**
+  String formatProfileReportTitle(String title, String handle);
+
+  /// Profile edit validation message for a text length limit
+  ///
+  /// In en, this message translates to:
+  /// **'{label} must be {count} characters or fewer'**
+  String formatProfileTextLimit(String label, int count);
+
+  /// Profile edit validation message for byte length
+  ///
+  /// In en, this message translates to:
+  /// **'{label} is too long'**
+  String formatProfileTextTooLong(String label);
+
+  /// Follow audit warning when some profiles failed to load
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 profile could not be loaded.} other{{count} profiles could not be loaded.}}'**
+  String formatProfilesFailedToLoad(int count);
+
+  /// Report submission success dialog body
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you. Your report (ID: {reportId}) has been submitted.'**
+  String formatReportSubmitted(String reportId);
+
+  /// Follow audit selected count footer
+  ///
+  /// In en, this message translates to:
+  /// **'Selected: {selected}/{total}'**
+  String formatSelectedCount(int selected, int total);
+
+  /// Tooltip to show a follow audit status
+  ///
+  /// In en, this message translates to:
+  /// **'Show {status}'**
+  String formatShowStatus(String status);
+
+  /// Title for unavailable accounts card
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable accounts ({count})'**
+  String formatUnavailableAccounts(int count);
+
+  /// Follow audit completion message
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollowed {count} account(s)'**
+  String formatUnfollowedAccounts(int count);
+
+  /// Helper text for required character-limited fields
+  ///
+  /// In en, this message translates to:
+  /// **'Required, max {count} characters'**
+  String formatValidationRequiredMaxCharacters(int count);
+
+  /// Action label to add an account to a list
+  ///
+  /// In en, this message translates to:
+  /// **'Add to list'**
+  String get labelAddToList;
+
+  /// Follow audit screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Audit Followers'**
+  String get labelAuditFollowers;
+
+  /// Profile banner image button label
+  ///
+  /// In en, this message translates to:
+  /// **'Banner'**
+  String get labelBanner;
+
+  /// List action label to block accounts via a moderation list
+  ///
+  /// In en, this message translates to:
+  /// **'Block via list'**
+  String get labelBlockViaList;
+
+  /// Profile context tab label for accounts that blocked the user
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked By'**
+  String get labelBlockedBy;
+
+  /// Profile context tab label for accounts the user is blocking
+  ///
+  /// In en, this message translates to:
+  /// **'Blocking'**
+  String get labelBlocking;
+
+  /// Profile connections screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Connections'**
+  String get labelConnections;
+
+  /// Profile action label to copy DID
+  ///
+  /// In en, this message translates to:
+  /// **'Copy DID'**
+  String get labelCopyDid;
+
+  /// Create list dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Create list'**
+  String get labelCreateList;
+
+  /// Tooltip to create a starter pack
+  ///
+  /// In en, this message translates to:
+  /// **'Create starter pack'**
+  String get labelCreateStarterPack;
+
+  /// Short curation list badge label
+  ///
+  /// In en, this message translates to:
+  /// **'CURATE'**
+  String get labelCurateShort;
+
+  /// List members section heading
+  ///
+  /// In en, this message translates to:
+  /// **'Current Members'**
+  String get labelCurrentMembers;
+
+  /// Profile context list section heading
+  ///
+  /// In en, this message translates to:
+  /// **'Curation Lists'**
+  String get labelCurationLists;
+
+  /// Description field label
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get labelDescription;
+
+  /// Optional description field label
+  ///
+  /// In en, this message translates to:
+  /// **'Description (optional)'**
+  String get labelDescriptionOptional;
+
+  /// Profile display name field label
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get labelDisplayName;
+
+  /// Edit list dialog or action title
+  ///
+  /// In en, this message translates to:
+  /// **'Edit list'**
+  String get labelEditList;
+
+  /// Edit profile screen title or action label
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get labelEditProfile;
+
+  /// Edit starter pack dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Edit starter pack'**
+  String get labelEditStarterPack;
+
+  /// Feed label
+  ///
+  /// In en, this message translates to:
+  /// **'Feed'**
+  String get labelFeed;
+
+  /// Followers label
+  ///
+  /// In en, this message translates to:
+  /// **'Followers'**
+  String get labelFollowers;
+
+  /// Starter pack statistic label for joins this week
+  ///
+  /// In en, this message translates to:
+  /// **'joined this week'**
+  String get labelJoinedThisWeek;
+
+  /// Starter pack card statistic label for total joins
+  ///
+  /// In en, this message translates to:
+  /// **'joined total'**
+  String get labelJoinedTotal;
+
+  /// Following label
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get labelFollowing;
+
+  /// Generic list title
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get labelList;
+
+  /// Lists label
+  ///
+  /// In en, this message translates to:
+  /// **'Lists'**
+  String get labelLists;
+
+  /// Profile media tab label
+  ///
+  /// In en, this message translates to:
+  /// **'Media'**
+  String get labelMedia;
+
+  /// Members section label
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get labelMembers;
+
+  /// Profile context moderation list section heading
+  ///
+  /// In en, this message translates to:
+  /// **'Moderation Lists'**
+  String get labelModerationLists;
+
+  /// Short moderation list badge label
+  ///
+  /// In en, this message translates to:
+  /// **'MOD'**
+  String get labelModerationShort;
+
+  /// List action label to mute a list
+  ///
+  /// In en, this message translates to:
+  /// **'Mute list'**
+  String get labelMuteList;
+
+  /// Mutual follows label
+  ///
+  /// In en, this message translates to:
+  /// **'Mutuals'**
+  String get labelMutuals;
+
+  /// My lists screen title
+  ///
+  /// In en, this message translates to:
+  /// **'My Lists'**
+  String get labelMyLists;
+
+  /// Name field label
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get labelName;
+
+  /// New starter pack screen title
+  ///
+  /// In en, this message translates to:
+  /// **'New Starter Pack'**
+  String get labelNewStarterPack;
+
+  /// Profile context other list section heading
+  ///
+  /// In en, this message translates to:
+  /// **'Other Lists'**
+  String get labelOtherLists;
+
+  /// Pronouns field label
+  ///
+  /// In en, this message translates to:
+  /// **'Pronouns'**
+  String get labelPronouns;
+
+  /// Profile context screen title and action label
+  ///
+  /// In en, this message translates to:
+  /// **'Profile Context'**
+  String get labelProfileContext;
+
+  /// Generic profile screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get labelProfileTitle;
+
+  /// Starter pack feeds section title
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended Feeds'**
+  String get labelRecommendedFeeds;
+
+  /// Profile context reference list section heading
+  ///
+  /// In en, this message translates to:
+  /// **'Reference Lists'**
+  String get labelReferenceLists;
+
+  /// Short reference list badge label
+  ///
+  /// In en, this message translates to:
+  /// **'REFERENCE'**
+  String get labelReferenceShort;
+
+  /// Profile replies tab label
+  ///
+  /// In en, this message translates to:
+  /// **'Replies'**
+  String get labelReplies;
+
+  /// Report action label
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get labelReport;
+
+  /// Report account dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Report Account'**
+  String get labelReportAccount;
+
+  /// Report reason section label
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get labelReportReason;
+
+  /// Report explanation field label
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation (required)'**
+  String get labelReportReasonExplanationRequired;
+
+  /// Report reason label for harassment
+  ///
+  /// In en, this message translates to:
+  /// **'Harassment'**
+  String get labelReportReasonHarassment;
+
+  /// Report reason label for misleading content
+  ///
+  /// In en, this message translates to:
+  /// **'Misleading'**
+  String get labelReportReasonMisleading;
+
+  /// Report reason label for other
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get labelReportReasonOther;
+
+  /// Report reason label for sexual content
+  ///
+  /// In en, this message translates to:
+  /// **'Sexual Content'**
+  String get labelReportReasonSexualContent;
+
+  /// Report reason label for spam
+  ///
+  /// In en, this message translates to:
+  /// **'Spam'**
+  String get labelReportReasonSpam;
+
+  /// Report reason label for violations
+  ///
+  /// In en, this message translates to:
+  /// **'Violation'**
+  String get labelReportReasonViolation;
+
+  /// Report success dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Report Submitted'**
+  String get labelReportSubmitted;
+
+  /// Select all checkbox label
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get labelSelectAll;
+
+  /// Feed picker sheet title
+  ///
+  /// In en, this message translates to:
+  /// **'Select a feed'**
+  String get labelSelectFeed;
+
+  /// Profile action label to share a profile
+  ///
+  /// In en, this message translates to:
+  /// **'Share Profile'**
+  String get labelShareProfile;
+
+  /// Fallback starter pack title
+  ///
+  /// In en, this message translates to:
+  /// **'Starter Pack'**
+  String get labelStarterPack;
+
+  /// Type field label
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get labelType;
+
+  /// Starter pack detail statistic label for total joins
+  ///
+  /// In en, this message translates to:
+  /// **'total joined'**
+  String get labelTotalJoined;
+
+  /// Profile liked posts unavailable entry title
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable liked post'**
+  String get labelUnavailableLikedPost;
+
+  /// List action label to unblock accounts via a moderation list
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock via list'**
+  String get labelUnblockViaList;
+
+  /// List action label to unmute a list
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute list'**
+  String get labelUnmuteList;
+
+  /// Helper label for selecting up to three starter pack feeds
+  ///
+  /// In en, this message translates to:
+  /// **'(up to 3)'**
+  String get labelUpToThree;
+
+  /// Website field label
+  ///
+  /// In en, this message translates to:
+  /// **'Website'**
+  String get labelWebsite;
+
+  /// Profile connection chip for the current user
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get labelYou;
+
+  /// Profile context blocked-by explanatory copy
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks are a normal part of social media. This data is public on the AT Protocol.'**
+  String get messageBlockedByContextNotice;
+
+  /// Profile context message when blocking list is not available
+  ///
+  /// In en, this message translates to:
+  /// **'Blocking information is only available when viewing your own profile.'**
+  String get messageBlockingOnlyOwnProfile;
+
+  /// Tooltip and semantics label for changing profile avatar
+  ///
+  /// In en, this message translates to:
+  /// **'Change avatar image'**
+  String get messageChangeAvatarImage;
+
+  /// Tooltip and semantics label for changing profile banner
+  ///
+  /// In en, this message translates to:
+  /// **'Change banner image'**
+  String get messageChangeBannerImage;
+
+  /// Profile edit validation error for invalid website
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid website'**
+  String get messageEnterValidWebsite;
+
+  /// List detail message when moderation lists do not have feeds
+  ///
+  /// In en, this message translates to:
+  /// **'Feed not available for moderation lists'**
+  String get messageFeedUnavailableForModerationLists;
+
+  /// Follow audit intro message before scanning
+  ///
+  /// In en, this message translates to:
+  /// **'Scan your follows for deleted, suspended, blocked, and hidden accounts.'**
+  String get messageFollowAuditIntro;
+
+  /// Follow audit empty prompt before scanning
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Scan to audit your follow list.'**
+  String get messageFollowAuditStartPrompt;
+
+  /// Profile context empty blocked-by message
+  ///
+  /// In en, this message translates to:
+  /// **'No accounts have blocked this user'**
+  String get messageNoAccountsBlockedThisUser;
+
+  /// Empty state when no lists exist
+  ///
+  /// In en, this message translates to:
+  /// **'No lists yet'**
+  String get messageNoListsYet;
+
+  /// Empty starter pack members message
+  ///
+  /// In en, this message translates to:
+  /// **'No members'**
+  String get messageNoMembers;
+
+  /// Empty list members message
+  ///
+  /// In en, this message translates to:
+  /// **'No members yet'**
+  String get messageNoMembersYet;
+
+  /// Empty list members message with search instruction
+  ///
+  /// In en, this message translates to:
+  /// **'No members yet. Search above to add people.'**
+  String get messageNoMembersYetSearch;
+
+  /// Empty profile media tab message
+  ///
+  /// In en, this message translates to:
+  /// **'No media posts yet'**
+  String get messageNoMediaPostsYet;
+
+  /// Empty profile/list feed message
+  ///
+  /// In en, this message translates to:
+  /// **'No posts yet'**
+  String get messageNoPostsYet;
+
+  /// Follow audit empty results message
+  ///
+  /// In en, this message translates to:
+  /// **'No problematic follows found'**
+  String get messageNoProblematicFollows;
+
+  /// Empty profile replies message
+  ///
+  /// In en, this message translates to:
+  /// **'No replies yet'**
+  String get messageNoRepliesYet;
+
+  /// Follow audit empty filtered results message
+  ///
+  /// In en, this message translates to:
+  /// **'No results visible for the current filters.'**
+  String get messageNoResultsForFilters;
+
+  /// Empty starter packs message
+  ///
+  /// In en, this message translates to:
+  /// **'No starter packs yet'**
+  String get messageNoStarterPacksYet;
+
+  /// Empty suggested follows message
+  ///
+  /// In en, this message translates to:
+  /// **'No suggestions found'**
+  String get messageNoSuggestionsFound;
+
+  /// Profile context empty blocking message
+  ///
+  /// In en, this message translates to:
+  /// **'Not blocking anyone'**
+  String get messageNotBlockingAnyone;
+
+  /// Profile context empty lists-on message
+  ///
+  /// In en, this message translates to:
+  /// **'Not on any lists'**
+  String get messageNotOnAnyLists;
+
+  /// Fallback unavailable profile reason
+  ///
+  /// In en, this message translates to:
+  /// **'Profile unavailable'**
+  String get messageProfileUnavailable;
+
+  /// Snackbar after profile update succeeds
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated'**
+  String get messageProfileUpdated;
+
+  /// Report explanation text field hint
+  ///
+  /// In en, this message translates to:
+  /// **'Please explain why you are reporting this...'**
+  String get messageReportExplanationHint;
+
+  /// Report reason description for harassment
+  ///
+  /// In en, this message translates to:
+  /// **'Harassment or rude behaviour'**
+  String get messageReportReasonHarassmentDescription;
+
+  /// Report reason description for misleading content
+  ///
+  /// In en, this message translates to:
+  /// **'Misleading or deceptive content'**
+  String get messageReportReasonMisleadingDescription;
+
+  /// Report reason description for other
+  ///
+  /// In en, this message translates to:
+  /// **'Other reason (requires explanation)'**
+  String get messageReportReasonOtherDescription;
+
+  /// Report reason description for sexual content
+  ///
+  /// In en, this message translates to:
+  /// **'Unwanted sexual content'**
+  String get messageReportReasonSexualContentDescription;
+
+  /// Report reason description for spam
+  ///
+  /// In en, this message translates to:
+  /// **'Spam or unsolicited content'**
+  String get messageReportReasonSpamDescription;
+
+  /// Report reason description for violations
+  ///
+  /// In en, this message translates to:
+  /// **'Violates community guidelines'**
+  String get messageReportReasonViolationDescription;
+
+  /// Profile connections search field placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Search handle, name, or description'**
+  String get messageSearchConnectionsPlaceholder;
+
+  /// Search field placeholder when adding people
+  ///
+  /// In en, this message translates to:
+  /// **'Search for people to add'**
+  String get messageSearchPeopleToAddPlaceholder;
+
+  /// Profile context message when some blocked accounts are unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'Some blocked accounts are suspended or unavailable.'**
+  String get messageSomeBlockedAccountsUnavailable;
+
+  /// Suggested follows unavailable message
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested follows are unavailable right now.'**
+  String get messageSuggestedFollowsUnavailable;
+
+  /// Unavailable accounts card subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'These accounts are suspended or their public profile could not be fetched.'**
+  String get messageUnavailableAccountsDescription;
+
+  /// Follow audit status label
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked by'**
+  String get statusBlockedBy;
+
+  /// Follow audit status label
+  ///
+  /// In en, this message translates to:
+  /// **'Blocking'**
+  String get statusBlocking;
+
+  /// Follow audit status label
+  ///
+  /// In en, this message translates to:
+  /// **'Deactivated'**
+  String get statusDeactivated;
+
+  /// Follow audit status label
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted'**
+  String get statusDeleted;
+
+  /// Follow audit status label
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden'**
+  String get statusHidden;
+
+  /// Follow audit status label
+  ///
+  /// In en, this message translates to:
+  /// **'Mutual block'**
+  String get statusMutualBlock;
+
+  /// Follow audit status label
+  ///
+  /// In en, this message translates to:
+  /// **'Self-follow'**
+  String get statusSelfFollow;
+
+  /// Follow audit status label
+  ///
+  /// In en, this message translates to:
+  /// **'Suspended'**
+  String get statusSuspended;
+
+  /// Tooltip for clearing a search field
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get tooltipClearSearch;
+
+  /// Tooltip for jump to top button
+  ///
+  /// In en, this message translates to:
+  /// **'Jump to top'**
+  String get tooltipJumpToTop;
+
+  /// Profile edit validation error for invalid website
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid website'**
+  String get validationEnterValidWebsite;
 
   /// Validation error for missing app password
   ///

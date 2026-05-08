@@ -13,6 +13,10 @@
   "@buttonCancel": {
     "description": "Cancel button label"
   },
+  "buttonCompose": "Compose",
+  "@buttonCompose": {
+    "description": "Tooltip for composing a post"
+  },
   "buttonClearCache": "Clear Cache",
   "@buttonClearCache": {
     "description": "Button label to clear local cache"
@@ -1067,6 +1071,10 @@
   "@labelSuggested": {
     "description": "Trending suggested topics section label"
   },
+  "labelSuggestedFollows": "Suggested Follows",
+  "@labelSuggestedFollows": {
+    "description": "Suggested follows sheet and menu label"
+  },
   "labelUnrepost": "Unrepost",
   "@labelUnrepost": {
     "description": "Post action label to undo a repost"
@@ -1399,6 +1407,10 @@
   "@messageNoLikedPostsSubtitle": {
     "description": "Empty state subtitle when there are no liked posts"
   },
+  "messageNoLikedPostsYet": "No liked posts yet",
+  "@messageNoLikedPostsYet": {
+    "description": "Empty state when a profile has no liked posts"
+  },
   "messageNoQuotesYet": "No quotes yet",
   "@messageNoQuotesYet": {
     "description": "Empty state message when a post has no quote posts"
@@ -1511,6 +1523,10 @@
   "@messageSearchPeoplePlaceholder": {
     "description": "Search people field placeholder"
   },
+  "messageSearchForPeoplePlaceholder": "Search for people",
+  "@messageSearchForPeoplePlaceholder": {
+    "description": "Search field placeholder when adding list members"
+  },
   "messageSearchFeedsPlaceholder": "Search feeds",
   "@messageSearchFeedsPlaceholder": {
     "description": "Search feeds field placeholder"
@@ -1546,6 +1562,980 @@
   "promptHandleOrDid": "Handle or DID",
   "@promptHandleOrDid": {
     "description": "Label for handle or DID sign-in field"
+  },
+  "buttonAddFeed": "Add feed",
+  "@buttonAddFeed": {
+    "description": "Button label to add a feed"
+  },
+  "buttonAddMembers": "Add members",
+  "@buttonAddMembers": {
+    "description": "Button label to add members to a list"
+  },
+  "buttonBlock": "Block",
+  "@buttonBlock": {
+    "description": "Button label to block an account"
+  },
+  "buttonCreate": "Create",
+  "@buttonCreate": {
+    "description": "Create button label"
+  },
+  "buttonEdit": "Edit",
+  "@buttonEdit": {
+    "description": "Edit button label"
+  },
+  "buttonFollow": "Follow",
+  "@buttonFollow": {
+    "description": "Button label to follow an account"
+  },
+  "buttonFollowAll": "Follow all",
+  "@buttonFollowAll": {
+    "description": "Button label to follow all starter pack members"
+  },
+  "buttonFollowing": "Following",
+  "@buttonFollowing": {
+    "description": "Button label showing that an account is followed"
+  },
+  "buttonFollowingInProgress": "Following…",
+  "@buttonFollowingInProgress": {
+    "description": "Button label while following all starter pack members"
+  },
+  "buttonLoadMore": "Load more",
+  "@buttonLoadMore": {
+    "description": "Button label to load more results"
+  },
+  "buttonMute": "Mute",
+  "@buttonMute": {
+    "description": "Button label to mute an account or list"
+  },
+  "buttonScan": "Scan",
+  "@buttonScan": {
+    "description": "Button label to start a follow audit scan"
+  },
+  "buttonSeeAll": "See all",
+  "@buttonSeeAll": {
+    "description": "Button label to view all items"
+  },
+  "buttonShowAccounts": "Show accounts",
+  "@buttonShowAccounts": {
+    "description": "Button label to reveal blocked-by accounts"
+  },
+  "buttonSubmitReport": "Submit Report",
+  "@buttonSubmitReport": {
+    "description": "Button label to submit a moderation report"
+  },
+  "buttonUnblock": "Unblock",
+  "@buttonUnblock": {
+    "description": "Button label to unblock an account"
+  },
+  "buttonUnfollow": "Unfollow",
+  "@buttonUnfollow": {
+    "description": "Button label to unfollow an account"
+  },
+  "buttonUnfollowSelected": "Unfollow Selected ({count})",
+  "@buttonUnfollowSelected": {
+    "description": "Button label to unfollow selected audit results",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "buttonUnmute": "Unmute",
+  "@buttonUnmute": {
+    "description": "Button label to unmute an account or list"
+  },
+  "dialogBlockAccountContent": "They will not be able to see your posts or interact with you. They will not be notified that you blocked them.",
+  "@dialogBlockAccountContent": {
+    "description": "Confirmation dialog body before blocking an account"
+  },
+  "dialogBlockAccountTitle": "Block Account?",
+  "@dialogBlockAccountTitle": {
+    "description": "Confirmation dialog title before blocking an account"
+  },
+  "dialogDeleteListTitle": "Delete list?",
+  "@dialogDeleteListTitle": {
+    "description": "Confirmation dialog title before deleting a list"
+  },
+  "dialogDeleteStarterPackContent": "This will permanently delete this starter pack and its backing list. This cannot be undone.",
+  "@dialogDeleteStarterPackContent": {
+    "description": "Confirmation dialog body before deleting a starter pack"
+  },
+  "dialogDeleteStarterPackTitle": "Delete starter pack",
+  "@dialogDeleteStarterPackTitle": {
+    "description": "Confirmation dialog title before deleting a starter pack"
+  },
+  "dialogMuteAccountContent": "You will no longer see their posts or receive notifications from them.",
+  "@dialogMuteAccountContent": {
+    "description": "Confirmation dialog body before muting an account"
+  },
+  "dialogMuteAccountTitle": "Mute Account?",
+  "@dialogMuteAccountTitle": {
+    "description": "Confirmation dialog title before muting an account"
+  },
+  "dialogUnblockAccountContent": "They will be able to see your posts and interact with you again.",
+  "@dialogUnblockAccountContent": {
+    "description": "Confirmation dialog body before unblocking an account"
+  },
+  "dialogUnblockAccountTitle": "Unblock Account?",
+  "@dialogUnblockAccountTitle": {
+    "description": "Confirmation dialog title before unblocking an account"
+  },
+  "dialogUnfollowAccountContent": "You will no longer see their posts in your feed.",
+  "@dialogUnfollowAccountContent": {
+    "description": "Confirmation dialog body before unfollowing an account"
+  },
+  "dialogUnfollowAccountTitle": "Unfollow?",
+  "@dialogUnfollowAccountTitle": {
+    "description": "Confirmation dialog title before unfollowing an account"
+  },
+  "dialogUnmuteAccountContent": "You will see their posts and receive notifications again.",
+  "@dialogUnmuteAccountContent": {
+    "description": "Confirmation dialog body before unmuting an account"
+  },
+  "dialogUnmuteAccountTitle": "Unmute Account?",
+  "@dialogUnmuteAccountTitle": {
+    "description": "Confirmation dialog title before unmuting an account"
+  },
+  "errorFailedToCreateStarterPack": "Failed to create starter pack",
+  "@errorFailedToCreateStarterPack": {
+    "description": "Error message when starter pack creation fails"
+  },
+  "errorFailedToLoadAccounts": "Failed to load accounts",
+  "@errorFailedToLoadAccounts": {
+    "description": "Error message when accounts cannot load"
+  },
+  "errorFailedToLoadFeed": "Failed to load feed",
+  "@errorFailedToLoadFeed": {
+    "description": "Error message when a list feed cannot load"
+  },
+  "errorFailedToLoadFeeds": "Failed to load feeds",
+  "@errorFailedToLoadFeeds": {
+    "description": "Error message when feed picker suggestions cannot load"
+  },
+  "errorFailedToLoadList": "Failed to load list",
+  "@errorFailedToLoadList": {
+    "description": "Error message when a list cannot load"
+  },
+  "errorFailedToLoadLists": "Failed to load lists",
+  "@errorFailedToLoadLists": {
+    "description": "Error message when lists cannot load"
+  },
+  "errorFailedToLoadMembers": "Failed to load members",
+  "@errorFailedToLoadMembers": {
+    "description": "Error message when list members cannot load"
+  },
+  "errorFailedToLoadMore": "Failed to load more",
+  "@errorFailedToLoadMore": {
+    "description": "Error message when loading more results fails"
+  },
+  "errorFailedToLoadPosts": "Failed to load posts",
+  "@errorFailedToLoadPosts": {
+    "description": "Error message when posts cannot load"
+  },
+  "errorFailedToLoadProfile": "Unable to load profile",
+  "@errorFailedToLoadProfile": {
+    "description": "Error title when a profile cannot load"
+  },
+  "errorFailedToLoadStarterPack": "Failed to load starter pack",
+  "@errorFailedToLoadStarterPack": {
+    "description": "Error message when a starter pack cannot load"
+  },
+  "errorFailedToLoadStarterPacks": "Failed to load starter packs",
+  "@errorFailedToLoadStarterPacks": {
+    "description": "Error message when starter packs cannot load"
+  },
+  "errorFailedToLoadSuggestions": "Failed to load suggestions",
+  "@errorFailedToLoadSuggestions": {
+    "description": "Error title when suggested follows cannot load"
+  },
+  "errorFollowAuditFailed": "Failed to complete follow audit.",
+  "@errorFollowAuditFailed": {
+    "description": "Error message when follow audit fails"
+  },
+  "errorImageTooLarge": "Image must be smaller than 1MB",
+  "@errorImageTooLarge": {
+    "description": "Validation error when a profile image is too large"
+  },
+  "errorInvalidProfileImageType": "Use a JPEG or PNG image",
+  "@errorInvalidProfileImageType": {
+    "description": "Validation error when profile image file type is unsupported"
+  },
+  "errorProfileImageReadFailed": "Unable to read selected image",
+  "@errorProfileImageReadFailed": {
+    "description": "Error when a selected profile image cannot be read"
+  },
+  "errorReportFailed": "Unable to submit your report. Please try again later.",
+  "@errorReportFailed": {
+    "description": "Report submission failure dialog body"
+  },
+  "errorReportFailedTitle": "Report Failed",
+  "@errorReportFailedTitle": {
+    "description": "Report submission failure dialog title"
+  },
+  "errorUnableToLoadConnections": "Unable to load {tab}",
+  "@errorUnableToLoadConnections": {
+    "description": "Error title when a profile connection tab cannot load",
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "following"
+      }
+    }
+  },
+  "errorUnableToUpdateProfile": "Unable to update profile",
+  "@errorUnableToUpdateProfile": {
+    "description": "Snackbar message when profile update fails"
+  },
+  "formatAccountCount": "{count, plural, =1{1 account} other{{count} accounts}}",
+  "@formatAccountCount": {
+    "description": "Count of accounts",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "formatBlockedByAccountsUnavailable": "Found {count, plural, =1{1 blocked-by account} other{{count} blocked-by accounts}}, but public Bluesky profile details could not be loaded.",
+  "@formatBlockedByAccountsUnavailable": {
+    "description": "Message when blocked-by account count exists but profiles are unavailable",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "formatConnectionsLoading": "Loading {tab}...",
+  "@formatConnectionsLoading": {
+    "description": "Loading message for a profile connection tab",
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "followers"
+      }
+    }
+  },
+  "formatConnectionsNoMatches": "No {tab} match \"{query}\"",
+  "@formatConnectionsNoMatches": {
+    "description": "Empty search message for a profile connection tab",
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "followers"
+      },
+      "query": {
+        "type": "String",
+        "example": "alice"
+      }
+    }
+  },
+  "formatConnectionsNoneFound": "No {tab} found",
+  "@formatConnectionsNoneFound": {
+    "description": "Empty message for a profile connection tab",
+    "placeholders": {
+      "tab": {
+        "type": "String",
+        "example": "followers"
+      }
+    }
+  },
+  "formatConnectionsSearching": "Searching {count} accounts...",
+  "@formatConnectionsSearching": {
+    "description": "Search progress message for profile connections",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "25"
+      }
+    }
+  },
+  "formatConnectionsSearched": "Searched {count} accounts",
+  "@formatConnectionsSearched": {
+    "description": "Completed search progress message for profile connections",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "25"
+      }
+    }
+  },
+  "formatConnectionsSearchStopped": "Search stopped after {count} accounts",
+  "@formatConnectionsSearchStopped": {
+    "description": "Stopped search progress message for profile connections",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "25"
+      }
+    }
+  },
+  "formatClassifyingProgress": "Classifying: {progress}/{total}",
+  "@formatClassifyingProgress": {
+    "description": "Follow audit classifying progress label",
+    "placeholders": {
+      "progress": {
+        "type": "int",
+        "example": "20"
+      },
+      "total": {
+        "type": "int",
+        "example": "120"
+      }
+    }
+  },
+  "formatDidCopied": "DID copied to clipboard",
+  "@formatDidCopied": {
+    "description": "Snackbar message after copying a DID"
+  },
+  "formatFetchingFollowsProgress": "Fetching follows: {progress}/{total}",
+  "@formatFetchingFollowsProgress": {
+    "description": "Follow audit fetching progress label",
+    "placeholders": {
+      "progress": {
+        "type": "int",
+        "example": "20"
+      },
+      "total": {
+        "type": "int",
+        "example": "120"
+      }
+    }
+  },
+  "formatFollowedMemberCount": "Followed {count, plural, =1{1 member} other{{count} members}}",
+  "@formatFollowedMemberCount": {
+    "description": "Snackbar message after following starter pack members",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "8"
+      }
+    }
+  },
+  "formatFollowsScanned": "{count, plural, =1{1 follow scanned for problematic accounts} other{{count} follows scanned for problematic accounts}}",
+  "@formatFollowsScanned": {
+    "description": "Follow audit summary after scanning follows",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "245"
+      }
+    }
+  },
+  "formatHideStatus": "Hide {status}",
+  "@formatHideStatus": {
+    "description": "Tooltip to hide a follow audit status",
+    "placeholders": {
+      "status": {
+        "type": "String",
+        "example": "Deleted"
+      }
+    }
+  },
+  "formatJoinedDate": "Joined {date}",
+  "@formatJoinedDate": {
+    "description": "Profile joined date label",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "March 2026"
+      }
+    }
+  },
+  "formatJoinedRelative": "Joined {relativeTime}",
+  "@formatJoinedRelative": {
+    "description": "Profile card joined relative time label",
+    "placeholders": {
+      "relativeTime": {
+        "type": "String",
+        "example": "2mo ago"
+      }
+    }
+  },
+  "formatListByHandle": "by @{handle}",
+  "@formatListByHandle": {
+    "description": "List creator attribution label",
+    "placeholders": {
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "formatMemberCount": "{count, plural, =1{1 member} other{{count} members}}",
+  "@formatMemberCount": {
+    "description": "Count of list or starter pack members",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "formatProfileReportTitle": "{title} by @{handle}",
+  "@formatProfileReportTitle": {
+    "description": "Report dialog title for a target handle",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Report Post"
+      },
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "formatProfileTextLimit": "{label} must be {count} characters or fewer",
+  "@formatProfileTextLimit": {
+    "description": "Profile edit validation message for a text length limit",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Display name"
+      },
+      "count": {
+        "type": "int",
+        "example": "64"
+      }
+    }
+  },
+  "formatProfileTextTooLong": "{label} is too long",
+  "@formatProfileTextTooLong": {
+    "description": "Profile edit validation message for byte length",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Description"
+      }
+    }
+  },
+  "formatProfilesFailedToLoad": "{count, plural, =1{1 profile could not be loaded.} other{{count} profiles could not be loaded.}}",
+  "@formatProfilesFailedToLoad": {
+    "description": "Follow audit warning when some profiles failed to load",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "formatReportSubmitted": "Thank you. Your report (ID: {reportId}) has been submitted.",
+  "@formatReportSubmitted": {
+    "description": "Report submission success dialog body",
+    "placeholders": {
+      "reportId": {
+        "type": "String",
+        "example": "3lkgvbn"
+      }
+    }
+  },
+  "formatSelectedCount": "Selected: {selected}/{total}",
+  "@formatSelectedCount": {
+    "description": "Follow audit selected count footer",
+    "placeholders": {
+      "selected": {
+        "type": "int",
+        "example": "2"
+      },
+      "total": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "formatShowStatus": "Show {status}",
+  "@formatShowStatus": {
+    "description": "Tooltip to show a follow audit status",
+    "placeholders": {
+      "status": {
+        "type": "String",
+        "example": "Deleted"
+      }
+    }
+  },
+  "formatUnavailableAccounts": "Unavailable accounts ({count})",
+  "@formatUnavailableAccounts": {
+    "description": "Title for unavailable accounts card",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "formatUnfollowedAccounts": "Unfollowed {count} account(s)",
+  "@formatUnfollowedAccounts": {
+    "description": "Follow audit completion message",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "formatValidationRequiredMaxCharacters": "Required, max {count} characters",
+  "@formatValidationRequiredMaxCharacters": {
+    "description": "Helper text for required character-limited fields",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "50"
+      }
+    }
+  },
+  "labelAddToList": "Add to list",
+  "@labelAddToList": {
+    "description": "Action label to add an account to a list"
+  },
+  "labelAuditFollowers": "Audit Followers",
+  "@labelAuditFollowers": {
+    "description": "Follow audit screen title"
+  },
+  "labelBanner": "Banner",
+  "@labelBanner": {
+    "description": "Profile banner image button label"
+  },
+  "labelBlockViaList": "Block via list",
+  "@labelBlockViaList": {
+    "description": "List action label to block accounts via a moderation list"
+  },
+  "labelBlockedBy": "Blocked By",
+  "@labelBlockedBy": {
+    "description": "Profile context tab label for accounts that blocked the user"
+  },
+  "labelBlocking": "Blocking",
+  "@labelBlocking": {
+    "description": "Profile context tab label for accounts the user is blocking"
+  },
+  "labelConnections": "Connections",
+  "@labelConnections": {
+    "description": "Profile connections screen title"
+  },
+  "labelCopyDid": "Copy DID",
+  "@labelCopyDid": {
+    "description": "Profile action label to copy DID"
+  },
+  "labelCreateList": "Create list",
+  "@labelCreateList": {
+    "description": "Create list dialog title"
+  },
+  "labelCreateStarterPack": "Create starter pack",
+  "@labelCreateStarterPack": {
+    "description": "Tooltip to create a starter pack"
+  },
+  "labelCurateShort": "CURATE",
+  "@labelCurateShort": {
+    "description": "Short curation list badge label"
+  },
+  "labelCurrentMembers": "Current Members",
+  "@labelCurrentMembers": {
+    "description": "List members section heading"
+  },
+  "labelCurationLists": "Curation Lists",
+  "@labelCurationLists": {
+    "description": "Profile context list section heading"
+  },
+  "labelDescription": "Description",
+  "@labelDescription": {
+    "description": "Description field label"
+  },
+  "labelDescriptionOptional": "Description (optional)",
+  "@labelDescriptionOptional": {
+    "description": "Optional description field label"
+  },
+  "labelDisplayName": "Display name",
+  "@labelDisplayName": {
+    "description": "Profile display name field label"
+  },
+  "labelEditList": "Edit list",
+  "@labelEditList": {
+    "description": "Edit list dialog or action title"
+  },
+  "labelEditProfile": "Edit profile",
+  "@labelEditProfile": {
+    "description": "Edit profile screen title or action label"
+  },
+  "labelEditStarterPack": "Edit starter pack",
+  "@labelEditStarterPack": {
+    "description": "Edit starter pack dialog title"
+  },
+  "labelFeed": "Feed",
+  "@labelFeed": {
+    "description": "Feed label"
+  },
+  "labelFollowers": "Followers",
+  "@labelFollowers": {
+    "description": "Followers label"
+  },
+  "labelJoinedThisWeek": "joined this week",
+  "@labelJoinedThisWeek": {
+    "description": "Starter pack statistic label for joins this week"
+  },
+  "labelJoinedTotal": "joined total",
+  "@labelJoinedTotal": {
+    "description": "Starter pack card statistic label for total joins"
+  },
+  "labelFollowing": "Following",
+  "@labelFollowing": {
+    "description": "Following label"
+  },
+  "labelList": "List",
+  "@labelList": {
+    "description": "Generic list title"
+  },
+  "labelLists": "Lists",
+  "@labelLists": {
+    "description": "Lists label"
+  },
+  "labelMedia": "Media",
+  "@labelMedia": {
+    "description": "Profile media tab label"
+  },
+  "labelMembers": "Members",
+  "@labelMembers": {
+    "description": "Members section label"
+  },
+  "labelModerationLists": "Moderation Lists",
+  "@labelModerationLists": {
+    "description": "Profile context moderation list section heading"
+  },
+  "labelModerationShort": "MOD",
+  "@labelModerationShort": {
+    "description": "Short moderation list badge label"
+  },
+  "labelMuteList": "Mute list",
+  "@labelMuteList": {
+    "description": "List action label to mute a list"
+  },
+  "labelMutuals": "Mutuals",
+  "@labelMutuals": {
+    "description": "Mutual follows label"
+  },
+  "labelMyLists": "My Lists",
+  "@labelMyLists": {
+    "description": "My lists screen title"
+  },
+  "labelName": "Name",
+  "@labelName": {
+    "description": "Name field label"
+  },
+  "labelNewStarterPack": "New Starter Pack",
+  "@labelNewStarterPack": {
+    "description": "New starter pack screen title"
+  },
+  "labelOtherLists": "Other Lists",
+  "@labelOtherLists": {
+    "description": "Profile context other list section heading"
+  },
+  "labelPronouns": "Pronouns",
+  "@labelPronouns": {
+    "description": "Pronouns field label"
+  },
+  "labelProfileContext": "Profile Context",
+  "@labelProfileContext": {
+    "description": "Profile context screen title and action label"
+  },
+  "labelProfileTitle": "Profile",
+  "@labelProfileTitle": {
+    "description": "Generic profile screen title"
+  },
+  "labelRecommendedFeeds": "Recommended Feeds",
+  "@labelRecommendedFeeds": {
+    "description": "Starter pack feeds section title"
+  },
+  "labelReferenceLists": "Reference Lists",
+  "@labelReferenceLists": {
+    "description": "Profile context reference list section heading"
+  },
+  "labelReferenceShort": "REFERENCE",
+  "@labelReferenceShort": {
+    "description": "Short reference list badge label"
+  },
+  "labelReplies": "Replies",
+  "@labelReplies": {
+    "description": "Profile replies tab label"
+  },
+  "labelReport": "Report",
+  "@labelReport": {
+    "description": "Report action label"
+  },
+  "labelReportAccount": "Report Account",
+  "@labelReportAccount": {
+    "description": "Report account dialog title"
+  },
+  "labelReportReason": "Reason",
+  "@labelReportReason": {
+    "description": "Report reason section label"
+  },
+  "labelReportReasonExplanationRequired": "Explanation (required)",
+  "@labelReportReasonExplanationRequired": {
+    "description": "Report explanation field label"
+  },
+  "labelReportReasonHarassment": "Harassment",
+  "@labelReportReasonHarassment": {
+    "description": "Report reason label for harassment"
+  },
+  "labelReportReasonMisleading": "Misleading",
+  "@labelReportReasonMisleading": {
+    "description": "Report reason label for misleading content"
+  },
+  "labelReportReasonOther": "Other",
+  "@labelReportReasonOther": {
+    "description": "Report reason label for other"
+  },
+  "labelReportReasonSexualContent": "Sexual Content",
+  "@labelReportReasonSexualContent": {
+    "description": "Report reason label for sexual content"
+  },
+  "labelReportReasonSpam": "Spam",
+  "@labelReportReasonSpam": {
+    "description": "Report reason label for spam"
+  },
+  "labelReportReasonViolation": "Violation",
+  "@labelReportReasonViolation": {
+    "description": "Report reason label for violations"
+  },
+  "labelReportSubmitted": "Report Submitted",
+  "@labelReportSubmitted": {
+    "description": "Report success dialog title"
+  },
+  "labelSelectAll": "Select All",
+  "@labelSelectAll": {
+    "description": "Select all checkbox label"
+  },
+  "labelSelectFeed": "Select a feed",
+  "@labelSelectFeed": {
+    "description": "Feed picker sheet title"
+  },
+  "labelShareProfile": "Share Profile",
+  "@labelShareProfile": {
+    "description": "Profile action label to share a profile"
+  },
+  "labelStarterPack": "Starter Pack",
+  "@labelStarterPack": {
+    "description": "Fallback starter pack title"
+  },
+  "labelType": "Type",
+  "@labelType": {
+    "description": "Type field label"
+  },
+  "labelTotalJoined": "total joined",
+  "@labelTotalJoined": {
+    "description": "Starter pack detail statistic label for total joins"
+  },
+  "labelUnavailableLikedPost": "Unavailable liked post",
+  "@labelUnavailableLikedPost": {
+    "description": "Profile liked posts unavailable entry title"
+  },
+  "labelUnblockViaList": "Unblock via list",
+  "@labelUnblockViaList": {
+    "description": "List action label to unblock accounts via a moderation list"
+  },
+  "labelUnmuteList": "Unmute list",
+  "@labelUnmuteList": {
+    "description": "List action label to unmute a list"
+  },
+  "labelUpToThree": "(up to 3)",
+  "@labelUpToThree": {
+    "description": "Helper label for selecting up to three starter pack feeds"
+  },
+  "labelWebsite": "Website",
+  "@labelWebsite": {
+    "description": "Website field label"
+  },
+  "labelYou": "You",
+  "@labelYou": {
+    "description": "Profile connection chip for the current user"
+  },
+  "messageBlockedByContextNotice": "Blocks are a normal part of social media. This data is public on the AT Protocol.",
+  "@messageBlockedByContextNotice": {
+    "description": "Profile context blocked-by explanatory copy"
+  },
+  "messageBlockingOnlyOwnProfile": "Blocking information is only available when viewing your own profile.",
+  "@messageBlockingOnlyOwnProfile": {
+    "description": "Profile context message when blocking list is not available"
+  },
+  "messageChangeAvatarImage": "Change avatar image",
+  "@messageChangeAvatarImage": {
+    "description": "Tooltip and semantics label for changing profile avatar"
+  },
+  "messageChangeBannerImage": "Change banner image",
+  "@messageChangeBannerImage": {
+    "description": "Tooltip and semantics label for changing profile banner"
+  },
+  "messageEnterValidWebsite": "Enter a valid website",
+  "@messageEnterValidWebsite": {
+    "description": "Profile edit validation error for invalid website"
+  },
+  "messageFeedUnavailableForModerationLists": "Feed not available for moderation lists",
+  "@messageFeedUnavailableForModerationLists": {
+    "description": "List detail message when moderation lists do not have feeds"
+  },
+  "messageFollowAuditIntro": "Scan your follows for deleted, suspended, blocked, and hidden accounts.",
+  "@messageFollowAuditIntro": {
+    "description": "Follow audit intro message before scanning"
+  },
+  "messageFollowAuditStartPrompt": "Tap Scan to audit your follow list.",
+  "@messageFollowAuditStartPrompt": {
+    "description": "Follow audit empty prompt before scanning"
+  },
+  "messageNoAccountsBlockedThisUser": "No accounts have blocked this user",
+  "@messageNoAccountsBlockedThisUser": {
+    "description": "Profile context empty blocked-by message"
+  },
+  "messageNoListsYet": "No lists yet",
+  "@messageNoListsYet": {
+    "description": "Empty state when no lists exist"
+  },
+  "messageNoMembers": "No members",
+  "@messageNoMembers": {
+    "description": "Empty starter pack members message"
+  },
+  "messageNoMembersYet": "No members yet",
+  "@messageNoMembersYet": {
+    "description": "Empty list members message"
+  },
+  "messageNoMembersYetSearch": "No members yet. Search above to add people.",
+  "@messageNoMembersYetSearch": {
+    "description": "Empty list members message with search instruction"
+  },
+  "messageNoMediaPostsYet": "No media posts yet",
+  "@messageNoMediaPostsYet": {
+    "description": "Empty profile media tab message"
+  },
+  "messageNoPostsYet": "No posts yet",
+  "@messageNoPostsYet": {
+    "description": "Empty profile/list feed message"
+  },
+  "messageNoProblematicFollows": "No problematic follows found",
+  "@messageNoProblematicFollows": {
+    "description": "Follow audit empty results message"
+  },
+  "messageNoRepliesYet": "No replies yet",
+  "@messageNoRepliesYet": {
+    "description": "Empty profile replies message"
+  },
+  "messageNoResultsForFilters": "No results visible for the current filters.",
+  "@messageNoResultsForFilters": {
+    "description": "Follow audit empty filtered results message"
+  },
+  "messageNoStarterPacksYet": "No starter packs yet",
+  "@messageNoStarterPacksYet": {
+    "description": "Empty starter packs message"
+  },
+  "messageNoSuggestionsFound": "No suggestions found",
+  "@messageNoSuggestionsFound": {
+    "description": "Empty suggested follows message"
+  },
+  "messageNotBlockingAnyone": "Not blocking anyone",
+  "@messageNotBlockingAnyone": {
+    "description": "Profile context empty blocking message"
+  },
+  "messageNotOnAnyLists": "Not on any lists",
+  "@messageNotOnAnyLists": {
+    "description": "Profile context empty lists-on message"
+  },
+  "messageProfileUnavailable": "Profile unavailable",
+  "@messageProfileUnavailable": {
+    "description": "Fallback unavailable profile reason"
+  },
+  "messageProfileUpdated": "Profile updated",
+  "@messageProfileUpdated": {
+    "description": "Snackbar after profile update succeeds"
+  },
+  "messageReportExplanationHint": "Please explain why you are reporting this...",
+  "@messageReportExplanationHint": {
+    "description": "Report explanation text field hint"
+  },
+  "messageReportReasonHarassmentDescription": "Harassment or rude behaviour",
+  "@messageReportReasonHarassmentDescription": {
+    "description": "Report reason description for harassment"
+  },
+  "messageReportReasonMisleadingDescription": "Misleading or deceptive content",
+  "@messageReportReasonMisleadingDescription": {
+    "description": "Report reason description for misleading content"
+  },
+  "messageReportReasonOtherDescription": "Other reason (requires explanation)",
+  "@messageReportReasonOtherDescription": {
+    "description": "Report reason description for other"
+  },
+  "messageReportReasonSexualContentDescription": "Unwanted sexual content",
+  "@messageReportReasonSexualContentDescription": {
+    "description": "Report reason description for sexual content"
+  },
+  "messageReportReasonSpamDescription": "Spam or unsolicited content",
+  "@messageReportReasonSpamDescription": {
+    "description": "Report reason description for spam"
+  },
+  "messageReportReasonViolationDescription": "Violates community guidelines",
+  "@messageReportReasonViolationDescription": {
+    "description": "Report reason description for violations"
+  },
+  "messageSearchConnectionsPlaceholder": "Search handle, name, or description",
+  "@messageSearchConnectionsPlaceholder": {
+    "description": "Profile connections search field placeholder"
+  },
+  "messageSearchPeopleToAddPlaceholder": "Search for people to add",
+  "@messageSearchPeopleToAddPlaceholder": {
+    "description": "Search field placeholder when adding people"
+  },
+  "messageSomeBlockedAccountsUnavailable": "Some blocked accounts are suspended or unavailable.",
+  "@messageSomeBlockedAccountsUnavailable": {
+    "description": "Profile context message when some blocked accounts are unavailable"
+  },
+  "messageSuggestedFollowsUnavailable": "Suggested follows are unavailable right now.",
+  "@messageSuggestedFollowsUnavailable": {
+    "description": "Suggested follows unavailable message"
+  },
+  "messageUnavailableAccountsDescription": "These accounts are suspended or their public profile could not be fetched.",
+  "@messageUnavailableAccountsDescription": {
+    "description": "Unavailable accounts card subtitle"
+  },
+  "statusBlockedBy": "Blocked by",
+  "@statusBlockedBy": {
+    "description": "Follow audit status label"
+  },
+  "statusBlocking": "Blocking",
+  "@statusBlocking": {
+    "description": "Follow audit status label"
+  },
+  "statusDeactivated": "Deactivated",
+  "@statusDeactivated": {
+    "description": "Follow audit status label"
+  },
+  "statusDeleted": "Deleted",
+  "@statusDeleted": {
+    "description": "Follow audit status label"
+  },
+  "statusHidden": "Hidden",
+  "@statusHidden": {
+    "description": "Follow audit status label"
+  },
+  "statusMutualBlock": "Mutual block",
+  "@statusMutualBlock": {
+    "description": "Follow audit status label"
+  },
+  "statusSelfFollow": "Self-follow",
+  "@statusSelfFollow": {
+    "description": "Follow audit status label"
+  },
+  "statusSuspended": "Suspended",
+  "@statusSuspended": {
+    "description": "Follow audit status label"
+  },
+  "tooltipClearSearch": "Clear search",
+  "@tooltipClearSearch": {
+    "description": "Tooltip for clearing a search field"
+  },
+  "tooltipJumpToTop": "Jump to top",
+  "@tooltipJumpToTop": {
+    "description": "Tooltip for jump to top button"
+  },
+  "validationEnterValidWebsite": "Enter a valid website",
+  "@validationEnterValidWebsite": {
+    "description": "Profile edit validation error for invalid website"
   },
   "validationEnterAppPassword": "Enter your app password",
   "@validationEnterAppPassword": {
