@@ -8,15 +8,20 @@ import 'package:logger/logger.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/logging/log_redactor.dart';
 import 'package:lazurite/features/logs/data/log_entry.dart';
+import 'package:lazurite/features/logs/data/log_repository.dart';
 
 part 'log_viewer_state.dart';
 
 class LogViewerCubit extends Cubit<LogViewerState> {
   LogViewerCubit({
     Duration refreshInterval = const Duration(seconds: 1),
+    Future<List<File>> Function()? logFilesProvider,
     Future<File?> Function()? todaysLogFileProvider,
     Directory Function()? systemTempDirectoryProvider,
-  }) : _todaysLogFileProvider = todaysLogFileProvider ?? log.getTodaysLogFile,
+    LogRepository logRepository = const LogRepository(),
+  }) : _logRepository = logRepository,
+       _logFilesProvider = logFilesProvider ?? log.getLogFiles,
+       _todaysLogFileProvider = todaysLogFileProvider ?? log.getTodaysLogFile,
        _systemTempDirectoryProvider = systemTempDirectoryProvider ?? (() => Directory.systemTemp),
        super(LogViewerState.initial()) {
     unawaited(loadLogs());
@@ -24,13 +29,20 @@ class LogViewerCubit extends Cubit<LogViewerState> {
   }
 
   static const String _shareDirectoryName = 'lazurite_logs_share';
+  static const int initialVisibleEntries = 1000;
+  static const int paginationPageSize = 1000;
   static final RegExp _datedLogFilePattern = RegExp(r'(\d{4})-(\d{2})-(\d{2})');
   static const String _staleShareDirectoryPrefix = 'lazurite_logs_share_';
 
+  final LogRepository _logRepository;
+  final Future<List<File>> Function() _logFilesProvider;
   final Future<File?> Function() _todaysLogFileProvider;
   final Directory Function() _systemTempDirectoryProvider;
   Timer? _refreshTimer;
   bool _isLoading = false;
+  String? _lastSnapshotKey;
+  List<LogEntry> _parsedEntries = const [];
+  int _visibleEntryCount = initialVisibleEntries;
 
   Future<void> loadLogs({bool showLoading = true}) async {
     if (_isLoading) {
@@ -43,31 +55,17 @@ class LogViewerCubit extends Cubit<LogViewerState> {
     }
 
     try {
-      final files = await log.getLogFiles();
-      final entries = <LogEntry>[];
-
-      for (final file in files) {
-        final content = await file.readAsString();
-        final lines = content.split('\n');
-        for (final line in lines) {
-          final entry = LogEntry.tryParse(line);
-          if (entry != null) {
-            entries.add(entry);
-          }
-        }
+      final files = await _logFilesProvider();
+      final snapshotKey = await _logRepository.snapshotKey(files);
+      if (!showLoading && state.status == LogViewerStatus.loaded && snapshotKey == _lastSnapshotKey) {
+        return;
       }
 
-      entries.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      _lastSnapshotKey = snapshotKey;
+      _parsedEntries = await _logRepository.readEntries(files);
+      _visibleEntryCount = _nextVisibleCountForRefresh();
 
-      final nextState = state.copyWith(
-        status: LogViewerStatus.loaded,
-        entries: entries,
-        filteredEntries: _applyFilters(entries, state.enabledLevels, state.searchQuery),
-        errorMessage: null,
-      );
-      if (nextState != state) {
-        emit(nextState);
-      }
+      _emitLoadedState(errorMessage: null);
     } catch (e) {
       final nextState = state.copyWith(status: LogViewerStatus.error, errorMessage: e.toString());
       if (nextState != state) {
@@ -76,6 +74,49 @@ class LogViewerCubit extends Cubit<LogViewerState> {
     } finally {
       _isLoading = false;
     }
+  }
+
+  int _nextVisibleCountForRefresh() {
+    if (_parsedEntries.length <= initialVisibleEntries) {
+      return _parsedEntries.length;
+    }
+
+    final currentVisibleCount = state.entries.isEmpty ? initialVisibleEntries : state.entries.length;
+    return currentVisibleCount.clamp(initialVisibleEntries, _parsedEntries.length);
+  }
+
+  Future<void> loadOlderEntries() async {
+    if (state.status != LogViewerStatus.loaded || state.isLoadingOlderEntries || !state.hasOlderEntries) {
+      return;
+    }
+
+    emit(state.copyWith(isLoadingOlderEntries: true));
+    _visibleEntryCount = (_visibleEntryCount + paginationPageSize).clamp(0, _parsedEntries.length);
+    _emitLoadedState(errorMessage: null);
+  }
+
+  void _emitLoadedState({Object? errorMessage = _logViewerStateNoChange}) {
+    final visibleEntries = _visibleEntries();
+    final nextState = state.copyWith(
+      status: LogViewerStatus.loaded,
+      entries: visibleEntries,
+      filteredEntries: _applyFilters(visibleEntries, state.enabledLevels, state.searchQuery),
+      hasOlderEntries: _visibleEntryCount < _parsedEntries.length,
+      isLoadingOlderEntries: false,
+      errorMessage: errorMessage,
+    );
+    if (nextState != state) {
+      emit(nextState);
+    }
+  }
+
+  List<LogEntry> _visibleEntries() {
+    if (_parsedEntries.isEmpty) {
+      return const [];
+    }
+
+    final start = (_parsedEntries.length - _visibleEntryCount).clamp(0, _parsedEntries.length);
+    return List.unmodifiable(_parsedEntries.sublist(start));
   }
 
   @override
@@ -191,6 +232,9 @@ class LogViewerCubit extends Cubit<LogViewerState> {
 
   Future<void> clearAllLogs() async {
     await log.clearAllLogs();
+    _lastSnapshotKey = null;
+    _parsedEntries = const [];
+    _visibleEntryCount = initialVisibleEntries;
     await loadLogs(showLoading: false);
   }
 }

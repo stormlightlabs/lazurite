@@ -1,14 +1,20 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
 
 class DailyLogFileOutput extends LogOutput {
-  DailyLogFileOutput({required this.directoryPath, this.retentionDays = 3});
+  DailyLogFileOutput({required this.directoryPath, this.retentionDays = 3, this.maxFileBytes = defaultMaxFileBytes})
+    : assert(retentionDays > 0),
+      assert(maxFileBytes > 0);
+
+  static const int defaultMaxFileBytes = 2 * 1024 * 1024;
 
   final String directoryPath;
   final int retentionDays;
+  final int maxFileBytes;
 
   String? _lastCleanupDateKey;
   Future<void> _pendingWrites = Future<void>.value();
@@ -39,7 +45,7 @@ class DailyLogFileOutput extends LogOutput {
     final shouldFlush = event.level.index >= Level.warning.index;
     _pendingWrites = _pendingWrites
         .then((_) => _appendLine(filePath: filePath, content: content, flush: shouldFlush))
-        .catchError((_) {});
+        .catchError(_reportWriteFailure);
   }
 
   Future<void> clearAllLogs() async {
@@ -86,7 +92,78 @@ class DailyLogFileOutput extends LogOutput {
     if (!await file.parent.exists()) {
       await file.parent.create(recursive: true);
     }
-    await file.writeAsString(content, mode: FileMode.writeOnlyAppend, flush: flush);
+
+    final maxEventBytes = maxFileBytes > 1 ? maxFileBytes ~/ 2 : maxFileBytes;
+    final boundedContent = _tailUtf8String(content, maxEventBytes);
+    final boundedContentBytes = utf8.encode(boundedContent);
+    if (await file.exists() && await file.length() + boundedContentBytes.length > maxFileBytes) {
+      await _trimFileForAppend(file: file, incomingByteCount: boundedContentBytes.length);
+    }
+    await file.writeAsString(boundedContent, mode: FileMode.writeOnlyAppend, flush: flush);
+  }
+
+  Future<void> _trimFileForAppend({required File file, required int incomingByteCount}) async {
+    final existingBytes = await file.readAsBytes();
+    final existingBudget = maxFileBytes - incomingByteCount;
+    if (existingBudget <= 0) {
+      await file.writeAsString('', flush: true);
+      return;
+    }
+
+    final marker = _tailUtf8String(_trimMarker(), existingBudget);
+    final markerBytes = utf8.encode(marker);
+    final retainedBudget = existingBudget - markerBytes.length;
+    if (retainedBudget <= 0) {
+      await file.writeAsString(marker, flush: true);
+      return;
+    }
+
+    final retainedByteCount = retainedBudget.clamp(0, maxFileBytes ~/ 2);
+    final tailStart = existingBytes.length > retainedByteCount ? existingBytes.length - retainedByteCount : 0;
+    var tailBytes = existingBytes.sublist(tailStart);
+    final firstNewline = tailBytes.indexOf(10);
+    if (tailStart > 0 && firstNewline >= 0 && firstNewline + 1 < tailBytes.length) {
+      tailBytes = tailBytes.sublist(firstNewline + 1);
+    }
+
+    final tail = utf8.decode(tailBytes, allowMalformed: true);
+    await file.writeAsString('$marker$tail', flush: true);
+  }
+
+  String _tailUtf8String(String value, int maxBytes) {
+    if (maxBytes <= 0) {
+      return '';
+    }
+
+    final valueBytes = utf8.encode(value);
+    if (valueBytes.length <= maxBytes) {
+      return value;
+    }
+
+    final retainedRunes = <int>[];
+    var retainedBytes = 0;
+    final runes = value.runes.toList(growable: false);
+    for (var index = runes.length - 1; index >= 0; index -= 1) {
+      final rune = runes[index];
+      final runeByteCount = utf8.encode(String.fromCharCode(rune)).length;
+      if (retainedBytes + runeByteCount > maxBytes) {
+        break;
+      }
+
+      retainedRunes.add(rune);
+      retainedBytes += runeByteCount;
+    }
+
+    return String.fromCharCodes(retainedRunes.reversed);
+  }
+
+  String _trimMarker() {
+    return '[W] TIME: ${DateTime.now().toIso8601String()} '
+        'AppLogger: Older log entries trimmed to keep this log file below $maxFileBytes bytes.\n';
+  }
+
+  void _reportWriteFailure(Object error, StackTrace stackTrace) {
+    stderr.writeln('Lazurite log write failed: $error');
   }
 
   static String fileNameFor(DateTime timestamp) {

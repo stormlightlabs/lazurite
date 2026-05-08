@@ -13,6 +13,8 @@ void main() {
       expect(state.entries, isEmpty);
       expect(state.filteredEntries, isEmpty);
       expect(state.searchQuery, isEmpty);
+      expect(state.hasOlderEntries, isFalse);
+      expect(state.isLoadingOlderEntries, isFalse);
       expect(
         state.enabledLevels,
         containsAll([Level.trace, Level.debug, Level.info, Level.warning, Level.error, Level.fatal]),
@@ -162,5 +164,89 @@ void main() {
       expect(await legacyOne.exists(), isFalse);
       expect(await legacyTwo.exists(), isFalse);
     });
+
+    test('loads only the latest initial page', () async {
+      final sourceDir = await Directory.systemTemp.createTemp('lazurite_log_viewer_source_');
+      final oldFile = File('${sourceDir.path}/lazurite_2026-05-05.log');
+      final newFile = File('${sourceDir.path}/lazurite_2026-05-06.log');
+      await oldFile.writeAsString(
+        List.generate(
+          10,
+          (index) =>
+              '[I] TIME: ${DateTime(2026, 5, 5, 10).add(Duration(seconds: index)).toIso8601String()} '
+              'Log: old $index',
+        ).join('\n'),
+      );
+      await newFile.writeAsString(
+        List.generate(
+          LogViewerCubit.initialVisibleEntries + 5,
+          (index) =>
+              '[I] TIME: ${DateTime(2026, 5, 6, 10).add(Duration(seconds: index)).toIso8601String()} '
+              'Log: new $index',
+        ).join('\n'),
+      );
+
+      final cubit = LogViewerCubit(
+        refreshInterval: const Duration(hours: 1),
+        logFilesProvider: () async => [newFile, oldFile],
+      );
+      addTearDown(() async {
+        await cubit.close();
+        if (await sourceDir.exists()) {
+          await sourceDir.delete(recursive: true);
+        }
+      });
+
+      await _waitForLoaded(cubit);
+
+      expect(cubit.state.entries, hasLength(LogViewerCubit.initialVisibleEntries));
+      expect(cubit.state.entries.first.message, contains('new 5'));
+      expect(cubit.state.entries.last.message, contains('new ${LogViewerCubit.initialVisibleEntries + 4}'));
+      expect(cubit.state.entries.any((entry) => entry.message.contains('old')), isFalse);
+      expect(cubit.state.hasOlderEntries, isTrue);
+    });
+
+    test('loads older entries before the visible tail', () async {
+      final sourceDir = await Directory.systemTemp.createTemp('lazurite_log_viewer_source_');
+      final sourceFile = File('${sourceDir.path}/lazurite_2026-05-06.log');
+      await sourceFile.writeAsString(
+        List.generate(
+          LogViewerCubit.initialVisibleEntries + 25,
+          (index) =>
+              '[I] TIME: ${DateTime(2026, 5, 6, 10).add(Duration(seconds: index)).toIso8601String()} '
+              'Log: entry $index',
+        ).join('\n'),
+      );
+
+      final cubit = LogViewerCubit(
+        refreshInterval: const Duration(hours: 1),
+        logFilesProvider: () async => [sourceFile],
+      );
+      addTearDown(() async {
+        await cubit.close();
+        if (await sourceDir.exists()) {
+          await sourceDir.delete(recursive: true);
+        }
+      });
+
+      await _waitForLoaded(cubit);
+      expect(cubit.state.entries.first.message, contains('entry 25'));
+
+      await cubit.loadOlderEntries();
+
+      expect(cubit.state.entries, hasLength(LogViewerCubit.initialVisibleEntries + 25));
+      expect(cubit.state.entries.first.message, contains('entry 0'));
+      expect(cubit.state.entries.last.message, contains('entry ${LogViewerCubit.initialVisibleEntries + 24}'));
+      expect(cubit.state.hasOlderEntries, isFalse);
+      expect(cubit.state.isLoadingOlderEntries, isFalse);
+    });
   });
+}
+
+Future<void> _waitForLoaded(LogViewerCubit cubit) async {
+  if (cubit.state.status == LogViewerStatus.loaded) {
+    return;
+  }
+
+  await cubit.stream.firstWhere((state) => state.status == LogViewerStatus.loaded).timeout(const Duration(seconds: 5));
 }
