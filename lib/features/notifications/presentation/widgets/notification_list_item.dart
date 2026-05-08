@@ -2,6 +2,7 @@ import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart' hide Notification;
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
@@ -45,9 +46,9 @@ class NotificationListItem extends StatelessWidget {
                   children: [
                     _buildActorRow(context),
                     const SizedBox(height: 4),
-                    _buildSummary(theme),
+                    _buildSummary(context, theme),
                     const SizedBox(height: 2),
-                    _buildTime(theme),
+                    _buildTime(context, theme),
                     if (notificationUi.alert || notificationUi.inform) ...[
                       const SizedBox(height: 8),
                       ModerationBadgeRow(ui: notificationUi),
@@ -95,10 +96,10 @@ class NotificationListItem extends StatelessWidget {
     );
   }
 
-  Widget _buildSummary(ThemeData theme) {
+  Widget _buildSummary(BuildContext context, ThemeData theme) {
     final author = notification.author;
     final displayName = author.displayName ?? author.handle;
-    final reasonText = _getReasonText();
+    final reasonText = _getReasonText(context);
 
     return RichText(
       text: TextSpan(
@@ -119,13 +120,13 @@ class NotificationListItem extends StatelessWidget {
     );
   }
 
-  String _getReasonText() {
-    return NotificationReasonUtils.summaryTextForReason(notification.reason);
+  String _getReasonText(BuildContext context) {
+    return NotificationReasonUtils.summaryTextForReason(notification.reason, l10n: context.l10n);
   }
 
-  Widget _buildTime(ThemeData theme) {
+  Widget _buildTime(BuildContext context, ThemeData theme) {
     return Text(
-      formatRelativeTime(notification.indexedAt, nowLabel: 'Just now', includeAgo: true),
+      formatRelativeTime(notification.indexedAt, nowLabel: context.l10n.commonJustNow, includeAgo: true),
       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
     );
   }

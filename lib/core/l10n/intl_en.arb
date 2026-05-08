@@ -129,6 +129,10 @@
   "@commonOff": {
     "description": "Disabled option label"
   },
+  "commonUnknown": "unknown",
+  "@commonUnknown": {
+    "description": "Lowercase fallback for an unknown value"
+  },
   "dialogClearCacheContent": "This removes cached posts, profiles, images, feeds, threads, label data, and local semantic search data.\n\nAccounts, settings, drafts, bookmarks, and likes are kept.",
   "@dialogClearCacheContent": {
     "description": "Confirmation dialog body before clearing local cache"
@@ -2536,6 +2540,270 @@
   "validationEnterValidWebsite": "Enter a valid website",
   "@validationEnterValidWebsite": {
     "description": "Profile edit validation error for invalid website"
+  },
+  "accountSwitcherNoOtherAccounts": "No other signed-in accounts yet. Add an account to switch between profiles.",
+  "@accountSwitcherNoOtherAccounts": {
+    "description": "Empty state message in the account switcher sheet"
+  },
+  "buttonAddAccount": "Add Account",
+  "@buttonAddAccount": {
+    "description": "Button and dialog title to add another account"
+  },
+  "buttonCopyAll": "Copy All",
+  "@buttonCopyAll": {
+    "description": "Message thread menu item to copy all messages"
+  },
+  "buttonMarkAllRead": "Mark All Read",
+  "@buttonMarkAllRead": {
+    "description": "Button label to mark notifications read"
+  },
+  "errorFailedToAddAccount": "Failed to add account",
+  "@errorFailedToAddAccount": {
+    "description": "Snackbar message when adding an account fails"
+  },
+  "errorFailedToLoadMessages": "Failed to load messages",
+  "@errorFailedToLoadMessages": {
+    "description": "Error title when messages cannot load"
+  },
+  "errorFailedToLoadNotifications": "Failed to load notifications",
+  "@errorFailedToLoadNotifications": {
+    "description": "Error title when notifications cannot load"
+  },
+  "errorUnableToRemoveAccountNow": "Unable to remove account right now.",
+  "@errorUnableToRemoveAccountNow": {
+    "description": "Snackbar message when removing an account from account switcher fails"
+  },
+  "formatActorListTwo": "{first} and {second}",
+  "@formatActorListTwo": {
+    "description": "Two-person actor summary in grouped notifications",
+    "placeholders": {
+      "first": {
+        "type": "String",
+        "example": "Alice"
+      },
+      "second": {
+        "type": "String",
+        "example": "Bob"
+      }
+    }
+  },
+  "formatActorListWithOthers": "{first}, {second}, and {count} others",
+  "@formatActorListWithOthers": {
+    "description": "Multi-person actor summary in grouped notifications",
+    "placeholders": {
+      "first": {
+        "type": "String",
+        "example": "Alice"
+      },
+      "second": {
+        "type": "String",
+        "example": "Bob"
+      },
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "formatMonthDay": "{month} {day}",
+  "@formatMonthDay": {
+    "description": "Month and day label for notification sections",
+    "placeholders": {
+      "month": {
+        "type": "String",
+        "example": "January"
+      },
+      "day": {
+        "type": "int",
+        "example": "8"
+      }
+    }
+  },
+  "formatRemoveAccountContent": "Remove @{handle} from this device?",
+  "@formatRemoveAccountContent": {
+    "description": "Confirmation dialog body when removing an account from the account switcher",
+    "placeholders": {
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "labelAccounts": "Accounts",
+  "@labelAccounts": {
+    "description": "Account switcher sheet title"
+  },
+  "labelAlertsTitle": "Alerts",
+  "@labelAlertsTitle": {
+    "description": "Alerts screen title"
+  },
+  "labelConversation": "Conversation",
+  "@labelConversation": {
+    "description": "Fallback conversation title"
+  },
+  "labelFollows": "Follows",
+  "@labelFollows": {
+    "description": "Notification channel name for follows"
+  },
+  "labelLikes": "Likes",
+  "@labelLikes": {
+    "description": "Notification channel name for likes"
+  },
+  "labelMessageRequests": "Requests",
+  "@labelMessageRequests": {
+    "description": "Message requests tab label"
+  },
+  "labelOther": "Other",
+  "@labelOther": {
+    "description": "Other notification channel name"
+  },
+  "labelPrimary": "Primary",
+  "@labelPrimary": {
+    "description": "Primary messages tab label"
+  },
+  "labelSomeone": "Someone",
+  "@labelSomeone": {
+    "description": "Fallback actor summary for grouped notifications"
+  },
+  "messageCopied": "Message copied",
+  "@messageCopied": {
+    "description": "Snackbar message after copying a message"
+  },
+  "messageDeleted": "Message deleted",
+  "@messageDeleted": {
+    "description": "Deleted message placeholder"
+  },
+  "messageLocalNotificationFallbackBody": "sent a notification",
+  "@messageLocalNotificationFallbackBody": {
+    "description": "Local notification body fallback for unknown notification reasons"
+  },
+  "messageNewNotification": "New notification",
+  "@messageNewNotification": {
+    "description": "Local notification title fallback"
+  },
+  "messageNoConnection": "No connection",
+  "@messageNoConnection": {
+    "description": "Offline state title"
+  },
+  "messageNoConversationsYet": "No conversations yet",
+  "@messageNoConversationsYet": {
+    "description": "Empty primary conversations state"
+  },
+  "messageNoMessageRequests": "No message requests",
+  "@messageNoMessageRequests": {
+    "description": "Empty message requests state"
+  },
+  "messageNoMessagesYet": "No messages yet",
+  "@messageNoMessagesYet": {
+    "description": "Empty message thread state"
+  },
+  "messageNoNotificationsYet": "No notifications yet",
+  "@messageNoNotificationsYet": {
+    "description": "Empty notifications state"
+  },
+  "messageNotificationContactMatch": "joined from your contacts",
+  "@messageNotificationContactMatch": {
+    "description": "Notification summary for contact match"
+  },
+  "messageNotificationFollow": "followed you",
+  "@messageNotificationFollow": {
+    "description": "Notification summary for follows"
+  },
+  "messageNotificationInteracted": "interacted with you",
+  "@messageNotificationInteracted": {
+    "description": "Notification summary fallback"
+  },
+  "messageNotificationLike": "liked your post",
+  "@messageNotificationLike": {
+    "description": "Notification summary for likes"
+  },
+  "messageNotificationLikeViaRepost": "liked your repost",
+  "@messageNotificationLikeViaRepost": {
+    "description": "Notification summary for likes via repost"
+  },
+  "messageNotificationMention": "mentioned you",
+  "@messageNotificationMention": {
+    "description": "Notification summary for mentions"
+  },
+  "messageNotificationQuote": "quoted your post",
+  "@messageNotificationQuote": {
+    "description": "Notification summary for quotes"
+  },
+  "messageNotificationReply": "replied to your post",
+  "@messageNotificationReply": {
+    "description": "Notification summary for replies"
+  },
+  "messageNotificationRepost": "reposted your post",
+  "@messageNotificationRepost": {
+    "description": "Notification summary for reposts"
+  },
+  "messageNotificationRepostViaRepost": "reposted your repost",
+  "@messageNotificationRepostViaRepost": {
+    "description": "Notification summary for reposts via repost"
+  },
+  "messageNotificationStarterPackJoined": "joined via your starter pack",
+  "@messageNotificationStarterPackJoined": {
+    "description": "Notification summary for starter pack joins"
+  },
+  "messageNotificationSubscribedPost": "posted a new update",
+  "@messageNotificationSubscribedPost": {
+    "description": "Notification summary for subscribed posts"
+  },
+  "messageNotificationUnverified": "removed your verification",
+  "@messageNotificationUnverified": {
+    "description": "Notification summary for unverified account"
+  },
+  "messageNotificationVerified": "verified your account",
+  "@messageNotificationVerified": {
+    "description": "Notification summary for verified account"
+  },
+  "messagePlaceholder": "Message…",
+  "@messagePlaceholder": {
+    "description": "Message composer placeholder"
+  },
+  "messagePleaseSignInAgainForAccount": "Please sign in again for that account.",
+  "@messagePleaseSignInAgainForAccount": {
+    "description": "Snackbar when account switch requires reauthentication"
+  },
+  "messageReconnectToLoadMessages": "Reconnect to load messages.",
+  "@messageReconnectToLoadMessages": {
+    "description": "Offline message list explanation"
+  },
+  "messageReconnectToLoadNotifications": "Reconnect to load notifications.",
+  "@messageReconnectToLoadNotifications": {
+    "description": "Offline notifications explanation"
+  },
+  "messageThreadCopied": "Thread copied",
+  "@messageThreadCopied": {
+    "description": "Snackbar after copying a message thread"
+  },
+  "messageToday": "Today",
+  "@messageToday": {
+    "description": "Today date section label"
+  },
+  "messageYesterday": "Yesterday",
+  "@messageYesterday": {
+    "description": "Yesterday date section label"
+  },
+  "placeholderUsernameBskySocial": "username.bsky.social",
+  "@placeholderUsernameBskySocial": {
+    "description": "Handle placeholder in account switcher"
+  },
+  "validationEnterBlueskyHandleOrDid": "Enter a Bluesky handle or DID",
+  "@validationEnterBlueskyHandleOrDid": {
+    "description": "Account switcher validation error for empty handle or DID"
+  },
+  "validationEnterCompleteDid": "Enter a complete DID like did:plc:... or did:web:...",
+  "@validationEnterCompleteDid": {
+    "description": "Account switcher validation error for incomplete DID"
+  },
+  "validationEnterFullHandle": "Enter a full handle like username.bsky.social",
+  "@validationEnterFullHandle": {
+    "description": "Account switcher validation error for invalid handle"
+  },
+  "validationUseSupportedDid": "Use a did:plc:... or did:web:... identifier",
+  "@validationUseSupportedDid": {
+    "description": "Account switcher validation error for unsupported DID method"
   },
   "validationEnterAppPassword": "Enter your app password",
   "@validationEnterAppPassword": {

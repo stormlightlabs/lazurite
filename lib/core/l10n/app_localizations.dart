@@ -283,6 +283,12 @@ abstract class AppLocalizations {
   /// **'Off'**
   String get commonOff;
 
+  /// Lowercase fallback for an unknown value
+  ///
+  /// In en, this message translates to:
+  /// **'unknown'**
+  String get commonUnknown;
+
   /// Confirmation dialog body before clearing local cache
   ///
   /// In en, this message translates to:
@@ -3330,6 +3336,342 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter a valid website'**
   String get validationEnterValidWebsite;
+
+  /// Empty state message in the account switcher sheet
+  ///
+  /// In en, this message translates to:
+  /// **'No other signed-in accounts yet. Add an account to switch between profiles.'**
+  String get accountSwitcherNoOtherAccounts;
+
+  /// Button and dialog title to add another account
+  ///
+  /// In en, this message translates to:
+  /// **'Add Account'**
+  String get buttonAddAccount;
+
+  /// Message thread menu item to copy all messages
+  ///
+  /// In en, this message translates to:
+  /// **'Copy All'**
+  String get buttonCopyAll;
+
+  /// Button label to mark notifications read
+  ///
+  /// In en, this message translates to:
+  /// **'Mark All Read'**
+  String get buttonMarkAllRead;
+
+  /// Snackbar message when adding an account fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to add account'**
+  String get errorFailedToAddAccount;
+
+  /// Error title when messages cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load messages'**
+  String get errorFailedToLoadMessages;
+
+  /// Error title when notifications cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load notifications'**
+  String get errorFailedToLoadNotifications;
+
+  /// Snackbar message when removing an account from account switcher fails
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to remove account right now.'**
+  String get errorUnableToRemoveAccountNow;
+
+  /// Two-person actor summary in grouped notifications
+  ///
+  /// In en, this message translates to:
+  /// **'{first} and {second}'**
+  String formatActorListTwo(String first, String second);
+
+  /// Multi-person actor summary in grouped notifications
+  ///
+  /// In en, this message translates to:
+  /// **'{first}, {second}, and {count} others'**
+  String formatActorListWithOthers(String first, String second, int count);
+
+  /// Month and day label for notification sections
+  ///
+  /// In en, this message translates to:
+  /// **'{month} {day}'**
+  String formatMonthDay(String month, int day);
+
+  /// Confirmation dialog body when removing an account from the account switcher
+  ///
+  /// In en, this message translates to:
+  /// **'Remove @{handle} from this device?'**
+  String formatRemoveAccountContent(String handle);
+
+  /// Account switcher sheet title
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get labelAccounts;
+
+  /// Alerts screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Alerts'**
+  String get labelAlertsTitle;
+
+  /// Fallback conversation title
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation'**
+  String get labelConversation;
+
+  /// Notification channel name for follows
+  ///
+  /// In en, this message translates to:
+  /// **'Follows'**
+  String get labelFollows;
+
+  /// Notification channel name for likes
+  ///
+  /// In en, this message translates to:
+  /// **'Likes'**
+  String get labelLikes;
+
+  /// Message requests tab label
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get labelMessageRequests;
+
+  /// Other notification channel name
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get labelOther;
+
+  /// Primary messages tab label
+  ///
+  /// In en, this message translates to:
+  /// **'Primary'**
+  String get labelPrimary;
+
+  /// Fallback actor summary for grouped notifications
+  ///
+  /// In en, this message translates to:
+  /// **'Someone'**
+  String get labelSomeone;
+
+  /// Snackbar message after copying a message
+  ///
+  /// In en, this message translates to:
+  /// **'Message copied'**
+  String get messageCopied;
+
+  /// Deleted message placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Message deleted'**
+  String get messageDeleted;
+
+  /// Local notification body fallback for unknown notification reasons
+  ///
+  /// In en, this message translates to:
+  /// **'sent a notification'**
+  String get messageLocalNotificationFallbackBody;
+
+  /// Local notification title fallback
+  ///
+  /// In en, this message translates to:
+  /// **'New notification'**
+  String get messageNewNotification;
+
+  /// Offline state title
+  ///
+  /// In en, this message translates to:
+  /// **'No connection'**
+  String get messageNoConnection;
+
+  /// Empty primary conversations state
+  ///
+  /// In en, this message translates to:
+  /// **'No conversations yet'**
+  String get messageNoConversationsYet;
+
+  /// Empty message requests state
+  ///
+  /// In en, this message translates to:
+  /// **'No message requests'**
+  String get messageNoMessageRequests;
+
+  /// Empty message thread state
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get messageNoMessagesYet;
+
+  /// Empty notifications state
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications yet'**
+  String get messageNoNotificationsYet;
+
+  /// Notification summary for contact match
+  ///
+  /// In en, this message translates to:
+  /// **'joined from your contacts'**
+  String get messageNotificationContactMatch;
+
+  /// Notification summary for follows
+  ///
+  /// In en, this message translates to:
+  /// **'followed you'**
+  String get messageNotificationFollow;
+
+  /// Notification summary fallback
+  ///
+  /// In en, this message translates to:
+  /// **'interacted with you'**
+  String get messageNotificationInteracted;
+
+  /// Notification summary for likes
+  ///
+  /// In en, this message translates to:
+  /// **'liked your post'**
+  String get messageNotificationLike;
+
+  /// Notification summary for likes via repost
+  ///
+  /// In en, this message translates to:
+  /// **'liked your repost'**
+  String get messageNotificationLikeViaRepost;
+
+  /// Notification summary for mentions
+  ///
+  /// In en, this message translates to:
+  /// **'mentioned you'**
+  String get messageNotificationMention;
+
+  /// Notification summary for quotes
+  ///
+  /// In en, this message translates to:
+  /// **'quoted your post'**
+  String get messageNotificationQuote;
+
+  /// Notification summary for replies
+  ///
+  /// In en, this message translates to:
+  /// **'replied to your post'**
+  String get messageNotificationReply;
+
+  /// Notification summary for reposts
+  ///
+  /// In en, this message translates to:
+  /// **'reposted your post'**
+  String get messageNotificationRepost;
+
+  /// Notification summary for reposts via repost
+  ///
+  /// In en, this message translates to:
+  /// **'reposted your repost'**
+  String get messageNotificationRepostViaRepost;
+
+  /// Notification summary for starter pack joins
+  ///
+  /// In en, this message translates to:
+  /// **'joined via your starter pack'**
+  String get messageNotificationStarterPackJoined;
+
+  /// Notification summary for subscribed posts
+  ///
+  /// In en, this message translates to:
+  /// **'posted a new update'**
+  String get messageNotificationSubscribedPost;
+
+  /// Notification summary for unverified account
+  ///
+  /// In en, this message translates to:
+  /// **'removed your verification'**
+  String get messageNotificationUnverified;
+
+  /// Notification summary for verified account
+  ///
+  /// In en, this message translates to:
+  /// **'verified your account'**
+  String get messageNotificationVerified;
+
+  /// Message composer placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Message…'**
+  String get messagePlaceholder;
+
+  /// Snackbar when account switch requires reauthentication
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in again for that account.'**
+  String get messagePleaseSignInAgainForAccount;
+
+  /// Offline message list explanation
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect to load messages.'**
+  String get messageReconnectToLoadMessages;
+
+  /// Offline notifications explanation
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect to load notifications.'**
+  String get messageReconnectToLoadNotifications;
+
+  /// Snackbar after copying a message thread
+  ///
+  /// In en, this message translates to:
+  /// **'Thread copied'**
+  String get messageThreadCopied;
+
+  /// Today date section label
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get messageToday;
+
+  /// Yesterday date section label
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get messageYesterday;
+
+  /// Handle placeholder in account switcher
+  ///
+  /// In en, this message translates to:
+  /// **'username.bsky.social'**
+  String get placeholderUsernameBskySocial;
+
+  /// Account switcher validation error for empty handle or DID
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a Bluesky handle or DID'**
+  String get validationEnterBlueskyHandleOrDid;
+
+  /// Account switcher validation error for incomplete DID
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a complete DID like did:plc:... or did:web:...'**
+  String get validationEnterCompleteDid;
+
+  /// Account switcher validation error for invalid handle
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a full handle like username.bsky.social'**
+  String get validationEnterFullHandle;
+
+  /// Account switcher validation error for unsupported DID method
+  ///
+  /// In en, this message translates to:
+  /// **'Use a did:plc:... or did:web:... identifier'**
+  String get validationUseSupportedDid;
 
   /// Validation error for missing app password
   ///

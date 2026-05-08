@@ -3,6 +3,8 @@ import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
 import 'package:bluesky/moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart' hide Notification;
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/notifications/domain/notification_deep_link_navigator.dart';
@@ -10,7 +12,6 @@ import 'package:lazurite/features/notifications/domain/notification_reason_utils
 import 'package:lazurite/shared/presentation/helpers/notification_icon_mapper.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class NotificationGroup {
   const NotificationGroup({required this.notifications});
@@ -66,9 +67,9 @@ class GroupedNotificationListItem extends StatelessWidget {
                   children: [
                     _buildActorRow(context),
                     const SizedBox(height: 4),
-                    _buildSummary(theme),
+                    _buildSummary(context, theme),
                     const SizedBox(height: 2),
-                    _buildTime(theme),
+                    _buildTime(context, theme),
                     if (_shouldShowPreview(latest)) ...[
                       const SizedBox(height: 8),
                       _buildPreview(context, theme, latest),
@@ -144,19 +145,19 @@ class GroupedNotificationListItem extends StatelessWidget {
     );
   }
 
-  Widget _buildSummary(ThemeData theme) {
+  Widget _buildSummary(BuildContext context, ThemeData theme) {
     return RichText(
       text: TextSpan(
         children: [
           TextSpan(
-            text: _actorSummary(),
+            text: _actorSummary(context),
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSurface,
             ),
           ),
           TextSpan(
-            text: ' ${_getReasonText(group.latest)}',
+            text: ' ${_getReasonText(context, group.latest)}',
             style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ],
@@ -164,29 +165,29 @@ class GroupedNotificationListItem extends StatelessWidget {
     );
   }
 
-  String _actorSummary() {
+  String _actorSummary(BuildContext context) {
     final names = group.authors.map((author) => author.displayName ?? author.handle).toList();
     if (names.isEmpty) {
-      return 'Someone';
+      return context.l10n.labelSomeone;
     }
     if (names.length == 1) {
       return names.first;
     }
     if (names.length == 2) {
-      return '${names[0]} and ${names[1]}';
+      return context.l10n.formatActorListTwo(names[0], names[1]);
     }
-    return '${names[0]}, ${names[1]}, and ${names.length - 2} others';
+    return context.l10n.formatActorListWithOthers(names[0], names[1], names.length - 2);
   }
 
-  Widget _buildTime(ThemeData theme) {
+  Widget _buildTime(BuildContext context, ThemeData theme) {
     return Text(
-      formatRelativeTime(group.latest.indexedAt, nowLabel: 'Just now', includeAgo: true),
+      formatRelativeTime(group.latest.indexedAt, nowLabel: context.l10n.commonJustNow, includeAgo: true),
       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
     );
   }
 
-  String _getReasonText(bsky.Notification notification) {
-    return NotificationReasonUtils.summaryTextForReason(notification.reason);
+  String _getReasonText(BuildContext context, bsky.Notification notification) {
+    return NotificationReasonUtils.summaryTextForReason(notification.reason, l10n: context.l10n);
   }
 
   bool _shouldShowPreview(bsky.Notification notification) {

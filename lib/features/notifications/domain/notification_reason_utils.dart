@@ -1,5 +1,8 @@
 import 'package:atproto_core/atproto_core.dart';
 import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
+import 'dart:ui';
+
+import 'package:lazurite/core/l10n/app_localizations.dart';
 import 'package:lazurite/features/notifications/domain/notification_local_models.dart';
 
 abstract final class NotificationReasonUtils {
@@ -35,46 +38,50 @@ abstract final class NotificationReasonUtils {
     }
   }
 
-  static String summaryTextForReason(bsky.NotificationReason reason) {
+  static final AppLocalizations _fallbackL10n = lookupAppLocalizations(const Locale('en'));
+
+  static String summaryTextForReason(bsky.NotificationReason reason, {AppLocalizations? l10n}) {
+    final strings = l10n ?? _fallbackL10n;
     if (!reason.isKnownValue) {
-      return 'interacted with you';
+      return strings.messageNotificationInteracted;
     }
 
     switch (reason.knownValue) {
       case bsky.KnownNotificationReason.like:
-        return 'liked your post';
+        return strings.messageNotificationLike;
       case bsky.KnownNotificationReason.repost:
-        return 'reposted your post';
+        return strings.messageNotificationRepost;
       case bsky.KnownNotificationReason.likeViaRepost:
-        return 'liked your repost';
+        return strings.messageNotificationLikeViaRepost;
       case bsky.KnownNotificationReason.repostViaRepost:
-        return 'reposted your repost';
+        return strings.messageNotificationRepostViaRepost;
       case bsky.KnownNotificationReason.follow:
-        return 'followed you';
+        return strings.messageNotificationFollow;
       case bsky.KnownNotificationReason.mention:
-        return 'mentioned you';
+        return strings.messageNotificationMention;
       case bsky.KnownNotificationReason.reply:
-        return 'replied to your post';
+        return strings.messageNotificationReply;
       case bsky.KnownNotificationReason.quote:
-        return 'quoted your post';
+        return strings.messageNotificationQuote;
       case bsky.KnownNotificationReason.starterpackJoined:
-        return 'joined via your starter pack';
+        return strings.messageNotificationStarterPackJoined;
       case bsky.KnownNotificationReason.verified:
-        return 'verified your account';
+        return strings.messageNotificationVerified;
       case bsky.KnownNotificationReason.unverified:
-        return 'removed your verification';
+        return strings.messageNotificationUnverified;
       case bsky.KnownNotificationReason.subscribedPost:
-        return 'posted a new update';
+        return strings.messageNotificationSubscribedPost;
       case bsky.KnownNotificationReason.contactMatch:
-        return 'joined from your contacts';
+        return strings.messageNotificationContactMatch;
       default:
-        return 'interacted with you';
+        return strings.messageNotificationInteracted;
     }
   }
 
-  static String localNotificationBodyForReason(bsky.NotificationReason reason) {
-    final summary = summaryTextForReason(reason);
-    return summary == 'interacted with you' ? 'sent a notification' : summary;
+  static String localNotificationBodyForReason(bsky.NotificationReason reason, {AppLocalizations? l10n}) {
+    final strings = l10n ?? _fallbackL10n;
+    final summary = summaryTextForReason(reason, l10n: strings);
+    return summary == strings.messageNotificationInteracted ? strings.messageLocalNotificationFallbackBody : summary;
   }
 
   static NotificationReasonFamily reasonFamilyForReason(bsky.NotificationReason reason) {

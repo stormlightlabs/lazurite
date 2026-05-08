@@ -2,7 +2,9 @@ import 'package:bluesky/chat_bsky_convo_defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
@@ -12,7 +14,6 @@ import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
 import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class ConvoListPane extends StatefulWidget {
   const ConvoListPane({super.key, required this.tab});
@@ -93,8 +94,8 @@ class _ConvoListPaneState extends State<ConvoListPane> {
             return const _OfflineConvoState();
           }
           return ErrorState(
-            title: 'Failed to load messages',
-            message: state.errorMessage ?? 'Unknown error',
+            title: context.l10n.errorFailedToLoadMessages,
+            message: state.errorMessage ?? context.l10n.errorUnknown,
             onRetry: () => context.read<ConvoListBloc>().add(const ConvosRequested()),
           );
         }
@@ -113,7 +114,9 @@ class _ConvoListPaneState extends State<ConvoListPane> {
                 SizedBox(
                   height: MediaQuery.of(context).size.height * 0.5,
                   child: EmptyState(
-                    message: widget.tab == ConvoTab.primary ? 'No conversations yet' : 'No message requests',
+                    message: widget.tab == ConvoTab.primary
+                        ? context.l10n.messageNoConversationsYet
+                        : context.l10n.messageNoMessageRequests,
                     icon: Icons.forum_outlined,
                   ),
                 ),
@@ -162,7 +165,7 @@ class _ConvoListPaneState extends State<ConvoListPane> {
 
   void _openThread(BuildContext context, ConvoView convo, String currentUserDid) {
     final other = convo.members.where((m) => m.did != currentUserDid).firstOrNull;
-    final title = other?.displayName ?? other?.handle ?? 'Conversation';
+    final title = other?.displayName ?? other?.handle ?? context.l10n.labelConversation;
     context.push('/alerts/messages/${convo.id}', extra: MessageThreadRouteArgs(title: title));
   }
 }
@@ -180,9 +183,13 @@ class _OfflineConvoState extends StatelessWidget {
           children: [
             Icon(Icons.cloud_off_outlined, size: 48, color: context.colorScheme.outline),
             const SizedBox(height: 12),
-            Text('No connection', style: context.textTheme.titleMedium),
+            Text(context.l10n.messageNoConnection, style: context.textTheme.titleMedium),
             const SizedBox(height: 8),
-            Text('Reconnect to load messages.', textAlign: TextAlign.center, style: context.textTheme.bodyMedium),
+            Text(
+              context.l10n.messageReconnectToLoadMessages,
+              textAlign: TextAlign.center,
+              style: context.textTheme.bodyMedium,
+            ),
           ],
         ),
       ),

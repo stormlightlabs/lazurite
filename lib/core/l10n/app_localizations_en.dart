@@ -105,6 +105,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonOff => 'Off';
 
   @override
+  String get commonUnknown => 'unknown';
+
+  @override
   String get dialogClearCacheContent =>
       'This removes cached posts, profiles, images, feeds, threads, label data, and local semantic search data.\n\nAccounts, settings, drafts, bookmarks, and likes are kept.';
 
@@ -1801,6 +1804,183 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get validationEnterValidWebsite => 'Enter a valid website';
+
+  @override
+  String get accountSwitcherNoOtherAccounts =>
+      'No other signed-in accounts yet. Add an account to switch between profiles.';
+
+  @override
+  String get buttonAddAccount => 'Add Account';
+
+  @override
+  String get buttonCopyAll => 'Copy All';
+
+  @override
+  String get buttonMarkAllRead => 'Mark All Read';
+
+  @override
+  String get errorFailedToAddAccount => 'Failed to add account';
+
+  @override
+  String get errorFailedToLoadMessages => 'Failed to load messages';
+
+  @override
+  String get errorFailedToLoadNotifications => 'Failed to load notifications';
+
+  @override
+  String get errorUnableToRemoveAccountNow => 'Unable to remove account right now.';
+
+  @override
+  String formatActorListTwo(String first, String second) {
+    return '$first and $second';
+  }
+
+  @override
+  String formatActorListWithOthers(String first, String second, int count) {
+    return '$first, $second, and $count others';
+  }
+
+  @override
+  String formatMonthDay(String month, int day) {
+    return '$month $day';
+  }
+
+  @override
+  String formatRemoveAccountContent(String handle) {
+    return 'Remove @$handle from this device?';
+  }
+
+  @override
+  String get labelAccounts => 'Accounts';
+
+  @override
+  String get labelAlertsTitle => 'Alerts';
+
+  @override
+  String get labelConversation => 'Conversation';
+
+  @override
+  String get labelFollows => 'Follows';
+
+  @override
+  String get labelLikes => 'Likes';
+
+  @override
+  String get labelMessageRequests => 'Requests';
+
+  @override
+  String get labelOther => 'Other';
+
+  @override
+  String get labelPrimary => 'Primary';
+
+  @override
+  String get labelSomeone => 'Someone';
+
+  @override
+  String get messageCopied => 'Message copied';
+
+  @override
+  String get messageDeleted => 'Message deleted';
+
+  @override
+  String get messageLocalNotificationFallbackBody => 'sent a notification';
+
+  @override
+  String get messageNewNotification => 'New notification';
+
+  @override
+  String get messageNoConnection => 'No connection';
+
+  @override
+  String get messageNoConversationsYet => 'No conversations yet';
+
+  @override
+  String get messageNoMessageRequests => 'No message requests';
+
+  @override
+  String get messageNoMessagesYet => 'No messages yet';
+
+  @override
+  String get messageNoNotificationsYet => 'No notifications yet';
+
+  @override
+  String get messageNotificationContactMatch => 'joined from your contacts';
+
+  @override
+  String get messageNotificationFollow => 'followed you';
+
+  @override
+  String get messageNotificationInteracted => 'interacted with you';
+
+  @override
+  String get messageNotificationLike => 'liked your post';
+
+  @override
+  String get messageNotificationLikeViaRepost => 'liked your repost';
+
+  @override
+  String get messageNotificationMention => 'mentioned you';
+
+  @override
+  String get messageNotificationQuote => 'quoted your post';
+
+  @override
+  String get messageNotificationReply => 'replied to your post';
+
+  @override
+  String get messageNotificationRepost => 'reposted your post';
+
+  @override
+  String get messageNotificationRepostViaRepost => 'reposted your repost';
+
+  @override
+  String get messageNotificationStarterPackJoined => 'joined via your starter pack';
+
+  @override
+  String get messageNotificationSubscribedPost => 'posted a new update';
+
+  @override
+  String get messageNotificationUnverified => 'removed your verification';
+
+  @override
+  String get messageNotificationVerified => 'verified your account';
+
+  @override
+  String get messagePlaceholder => 'Message…';
+
+  @override
+  String get messagePleaseSignInAgainForAccount => 'Please sign in again for that account.';
+
+  @override
+  String get messageReconnectToLoadMessages => 'Reconnect to load messages.';
+
+  @override
+  String get messageReconnectToLoadNotifications => 'Reconnect to load notifications.';
+
+  @override
+  String get messageThreadCopied => 'Thread copied';
+
+  @override
+  String get messageToday => 'Today';
+
+  @override
+  String get messageYesterday => 'Yesterday';
+
+  @override
+  String get placeholderUsernameBskySocial => 'username.bsky.social';
+
+  @override
+  String get validationEnterBlueskyHandleOrDid => 'Enter a Bluesky handle or DID';
+
+  @override
+  String get validationEnterCompleteDid => 'Enter a complete DID like did:plc:... or did:web:...';
+
+  @override
+  String get validationEnterFullHandle => 'Enter a full handle like username.bsky.social';
+
+  @override
+  String get validationUseSupportedDid => 'Use a did:plc:... or did:web:... identifier';
 
   @override
   String get validationEnterAppPassword => 'Enter your app password';

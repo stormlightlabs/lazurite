@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:bluesky/chat_bsky_convo_defs.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/presentation/widgets/convo_list_pane.dart';
@@ -40,9 +41,9 @@ class _AlertsScreenState extends State<AlertsScreen> {
     return AppScreenEntrance(
       child: Scaffold(
         appBar: LazuriteAppBar(
-          sectionLabel: 'Alerts',
+          sectionLabel: context.l10n.labelAlertsTitle,
           actions: currentTab == AlertsTab.notifications
-              ? [TextButton(onPressed: () => _markAllRead(context), child: const Text('Mark All Read'))]
+              ? [TextButton(onPressed: () => _markAllRead(context), child: Text(context.l10n.buttonMarkAllRead))]
               : null,
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(48),
@@ -108,17 +109,17 @@ class _AlertsTabs extends StatelessWidget {
         children: [
           _AlertsTabButton(
             tab: AlertsTab.notifications,
-            label: 'Notifications',
+            label: context.l10n.labelNotifications,
             currentTab: currentTab,
             unreadCount: notificationsUnreadCount,
           ),
           _AlertsTabButton(
             tab: AlertsTab.messages,
-            label: 'Messages',
+            label: context.l10n.labelMessages,
             currentTab: currentTab,
             unreadCount: messagesUnreadCount,
           ),
-          _AlertsTabButton(tab: AlertsTab.requests, label: 'Requests', currentTab: currentTab),
+          _AlertsTabButton(tab: AlertsTab.requests, label: context.l10n.labelMessageRequests, currentTab: currentTab),
         ],
       ),
     );

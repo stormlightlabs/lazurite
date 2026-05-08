@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:bluesky/app_bsky_notification_listnotifications.dart';
 import 'package:crypto/crypto.dart';
+import 'package:lazurite/core/l10n/app_localizations.dart';
 import 'package:lazurite/features/notifications/domain/notification_local_models.dart';
 import 'package:lazurite/features/notifications/domain/notification_reason_utils.dart';
 
@@ -39,6 +41,8 @@ class NotificationPayloadCodec {
 }
 
 class NotificationLocalMapper {
+  static final AppLocalizations _fallbackL10n = lookupAppLocalizations(const Locale('en'));
+
   static LocalNotificationRequest? requestFromNotification(Notification notification) {
     if (notification.isRead) {
       return null;
@@ -52,7 +56,7 @@ class NotificationLocalMapper {
     return LocalNotificationRequest(
       notificationId: _stableNotificationId(notification.uri.toString()),
       title: _titleForNotification(notification),
-      body: NotificationReasonUtils.localNotificationBodyForReason(notification.reason),
+      body: NotificationReasonUtils.localNotificationBodyForReason(notification.reason, l10n: _fallbackL10n),
       reasonFamily: NotificationReasonUtils.reasonFamilyForReason(notification.reason),
       deepLink: deepLink,
     );
@@ -64,7 +68,7 @@ class NotificationLocalMapper {
       return displayName;
     }
     final handle = notification.author.handle.trim();
-    return handle.isEmpty ? 'New notification' : handle;
+    return handle.isEmpty ? _fallbackL10n.messageNewNotification : handle;
   }
 
   static int _stableNotificationId(String value) {
@@ -93,15 +97,15 @@ extension NotificationReasonFamilyChannels on NotificationReasonFamily {
   String get androidChannelName {
     switch (this) {
       case NotificationReasonFamily.mentions:
-        return 'Mentions';
+        return NotificationLocalMapper._fallbackL10n.labelMentions;
       case NotificationReasonFamily.replies:
-        return 'Replies';
+        return NotificationLocalMapper._fallbackL10n.labelReplies;
       case NotificationReasonFamily.follows:
-        return 'Follows';
+        return NotificationLocalMapper._fallbackL10n.labelFollows;
       case NotificationReasonFamily.likes:
-        return 'Likes';
+        return NotificationLocalMapper._fallbackL10n.labelLikes;
       case NotificationReasonFamily.misc:
-        return 'Other';
+        return NotificationLocalMapper._fallbackL10n.labelOther;
     }
   }
 
