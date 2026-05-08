@@ -11,7 +11,7 @@ class LogRepository {
     final entries = <LogEntry>[];
 
     for (final file in sortedFiles) {
-      await for (final line in file.openRead().transform(systemEncoding.decoder).transform(const LineSplitter())) {
+      await for (final line in file.openRead().transform(utf8.decoder).transform(const LineSplitter())) {
         final entry = LogEntry.tryParse(line);
         if (entry != null) {
           entries.add(entry);

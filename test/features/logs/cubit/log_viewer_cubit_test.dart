@@ -197,8 +197,7 @@ void main() {
         }
       });
 
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      await cubit.loadLogs(showLoading: false);
+      await _waitForLoaded(cubit);
 
       expect(cubit.state.entries, hasLength(LogViewerCubit.initialVisibleEntries));
       expect(cubit.state.entries.first.message, contains('new 5'));
@@ -230,8 +229,7 @@ void main() {
         }
       });
 
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      await cubit.loadLogs(showLoading: false);
+      await _waitForLoaded(cubit);
       expect(cubit.state.entries.first.message, contains('entry 25'));
 
       await cubit.loadOlderEntries();
@@ -243,4 +241,12 @@ void main() {
       expect(cubit.state.isLoadingOlderEntries, isFalse);
     });
   });
+}
+
+Future<void> _waitForLoaded(LogViewerCubit cubit) async {
+  if (cubit.state.status == LogViewerStatus.loaded) {
+    return;
+  }
+
+  await cubit.stream.firstWhere((state) => state.status == LogViewerStatus.loaded).timeout(const Duration(seconds: 5));
 }

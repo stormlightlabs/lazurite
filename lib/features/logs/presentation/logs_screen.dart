@@ -34,6 +34,7 @@ class _LogsScreenContentState extends State<_LogsScreenContent> {
   bool _autoScroll = true;
   int? _lastEntryCount;
   LogEntry? _lastEntry;
+  int? _lastOlderEntriesRequestCount;
 
   @override
   void initState() {
@@ -60,7 +61,12 @@ class _LogsScreenContentState extends State<_LogsScreenContent> {
       setState(() => _autoScroll = isAtBottom);
     }
 
-    if (_scrollController.offset <= 120) {
+    final logViewerState = context.read<LogViewerCubit>().state;
+    if (_scrollController.offset <= 120 &&
+        logViewerState.hasOlderEntries &&
+        !logViewerState.isLoadingOlderEntries &&
+        _lastOlderEntriesRequestCount != logViewerState.entries.length) {
+      _lastOlderEntriesRequestCount = logViewerState.entries.length;
       unawaited(context.read<LogViewerCubit>().loadOlderEntries());
     }
   }
@@ -114,6 +120,7 @@ class _LogsScreenContentState extends State<_LogsScreenContent> {
           });
           _lastEntryCount = state.entries.length;
           _lastEntry = state.entries.isEmpty ? null : state.entries.last;
+          _lastOlderEntriesRequestCount = null;
           return;
         }
 

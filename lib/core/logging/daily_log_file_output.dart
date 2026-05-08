@@ -94,8 +94,7 @@ class DailyLogFileOutput extends LogOutput {
     }
 
     final maxEventBytes = maxFileBytes > 1 ? maxFileBytes ~/ 2 : maxFileBytes;
-    final contentBytes = utf8.encode(content);
-    final boundedContent = contentBytes.length > maxEventBytes ? _tailUtf8(contentBytes, maxEventBytes) : content;
+    final boundedContent = _tailUtf8String(content, maxEventBytes);
     final boundedContentBytes = utf8.encode(boundedContent);
     if (await file.exists() && await file.length() + boundedContentBytes.length > maxFileBytes) {
       await _trimFileForAppend(file: file, incomingByteCount: boundedContentBytes.length);
@@ -105,9 +104,15 @@ class DailyLogFileOutput extends LogOutput {
 
   Future<void> _trimFileForAppend({required File file, required int incomingByteCount}) async {
     final existingBytes = await file.readAsBytes();
-    final marker = _trimMarker();
+    final existingBudget = maxFileBytes - incomingByteCount;
+    if (existingBudget <= 0) {
+      await file.writeAsString('', flush: true);
+      return;
+    }
+
+    final marker = _tailUtf8String(_trimMarker(), existingBudget);
     final markerBytes = utf8.encode(marker);
-    final retainedBudget = maxFileBytes - incomingByteCount - markerBytes.length;
+    final retainedBudget = existingBudget - markerBytes.length;
     if (retainedBudget <= 0) {
       await file.writeAsString(marker, flush: true);
       return;
@@ -125,13 +130,31 @@ class DailyLogFileOutput extends LogOutput {
     await file.writeAsString('$marker$tail', flush: true);
   }
 
-  String _tailUtf8(List<int> bytes, int maxBytes) {
-    if (bytes.length <= maxBytes) {
-      return utf8.decode(bytes, allowMalformed: true);
+  String _tailUtf8String(String value, int maxBytes) {
+    if (maxBytes <= 0) {
+      return '';
     }
 
-    final tailBytes = bytes.sublist(bytes.length - maxBytes);
-    return utf8.decode(tailBytes, allowMalformed: true);
+    final valueBytes = utf8.encode(value);
+    if (valueBytes.length <= maxBytes) {
+      return value;
+    }
+
+    final retainedRunes = <int>[];
+    var retainedBytes = 0;
+    final runes = value.runes.toList(growable: false);
+    for (var index = runes.length - 1; index >= 0; index -= 1) {
+      final rune = runes[index];
+      final runeByteCount = utf8.encode(String.fromCharCode(rune)).length;
+      if (retainedBytes + runeByteCount > maxBytes) {
+        break;
+      }
+
+      retainedRunes.add(rune);
+      retainedBytes += runeByteCount;
+    }
+
+    return String.fromCharCodes(retainedRunes.reversed);
   }
 
   String _trimMarker() {

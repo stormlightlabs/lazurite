@@ -47,5 +47,14 @@ void main() {
 
       expect(secondSnapshot, isNot(firstSnapshot));
     });
+
+    test('decodes retained logs as utf8', () async {
+      final file = File('${tempDirectory.path}/lazurite_2026-05-06.log');
+      await file.writeAsString('[I] TIME: 2026-05-06T10:00:01.000 Log: café\n');
+
+      final entries = await repository.readEntries([file]);
+
+      expect(entries.single.message, 'café');
+    });
   });
 }

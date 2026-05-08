@@ -109,5 +109,24 @@ void main() {
       expect(await file.length(), lessThanOrEqualTo(260));
       expect(await file.readAsString(), contains('x'));
     });
+
+    test('keeps file within cap when the trim marker and incoming event compete for a tiny budget', () async {
+      final output = DailyLogFileOutput(directoryPath: tempDirectory.path, maxFileBytes: 64);
+      final logger = Logger(
+        filter: ProductionFilter(),
+        printer: AppFileLogPrinter(),
+        output: output,
+        level: Level.trace,
+      );
+      await logger.init;
+
+      for (var index = 0; index < 6; index += 1) {
+        logger.w('AppLogger: tiny cap entry $index ${List.filled(80, 'y').join()}');
+      }
+      await logger.close();
+
+      final file = File('${tempDirectory.path}/${DailyLogFileOutput.fileNameFor(DateTime.now())}');
+      expect(await file.length(), lessThanOrEqualTo(64));
+    });
   });
 }
