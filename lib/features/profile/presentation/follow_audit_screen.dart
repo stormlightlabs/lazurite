@@ -32,7 +32,12 @@ class FollowAuditScreen extends StatelessWidget {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _AuditActionButton(status: state.status, selectedCount: selectedCount, isBusy: isBusy),
+                      child: _AuditActionButton(
+                        status: state.status,
+                        selectedCount: selectedCount,
+                        resultCount: state.results.length,
+                        isBusy: isBusy,
+                      ),
                     ),
                   ],
                 ),
@@ -182,29 +187,39 @@ class _HeaderCard extends StatelessWidget {
 }
 
 class _AuditActionButton extends StatelessWidget {
-  const _AuditActionButton({required this.status, required this.selectedCount, required this.isBusy});
+  const _AuditActionButton({
+    required this.status,
+    required this.selectedCount,
+    required this.resultCount,
+    required this.isBusy,
+  });
 
   final FollowAuditStatus status;
   final int selectedCount;
+  final int resultCount;
   final bool isBusy;
 
   @override
   Widget build(BuildContext context) {
-    if (status == FollowAuditStatus.initial) {
-      return FilledButton.icon(
-        key: const Key('follow_audit_scan_button'),
-        onPressed: isBusy ? null : () => context.read<FollowAuditCubit>().audit(),
-        icon: const Icon(Icons.manage_search_outlined),
-        label: Text(context.l10n.buttonScan),
-      );
-    }
-
     if (status == FollowAuditStatus.fetching || status == FollowAuditStatus.classifying) {
       return OutlinedButton.icon(
         key: const Key('follow_audit_cancel_button'),
         onPressed: () => context.read<FollowAuditCubit>().cancelAudit(),
         icon: const Icon(Icons.stop_circle_outlined),
         label: Text(context.l10n.buttonCancel),
+      );
+    }
+
+    if (status == FollowAuditStatus.initial ||
+        (resultCount == 0 &&
+            selectedCount == 0 &&
+            status != FollowAuditStatus.unfollowing &&
+            status != FollowAuditStatus.error)) {
+      return FilledButton.icon(
+        key: const Key('follow_audit_scan_button'),
+        onPressed: isBusy ? null : () => context.read<FollowAuditCubit>().audit(),
+        icon: const Icon(Icons.manage_search_outlined),
+        label: Text(context.l10n.buttonScan),
       );
     }
 

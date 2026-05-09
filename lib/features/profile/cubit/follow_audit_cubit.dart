@@ -128,7 +128,7 @@ class FollowAuditCubit extends Cubit<FollowAuditState> {
                 totalFollows: _displayTotalFor(batch),
                 progress: batch.classifiedCount,
                 failedProfiles: batch.failedCount,
-                visibleStatuses: FollowStatus.values.toSet(),
+                visibleStatuses: state.visibleStatuses.isEmpty ? FollowStatus.values.toSet() : state.visibleStatuses,
               ),
             );
           },

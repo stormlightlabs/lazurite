@@ -16,6 +16,7 @@ class _FakeFollowAuditRepository implements FollowAuditRepository {
     Exception? unfollowError,
     List<int>? classifyProgressValues,
     Completer<void>? scanGate,
+    Future<void> Function(int batchIndex)? afterBatch,
   }) : _classifyResult = classifyResult,
        _scanBatches = scanBatches,
        _classifyFailedCount = classifyFailedCount,
@@ -24,7 +25,8 @@ class _FakeFollowAuditRepository implements FollowAuditRepository {
        _scanError = scanError,
        _unfollowError = unfollowError,
        _classifyProgressValues = classifyProgressValues,
-       _scanGate = scanGate;
+       _scanGate = scanGate,
+       _afterBatch = afterBatch;
 
   final List<ClassifiedFollow> _classifyResult;
   final List<FollowAuditBatch>? _scanBatches;
@@ -35,6 +37,7 @@ class _FakeFollowAuditRepository implements FollowAuditRepository {
   final Exception? _unfollowError;
   final List<int>? _classifyProgressValues;
   final Completer<void>? _scanGate;
+  final Future<void> Function(int batchIndex)? _afterBatch;
 
   @override
   Future<({List<ClassifiedFollow> results, int failedCount})> classifyFollows(
@@ -63,8 +66,10 @@ class _FakeFollowAuditRepository implements FollowAuditRepository {
 
     final batches = _scanBatches;
     if (batches != null) {
-      for (final batch in batches) {
+      for (var i = 0; i < batches.length; i++) {
+        final batch = batches[i];
         yield batch;
+        await _afterBatch?.call(i);
         await Future<void>.delayed(Duration.zero);
       }
       await _scanGate?.future;
@@ -266,6 +271,58 @@ void main() {
             .having((s) => s.progress, 'progress', 100)
             .having((s) => s.totalFollows, 'totalFollows', 789),
         isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.ready),
+      ],
+    );
+
+    late Completer<void> releaseSecondBatch;
+    blocTest<FollowAuditCubit, FollowAuditState>(
+      'preserves visibility filters across streamed batches',
+      build: () {
+        releaseSecondBatch = Completer<void>();
+        return _cubit(
+          _FakeFollowAuditRepository(
+            scanBatches: [
+              FollowAuditBatch(
+                totalFollows: 2,
+                scannedCount: 1,
+                classifiedCount: 1,
+                results: [_classified('did:plc:a', FollowStatus.deleted)],
+                failedCount: 0,
+                isComplete: false,
+              ),
+              FollowAuditBatch(
+                totalFollows: 2,
+                scannedCount: 2,
+                classifiedCount: 2,
+                results: [_classified('did:plc:b', FollowStatus.blockedBy)],
+                failedCount: 0,
+                isComplete: true,
+              ),
+            ],
+            afterBatch: (index) => index == 0 ? releaseSecondBatch.future : Future<void>.value(),
+          ),
+        );
+      },
+      act: (cubit) async {
+        unawaited(cubit.audit());
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        cubit.toggleVisibility(FollowStatus.blockedBy);
+        releaseSecondBatch.complete();
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+      },
+      expect: () => [
+        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.fetching),
+        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.classifying),
+        isA<FollowAuditState>().having(
+          (s) => s.visibleStatuses,
+          'visibleStatuses',
+          isNot(contains(FollowStatus.blockedBy)),
+        ),
+        isA<FollowAuditState>()
+            .having((s) => s.status, 'status', FollowAuditStatus.ready)
+            .having((s) => s.visibleStatuses, 'visibleStatuses', isNot(contains(FollowStatus.blockedBy))),
       ],
     );
 

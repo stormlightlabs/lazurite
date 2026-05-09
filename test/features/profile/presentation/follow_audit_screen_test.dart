@@ -300,6 +300,10 @@ void main() {
 
     expect(find.byKey(const Key('follow_audit_empty_message')), findsOneWidget);
     expect(find.text('Scan your 788 follows for deleted, suspended, blocked, and hidden accounts.'), findsWidgets);
+    expect(find.byKey(const Key('follow_audit_scan_button')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('follow_audit_scan_button')));
+    verify(() => cubit.audit()).called(1);
   });
 
   testWidgets('tapping a handle navigates to profile screen', (tester) async {
