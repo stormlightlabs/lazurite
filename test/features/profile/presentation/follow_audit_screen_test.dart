@@ -84,15 +84,16 @@ void main() {
     expect(find.text('Scan'), findsOneWidget);
   });
 
-  testWidgets('fetching state shows progress bar with count text', (tester) async {
-    const state = FollowAuditState(status: FollowAuditStatus.fetching, progress: 3, totalFollows: 7);
+  testWidgets('fetching state shows getting follow count progress and cancel button', (tester) async {
+    const state = FollowAuditState(status: FollowAuditStatus.fetching);
     when(() => cubit.state).thenReturn(state);
     whenListen(cubit, const Stream<FollowAuditState>.empty(), initialState: state);
 
     await tester.pumpWidget(_buildSubject(cubit));
 
     expect(find.byKey(const Key('follow_audit_progress')), findsOneWidget);
-    expect(find.text('Fetching follows: 3/7'), findsOneWidget);
+    expect(find.text('Getting follow count...'), findsWidgets);
+    expect(find.byKey(const Key('follow_audit_cancel_button')), findsOneWidget);
   });
 
   testWidgets('classifying state shows cancel button and streams existing results', (tester) async {
@@ -288,6 +289,17 @@ void main() {
 
     expect(find.byKey(const Key('follow_audit_empty_message')), findsOneWidget);
     expect(find.text('No problematic follows found'), findsOneWidget);
+  });
+
+  testWidgets('complete state with no results shows updated follow count prompt', (tester) async {
+    const state = FollowAuditState(status: FollowAuditStatus.complete, totalFollows: 788, progress: 788);
+    when(() => cubit.state).thenReturn(state);
+    whenListen(cubit, const Stream<FollowAuditState>.empty(), initialState: state);
+
+    await tester.pumpWidget(_buildSubject(cubit));
+
+    expect(find.byKey(const Key('follow_audit_empty_message')), findsOneWidget);
+    expect(find.text('Scan your 788 follows for deleted, suspended, blocked, and hidden accounts.'), findsWidgets);
   });
 
   testWidgets('tapping a handle navigates to profile screen', (tester) async {

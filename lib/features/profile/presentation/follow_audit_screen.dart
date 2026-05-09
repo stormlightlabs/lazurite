@@ -26,7 +26,7 @@ class FollowAuditScreen extends StatelessWidget {
 
           return Column(
             children: [
-              _HeaderCard(totalFollows: state.totalFollows),
+              _HeaderCard(scannedFollows: state.progress, totalFollows: state.totalFollows, status: state.status),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: Row(
@@ -130,12 +130,15 @@ class FollowAuditScreen extends StatelessWidget {
 }
 
 class _HeaderCard extends StatelessWidget {
-  const _HeaderCard({required this.totalFollows});
+  const _HeaderCard({required this.scannedFollows, required this.totalFollows, required this.status});
 
+  final int scannedFollows;
   final int totalFollows;
+  final FollowAuditStatus status;
 
   @override
   Widget build(BuildContext context) {
+    final subtitle = _subtitle(context);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -152,13 +155,29 @@ class _HeaderCard extends StatelessWidget {
             style: context.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 1.1),
           ),
           const SizedBox(height: 6),
-          Text(
-            totalFollows > 0 ? context.l10n.formatFollowsScanned(totalFollows) : context.l10n.messageFollowAuditIntro,
-            style: context.textTheme.bodyMedium,
-          ),
+          Text(subtitle, style: context.textTheme.bodyMedium),
         ],
       ),
     );
+  }
+
+  String _subtitle(BuildContext context) {
+    if (status == FollowAuditStatus.fetching) {
+      return context.l10n.messageGettingFollowCount;
+    }
+    if (status == FollowAuditStatus.complete && totalFollows > 0) {
+      return context.l10n.formatFollowAuditPromptWithCount(totalFollows);
+    }
+    if (totalFollows > 0 && scannedFollows <= 0) {
+      return context.l10n.formatFollowAuditPromptWithCount(totalFollows);
+    }
+    if (totalFollows <= 0 && scannedFollows <= 0) {
+      return context.l10n.messageFollowAuditIntro;
+    }
+    if (status == FollowAuditStatus.classifying && totalFollows > 0) {
+      return context.l10n.formatClassifyingProgress(scannedFollows, totalFollows);
+    }
+    return context.l10n.formatFollowsScanned(scannedFollows);
   }
 }
 
@@ -171,7 +190,7 @@ class _AuditActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (status == FollowAuditStatus.initial || status == FollowAuditStatus.fetching) {
+    if (status == FollowAuditStatus.initial) {
       return FilledButton.icon(
         key: const Key('follow_audit_scan_button'),
         onPressed: isBusy ? null : () => context.read<FollowAuditCubit>().audit(),
@@ -180,7 +199,7 @@ class _AuditActionButton extends StatelessWidget {
       );
     }
 
-    if (status == FollowAuditStatus.classifying) {
+    if (status == FollowAuditStatus.fetching || status == FollowAuditStatus.classifying) {
       return OutlinedButton.icon(
         key: const Key('follow_audit_cancel_button'),
         onPressed: () => context.read<FollowAuditCubit>().cancelAudit(),
@@ -212,9 +231,10 @@ class _ProgressSection extends StatelessWidget {
     }
 
     final shownTotal = totalFollows > 0 ? totalFollows : math.max(progress, 1);
-    final value = (progress / shownTotal).clamp(0.0, 1.0);
-    final label = status == FollowAuditStatus.fetching
-        ? context.l10n.formatFetchingFollowsProgress(progress, shownTotal)
+    final isFetchingCount = status == FollowAuditStatus.fetching;
+    final value = isFetchingCount ? null : (progress / shownTotal).clamp(0.0, 1.0);
+    final label = isFetchingCount
+        ? context.l10n.messageGettingFollowCount
         : context.l10n.formatClassifyingProgress(progress, shownTotal);
 
     return Padding(
@@ -446,19 +466,27 @@ class _ResultsPanelState extends State<_ResultsPanel> {
       return Center(child: Text(context.l10n.messageFollowAuditStartPrompt));
     }
 
+    if (widget.state.status == FollowAuditStatus.fetching) {
+      return _CenteredAuditSpinner(message: context.l10n.messageGettingFollowCount);
+    }
+
     if (widget.state.results.isEmpty &&
         (widget.state.status == FollowAuditStatus.ready || widget.state.status == FollowAuditStatus.complete)) {
       return Center(
-        child: Text(context.l10n.messageNoProblematicFollows, key: const Key('follow_audit_empty_message')),
+        child: Text(
+          widget.state.status == FollowAuditStatus.complete && widget.state.totalFollows > 0
+              ? context.l10n.formatFollowAuditPromptWithCount(widget.state.totalFollows)
+              : context.l10n.messageNoProblematicFollows,
+          key: const Key('follow_audit_empty_message'),
+          textAlign: TextAlign.center,
+        ),
       );
     }
 
     if (widget.state.results.isEmpty && widget.state.status == FollowAuditStatus.classifying) {
-      return Center(
-        child: Text(
-          context.l10n.formatClassifyingProgress(widget.state.progress, math.max(widget.state.totalFollows, 1)),
-          key: const Key('follow_audit_streaming_empty_message'),
-        ),
+      return _CenteredAuditSpinner(
+        key: const Key('follow_audit_streaming_empty_message'),
+        message: context.l10n.formatClassifyingProgress(widget.state.progress, math.max(widget.state.totalFollows, 1)),
       );
     }
 
@@ -483,6 +511,26 @@ class _ResultsPanelState extends State<_ResultsPanel> {
           child: _ResultRow(index: entry.index, item: entry.item),
         );
       },
+    );
+  }
+}
+
+class _CenteredAuditSpinner extends StatelessWidget {
+  const _CenteredAuditSpinner({super.key, required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2)),
+          const SizedBox(height: 12),
+          Text(message, textAlign: TextAlign.center, style: context.textTheme.bodyMedium),
+        ],
+      ),
     );
   }
 }

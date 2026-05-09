@@ -26,6 +26,7 @@ class FollowRecordPage {
 
 class FollowAuditBatch {
   const FollowAuditBatch({
+    required this.totalFollows,
     required this.scannedCount,
     required this.classifiedCount,
     required this.results,
@@ -33,6 +34,7 @@ class FollowAuditBatch {
     required this.isComplete,
   });
 
+  final int? totalFollows;
   final int scannedCount;
   final int classifiedCount;
   final List<ClassifiedFollow> results;
@@ -90,6 +92,21 @@ class FollowAuditRepository {
   final dynamic _bluesky;
   final AppViewRequestContext _appViewContext;
 
+  Future<int?> fetchFollowCount(String did) async {
+    _assertCurrentSessionRepoAccess(did: did, operation: 'fetchFollowCount');
+    try {
+      final response = await _bluesky.actor.getProfile(
+        actor: did,
+        $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.actor.getProfile'),
+      );
+      final count = response.data.followsCount;
+      return count is int && count >= 0 ? count : null;
+    } catch (error, stackTrace) {
+      log.w('FollowAuditRepository: failed to fetch followsCount for $did', error: error, stackTrace: stackTrace);
+      return null;
+    }
+  }
+
   Future<FollowRecordPage> fetchFollowPage(String did, {String? cursor, int limit = 100}) async {
     _assertCurrentSessionRepoAccess(did: did, operation: 'fetchFollowPage');
     final response = await _bluesky.atproto.repo.listRecords(
@@ -113,6 +130,7 @@ class FollowAuditRepository {
 
   Stream<FollowAuditBatch> scanFollows(String did) async* {
     _assertCurrentSessionRepoAccess(did: did, operation: 'scanFollows');
+    final expectedTotalFollows = await fetchFollowCount(did);
     var scannedCount = 0;
     var classifiedCount = 0;
     var failedCount = 0;
@@ -125,6 +143,7 @@ class FollowAuditRepository {
 
       if (page.records.isEmpty) {
         yield FollowAuditBatch(
+          totalFollows: expectedTotalFollows,
           scannedCount: scannedCount,
           classifiedCount: classifiedCount,
           results: const [],
@@ -138,6 +157,7 @@ class FollowAuditRepository {
       classifiedCount += page.records.length;
       failedCount += classified.failedCount;
       yield FollowAuditBatch(
+        totalFollows: expectedTotalFollows,
         scannedCount: scannedCount,
         classifiedCount: classifiedCount,
         results: classified.results,

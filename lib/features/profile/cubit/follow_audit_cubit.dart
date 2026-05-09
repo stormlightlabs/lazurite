@@ -103,7 +103,7 @@ class FollowAuditCubit extends Cubit<FollowAuditState> {
 
     emit(
       state.copyWith(
-        status: FollowAuditStatus.classifying,
+        status: FollowAuditStatus.fetching,
         results: const [],
         totalFollows: 0,
         progress: 0,
@@ -125,7 +125,7 @@ class FollowAuditCubit extends Cubit<FollowAuditState> {
               state.copyWith(
                 status: batch.isComplete ? FollowAuditStatus.ready : FollowAuditStatus.classifying,
                 results: [...state.results, ...batch.results],
-                totalFollows: batch.scannedCount,
+                totalFollows: _displayTotalFor(batch),
                 progress: batch.classifiedCount,
                 failedProfiles: batch.failedCount,
                 visibleStatuses: FollowStatus.values.toSet(),
@@ -145,7 +145,8 @@ class FollowAuditCubit extends Cubit<FollowAuditState> {
             }
           },
           onDone: () {
-            if (_isActiveAudit(generation) && state.status == FollowAuditStatus.classifying) {
+            if (_isActiveAudit(generation) &&
+                (state.status == FollowAuditStatus.fetching || state.status == FollowAuditStatus.classifying)) {
               emit(state.copyWith(status: FollowAuditStatus.ready));
             }
             if (_isActiveAudit(generation)) {
@@ -166,7 +167,8 @@ class FollowAuditCubit extends Cubit<FollowAuditState> {
 
   Future<void> cancelAudit() async {
     final subscription = _scanSubscription;
-    if (subscription == null || state.status != FollowAuditStatus.classifying) {
+    if (subscription == null ||
+        (state.status != FollowAuditStatus.fetching && state.status != FollowAuditStatus.classifying)) {
       return;
     }
 
@@ -183,6 +185,14 @@ class FollowAuditCubit extends Cubit<FollowAuditState> {
   }
 
   bool _isActiveAudit(int generation) => !isClosed && generation == _auditGeneration;
+
+  int _displayTotalFor(FollowAuditBatch batch) {
+    final expectedTotal = batch.totalFollows;
+    if (expectedTotal == null) {
+      return batch.scannedCount;
+    }
+    return expectedTotal < batch.scannedCount ? batch.scannedCount : expectedTotal;
+  }
 
   /// Toggles the selection of the result at [index].
   void toggleSelection(int index) {
@@ -226,8 +236,18 @@ class FollowAuditCubit extends Cubit<FollowAuditState> {
       final count = await _repository.batchUnfollow(selected, _ownDid);
       final selectedUris = selected.map((r) => r.record.uri).toSet();
       final remaining = state.results.where((r) => !selectedUris.contains(r.record.uri)).toList();
+      final updatedTotal = (state.totalFollows - count).clamp(0, state.totalFollows);
+      final updatedProgress = (state.progress - count).clamp(0, state.progress);
 
-      emit(state.copyWith(status: FollowAuditStatus.complete, results: remaining, unfollowedCount: count));
+      emit(
+        state.copyWith(
+          status: FollowAuditStatus.complete,
+          results: remaining,
+          totalFollows: updatedTotal,
+          progress: updatedProgress,
+          unfollowedCount: count,
+        ),
+      );
     } catch (error, stackTrace) {
       log.e('FollowAuditCubit: unfollow failed', error: error, stackTrace: stackTrace);
       emit(state.copyWith(status: FollowAuditStatus.error, errorMessage: error.toString()));

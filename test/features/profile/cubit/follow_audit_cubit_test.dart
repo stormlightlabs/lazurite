@@ -73,6 +73,7 @@ class _FakeFollowAuditRepository implements FollowAuditRepository {
 
     if (_classifyError != null) throw _classifyError;
     yield FollowAuditBatch(
+      totalFollows: _classifyResult.length,
       scannedCount: _classifyResult.length,
       classifiedCount: _classifyResult.length,
       results: _classifyResult,
@@ -141,13 +142,13 @@ void main() {
 
   group('FollowAuditCubit.audit', () {
     blocTest<FollowAuditCubit, FollowAuditState>(
-      'transitions initial → classifying → ready',
+      'transitions initial → fetching → ready',
       build: () =>
           _cubit(_FakeFollowAuditRepository(classifyResult: [_classified('did:plc:alice', FollowStatus.blockedBy)])),
       act: (cubit) => cubit.audit(),
       expect: () => [
         isA<FollowAuditState>()
-            .having((s) => s.status, 'status', FollowAuditStatus.classifying)
+            .having((s) => s.status, 'status', FollowAuditStatus.fetching)
             .having((s) => s.results, 'results', isEmpty),
         isA<FollowAuditState>()
             .having((s) => s.status, 'status', FollowAuditStatus.ready)
@@ -162,6 +163,7 @@ void main() {
         _FakeFollowAuditRepository(
           scanBatches: [
             FollowAuditBatch(
+              totalFollows: 3,
               scannedCount: 2,
               classifiedCount: 2,
               results: [_classified('did:plc:a', FollowStatus.deleted)],
@@ -169,6 +171,7 @@ void main() {
               isComplete: false,
             ),
             FollowAuditBatch(
+              totalFollows: 3,
               scannedCount: 3,
               classifiedCount: 3,
               results: [_classified('did:plc:b', FollowStatus.blockedBy)],
@@ -181,12 +184,12 @@ void main() {
       act: (cubit) => cubit.audit(),
       expect: () => [
         isA<FollowAuditState>()
-            .having((s) => s.status, 'status', FollowAuditStatus.classifying)
+            .having((s) => s.status, 'status', FollowAuditStatus.fetching)
             .having((s) => s.results, 'results', isEmpty),
         isA<FollowAuditState>()
             .having((s) => s.status, 'status', FollowAuditStatus.classifying)
             .having((s) => s.progress, 'progress', 2)
-            .having((s) => s.totalFollows, 'totalFollows', 2)
+            .having((s) => s.totalFollows, 'totalFollows', 3)
             .having((s) => s.results.length, 'results', 1),
         isA<FollowAuditState>()
             .having((s) => s.status, 'status', FollowAuditStatus.ready)
@@ -203,6 +206,7 @@ void main() {
         _FakeFollowAuditRepository(
           scanBatches: [
             FollowAuditBatch(
+              totalFollows: 5,
               scannedCount: 1,
               classifiedCount: 1,
               results: [_classified('did:plc:a', FollowStatus.deleted).copyWith(selected: true)],
@@ -221,7 +225,7 @@ void main() {
       },
       expect: () => [
         isA<FollowAuditState>()
-            .having((s) => s.status, 'status', FollowAuditStatus.classifying)
+            .having((s) => s.status, 'status', FollowAuditStatus.fetching)
             .having((s) => s.results, 'results', isEmpty),
         isA<FollowAuditState>()
             .having((s) => s.status, 'status', FollowAuditStatus.classifying)
@@ -233,11 +237,44 @@ void main() {
     );
 
     blocTest<FollowAuditCubit, FollowAuditState>(
+      'uses expected follow count as progress denominator while scan is incomplete',
+      build: () => _cubit(
+        _FakeFollowAuditRepository(
+          scanBatches: [
+            FollowAuditBatch(
+              totalFollows: 789,
+              scannedCount: 100,
+              classifiedCount: 100,
+              results: [_classified('did:plc:a', FollowStatus.deleted)],
+              failedCount: 0,
+              isComplete: false,
+            ),
+          ],
+          scanGate: Completer<void>(),
+        ),
+      ),
+      act: (cubit) async {
+        unawaited(cubit.audit());
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        await cubit.cancelAudit();
+      },
+      expect: () => [
+        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.fetching),
+        isA<FollowAuditState>()
+            .having((s) => s.status, 'status', FollowAuditStatus.classifying)
+            .having((s) => s.progress, 'progress', 100)
+            .having((s) => s.totalFollows, 'totalFollows', 789),
+        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.ready),
+      ],
+    );
+
+    blocTest<FollowAuditCubit, FollowAuditState>(
       'transitions to error when scan fails',
       build: () => _cubit(_FakeFollowAuditRepository(scanError: Exception('network error'))),
       act: (cubit) => cubit.audit(),
       expect: () => [
-        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.classifying),
+        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.fetching),
         isA<FollowAuditState>()
             .having((s) => s.status, 'status', FollowAuditStatus.error)
             .having((s) => s.errorMessage, 'errorMessage', isNotNull),
@@ -249,13 +286,20 @@ void main() {
       build: () => _cubit(
         _FakeFollowAuditRepository(
           scanBatches: const [
-            FollowAuditBatch(scannedCount: 2, classifiedCount: 2, results: [], failedCount: 0, isComplete: true),
+            FollowAuditBatch(
+              totalFollows: 2,
+              scannedCount: 2,
+              classifiedCount: 2,
+              results: [],
+              failedCount: 0,
+              isComplete: true,
+            ),
           ],
         ),
       ),
       act: (cubit) => cubit.audit(),
       expect: () => [
-        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.classifying),
+        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.fetching),
         isA<FollowAuditState>()
             .having((s) => s.status, 'status', FollowAuditStatus.ready)
             .having((s) => s.results, 'results', isEmpty)
@@ -268,13 +312,20 @@ void main() {
       build: () => _cubit(
         _FakeFollowAuditRepository(
           scanBatches: const [
-            FollowAuditBatch(scannedCount: 1, classifiedCount: 1, results: [], failedCount: 3, isComplete: true),
+            FollowAuditBatch(
+              totalFollows: 1,
+              scannedCount: 1,
+              classifiedCount: 1,
+              results: [],
+              failedCount: 3,
+              isComplete: true,
+            ),
           ],
         ),
       ),
       act: (cubit) => cubit.audit(),
       expect: () => [
-        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.classifying),
+        isA<FollowAuditState>().having((s) => s.status, 'status', FollowAuditStatus.fetching),
         isA<FollowAuditState>()
             .having((s) => s.status, 'status', FollowAuditStatus.ready)
             .having((s) => s.failedProfiles, 'failedProfiles', 3),
@@ -384,6 +435,8 @@ void main() {
       },
       seed: () => FollowAuditState(
         status: FollowAuditStatus.ready,
+        totalFollows: 10,
+        progress: 10,
         results: [
           _classified('did:plc:a', FollowStatus.deleted).copyWith(selected: true),
           _classified('did:plc:b', FollowStatus.blockedBy).copyWith(selected: true),
@@ -396,6 +449,8 @@ void main() {
         isA<FollowAuditState>()
             .having((s) => s.status, 'status', FollowAuditStatus.complete)
             .having((s) => s.unfollowedCount, 'unfollowedCount', 2)
+            .having((s) => s.totalFollows, 'totalFollows', 8)
+            .having((s) => s.progress, 'progress', 8)
             .having((s) => s.results.length, 'results length', 1),
       ],
     );

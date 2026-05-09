@@ -2635,6 +2635,12 @@ abstract class AppLocalizations {
   /// **'Fetching follows: {progress}/{total}'**
   String formatFetchingFollowsProgress(int progress, int total);
 
+  /// Follow audit loading message while fetching the account follow count
+  ///
+  /// In en, this message translates to:
+  /// **'Getting follow count...'**
+  String get messageGettingFollowCount;
+
   /// Snackbar message after following starter pack members
   ///
   /// In en, this message translates to:
@@ -2646,6 +2652,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 follow scanned for problematic accounts} other{{count} follows scanned for problematic accounts}}'**
   String formatFollowsScanned(int count);
+
+  /// Follow audit intro message when the follow count is known
+  ///
+  /// In en, this message translates to:
+  /// **'Scan your {count, plural, =1{1 follow} other{{count} follows}} for deleted, suspended, blocked, and hidden accounts.'**
+  String formatFollowAuditPromptWithCount(int count);
 
   /// Tooltip to hide a follow audit status
   ///

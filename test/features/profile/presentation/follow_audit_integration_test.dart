@@ -33,6 +33,7 @@ class _ScriptedFollowAuditRepository implements FollowAuditRepository {
   @override
   Stream<FollowAuditBatch> scanFollows(String did) async* {
     yield FollowAuditBatch(
+      totalFollows: records.length,
       scannedCount: records.length,
       classifiedCount: records.length,
       results: classified,

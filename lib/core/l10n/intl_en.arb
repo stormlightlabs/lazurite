@@ -1969,6 +1969,10 @@
       }
     }
   },
+  "messageGettingFollowCount": "Getting follow count...",
+  "@messageGettingFollowCount": {
+    "description": "Follow audit loading message while fetching the account follow count"
+  },
   "formatFollowedMemberCount": "Followed {count, plural, =1{1 member} other{{count} members}}",
   "@formatFollowedMemberCount": {
     "description": "Snackbar message after following starter pack members",
@@ -1986,6 +1990,16 @@
       "count": {
         "type": "int",
         "example": "245"
+      }
+    }
+  },
+  "formatFollowAuditPromptWithCount": "Scan your {count, plural, =1{1 follow} other{{count} follows}} for deleted, suspended, blocked, and hidden accounts.",
+  "@formatFollowAuditPromptWithCount": {
+    "description": "Follow audit intro message when the follow count is known",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "788"
       }
     }
   },
