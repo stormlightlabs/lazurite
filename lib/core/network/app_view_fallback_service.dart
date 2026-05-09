@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:atproto_core/atproto_core.dart' as atp_core show XRPCException;
+import 'package:poptart_core/poptart_core.dart' as atp_core show XRPCException;
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';

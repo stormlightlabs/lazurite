@@ -1,10 +1,9 @@
-import 'package:atproto/atproto.dart' as atp;
-import 'package:atproto_core/atproto_core.dart' as atp_core;
-import 'package:atproto_oauth/atproto_oauth.dart' as atp_oauth;
-import 'package:bluesky/bluesky.dart';
-import 'package:bluesky/bluesky_chat.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart' as atp;
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:poptart_core/poptart_core.dart' as atp_core;
+import 'package:poptart_oauth/poptart_oauth.dart' as atp_oauth;
 
 /// Creates a Bluesky client from authentication tokens.
 ///

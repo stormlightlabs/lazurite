@@ -1,5 +1,5 @@
-import 'package:atproto/com_atproto_moderation_defs.dart';
-import 'package:atproto_core/atproto_core.dart';
+import 'package:poptart_lex/com/atproto/moderation/defs.dart';
+import 'package:poptart_core/poptart_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/l10n/l10n.dart';

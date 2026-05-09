@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:atproto/com_atproto_label_defs.dart';
-import 'package:bluesky/app_bsky_actor_defs.dart';
-import 'package:bluesky/app_bsky_actor_getpreferences.dart';
-import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bluesky/app_bsky_labeler_defs.dart';
-import 'package:bluesky/app_bsky_labeler_getservices.dart';
-import 'package:bluesky/app_bsky_notification_listnotifications.dart' as notifications;
-import 'package:bluesky/bluesky.dart';
-import 'package:bluesky/moderation.dart' as bsky_moderation;
+import 'package:poptart_lex/com/atproto/label/defs.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/actor/get_preferences.dart';
+import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:poptart_lex/app/bsky/labeler/defs.dart';
+import 'package:poptart_lex/app/bsky/labeler/get_services.dart';
+import 'package:poptart_lex/app/bsky/notification/list_notifications.dart' as notifications;
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:bsky_moderation/bsky_moderation.dart' as bsky_moderation;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';

@@ -1,8 +1,5 @@
 import 'dart:async';
 
-import 'package:atproto/atproto.dart' as atp;
-import 'package:atproto_core/atproto_core.dart' show AtUri;
-import 'package:bluesky/bluesky.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +7,8 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/constellation_client.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart' as atp;
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/core/router/app_route_page.dart';
 import 'package:lazurite/core/router/app_shell.dart';

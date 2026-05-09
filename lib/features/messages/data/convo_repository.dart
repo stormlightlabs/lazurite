@@ -1,6 +1,6 @@
-import 'package:bluesky/bluesky_chat.dart';
-import 'package:bluesky/chat_bsky_convo_defs.dart';
-import 'package:bluesky/chat_bsky_convo_getmessages.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:poptart_lex/chat/bsky/convo/defs.dart';
+import 'package:poptart_lex/chat/bsky/convo/get_messages.dart';
 import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';

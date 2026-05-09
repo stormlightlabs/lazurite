@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:atproto/com_atproto_repo_applywrites.dart';
-import 'package:atproto_core/atproto_core.dart' show AtUri;
-import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:poptart_lex/com/atproto/repo/apply_writes.dart';
+import 'package:poptart_core/poptart_core.dart' show AtUri;
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:equatable/equatable.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';

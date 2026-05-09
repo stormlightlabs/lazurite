@@ -1,7 +1,7 @@
-import 'package:bluesky/app_bsky_actor_defs.dart';
-import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bluesky/app_bsky_graph_defs.dart' as bsky_graph;
-import 'package:bluesky/moderation.dart' as bsky_moderation;
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:poptart_lex/app/bsky/graph/defs.dart' as bsky_graph;
+import 'package:bsky_moderation/bsky_moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';

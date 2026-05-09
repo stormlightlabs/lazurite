@@ -1,5 +1,5 @@
-import 'package:bluesky/app_bsky_video_getuploadlimits.dart';
-import 'package:bluesky/bluesky.dart';
+import 'package:poptart_lex/app/bsky/video/get_upload_limits.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 
 abstract interface class VideoUploadLimitsApi {
   Future<VideoGetUploadLimitsOutput> getUploadLimits();

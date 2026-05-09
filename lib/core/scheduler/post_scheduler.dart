@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:atproto_core/atproto_core.dart' show Blob;
-import 'package:bluesky/app_bsky_video_defs.dart' show KnownJobStatusState;
+import 'package:poptart_core/poptart_core.dart' show Blob;
+import 'package:poptart_lex/app/bsky/video/defs.dart' show KnownJobStatusState;
 import 'package:bluesky_text/bluesky_text.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lazurite/core/database/app_database.dart';

@@ -1,14 +1,14 @@
 import 'dart:convert';
 
-import 'package:atproto_core/atproto_core.dart';
-import 'package:bluesky/app_bsky_actor_defs.dart';
-import 'package:bluesky/app_bsky_embed_external.dart';
-import 'package:bluesky/app_bsky_embed_images.dart';
-import 'package:bluesky/app_bsky_embed_record.dart';
-import 'package:bluesky/app_bsky_embed_recordwithmedia.dart';
-import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bluesky/app_bsky_feed_post.dart';
-import 'package:bluesky/app_bsky_richtext_facet.dart';
+import 'package:poptart_core/poptart_core.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/embed/external.dart';
+import 'package:poptart_lex/app/bsky/embed/images.dart';
+import 'package:poptart_lex/app/bsky/embed/record.dart';
+import 'package:poptart_lex/app/bsky/embed/record_with_media.dart';
+import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:poptart_lex/app/bsky/feed/post.dart';
+import 'package:poptart_lex/app/bsky/richtext/facet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';

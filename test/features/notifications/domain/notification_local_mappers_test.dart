@@ -1,6 +1,6 @@
-import 'package:atproto_core/atproto_core.dart';
-import 'package:bluesky/app_bsky_actor_defs.dart';
-import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
+import 'package:poptart_core/poptart_core.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/notification/list_notifications.dart' as bsky;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/notifications/domain/notification_local_mappers.dart';
 import 'package:lazurite/features/notifications/domain/notification_local_models.dart';

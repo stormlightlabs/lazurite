@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:atproto/com_atproto_repo_listrecords.dart';
-import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:poptart_lex/com/atproto/repo/list_records.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

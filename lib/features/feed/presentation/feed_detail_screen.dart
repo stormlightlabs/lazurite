@@ -1,5 +1,5 @@
-import 'package:atproto_core/atproto_core.dart';
-import 'package:bluesky/app_bsky_feed_defs.dart';
+import 'package:poptart_core/poptart_core.dart';
+import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';

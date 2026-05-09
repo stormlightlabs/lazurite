@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:atproto_core/atproto_core.dart' as atp_core;
+import 'package:poptart_core/poptart_core.dart' as atp_core;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/logging/app_logger.dart';

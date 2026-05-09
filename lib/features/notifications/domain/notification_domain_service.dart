@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:atproto_core/atproto_core.dart';
-import 'package:bluesky/app_bsky_notification_listnotifications.dart';
+import 'package:poptart_core/poptart_core.dart';
+import 'package:poptart_lex/app/bsky/notification/list_notifications.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';

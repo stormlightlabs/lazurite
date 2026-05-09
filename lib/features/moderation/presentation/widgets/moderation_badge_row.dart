@@ -1,4 +1,4 @@
-import 'package:bluesky/moderation.dart' as bsky_moderation;
+import 'package:bsky_moderation/bsky_moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';

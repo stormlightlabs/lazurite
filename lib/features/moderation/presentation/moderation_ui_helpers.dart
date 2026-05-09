@@ -1,6 +1,6 @@
-import 'package:atproto/com_atproto_label_defs.dart';
-import 'package:bluesky/app_bsky_actor_defs.dart';
-import 'package:bluesky/moderation.dart' as bsky_moderation;
+import 'package:poptart_lex/com/atproto/label/defs.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:bsky_moderation/bsky_moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/l10n/app_localizations.dart';

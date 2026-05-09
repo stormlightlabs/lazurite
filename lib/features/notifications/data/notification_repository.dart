@@ -1,7 +1,7 @@
-import 'package:bluesky/app_bsky_notification_listnotifications.dart';
-import 'package:bluesky/app_bsky_notification_registerpush.dart';
-import 'package:bluesky/app_bsky_notification_unregisterpush.dart';
-import 'package:bluesky/bluesky.dart';
+import 'package:poptart_lex/app/bsky/notification/list_notifications.dart';
+import 'package:poptart_lex/app/bsky/notification/register_push.dart';
+import 'package:poptart_lex/app/bsky/notification/unregister_push.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';

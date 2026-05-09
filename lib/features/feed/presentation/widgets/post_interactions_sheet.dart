@@ -1,5 +1,5 @@
-import 'package:atproto_core/atproto_core.dart';
-import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:poptart_core/poptart_core.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:flutter/material.dart';
 import 'package:lazurite/core/cache/lazurite_image_cache.dart';
 import 'package:lazurite/core/l10n/l10n.dart';

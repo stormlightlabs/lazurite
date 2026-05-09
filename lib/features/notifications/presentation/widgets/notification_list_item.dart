@@ -1,5 +1,5 @@
-import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
-import 'package:bluesky/moderation.dart' as bsky_moderation;
+import 'package:poptart_lex/app/bsky/notification/list_notifications.dart' as bsky;
+import 'package:bsky_moderation/bsky_moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart' hide Notification;
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/l10n/l10n.dart';

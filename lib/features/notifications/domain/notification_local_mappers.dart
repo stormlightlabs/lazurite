@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:ui';
 
-import 'package:bluesky/app_bsky_notification_listnotifications.dart';
+import 'package:poptart_lex/app/bsky/notification/list_notifications.dart';
 import 'package:crypto/crypto.dart';
 import 'package:lazurite/core/l10n/app_localizations.dart';
 import 'package:lazurite/features/notifications/domain/notification_local_models.dart';

@@ -1,8 +1,8 @@
-import 'package:atproto_core/atproto_core.dart';
-import 'package:bluesky/app_bsky_actor_defs.dart' as app_actor;
-import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
-import 'package:bluesky/chat_bsky_actor_defs.dart' as chat_actor;
-import 'package:bluesky/chat_bsky_convo_defs.dart';
+import 'package:poptart_core/poptart_core.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart' as app_actor;
+import 'package:poptart_lex/app/bsky/notification/list_notifications.dart' as bsky;
+import 'package:poptart_lex/chat/bsky/actor/defs.dart' as chat_actor;
+import 'package:poptart_lex/chat/bsky/convo/defs.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

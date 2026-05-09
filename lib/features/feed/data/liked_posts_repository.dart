@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:bluesky/app_bsky_feed_defs.dart';
+import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';

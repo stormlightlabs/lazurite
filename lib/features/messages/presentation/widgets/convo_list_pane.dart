@@ -1,4 +1,4 @@
-import 'package:bluesky/chat_bsky_convo_defs.dart';
+import 'package:poptart_lex/chat/bsky/convo/defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';

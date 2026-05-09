@@ -1,4 +1,4 @@
-import 'package:bluesky/app_bsky_feed_defs.dart';
+import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:intl/intl.dart';
 
 /// Returns up to two initials from a display value.

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/features/moderation/data/moderation_service.dart';

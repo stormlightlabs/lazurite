@@ -1,6 +1,6 @@
-import 'package:atproto_core/atproto_core.dart' show AtUri;
-import 'package:bluesky/app_bsky_actor_defs.dart';
-import 'package:bluesky/app_bsky_graph_defs.dart';
+import 'package:poptart_core/poptart_core.dart' show AtUri;
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/graph/defs.dart';
 import 'package:equatable/equatable.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/constellation_client.dart';

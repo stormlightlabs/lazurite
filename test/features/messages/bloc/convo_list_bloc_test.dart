@@ -1,5 +1,5 @@
 import 'package:bloc_test/bloc_test.dart';
-import 'package:bluesky/chat_bsky_convo_defs.dart';
+import 'package:poptart_lex/chat/bsky/convo/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
