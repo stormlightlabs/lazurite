@@ -61,6 +61,7 @@ void main() {
     cubit = MockFollowAuditCubit();
 
     when(() => cubit.audit()).thenAnswer((_) async {});
+    when(() => cubit.cancelAudit()).thenAnswer((_) async {});
     when(() => cubit.confirmUnfollow()).thenAnswer((_) async {});
     when(() => cubit.toggleSelection(any())).thenReturn(null);
     when(() => cubit.selectAllByStatus(FollowStatus.deleted)).thenReturn(null);
@@ -83,15 +84,37 @@ void main() {
     expect(find.text('Scan'), findsOneWidget);
   });
 
-  testWidgets('fetching state shows progress bar with count text', (tester) async {
-    const state = FollowAuditState(status: FollowAuditStatus.fetching, progress: 3, totalFollows: 7);
+  testWidgets('fetching state shows getting follow count progress and cancel button', (tester) async {
+    const state = FollowAuditState(status: FollowAuditStatus.fetching);
     when(() => cubit.state).thenReturn(state);
     whenListen(cubit, const Stream<FollowAuditState>.empty(), initialState: state);
 
     await tester.pumpWidget(_buildSubject(cubit));
 
     expect(find.byKey(const Key('follow_audit_progress')), findsOneWidget);
-    expect(find.text('Fetching follows: 3/7'), findsOneWidget);
+    expect(find.text('Getting follow count...'), findsWidgets);
+    expect(find.byKey(const Key('follow_audit_cancel_button')), findsOneWidget);
+  });
+
+  testWidgets('classifying state shows cancel button and streams existing results', (tester) async {
+    final state = FollowAuditState(
+      status: FollowAuditStatus.classifying,
+      progress: 1,
+      totalFollows: 2,
+      results: [_classified(did: 'did:plc:alice', rkey: 'alice', status: FollowStatus.deleted, statusLabel: 'Deleted')],
+      visibleStatuses: FollowStatus.values.toSet(),
+    );
+    when(() => cubit.state).thenReturn(state);
+    whenListen(cubit, const Stream<FollowAuditState>.empty(), initialState: state);
+
+    await tester.pumpWidget(_buildSubject(cubit));
+
+    expect(find.byKey(const Key('follow_audit_cancel_button')), findsOneWidget);
+    expect(find.text('alice.bsky.social'), findsOneWidget);
+    expect(find.byKey(const Key('follow_audit_scanning_footer')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('follow_audit_cancel_button')));
+    verify(() => cubit.cancelAudit()).called(1);
   });
 
   testWidgets('ready state renders results list with status badges', (tester) async {
@@ -266,6 +289,21 @@ void main() {
 
     expect(find.byKey(const Key('follow_audit_empty_message')), findsOneWidget);
     expect(find.text('No problematic follows found'), findsOneWidget);
+  });
+
+  testWidgets('complete state with no results shows updated follow count prompt', (tester) async {
+    const state = FollowAuditState(status: FollowAuditStatus.complete, totalFollows: 788, progress: 788);
+    when(() => cubit.state).thenReturn(state);
+    whenListen(cubit, const Stream<FollowAuditState>.empty(), initialState: state);
+
+    await tester.pumpWidget(_buildSubject(cubit));
+
+    expect(find.byKey(const Key('follow_audit_empty_message')), findsOneWidget);
+    expect(find.text('Scan your 788 follows for deleted, suspended, blocked, and hidden accounts.'), findsWidgets);
+    expect(find.byKey(const Key('follow_audit_scan_button')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('follow_audit_scan_button')));
+    verify(() => cubit.audit()).called(1);
   });
 
   testWidgets('tapping a handle navigates to profile screen', (tester) async {

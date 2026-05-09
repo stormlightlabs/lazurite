@@ -96,6 +96,7 @@ class _FakeActorService {
   _FakeActorService({
     this.batchProfiles = const {},
     this.singleProfiles = const {},
+    this.followCounts = const {},
     Map<String, Object>? singleErrors,
     this.batchFailCount = 0,
   }) : singleErrors = singleErrors ?? {};
@@ -105,6 +106,9 @@ class _FakeActorService {
 
   /// DID → ProfileView for per-DID fallback (getProfile).
   final Map<String, ProfileView> singleProfiles;
+
+  /// DID → followsCount for profile count lookup.
+  final Map<String, int> followCounts;
 
   /// DID → exception for per-DID fallback.
   final Map<String, Object> singleErrors;
@@ -126,13 +130,17 @@ class _FakeActorService {
     return _FakeResponse(_FakeProfilesOutput(profiles: matched));
   }
 
-  Future<_FakeResponse<ProfileView>> getProfile({
+  Future<_FakeResponse<dynamic>> getProfile({
     required String actor,
     String? $service,
     Map<String, String>? $headers,
   }) async {
     final error = singleErrors[actor];
     if (error != null) throw error;
+    final followCount = followCounts[actor];
+    if (followCount != null) {
+      return _FakeResponse(ProfileViewDetailed(did: actor, handle: 'owner.bsky.social', followsCount: followCount));
+    }
     final profile = singleProfiles[actor];
     if (profile == null) throw Exception('HTTP 404 Profile not found');
     return _FakeResponse(profile);
@@ -155,6 +163,7 @@ _FakeBluesky _bluesky({
   List<List<(String, String)>> pages = const [],
   Map<String, ProfileView> batchProfiles = const {},
   Map<String, ProfileView> singleProfiles = const {},
+  Map<String, int> followCounts = const {},
   Map<String, Object>? singleErrors,
   int batchFailCount = 0,
   void Function(String repo, List<URepoApplyWritesWrites> writes)? applyWritesCallback,
@@ -166,6 +175,7 @@ _FakeBluesky _bluesky({
     actor: _FakeActorService(
       batchProfiles: batchProfiles,
       singleProfiles: singleProfiles,
+      followCounts: followCounts,
       singleErrors: singleErrors,
       batchFailCount: batchFailCount,
     ),
@@ -263,58 +273,70 @@ void main() {
     });
   });
 
-  group('FollowAuditRepository.fetchAllFollows', () {
-    test('returns empty list when no follows', () async {
-      final client = _bluesky(pages: []);
-      final repo = _repo(client);
-
-      final result = await repo.fetchAllFollows(_ownerDid);
-
-      expect(result, isEmpty);
-    });
-
-    test('returns all records from a single page', () async {
-      final client = _bluesky(
-        pages: [
-          [(_uri('did:plc:alice'), 'did:plc:alice'), (_uri('did:plc:bob'), 'did:plc:bob')],
-        ],
-      );
-      final repo = _repo(client);
-
-      final result = await repo.fetchAllFollows(_ownerDid);
-
-      expect(result.length, 2);
-      expect(result[0].subjectDid, 'did:plc:alice');
-      expect(result[1].subjectDid, 'did:plc:bob');
-    });
-
-    test('extracts rkey from AT URI correctly', () async {
+  group('FollowAuditRepository.fetchFollowPage', () {
+    test('returns one page of follow records and cursor', () async {
       final client = _bluesky(
         pages: [
           [(_uri('did:plc:alice', 'rkey123'), 'did:plc:alice')],
+          [(_uri('did:plc:bob', 'rkey456'), 'did:plc:bob')],
         ],
       );
       final repo = _repo(client);
 
-      final result = await repo.fetchAllFollows(_ownerDid);
+      final page = await repo.fetchFollowPage(_ownerDid);
 
-      expect(result.first.rkey, 'rkey123');
+      expect(page.records.length, 1);
+      expect(page.records.first.rkey, 'rkey123');
+      expect(page.cursor, 'page1');
+    });
+  });
+
+  group('FollowAuditRepository.fetchFollowCount', () {
+    test('returns followsCount from own profile', () async {
+      final client = _bluesky(followCounts: {_ownerDid: 789});
+      final repo = _repo(client);
+
+      final count = await repo.fetchFollowCount(_ownerDid);
+
+      expect(count, 789);
     });
 
-    test('paginates across multiple pages until cursor is null', () async {
+    test('returns null when followsCount cannot be loaded', () async {
+      final client = _bluesky();
+      final repo = _repo(client);
+
+      final count = await repo.fetchFollowCount(_ownerDid);
+
+      expect(count, isNull);
+    });
+  });
+
+  group('FollowAuditRepository.scanFollows', () {
+    test('streams classified pages as they are processed', () async {
+      final aliceProfile = _profile('did:plc:alice', 'alice.bsky.social', blockedBy: true);
+      final bobProfile = _profile('did:plc:bob', 'bob.bsky.social', blocking: true);
       final client = _bluesky(
         pages: [
-          [(_uri('did:plc:a1'), 'did:plc:a1')],
-          [(_uri('did:plc:a2'), 'did:plc:a2')],
-          [(_uri('did:plc:a3'), 'did:plc:a3')],
+          [(_uri('did:plc:alice'), 'did:plc:alice')],
+          [(_uri('did:plc:bob'), 'did:plc:bob')],
         ],
+        followCounts: {_ownerDid: 789},
+        batchProfiles: {'did:plc:alice': aliceProfile, 'did:plc:bob': bobProfile},
       );
       final repo = _repo(client);
 
-      final result = await repo.fetchAllFollows(_ownerDid);
+      final batches = await repo.scanFollows(_ownerDid).toList();
 
-      expect(result.length, 3);
-      expect(result.map((r) => r.subjectDid), containsAll(['did:plc:a1', 'did:plc:a2', 'did:plc:a3']));
+      expect(batches.length, 2);
+      expect(batches.first.totalFollows, 789);
+      expect(batches.first.scannedCount, 1);
+      expect(batches.first.classifiedCount, 1);
+      expect(batches.first.results.single.status, FollowStatus.blockedBy);
+      expect(batches.first.isComplete, isFalse);
+      expect(batches.last.scannedCount, 2);
+      expect(batches.last.classifiedCount, 2);
+      expect(batches.last.results.single.status, FollowStatus.blocking);
+      expect(batches.last.isComplete, isTrue);
     });
   });
 

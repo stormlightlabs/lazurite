@@ -1410,6 +1410,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get messageGettingFollowCount => 'Getting follow count...';
+
+  @override
   String formatFollowedMemberCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count members', one: '1 member');
     return 'Followed $_temp0';
@@ -1424,6 +1427,12 @@ class AppLocalizationsEn extends AppLocalizations {
       one: '1 follow scanned for problematic accounts',
     );
     return '$_temp0';
+  }
+
+  @override
+  String formatFollowAuditPromptWithCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count follows', one: '1 follow');
+    return 'Scan your $_temp0 for deleted, suspended, blocked, and hidden accounts.';
   }
 
   @override
