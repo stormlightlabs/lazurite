@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:logger/logger.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:lazurite/core/logging/app_file_log_printer.dart';
 import 'package:lazurite/core/logging/daily_log_file_output.dart';
+import 'package:logger/logger.dart';
+import 'package:path_provider/path_provider.dart';
 
 class AppLogger {
   AppLogger._();
@@ -20,20 +20,16 @@ class AppLogger {
   Future<void> initialize() async {
     await dispose();
 
+    const level = kReleaseMode ? Level.info : Level.debug;
     _logDirectory = await _getLogDirectory();
     _fileOutput = DailyLogFileOutput(directoryPath: _logDirectory!, retentionDays: 3);
-    _fileLogger = Logger(
-      filter: ProductionFilter(),
-      printer: AppFileLogPrinter(),
-      output: _fileOutput!,
-      level: Level.trace,
-    );
+    _fileLogger = Logger(filter: ProductionFilter(), printer: AppFileLogPrinter(), output: _fileOutput!, level: level);
 
     final initFutures = <Future<void>>[_fileLogger!.init];
 
-    if (kDebugMode) {
+    if (!kReleaseMode) {
       _consoleLogger = Logger(
-        filter: DevelopmentFilter(),
+        filter: ProductionFilter(),
         printer: PrettyPrinter(
           methodCount: 2,
           errorMethodCount: 8,
@@ -43,7 +39,7 @@ class AppLogger {
           dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
         ),
         output: ConsoleOutput(),
-        level: Level.trace,
+        level: level,
       );
       initFutures.add(_consoleLogger!.init);
     }
