@@ -2,9 +2,6 @@
 // All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// ignore_for_file: lines_longer_than_80_chars
-
-// Project imports:
 import 'valid_cctld.dart';
 import 'valid_domain_name.dart';
 import 'valid_gtld.dart';
@@ -21,5 +18,4 @@ import 'valid_subdomain.dart';
 /// - a [validGtld], or
 /// - a [validCctld], or
 /// - a [validPunycode].
-const validDomain =
-    '(?:$validSubdomain*$validDomainName(?:$validGtld|$validCctld|$validPunycode))';
+const validDomain = '(?:$validSubdomain*$validDomainName(?:$validGtld|$validCctld|$validPunycode))';

@@ -1,12 +1,7 @@
-// ignore_for_file: deprecated_member_use_from_same_package
-
-// Package imports:
-import 'package:test/test.dart';
-
-// Project imports:
 import 'package:bluesky_text/src/bluesky_text.dart';
 import 'package:bluesky_text/src/config/link_config.dart';
 import 'package:bluesky_text/src/entities/entity.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('.value', () {
@@ -119,9 +114,7 @@ void main() {
     });
 
     test('case3', () {
-      const text = BlueskyText(
-        '😳 @test.bsky.social 😳😳😳 @test2.bsky.social',
-      );
+      const text = BlueskyText('😳 @test.bsky.social 😳😳😳 @test2.bsky.social');
       final handles = text.handles;
 
       expect(handles.length, 2);
@@ -314,11 +307,7 @@ void main() {
           final handles = text.handles;
 
           expect(handles.length, 1, reason: 'Failed for $input');
-          expect(
-            handles.first.value,
-            expected,
-            reason: 'Wrong value for $input',
-          );
+          expect(handles.first.value, expected, reason: 'Wrong value for $input');
           expect(handles.first.type, EntityType.handle);
           expect(handles.first.isHandle, isTrue);
           expect(handles.first.isLink, isFalse);
@@ -342,11 +331,7 @@ void main() {
           final handles = text.handles;
 
           expect(handles.length, 1, reason: 'Failed for $input');
-          expect(
-            handles.first.value,
-            expected,
-            reason: 'Wrong value for $input',
-          );
+          expect(handles.first.value, expected, reason: 'Wrong value for $input');
         }
       });
 
@@ -357,14 +342,8 @@ void main() {
           ('(@user.example.com)', ['user.example.com']),
           ('"@quoted.handle.dev"', ['quoted.handle.dev']),
           ("'@single.quoted.org'", ['single.quoted.org']),
-          (
-            'Email: contact@company.com vs @handle.bsky.social',
-            ['handle.bsky.social'],
-          ),
-          (
-            'Multiple: @user1.dev, @user2.org; @user3.net!',
-            ['user1.dev', 'user2.org', 'user3.net'],
-          ),
+          ('Email: contact@company.com vs @handle.bsky.social', ['handle.bsky.social']),
+          ('Multiple: @user1.dev, @user2.org; @user3.net!', ['user1.dev', 'user2.org', 'user3.net']),
           ('At start @handle.dev and end', ['handle.dev']),
           ('Newline\n@handle.example.com', ['handle.example.com']),
           ('Tab\t@handle.test.org', ['handle.test.org']),
@@ -376,17 +355,9 @@ void main() {
           final text = BlueskyText(input);
           final handles = text.handles;
 
-          expect(
-            handles.length,
-            expectedHandles.length,
-            reason: 'Wrong count for: $input',
-          );
+          expect(handles.length, expectedHandles.length, reason: 'Wrong count for: $input');
           for (int i = 0; i < expectedHandles.length; i++) {
-            expect(
-              handles[i].value,
-              expectedHandles[i],
-              reason: 'Wrong handle $i for: $input',
-            );
+            expect(handles[i].value, expectedHandles[i], reason: 'Wrong handle $i for: $input');
           }
         }
       });
@@ -410,25 +381,15 @@ void main() {
           final text = BlueskyText(invalid);
           final handles = text.handles;
 
-          expect(
-            handles.length,
-            0,
-            reason: 'Should not find handle for invalid case: $invalid',
-          );
+          expect(handles.length, 0, reason: 'Should not find handle for invalid case: $invalid');
         }
       });
 
       test('handles with Unicode characters', () {
         final testCases = [
-          (
-            'Hello @ユーザー.example.com',
-            1,
-          ), // Unicode in handle - actually recognized
+          ('Hello @ユーザー.example.com', 1), // Unicode in handle - actually recognized
           ('Text @user.日本.com', 1), // Unicode domain - actually recognized
-          (
-            'Mixed @user.example.com text',
-            1,
-          ), // Valid handle with Unicode context
+          ('Mixed @user.example.com text', 1), // Valid handle with Unicode context
           ('日本語 @handle.bsky.social 文字', 1), // Unicode context, valid handle
         ];
 
@@ -438,20 +399,13 @@ void main() {
           final text = BlueskyText(input);
           final handles = text.handles;
 
-          expect(
-            handles.length,
-            expectedCount,
-            reason: 'Wrong count for Unicode case: $input',
-          );
+          expect(handles.length, expectedCount, reason: 'Wrong count for Unicode case: $input');
         }
       });
 
       test('handle boundary detection', () {
         final testCases = [
-          (
-            'text@handle.dev',
-            0,
-          ), // No space before - should be treated as email
+          ('text@handle.dev', 0), // No space before - should be treated as email
           ('text @handle.dev', 1), // Space before
           ('text.@handle.dev', 1), // Punctuation before
           ('text,@handle.dev', 1), // Comma before
@@ -469,41 +423,19 @@ void main() {
           final text = BlueskyText(input);
           final handles = text.handles;
 
-          expect(
-            handles.length,
-            expectedCount,
-            reason: 'Wrong boundary detection for: $input',
-          );
+          expect(handles.length, expectedCount, reason: 'Wrong boundary detection for: $input');
         }
       });
 
       test('real-world handle scenarios', () {
         final realWorldCases = [
-          (
-            'Thanks @alice.bsky.social for the great post!',
-            ['alice.bsky.social'],
-          ),
-          (
-            'CC: @bob.dev @charlie.org @diana.net',
-            ['bob.dev', 'charlie.org', 'diana.net'],
-          ),
-          (
-            'Follow me @myhandle.bsky.social for updates',
-            ['myhandle.bsky.social'],
-          ),
-          (
-            'Shoutout to @developer.tech and @designer.app',
-            ['developer.tech', 'designer.app'],
-          ),
-          (
-            'Meeting with @team-lead.company.com tomorrow',
-            ['team-lead.company.com'],
-          ),
+          ('Thanks @alice.bsky.social for the great post!', ['alice.bsky.social']),
+          ('CC: @bob.dev @charlie.org @diana.net', ['bob.dev', 'charlie.org', 'diana.net']),
+          ('Follow me @myhandle.bsky.social for updates', ['myhandle.bsky.social']),
+          ('Shoutout to @developer.tech and @designer.app', ['developer.tech', 'designer.app']),
+          ('Meeting with @team-lead.company.com tomorrow', ['team-lead.company.com']),
           ('@everyone.bsky.social check this out!', ['everyone.bsky.social']),
-          (
-            'Reply to @original-poster.example.org',
-            ['original-poster.example.org'],
-          ),
+          ('Reply to @original-poster.example.org', ['original-poster.example.org']),
         ];
 
         for (final testCase in realWorldCases) {
@@ -512,17 +444,9 @@ void main() {
           final text = BlueskyText(input);
           final handles = text.handles;
 
-          expect(
-            handles.length,
-            expectedHandles.length,
-            reason: 'Wrong count for: $input',
-          );
+          expect(handles.length, expectedHandles.length, reason: 'Wrong count for: $input');
           for (int i = 0; i < expectedHandles.length; i++) {
-            expect(
-              handles[i].value,
-              expectedHandles[i],
-              reason: 'Wrong handle $i for: $input',
-            );
+            expect(handles[i].value, expectedHandles[i], reason: 'Wrong handle $i for: $input');
           }
         }
       });
@@ -547,10 +471,7 @@ void main() {
 
       test('performance with many handles', () {
         // Test performance with a large number of handles
-        final manyHandles = List.generate(
-          50,
-          (i) => '@user$i.example.com',
-        ).join(' ');
+        final manyHandles = List.generate(50, (i) => '@user$i.example.com').join(' ');
         final text = BlueskyText(manyHandles);
 
         final startTime = DateTime.now();
@@ -559,19 +480,11 @@ void main() {
         final duration = endTime.difference(startTime);
 
         expect(handles.length, 50, reason: 'Should find all 50 handles');
-        expect(
-          duration.inMilliseconds,
-          lessThan(1000),
-          reason: 'Should be fast even with many handles',
-        );
+        expect(duration.inMilliseconds, lessThan(1000), reason: 'Should be fast even with many handles');
 
         // Verify all handles are correct
         for (int i = 0; i < 50; i++) {
-          expect(
-            handles[i].value,
-            'user$i.example.com',
-            reason: 'Wrong handle at index $i',
-          );
+          expect(handles[i].value, 'user$i.example.com', reason: 'Wrong handle at index $i');
         }
       });
     });
@@ -800,16 +713,11 @@ void main() {
     });
 
     test('case23', () {
-      const text = BlueskyText(
-        'テストhttps://atprotodart.com:8080/test/test2?test=valueあいうえお',
-      );
+      const text = BlueskyText('テストhttps://atprotodart.com:8080/test/test2?test=valueあいうえお');
       final links = text.links;
 
       expect(links.length, 1);
-      expect(
-        links.first.value,
-        'https://atprotodart.com:8080/test/test2?test=value',
-      );
+      expect(links.first.value, 'https://atprotodart.com:8080/test/test2?test=value');
       expect(links.first.indices.start, 9);
       expect(links.first.indices.end, 59);
     });
@@ -850,40 +758,27 @@ void main() {
       final links = text.links;
 
       expect(links.length, 1);
-      expect(
-        links.first.value,
-        'https://wikipedia.com/Primer_(film)/S(dfd346)/',
-      );
+      expect(links.first.value, 'https://wikipedia.com/Primer_(film)/S(dfd346)/');
       expect(links.first.indices.start, 0);
       expect(links.first.indices.end, 38);
     });
 
     test('case29', () {
-      const text = BlueskyText(
-        'wikipedia.com/track/We_Up_(Album_Version_(Edited))/',
-      );
+      const text = BlueskyText('wikipedia.com/track/We_Up_(Album_Version_(Edited))/');
       final links = text.links;
 
       expect(links.length, 1);
-      expect(
-        links.first.value,
-        'https://wikipedia.com/track/We_Up_(Album_Version_(Edited))/',
-      );
+      expect(links.first.value, 'https://wikipedia.com/track/We_Up_(Album_Version_(Edited))/');
       expect(links.first.indices.start, 0);
       expect(links.first.indices.end, 51);
     });
 
     test('case29', () {
-      const text = BlueskyText(
-        'wikipedia.com//track/We_Up_(Album_Version_(Edited))/',
-      );
+      const text = BlueskyText('wikipedia.com//track/We_Up_(Album_Version_(Edited))/');
       final links = text.links;
 
       expect(links.length, 1);
-      expect(
-        links.first.value,
-        'https://wikipedia.com//track/We_Up_(Album_Version_(Edited))/',
-      ); //* No problem
+      expect(links.first.value, 'https://wikipedia.com//track/We_Up_(Album_Version_(Edited))/'); //* No problem
       expect(links.first.indices.start, 0);
       expect(links.first.indices.end, 52);
     });
@@ -893,10 +788,7 @@ void main() {
       final links = text.links;
 
       expect(links.length, 1);
-      expect(
-        links.first.value,
-        'https://wikipedia.com//track/We_Up_',
-      ); //* Not formatted.
+      expect(links.first.value, 'https://wikipedia.com//track/We_Up_'); //* Not formatted.
       expect(links.first.indices.start, 0);
       expect(links.first.indices.end, 27);
     });
@@ -975,31 +867,23 @@ example8.com はいいぞ
     });
 
     test('case34', () {
-      const text = BlueskyText(
-        '''I use @deck.blue, which lets you add inline links using Markdown! So that
+      const text = BlueskyText('''I use @deck.blue, which lets you add inline links using Markdown! So that
 
 [example link](link url here)
 
 becomes
 
-[example link](https://www.picserver.org/assets/library/2020-10-31/originals/example1.jpg)''',
-      );
+[example link](https://www.picserver.org/assets/library/2020-10-31/originals/example1.jpg)''');
 
       final links = text.links;
       expect(links.length, 1);
-      expect(
-        links.first.value,
-        'https://www.picserver.org/assets/library/2020-10-31/originals/example1.jpg',
-      );
+      expect(links.first.value, 'https://www.picserver.org/assets/library/2020-10-31/originals/example1.jpg');
       expect(links.first.indices.start, 116);
       expect(links.first.indices.end, 128);
 
       final formatted = text.format().links;
       expect(formatted.length, 1);
-      expect(
-        formatted.first.value,
-        'https://www.picserver.org/assets/library/2020-10-31/originals/example1.jpg',
-      );
+      expect(formatted.first.value, 'https://www.picserver.org/assets/library/2020-10-31/originals/example1.jpg');
       expect(formatted.first.indices.start, 115);
       expect(formatted.first.indices.end, 127);
     });
@@ -1025,21 +909,13 @@ becomes
 
           if (input.startsWith('http')) {
             expect(links.length, 1, reason: 'Failed for $input');
-            expect(
-              links.first.value,
-              expected,
-              reason: 'Wrong value for $input',
-            );
+            expect(links.first.value, expected, reason: 'Wrong value for $input');
             expect(links.first.type, EntityType.link);
             expect(links.first.isLink, isTrue);
             expect(links.first.isHandle, isFalse);
           } else {
             // Non-HTTP schemes may not be recognized as links
-            expect(
-              links.length,
-              greaterThanOrEqualTo(0),
-              reason: 'Failed for $input',
-            );
+            expect(links.length, greaterThanOrEqualTo(0), reason: 'Failed for $input');
           }
         }
       });
@@ -1072,32 +948,14 @@ becomes
       test('links with paths and parameters', () {
         final testCases = [
           ('https://example.com/path', 'https://example.com/path'),
-          (
-            'https://example.com/path/to/page',
-            'https://example.com/path/to/page',
-          ),
-          (
-            'https://example.com/path?param=value',
-            'https://example.com/path?param=value',
-          ),
-          (
-            'https://example.com/path?p1=v1&p2=v2',
-            'https://example.com/path?p1=v1&p2=v2',
-          ),
-          (
-            'https://example.com/path#fragment',
-            'https://example.com/path#fragment',
-          ),
-          (
-            'https://example.com/path?param=value#fragment',
-            'https://example.com/path?param=value#fragment',
-          ),
+          ('https://example.com/path/to/page', 'https://example.com/path/to/page'),
+          ('https://example.com/path?param=value', 'https://example.com/path?param=value'),
+          ('https://example.com/path?p1=v1&p2=v2', 'https://example.com/path?p1=v1&p2=v2'),
+          ('https://example.com/path#fragment', 'https://example.com/path#fragment'),
+          ('https://example.com/path?param=value#fragment', 'https://example.com/path?param=value#fragment'),
           ('https://example.com:8080/path', 'https://example.com:8080/path'),
           ('https://sub.example.com/path', 'https://sub.example.com/path'),
-          (
-            'https://api.v2.example.com/users/123',
-            'https://api.v2.example.com/users/123',
-          ),
+          ('https://api.v2.example.com/users/123', 'https://api.v2.example.com/users/123'),
         ];
 
         for (final testCase in testCases) {
@@ -1114,17 +972,11 @@ becomes
       test('links in different contexts', () {
         final testCases = [
           ('Check out https://example.com!', ['https://example.com']),
-          (
-            'Visit https://site1.com and https://site2.org',
-            ['https://site1.com', 'https://site2.org'],
-          ),
+          ('Visit https://site1.com and https://site2.org', ['https://site1.com', 'https://site2.org']),
           ('(https://example.com)', ['https://example.com']),
           ('"https://quoted.com"', ['https://quoted.com']),
           ("'https://single.com'", ['https://single.com']),
-          (
-            'Link: https://example.com, another: https://test.org',
-            ['https://example.com', 'https://test.org'],
-          ),
+          ('Link: https://example.com, another: https://test.org', ['https://example.com', 'https://test.org']),
           (
             'Multiple: https://a.com; https://b.net! https://c.org?',
             ['https://a.com', 'https://b.net', 'https://c.org'],
@@ -1140,17 +992,9 @@ becomes
           final text = BlueskyText(input);
           final links = text.links;
 
-          expect(
-            links.length,
-            expectedLinks.length,
-            reason: 'Wrong count for: $input',
-          );
+          expect(links.length, expectedLinks.length, reason: 'Wrong count for: $input');
           for (int i = 0; i < expectedLinks.length; i++) {
-            expect(
-              links[i].value,
-              expectedLinks[i],
-              reason: 'Wrong link $i for: $input',
-            );
+            expect(links[i].value, expectedLinks[i], reason: 'Wrong link $i for: $input');
           }
         }
       });
@@ -1173,16 +1017,8 @@ becomes
           final text = BlueskyText(domain);
           final links = text.links;
 
-          expect(
-            links.length,
-            1,
-            reason: 'Failed for international domain: $domain',
-          );
-          expect(
-            links.first.value,
-            'https://$domain',
-            reason: 'Wrong value for: $domain',
-          );
+          expect(links.length, 1, reason: 'Failed for international domain: $domain');
+          expect(links.first.value, 'https://$domain', reason: 'Wrong value for: $domain');
         }
       });
 
@@ -1203,44 +1039,19 @@ becomes
           final text = BlueskyText(invalid);
           final links = text.links;
 
-          expect(
-            links.length,
-            0,
-            reason: 'Should not find link for invalid case: $invalid',
-          );
+          expect(links.length, 0, reason: 'Should not find link for invalid case: $invalid');
         }
       });
 
       test('links with special characters', () {
         final testCases = [
-          (
-            'https://example.com/path_(with_parens)',
-            'https://example.com/path_(with_parens)',
-          ),
-          (
-            'https://example.com/path-with-hyphens',
-            'https://example.com/path-with-hyphens',
-          ),
-          (
-            'https://example.com/path_with_underscores',
-            'https://example.com/path_with_underscores',
-          ),
-          (
-            'https://example.com/path.with.dots',
-            'https://example.com/path.with.dots',
-          ),
-          (
-            'https://example.com/path~with~tildes',
-            'https://example.com/path~with~tildes',
-          ),
-          (
-            'https://example.com/path%20encoded',
-            'https://example.com/path%20encoded',
-          ),
-          (
-            'https://user:pass@example.com/path',
-            'https://user:pass@example.com/path',
-          ),
+          ('https://example.com/path_(with_parens)', 'https://example.com/path_(with_parens)'),
+          ('https://example.com/path-with-hyphens', 'https://example.com/path-with-hyphens'),
+          ('https://example.com/path_with_underscores', 'https://example.com/path_with_underscores'),
+          ('https://example.com/path.with.dots', 'https://example.com/path.with.dots'),
+          ('https://example.com/path~with~tildes', 'https://example.com/path~with~tildes'),
+          ('https://example.com/path%20encoded', 'https://example.com/path%20encoded'),
+          ('https://user:pass@example.com/path', 'https://user:pass@example.com/path'),
         ];
 
         for (final testCase in testCases) {
@@ -1249,11 +1060,7 @@ becomes
           final text = BlueskyText(input);
           final links = text.links;
 
-          expect(
-            links.length,
-            greaterThanOrEqualTo(0),
-            reason: 'Failed for special chars: $input',
-          );
+          expect(links.length, greaterThanOrEqualTo(0), reason: 'Failed for special chars: $input');
           if (links.isNotEmpty) {
             // Some special character URLs might be partially recognized
             // Check if the found link matches the expected value or at least
@@ -1262,11 +1069,7 @@ becomes
             if (actualLink == expected) {
               expect(actualLink, expected, reason: 'Exact match for: $input');
             } else {
-              expect(
-                actualLink,
-                startsWith('https://'),
-                reason: 'Should start with https:// for: $input',
-              );
+              expect(actualLink, startsWith('https://'), reason: 'Should start with https:// for: $input');
             }
           }
         }
@@ -1286,17 +1089,9 @@ becomes
           final text = BlueskyText(input);
           final links = text.links;
 
-          expect(
-            links.length,
-            expectedLinks.length,
-            reason: 'Wrong count for Unicode context: $input',
-          );
+          expect(links.length, expectedLinks.length, reason: 'Wrong count for Unicode context: $input');
           for (int i = 0; i < expectedLinks.length; i++) {
-            expect(
-              links[i].value,
-              expectedLinks[i],
-              reason: 'Wrong link $i for: $input',
-            );
+            expect(links[i].value, expectedLinks[i], reason: 'Wrong link $i for: $input');
           }
         }
       });
@@ -1304,30 +1099,15 @@ becomes
       test('real-world link scenarios', () {
         final realWorldCases = [
           ('Check out my blog: https://myblog.dev', ['https://myblog.dev']),
-          (
-            'GitHub repo: https://github.com/user/project',
-            ['https://github.com/user/project'],
-          ),
-          (
-            'Documentation: https://docs.example.com/api/v1',
-            ['https://docs.example.com/api/v1'],
-          ),
-          (
-            'Download: https://releases.example.com/v1.0.0.zip',
-            ['https://releases.example.com/v1.0.0.zip'],
-          ),
-          (
-            'API endpoint: https://api.service.com/users?limit=10',
-            ['https://api.service.com/users?limit=10'],
-          ),
+          ('GitHub repo: https://github.com/user/project', ['https://github.com/user/project']),
+          ('Documentation: https://docs.example.com/api/v1', ['https://docs.example.com/api/v1']),
+          ('Download: https://releases.example.com/v1.0.0.zip', ['https://releases.example.com/v1.0.0.zip']),
+          ('API endpoint: https://api.service.com/users?limit=10', ['https://api.service.com/users?limit=10']),
           (
             'Social: twitter.com/username and linkedin.com/in/user',
             ['https://twitter.com/username', 'https://linkedin.com/in/user'],
           ),
-          (
-            'News: https://news.example.com/article/123#comments',
-            ['https://news.example.com/article/123#comments'],
-          ),
+          ('News: https://news.example.com/article/123#comments', ['https://news.example.com/article/123#comments']),
         ];
 
         for (final testCase in realWorldCases) {
@@ -1336,27 +1116,16 @@ becomes
           final text = BlueskyText(input);
           final links = text.links;
 
-          expect(
-            links.length,
-            expectedLinks.length,
-            reason: 'Wrong count for: $input',
-          );
+          expect(links.length, expectedLinks.length, reason: 'Wrong count for: $input');
           for (int i = 0; i < expectedLinks.length; i++) {
-            expect(
-              links[i].value,
-              expectedLinks[i],
-              reason: 'Wrong link $i for: $input',
-            );
+            expect(links[i].value, expectedLinks[i], reason: 'Wrong link $i for: $input');
           }
         }
       });
 
       test('link boundary detection', () {
         final testCases = [
-          (
-            'texthttp://example.com',
-            1,
-          ), // No space before - actually recognized
+          ('texthttp://example.com', 1), // No space before - actually recognized
           ('text http://example.com', 1), // Space before
           ('text.http://example.com', 1), // Punctuation before
           ('text,http://example.com', 1), // Comma before
@@ -1374,11 +1143,7 @@ becomes
           final text = BlueskyText(input);
           final links = text.links;
 
-          expect(
-            links.length,
-            expectedCount,
-            reason: 'Wrong boundary detection for: $input',
-          );
+          expect(links.length, expectedCount, reason: 'Wrong boundary detection for: $input');
         }
       });
 
@@ -1387,52 +1152,25 @@ becomes
         final links = text.links;
         final facets = await links.toFacets();
 
-        expect(
-          facets.length,
-          2,
-          reason: 'Should generate facets for all links',
-        );
+        expect(facets.length, 2, reason: 'Should generate facets for all links');
 
         for (int i = 0; i < facets.length; i++) {
           final facet = facets[i];
-          expect(
-            facet['features'],
-            isA<List>(),
-            reason: 'Facet should have features array',
-          );
-          expect(
-            facet['features'].length,
-            1,
-            reason: 'Each facet should have one feature',
-          );
+          expect(facet['features'], isA<List>(), reason: 'Facet should have features array');
+          expect(facet['features'].length, 1, reason: 'Each facet should have one feature');
 
           final feature = facet['features'][0];
-          expect(
-            feature[r'$type'],
-            'app.bsky.richtext.facet#link',
-            reason: 'Should have correct type',
-          );
-          expect(
-            feature['uri'],
-            isA<String>(),
-            reason: 'Should have URI value',
-          );
+          expect(feature[r'$type'], 'app.bsky.richtext.facet#link', reason: 'Should have correct type');
+          expect(feature['uri'], isA<String>(), reason: 'Should have URI value');
 
           final expectedUri = links[i].value;
-          expect(
-            feature['uri'],
-            expectedUri,
-            reason: 'Facet URI should match extracted link',
-          );
+          expect(feature['uri'], expectedUri, reason: 'Facet URI should match extracted link');
         }
       });
 
       test('performance with many links', () {
         // Test performance with a large number of links
-        final manyLinks = List.generate(
-          50,
-          (i) => 'https://example$i.com',
-        ).join(' ');
+        final manyLinks = List.generate(50, (i) => 'https://example$i.com').join(' ');
         final text = BlueskyText(manyLinks);
 
         final startTime = DateTime.now();
@@ -1441,26 +1179,16 @@ becomes
         final duration = endTime.difference(startTime);
 
         expect(links.length, 50, reason: 'Should find all 50 links');
-        expect(
-          duration.inMilliseconds,
-          lessThan(1000),
-          reason: 'Should be fast even with many links',
-        );
+        expect(duration.inMilliseconds, lessThan(1000), reason: 'Should be fast even with many links');
 
         // Verify all links are correct
         for (int i = 0; i < 50; i++) {
-          expect(
-            links[i].value,
-            'https://example$i.com',
-            reason: 'Wrong link at index $i',
-          );
+          expect(links[i].value, 'https://example$i.com', reason: 'Wrong link at index $i');
         }
       });
 
       test('mixed entities - links, handles, and hashtags', () {
-        const text = BlueskyText(
-          'Check out https://example.com by @author.dev #awesome #link',
-        );
+        const text = BlueskyText('Check out https://example.com by @author.dev #awesome #link');
 
         final links = text.links;
         final handles = text.handles;
@@ -1492,10 +1220,7 @@ becomes
 
       final facets = await tags.toFacets();
 
-      expect(
-        facets.first['features'][0][r'$type'],
-        'app.bsky.richtext.facet#tag',
-      );
+      expect(facets.first['features'][0][r'$type'], 'app.bsky.richtext.facet#tag');
       expect(facets.first['features'][0]['tag'], 'test');
     });
 
@@ -1873,11 +1598,7 @@ becomes
           final expected = expectedResults[hashtag]!;
 
           expect(tags.length, 1, reason: 'Failed for $hashtag');
-          expect(
-            tags.first.value,
-            expected,
-            reason: 'Wrong value for $hashtag',
-          );
+          expect(tags.first.value, expected, reason: 'Wrong value for $hashtag');
         }
       });
 
@@ -1919,17 +1640,9 @@ becomes
           final text = BlueskyText(input);
           final tags = text.tags;
 
-          expect(
-            tags.length,
-            expectedTags.length,
-            reason: 'Wrong count for: $input',
-          );
+          expect(tags.length, expectedTags.length, reason: 'Wrong count for: $input');
           for (int i = 0; i < expectedTags.length; i++) {
-            expect(
-              tags[i].value,
-              expectedTags[i],
-              reason: 'Wrong tag $i for: $input',
-            );
+            expect(tags[i].value, expectedTags[i], reason: 'Wrong tag $i for: $input');
           }
         }
       });
@@ -1951,11 +1664,7 @@ becomes
           final tags = text.tags;
 
           // These should either have 0 tags or be handled gracefully
-          expect(
-            tags.length,
-            lessThanOrEqualTo(1),
-            reason: 'Too many tags for invalid case: $invalid',
-          );
+          expect(tags.length, lessThanOrEqualTo(1), reason: 'Too many tags for invalid case: $invalid');
         }
       });
 
@@ -1967,16 +1676,8 @@ becomes
         final maxText = BlueskyText(maxLengthTag);
         final tooLongText = BlueskyText(tooLongTag);
 
-        expect(
-          maxText.tags.length,
-          1,
-          reason: 'Max length tag should be accepted',
-        );
-        expect(
-          tooLongText.tags.length,
-          0,
-          reason: 'Too long tag should be rejected',
-        );
+        expect(maxText.tags.length, 1, reason: 'Max length tag should be accepted');
+        expect(tooLongText.tags.length, 0, reason: 'Too long tag should be rejected');
       });
 
       test('hashtags with emoji combinations', () {
@@ -1995,17 +1696,9 @@ becomes
           final text = BlueskyText(hashtag);
           final tags = text.tags;
 
-          expect(
-            tags.length,
-            greaterThanOrEqualTo(0),
-            reason: 'Failed for emoji hashtag: $hashtag',
-          );
+          expect(tags.length, greaterThanOrEqualTo(0), reason: 'Failed for emoji hashtag: $hashtag');
           if (tags.isNotEmpty) {
-            expect(
-              tags.first.value,
-              hashtag.substring(1),
-              reason: 'Wrong value for emoji hashtag: $hashtag',
-            );
+            expect(tags.first.value, hashtag.substring(1), reason: 'Wrong value for emoji hashtag: $hashtag');
           }
         }
       });
@@ -2028,17 +1721,9 @@ becomes
           final text = BlueskyText(hashtag);
           final tags = text.tags;
 
-          expect(
-            tags.length,
-            greaterThanOrEqualTo(0),
-            reason: 'Failed for Unicode hashtag: $hashtag',
-          );
+          expect(tags.length, greaterThanOrEqualTo(0), reason: 'Failed for Unicode hashtag: $hashtag');
           if (tags.isNotEmpty) {
-            expect(
-              tags.first.value,
-              hashtag.substring(1),
-              reason: 'Wrong value for Unicode hashtag: $hashtag',
-            );
+            expect(tags.first.value, hashtag.substring(1), reason: 'Wrong value for Unicode hashtag: $hashtag');
           }
         }
       });
@@ -2063,11 +1748,7 @@ becomes
           final text = BlueskyText(input);
           final tags = text.tags;
 
-          expect(
-            tags.length,
-            expectedCount,
-            reason: 'Wrong boundary detection for: $input',
-          );
+          expect(tags.length, expectedCount, reason: 'Wrong boundary detection for: $input');
         }
       });
 
@@ -2078,16 +1759,8 @@ becomes
           final text = BlueskyText(hashtag);
           final tags = text.tags;
 
-          expect(
-            tags.length,
-            1,
-            reason: 'Case sensitivity issue for: $hashtag',
-          );
-          expect(
-            tags.first.value,
-            hashtag.substring(1),
-            reason: 'Case not preserved for: $hashtag',
-          );
+          expect(tags.length, 1, reason: 'Case sensitivity issue for: $hashtag');
+          expect(tags.first.value, hashtag.substring(1), reason: 'Case not preserved for: $hashtag');
         }
       });
 
@@ -2102,11 +1775,7 @@ becomes
         final duration = endTime.difference(startTime);
 
         expect(tags.length, 100, reason: 'Should find all 100 hashtags');
-        expect(
-          duration.inMilliseconds,
-          lessThan(1000),
-          reason: 'Should be fast even with many hashtags',
-        );
+        expect(duration.inMilliseconds, lessThan(1000), reason: 'Should be fast even with many hashtags');
 
         // Verify all tags are correct
         for (int i = 0; i < 100; i++) {
@@ -2117,57 +1786,24 @@ becomes
       test('real-world hashtag scenarios', () {
         final realWorldCases = [
           // Social media style
-          (
-            'Just posted a new blog! #webdev #javascript #coding',
-            ['webdev', 'javascript', 'coding'],
-          ),
-          (
-            'Beautiful sunset today 🌅 #photography #nature #sunset',
-            ['photography', 'nature', 'sunset'],
-          ),
-          (
-            'Working from home today #WFH #productivity #coffee',
-            ['WFH', 'productivity', 'coffee'],
-          ),
+          ('Just posted a new blog! #webdev #javascript #coding', ['webdev', 'javascript', 'coding']),
+          ('Beautiful sunset today 🌅 #photography #nature #sunset', ['photography', 'nature', 'sunset']),
+          ('Working from home today #WFH #productivity #coffee', ['WFH', 'productivity', 'coffee']),
 
           // Event and trending topics
-          (
-            'Excited for #WWDC2024 #Apple #iOS18',
-            ['WWDC2024', 'Apple', 'iOS18'],
-          ),
-          (
-            'Great match! #WorldCup #football #sports',
-            ['WorldCup', 'football', 'sports'],
-          ),
-          (
-            '#BlackFriday deals are amazing! #shopping #deals',
-            ['BlackFriday', 'shopping', 'deals'],
-          ),
+          ('Excited for #WWDC2024 #Apple #iOS18', ['WWDC2024', 'Apple', 'iOS18']),
+          ('Great match! #WorldCup #football #sports', ['WorldCup', 'football', 'sports']),
+          ('#BlackFriday deals are amazing! #shopping #deals', ['BlackFriday', 'shopping', 'deals']),
 
           // Technical and professional
-          (
-            'New #Flutter release with #Dart improvements #mobile',
-            ['Flutter', 'Dart', 'mobile'],
-          ),
-          (
-            'Learning #MachineLearning with #Python #AI',
-            ['MachineLearning', 'Python', 'AI'],
-          ),
-          (
-            '#OpenSource contribution to #GitHub project',
-            ['OpenSource', 'GitHub'],
-          ),
+          ('New #Flutter release with #Dart improvements #mobile', ['Flutter', 'Dart', 'mobile']),
+          ('Learning #MachineLearning with #Python #AI', ['MachineLearning', 'Python', 'AI']),
+          ('#OpenSource contribution to #GitHub project', ['OpenSource', 'GitHub']),
 
           // Mixed languages
           ('今日は良い天気 #天気 #日本 #weather', ['天気', '日本', 'weather']),
-          (
-            '¡Hola mundo! #español #programming #hola',
-            ['español', 'programming', 'hola'],
-          ),
-          (
-            'Bonjour le monde #français #code #bonjour',
-            ['français', 'code', 'bonjour'],
-          ),
+          ('¡Hola mundo! #español #programming #hola', ['español', 'programming', 'hola']),
+          ('Bonjour le monde #français #code #bonjour', ['français', 'code', 'bonjour']),
         ];
 
         for (final testCase in realWorldCases) {
@@ -2176,17 +1812,9 @@ becomes
           final text = BlueskyText(input);
           final tags = text.tags;
 
-          expect(
-            tags.length,
-            expectedTags.length,
-            reason: 'Wrong count for: $input',
-          );
+          expect(tags.length, expectedTags.length, reason: 'Wrong count for: $input');
           for (int i = 0; i < expectedTags.length; i++) {
-            expect(
-              tags[i].value,
-              expectedTags[i],
-              reason: 'Wrong tag $i for: $input',
-            );
+            expect(tags[i].value, expectedTags[i], reason: 'Wrong tag $i for: $input');
           }
         }
       });
@@ -2212,17 +1840,9 @@ becomes
           final text = BlueskyText(input);
           final tags = text.tags;
 
-          expect(
-            tags.length,
-            expectedTags.length,
-            reason: 'Wrong count for: $input',
-          );
+          expect(tags.length, expectedTags.length, reason: 'Wrong count for: $input');
           for (int i = 0; i < expectedTags.length; i++) {
-            expect(
-              tags[i].value,
-              expectedTags[i],
-              reason: 'Wrong tag $i for: $input',
-            );
+            expect(tags[i].value, expectedTags[i], reason: 'Wrong tag $i for: $input');
           }
         }
       });
@@ -2245,28 +1865,12 @@ becomes
             final startByte = tag.indices.start;
             final endByte = tag.indices.end;
 
-            expect(
-              startByte,
-              greaterThanOrEqualTo(0),
-              reason: 'Start index should be non-negative for: $input',
-            );
-            expect(
-              startByte,
-              lessThan(endByte),
-              reason: 'Invalid index range for: $input',
-            );
+            expect(startByte, greaterThanOrEqualTo(0), reason: 'Start index should be non-negative for: $input');
+            expect(startByte, lessThan(endByte), reason: 'Invalid index range for: $input');
 
             // Verify the tag value matches what we expect
-            expect(
-              tag.value,
-              isA<String>(),
-              reason: 'Tag value should be a string for: $input',
-            );
-            expect(
-              tag.value.isNotEmpty,
-              isTrue,
-              reason: 'Tag value should not be empty for: $input',
-            );
+            expect(tag.value, isA<String>(), reason: 'Tag value should be a string for: $input');
+            expect(tag.value.isNotEmpty, isTrue, reason: 'Tag value should not be empty for: $input');
           }
         }
       });
@@ -2280,35 +1884,15 @@ becomes
 
         for (int i = 0; i < facets.length; i++) {
           final facet = facets[i];
-          expect(
-            facet['features'],
-            isA<List>(),
-            reason: 'Facet should have features array',
-          );
-          expect(
-            facet['features'].length,
-            1,
-            reason: 'Each facet should have one feature',
-          );
+          expect(facet['features'], isA<List>(), reason: 'Facet should have features array');
+          expect(facet['features'].length, 1, reason: 'Each facet should have one feature');
 
           final feature = facet['features'][0];
-          expect(
-            feature[r'$type'],
-            'app.bsky.richtext.facet#tag',
-            reason: 'Should have correct type',
-          );
-          expect(
-            feature['tag'],
-            isA<String>(),
-            reason: 'Should have tag value',
-          );
+          expect(feature[r'$type'], 'app.bsky.richtext.facet#tag', reason: 'Should have correct type');
+          expect(feature['tag'], isA<String>(), reason: 'Should have tag value');
 
           final expectedTag = tags[i].value;
-          expect(
-            feature['tag'],
-            expectedTag,
-            reason: 'Facet tag should match extracted tag',
-          );
+          expect(feature['tag'], expectedTag, reason: 'Facet tag should match extracted tag');
         }
       });
     });
@@ -2407,18 +1991,13 @@ github.com/videah/SkyBridge
     });
 
     test('case10', () {
-      const text = BlueskyText(
-        'https://github.com/jakobo/codedrift/discussions/115',
-      );
+      const text = BlueskyText('https://github.com/jakobo/codedrift/discussions/115');
 
       final entities = text.entities;
 
       expect(entities.length, 1);
       expect(entities.first.isLink, isTrue);
-      expect(
-        entities.first.value,
-        'https://github.com/jakobo/codedrift/discussions/115',
-      );
+      expect(entities.first.value, 'https://github.com/jakobo/codedrift/discussions/115');
       expect(entities.first.indices.start, 0);
       expect(entities.first.indices.end, 51);
     });
@@ -2569,9 +2148,7 @@ github.com/videah/SkyBridge
     });
 
     test('case2', () {
-      final text = const BlueskyText(
-        '@shinyakato.dev https://test.com',
-      ).format();
+      final text = const BlueskyText('@shinyakato.dev https://test.com').format();
 
       expect(text.value, '@shinyakato.dev https://test.com');
       expect(text.length, 32);
@@ -2600,10 +2177,7 @@ github.com/videah/SkyBridge
       expect(entities.first.type, EntityType.handle);
       expect(entities.first.value, 'shinyakato.dev');
       expect(entities[1].type, EntityType.link);
-      expect(
-        entities[1].value,
-        'https://www.nikkei.com/article/DGXZQOGN20CZ30Q3A920C2000000/',
-      );
+      expect(entities[1].value, 'https://www.nikkei.com/article/DGXZQOGN20CZ30Q3A920C2000000/');
     });
 
     test('case4', () {
@@ -2621,10 +2195,7 @@ github.com/videah/SkyBridge
       expect(entities.first.type, EntityType.handle);
       expect(entities.first.value, 'shinyakato.dev');
       expect(entities[1].type, EntityType.link);
-      expect(
-        entities[1].value,
-        'https://www.nikkei.com/article/DGXZQOGN20CZ30Q3A920C2000000/',
-      );
+      expect(entities[1].value, 'https://www.nikkei.com/article/DGXZQOGN20CZ30Q3A920C2000000/');
     });
 
     test('case5', () {
@@ -2642,10 +2213,7 @@ github.com/videah/SkyBridge
       expect(entities.first.type, EntityType.handle);
       expect(entities.first.value, 'shinyakato.dev');
       expect(entities[1].type, EntityType.link);
-      expect(
-        entities[1].value,
-        'https://www.nikkei.com/article/DGX?QOGN20CZ30Q3A920C2000000/',
-      );
+      expect(entities[1].value, 'https://www.nikkei.com/article/DGX?QOGN20CZ30Q3A920C2000000/');
     });
 
     test('case6', () {
@@ -2654,10 +2222,7 @@ github.com/videah/SkyBridge
         linkConfig: LinkConfig(excludeProtocol: true, enableShortening: true),
       ).format();
 
-      expect(
-        text.value,
-        '@shinyakato.dev www.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com/article/DGX...',
-      );
+      expect(text.value, '@shinyakato.dev www.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com/article/DGX...');
       expect(text.length, 81);
 
       final entities = text.entities;
@@ -2754,10 +2319,7 @@ github.com/videah/SkyBridge
     });
 
     test('case11', () {
-      final text = const BlueskyText(
-        'https://deck.blue/',
-        linkConfig: LinkConfig(excludeProtocol: true),
-      ).format();
+      final text = const BlueskyText('https://deck.blue/', linkConfig: LinkConfig(excludeProtocol: true)).format();
 
       expect(text.value, 'deck.blue');
 
@@ -2790,10 +2352,7 @@ github.com/videah/SkyBridge
     });
 
     test('case14', () {
-      final text = const BlueskyText(
-        '[test](https://atprotodart.com)',
-        enableMarkdown: false,
-      ).format();
+      final text = const BlueskyText('[test](https://atprotodart.com)', enableMarkdown: false).format();
 
       expect(text.value, '[test](https://atprotodart.com)');
 
@@ -2864,29 +2423,18 @@ github.com/videah/SkyBridge
       ];
 
       for (int i = 0; i < urls.length; i++) {
-        final text = BlueskyText(
-          urls[i],
-          linkConfig: const LinkConfig(
-            excludeProtocol: true,
-            enableShortening: true,
-          ),
-        );
+        final text = BlueskyText(urls[i], linkConfig: const LinkConfig(excludeProtocol: true, enableShortening: true));
 
         expect(text.entities.first.value, expectedUrls[i]);
       }
     });
 
     test('urls followed by punctuations', () {
-      const text = BlueskyText(
-        'http://games.aarp.org/games/mahjongg-dimensions.aspx!!!!!!',
-      );
+      const text = BlueskyText('http://games.aarp.org/games/mahjongg-dimensions.aspx!!!!!!');
 
       final entities = text.entities;
 
-      expect(
-        entities.first.value,
-        'http://games.aarp.org/games/mahjongg-dimensions.aspx',
-      );
+      expect(entities.first.value, 'http://games.aarp.org/games/mahjongg-dimensions.aspx');
     });
   });
 
@@ -2918,9 +2466,7 @@ github.com/videah/SkyBridge
     });
 
     test('case3', () {
-      final text = const BlueskyText(
-        '[test テスト](https://example.com)',
-      ).format();
+      final text = const BlueskyText('[test テスト](https://example.com)').format();
 
       expect(text.value, 'test テスト');
 
@@ -2933,9 +2479,7 @@ github.com/videah/SkyBridge
     });
 
     test('case4', () {
-      final text = const BlueskyText(
-        'あああああ[test テスト](https://example.com)test',
-      ).format();
+      final text = const BlueskyText('あああああ[test テスト](https://example.com)test').format();
 
       expect(text.value, 'あああああtest テストtest');
 
@@ -2994,9 +2538,7 @@ github.com/videah/SkyBridge
     });
 
     test('case9', () {
-      final text = const BlueskyText(
-        '[test](https://example.com) atprotodart.com',
-      ).format();
+      final text = const BlueskyText('[test](https://example.com) atprotodart.com').format();
 
       expect(text.value, 'test atprotodart.com');
 
@@ -3012,9 +2554,7 @@ github.com/videah/SkyBridge
     });
 
     test('case10', () {
-      final text = const BlueskyText(
-        '[test](https://example.com)https://atprotodart.com',
-      ).format();
+      final text = const BlueskyText('[test](https://example.com)https://atprotodart.com').format();
 
       expect(text.value, 'testhttps://atprotodart.com');
 
@@ -3051,9 +2591,7 @@ github.com/videah/SkyBridge
     });
 
     test('case12', () {
-      final text = const BlueskyText(
-        '[test](mailto:hello@example.com)',
-      ).format();
+      final text = const BlueskyText('[test](mailto:hello@example.com)').format();
 
       expect(text.value, '[test](mailto:hello@example.com)');
 
@@ -3063,9 +2601,7 @@ github.com/videah/SkyBridge
     });
 
     test('case13', () {
-      final text = const BlueskyText(
-        '[test](ftp://user:pass@ftp.example.txt)',
-      ).format();
+      final text = const BlueskyText('[test](ftp://user:pass@ftp.example.txt)').format();
 
       expect(text.value, '[test](ftp://user:pass@ftp.example.txt)');
 
@@ -3075,9 +2611,7 @@ github.com/videah/SkyBridge
     });
 
     test('case14', () {
-      const text = BlueskyText(
-        '[あああああ](deck.blue)[あああああいいい](deck.blue)⭐[ううあえあああ](deck.blue)',
-      );
+      const text = BlueskyText('[あああああ](deck.blue)[あああああいいい](deck.blue)⭐[ううあえあああ](deck.blue)');
 
       final entities = text.entities;
 
@@ -3122,9 +2656,7 @@ github.com/videah/SkyBridge
     });
 
     test('case18', () {
-      final text = const BlueskyText(
-        '[@shinyakato.dev](https://example.com)',
-      ).format();
+      final text = const BlueskyText('[@shinyakato.dev](https://example.com)').format();
 
       final entities = text.entities;
 
@@ -3194,9 +2726,7 @@ github.com/videah/SkyBridge
     });
 
     test('case24', () {
-      final text = const BlueskyText(
-        '[#test](https://shinyakato.dev)',
-      ).format();
+      final text = const BlueskyText('[#test](https://shinyakato.dev)').format();
 
       final entities = text.entities;
 
@@ -3228,9 +2758,7 @@ github.com/videah/SkyBridge
     });
 
     test('case26', () {
-      final text = const BlueskyText(
-        '[##test](https://shinyakato.dev)',
-      ).format();
+      final text = const BlueskyText('[##test](https://shinyakato.dev)').format();
 
       final entities = text.entities;
 
@@ -3246,18 +2774,13 @@ github.com/videah/SkyBridge
     });
 
     test('case27', () {
-      const text = BlueskyText(
-        '[test](https://wikipedia.com//track/We_Up_(Album_Version_(Edited)))',
-      );
+      const text = BlueskyText('[test](https://wikipedia.com//track/We_Up_(Album_Version_(Edited)))');
 
       final entities = text.entities;
 
       expect(entities.length, 1);
       expect(entities.first.type, EntityType.markdownLink);
-      expect(
-        entities.first.value,
-        'https://wikipedia.com//track/We_Up_(Album_Version_(Edited))',
-      );
+      expect(entities.first.value, 'https://wikipedia.com//track/We_Up_(Album_Version_(Edited))');
       expect(entities.first.indices.start, 1);
       expect(entities.first.indices.end, 5);
     });
@@ -3568,11 +3091,7 @@ github.com/videah/SkyBridge
         final tags = text.tags;
 
         expect(tags.length, 1, reason: 'Failed for $description');
-        expect(
-          tags.first.value,
-          'test',
-          reason: 'Wrong tag value for $description',
-        );
+        expect(tags.first.value, 'test', reason: 'Wrong tag value for $description');
       }
     });
 

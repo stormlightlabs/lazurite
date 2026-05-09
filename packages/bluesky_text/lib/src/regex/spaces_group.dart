@@ -2,8 +2,6 @@
 // All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// ignore_for_file: lines_longer_than_80_chars
-
 /// A string representing the Unicode range for various space or whitespace characters.
 ///
 /// This range includes the following Unicode characters and blocks:
@@ -21,5 +19,4 @@
 ///
 /// These characters are generally used to represent spaces or whitespace in different contexts or scripts
 /// and are often used in regular expressions to match any whitespace character.
-const spacesGroup =
-    r'\x09-\x0D\x20\x85\xA0\u1680\u180E\u2000-\u200A\u2028\u2029\u202F\u205F\u3000';
+const spacesGroup = r'\x09-\x0D\x20\x85\xA0\u1680\u180E\u2000-\u200A\u2028\u2029\u202F\u205F\u3000';
