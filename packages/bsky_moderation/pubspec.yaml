@@ -1,0 +1,57 @@
+name: bsky_moderation
+description: High-level Bluesky content moderation helpers ported for Poptart lex types.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.10.1 <4.0.0"
+
+dependencies:
+  characters: ^1.4.0
+  poptart_core:
+    git:
+      url: https://github.com/sprksocial/poptart.git
+      ref: f452e900c89930976c185818eb6e350a37ab9808
+      path: packages/poptart_core
+  poptart_lex:
+    git:
+      url: https://github.com/sprksocial/poptart.git
+      ref: f452e900c89930976c185818eb6e350a37ab9808
+      path: packages/poptart_lex
+  freezed_annotation: ^3.1.0
+
+dependency_overrides:
+  poptart_core:
+    git:
+      url: https://github.com/sprksocial/poptart.git
+      ref: f452e900c89930976c185818eb6e350a37ab9808
+      path: packages/poptart_core
+  poptart_lex:
+    git:
+      url: https://github.com/sprksocial/poptart.git
+      ref: f452e900c89930976c185818eb6e350a37ab9808
+      path: packages/poptart_lex
+  poptart_oauth:
+    git:
+      url: https://github.com/sprksocial/poptart.git
+      ref: f452e900c89930976c185818eb6e350a37ab9808
+      path: packages/poptart_oauth
+  poptart_primitives:
+    git:
+      url: https://github.com/sprksocial/poptart.git
+      ref: f452e900c89930976c185818eb6e350a37ab9808
+      path: packages/poptart_primitives
+  poptart_xrpc:
+    git:
+      url: https://github.com/sprksocial/poptart.git
+      ref: f452e900c89930976c185818eb6e350a37ab9808
+      path: packages/poptart_xrpc
+  poptart_multiformats:
+    git:
+      url: https://github.com/sprksocial/poptart.git
+      ref: f452e900c89930976c185818eb6e350a37ab9808
+      path: packages/poptart_multiformats
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.26.2
