@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
@@ -15,6 +17,49 @@ void main() {
   });
 
   group('AppDatabase', () {
+    group('Serialized writes', () {
+      test('runSerializedWrite waits for the previous write to finish', () async {
+        final events = <String>[];
+        final firstStarted = Completer<void>();
+        final releaseFirst = Completer<void>();
+
+        final first = database.runSerializedWrite(() async {
+          events.add('first-start');
+          firstStarted.complete();
+          await releaseFirst.future;
+          events.add('first-end');
+          return 'first';
+        });
+
+        await firstStarted.future;
+        final second = database.runSerializedWrite(() async {
+          events.add('second');
+          return 'second';
+        });
+
+        await Future<void>.delayed(Duration.zero);
+        expect(events, ['first-start']);
+
+        releaseFirst.complete();
+
+        expect(await Future.wait([first, second]), ['first', 'second']);
+        expect(events, ['first-start', 'first-end', 'second']);
+      });
+
+      test('runSerializedWrite continues after a failed write', () async {
+        await expectLater(
+          database.runSerializedWrite<void>(() async {
+            throw StateError('write failed');
+          }),
+          throwsA(isA<StateError>()),
+        );
+
+        final result = await database.runSerializedWrite(() async => 1);
+
+        expect(result, 1);
+      });
+    });
+
     group('Account operations', () {
       test('should insert and retrieve an account', () async {
         final account = AccountsCompanion.insert(
