@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
@@ -424,11 +425,13 @@ class _LogEntryTileState extends State<_LogEntryTile> {
   Widget build(BuildContext context) {
     final levelColor = _getLevelColor(context, widget.entry.level);
     final badgeColor = _getBadgeColor(context, widget.entry.level);
+    final stackTrace = widget.entry.stackTrace;
+    final hasStackTrace = stackTrace != null;
 
     return InkWell(
       onTap: () => setState(() => _expanded = !_expanded),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -458,9 +461,18 @@ class _LogEntryTileState extends State<_LogEntryTile> {
                   Text(
                     widget.entry.message,
                     style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 12, color: context.colorScheme.onSurface),
-                    maxLines: _expanded ? null : 2,
+                    maxLines: _expanded ? null : 3,
                     overflow: _expanded ? null : TextOverflow.ellipsis,
                   ),
+                  if (hasStackTrace)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: _StackTracePreview(
+                        stackTrace: stackTrace,
+                        expanded: _expanded,
+                        onToggle: () => setState(() => _expanded = !_expanded),
+                      ),
+                    ),
                   if (widget.entry.source != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
@@ -476,10 +488,25 @@ class _LogEntryTileState extends State<_LogEntryTile> {
                 ],
               ),
             ),
+            const SizedBox(width: 4),
+            IconButton(
+              icon: const Icon(Icons.content_copy_outlined, size: 18),
+              tooltip: MaterialLocalizations.of(context).copyButtonLabel,
+              visualDensity: VisualDensity.compact,
+              onPressed: () => _copyEntry(context),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _copyEntry(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: widget.entry.copyText));
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.messageCopied)));
   }
 
   Color _getLevelColor(BuildContext context, Level level) {
@@ -516,4 +543,50 @@ class _LogEntryTileState extends State<_LogEntryTile> {
   }
 
   bool _isFatalOrError(Level level) => level == Level.fatal || level == Level.error;
+}
+
+class _StackTracePreview extends StatelessWidget {
+  const _StackTracePreview({required this.stackTrace, required this.expanded, required this.onToggle});
+
+  final String stackTrace;
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = context.colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withAlpha(128),
+        border: Border.all(color: colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                stackTrace,
+                style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 11, color: colorScheme.onSurfaceVariant),
+                maxLines: expanded ? null : 2,
+                overflow: expanded ? null : TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              icon: Icon(expanded ? Icons.unfold_less : Icons.unfold_more, size: 18),
+              tooltip: expanded ? context.l10n.tooltipCollapseStackTrace : context.l10n.tooltipExpandStackTrace,
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(width: 28, height: 28),
+              onPressed: onToggle,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

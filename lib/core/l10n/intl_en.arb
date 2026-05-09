@@ -3439,6 +3439,14 @@
   "@tooltipClearAllLogs": {
     "description": "Tooltip for clearing all log files"
   },
+  "tooltipCollapseStackTrace": "Collapse stack trace",
+  "@tooltipCollapseStackTrace": {
+    "description": "Tooltip for collapsing a log row stack trace preview"
+  },
+  "tooltipExpandStackTrace": "Expand stack trace",
+  "@tooltipExpandStackTrace": {
+    "description": "Tooltip for expanding a log row stack trace preview"
+  },
   "tooltipGoToPdsLs": "Go to pds.ls",
   "@tooltipGoToPdsLs": {
     "description": "Tooltip for opening pds.ls"
