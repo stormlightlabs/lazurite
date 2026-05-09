@@ -54,6 +54,20 @@ void main() {
         expect(entry.message, 'Unhandled exception');
       });
 
+      test('separates stack traces from the visible message', () {
+        final entry = LogEntry.tryParse(
+          '[E] TIME: 2026-03-16T14:32:12.450 FeedRepository: feed.cacheWindow failed  '
+          'ERROR: cannot commit transaction  '
+          'STACK: #0 AppDatabase.transaction | #1 FeedRepository._cacheFeedWindow',
+        );
+
+        expect(entry, isNotNull);
+        expect(entry!.level, Level.error);
+        expect(entry.source, 'FeedRepository');
+        expect(entry.message, 'feed.cacheWindow failed  ERROR: cannot commit transaction');
+        expect(entry.stackTrace, '#0 AppDatabase.transaction | #1 FeedRepository._cacheFeedWindow');
+      });
+
       test('returns null for empty line', () {
         final entry = LogEntry.tryParse('');
         expect(entry, isNull);
@@ -114,6 +128,22 @@ void main() {
         final timestamp = DateTime(2024, 1, 15, 9, 5, 3, 5);
         final entry = LogEntry(timestamp: timestamp, level: Level.info, message: 'test');
         expect(entry.formatTimestamp(), '09:05:03.005');
+      });
+    });
+
+    group('copyText', () {
+      test('includes the full row and stack trace', () {
+        final entry = LogEntry(
+          timestamp: DateTime(2026, 5, 9, 10, 15, 30, 125),
+          level: Level.error,
+          source: 'FeedRepository',
+          message: 'feed.cacheWindow failed',
+          stackTrace: '#0 AppDatabase.transaction',
+        );
+
+        expect(entry.copyText, contains('[ERROR] TIME: 2026-05-09T10:15:30.125'));
+        expect(entry.copyText, contains('FeedRepository: feed.cacheWindow failed'));
+        expect(entry.copyText, contains('STACK: #0 AppDatabase.transaction'));
       });
     });
 

@@ -158,7 +158,9 @@ class LogViewerCubit extends Cubit<LogViewerState> {
     if (searchQuery.isNotEmpty) {
       final query = searchQuery.toLowerCase();
       filtered = filtered.where((entry) {
-        return entry.message.toLowerCase().contains(query) || (entry.source?.toLowerCase().contains(query) ?? false);
+        return entry.message.toLowerCase().contains(query) ||
+            (entry.source?.toLowerCase().contains(query) ?? false) ||
+            (entry.stackTrace?.toLowerCase().contains(query) ?? false);
       }).toList();
     }
 

@@ -76,6 +76,33 @@ void main() {
       },
     );
 
+    test('search query matches stack traces', () async {
+      final sourceDir = await Directory.systemTemp.createTemp('lazurite_log_viewer_source_');
+      final sourceFile = File('${sourceDir.path}/lazurite_2026-05-06.log');
+      await sourceFile.writeAsString(
+        '[E] TIME: 2026-05-06T10:00:00.000 FeedRepository: cache failed  '
+        'STACK: #0 AppDatabase.transaction\n'
+        '[I] TIME: 2026-05-06T10:00:01.000 FeedRepository: cache recovered',
+      );
+
+      final cubit = LogViewerCubit(
+        refreshInterval: const Duration(hours: 1),
+        logFilesProvider: () async => [sourceFile],
+      );
+      addTearDown(() async {
+        await cubit.close();
+        if (await sourceDir.exists()) {
+          await sourceDir.delete(recursive: true);
+        }
+      });
+
+      await _waitForLoaded(cubit);
+      cubit.setSearchQuery('transaction');
+
+      expect(cubit.state.filteredEntries, hasLength(1));
+      expect(cubit.state.filteredEntries.single.stackTrace, contains('AppDatabase.transaction'));
+    });
+
     test('getTodaysLogFile returns a redacted share copy', () async {
       final sourceDir = await Directory.systemTemp.createTemp('lazurite_log_viewer_test_');
       final sourceFile = File('${sourceDir.path}/lazurite_2026-05-05.log');

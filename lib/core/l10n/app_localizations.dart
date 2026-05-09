@@ -4417,6 +4417,18 @@ abstract class AppLocalizations {
   /// **'Clear all logs'**
   String get tooltipClearAllLogs;
 
+  /// Tooltip for collapsing a log row stack trace preview
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse stack trace'**
+  String get tooltipCollapseStackTrace;
+
+  /// Tooltip for expanding a log row stack trace preview
+  ///
+  /// In en, this message translates to:
+  /// **'Expand stack trace'**
+  String get tooltipExpandStackTrace;
+
   /// Tooltip for opening pds.ls
   ///
   /// In en, this message translates to:

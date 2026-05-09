@@ -3,12 +3,13 @@ import 'package:logger/logger.dart';
 import 'package:lazurite/core/logging/log_redactor.dart';
 
 class LogEntry extends Equatable {
-  const LogEntry({required this.timestamp, required this.level, required this.message, this.source});
+  const LogEntry({required this.timestamp, required this.level, required this.message, this.source, this.stackTrace});
 
   final DateTime timestamp;
   final Level level;
   final String message;
   final String? source;
+  final String? stackTrace;
 
   static LogEntry? tryParse(String line) {
     final trimmed = line.trim();
@@ -35,6 +36,13 @@ class LogEntry extends Equatable {
 
     String message;
     String? source;
+    String? stackTrace;
+
+    final stackMarkerIndex = remaining.indexOf('  STACK: ');
+    if (stackMarkerIndex >= 0) {
+      stackTrace = remaining.substring(stackMarkerIndex + '  STACK: '.length).trim();
+      remaining = remaining.substring(0, stackMarkerIndex).trim();
+    }
 
     final colonIndex = remaining.indexOf(':');
     if (colonIndex > 0 && colonIndex < 30 && !remaining.substring(0, colonIndex).contains(' ')) {
@@ -46,14 +54,16 @@ class LogEntry extends Equatable {
 
     final redactedSource = source == null ? null : LogRedactor.redact(source);
     final redactedMessage = LogRedactor.redact(message);
+    final redactedStackTrace = stackTrace == null ? null : LogRedactor.redact(stackTrace);
 
-    if (redactedMessage.isEmpty && redactedSource == null) return null;
+    if (redactedMessage.isEmpty && redactedSource == null && (redactedStackTrace?.isEmpty ?? true)) return null;
 
     return LogEntry(
       timestamp: timestamp ?? DateTime.now(),
       level: level,
       message: redactedMessage,
       source: redactedSource,
+      stackTrace: redactedStackTrace?.isEmpty ?? true ? null : redactedStackTrace,
     );
   }
 
@@ -108,6 +118,25 @@ class LogEntry extends Equatable {
         '${timestamp.millisecond.toString().padLeft(3, '0')}';
   }
 
+  String get copyText {
+    final buffer = StringBuffer()
+      ..write('[${level.name.toUpperCase()}] TIME: ')
+      ..write(timestamp.toIso8601String())
+      ..write(' ');
+    if (source != null) {
+      buffer
+        ..write(source)
+        ..write(': ');
+    }
+    buffer.write(message);
+    if (stackTrace != null) {
+      buffer
+        ..write('\nSTACK: ')
+        ..write(stackTrace);
+    }
+    return buffer.toString();
+  }
+
   @override
-  List<Object?> get props => [timestamp, level, message, source];
+  List<Object?> get props => [timestamp, level, message, source, stackTrace];
 }

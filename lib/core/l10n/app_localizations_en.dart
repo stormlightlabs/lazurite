@@ -2419,6 +2419,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tooltipClearAllLogs => 'Clear all logs';
 
   @override
+  String get tooltipCollapseStackTrace => 'Collapse stack trace';
+
+  @override
+  String get tooltipExpandStackTrace => 'Expand stack trace';
+
+  @override
   String get tooltipGoToPdsLs => 'Go to pds.ls';
 
   @override

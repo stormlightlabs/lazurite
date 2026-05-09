@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:lazurite/core/database/tables.dart';
@@ -35,6 +37,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase({QueryExecutor? executor}) : super(executor ?? _openConnection());
 
   static const activeAccountDidSettingKey = 'active_account_did';
+  Future<void> _serializedWriteTail = Future.value();
 
   @override
   int get schemaVersion => 23;
@@ -177,8 +180,28 @@ class AppDatabase extends _$AppDatabase {
 
   static QueryExecutor _openConnection() => driftDatabase(
     name: 'lazurite_db',
-    native: const DriftNativeOptions(databaseDirectory: getApplicationSupportDirectory),
+    native: const DriftNativeOptions(
+      databaseDirectory: getApplicationSupportDirectory,
+      shareAcrossIsolates: true,
+      setup: _configureNativeDatabaseConnection,
+    ),
   );
+
+  /// Serializes read-modify-write database operations issued through this
+  /// [AppDatabase] instance so callers do not compute writes from stale reads.
+  Future<T> runSerializedWrite<T>(Future<T> Function() operation) {
+    final previousTail = _serializedWriteTail;
+    final completion = Completer<void>();
+    _serializedWriteTail = completion.future;
+
+    return previousTail.then((_) async {
+      try {
+        return await operation();
+      } finally {
+        completion.complete();
+      }
+    });
+  }
 
   Future<Account?> getAccount(String did) => (select(accounts)..where((a) => a.did.equals(did))).getSingleOrNull();
 
@@ -268,14 +291,16 @@ class AppDatabase extends _$AppDatabase {
   Future<int> deleteSetting(String key) => (delete(settings)..where((s) => s.key.equals(key))).go();
 
   Future<void> clearLocalCaches() async {
-    await transaction(() async {
-      await delete(cachedProfiles).go();
-      await delete(cachedPosts).go();
-      await delete(cachedFeedPages).go();
-      await delete(cachedFeedPosts).go();
-      await delete(cachedThreadRoots).go();
-      await delete(labelerCache).go();
-      await customStatement("DELETE FROM settings WHERE key LIKE 'moderation_preferences::%'");
+    await runSerializedWrite(() async {
+      await transaction(() async {
+        await delete(cachedProfiles).go();
+        await delete(cachedPosts).go();
+        await delete(cachedFeedPages).go();
+        await delete(cachedFeedPosts).go();
+        await delete(cachedThreadRoots).go();
+        await delete(labelerCache).go();
+        await customStatement("DELETE FROM settings WHERE key LIKE 'moderation_preferences::%'");
+      });
     });
   }
 
@@ -422,11 +447,13 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> replaceSavedFeeds(String accountDid, List<SavedFeedsCompanion> feeds) async {
-    await transaction(() async {
-      await deleteAllSavedFeeds(accountDid);
-      for (final feed in feeds) {
-        await insertSavedFeed(feed);
-      }
+    await runSerializedWrite(() async {
+      await transaction(() async {
+        await deleteAllSavedFeeds(accountDid);
+        for (final feed in feeds) {
+          await insertSavedFeed(feed);
+        }
+      });
     });
   }
 
@@ -836,4 +863,11 @@ class AppDatabase extends _$AppDatabase {
     final rows = await (select(notificationDeliveries)..where((entry) => entry.accountDid.equals(accountDid))).get();
     return rows.length;
   }
+}
+
+void _configureNativeDatabaseConnection(dynamic database) {
+  database.execute('PRAGMA busy_timeout = 5000');
+  database.execute('PRAGMA journal_mode = WAL');
+  database.execute('PRAGMA synchronous = NORMAL');
+  database.execute('PRAGMA foreign_keys = ON');
 }
