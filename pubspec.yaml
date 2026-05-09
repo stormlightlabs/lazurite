@@ -74,6 +74,33 @@ dev_dependencies:
   objectbox_generator: ^5.3.1
   # flutter_native_splash: ^2.4.7
 
+dependency_overrides:
+  atproto:
+    git:
+      url: https://github.com/sprksocial/poptart.git
+      ref: oauth-client-id
+      path: packages/atproto
+  atproto_core:
+    git:
+      url: https://github.com/sprksocial/poptart.git
+      ref: oauth-client-id
+      path: packages/atproto_core
+  bluesky:
+    git:
+      url: https://github.com/sprksocial/poptart.git
+      ref: oauth-client-id
+      path: packages/bluesky
+  bluesky_text:
+    git:
+      url: https://github.com/sprksocial/poptart.git
+      ref: oauth-client-id
+      path: packages/bluesky_text
+  atproto_oauth:
+    git:
+      url: https://github.com/sprksocial/poptart.git
+      ref: oauth-client-id
+      path: packages/atproto_oauth
+
 flutter:
   uses-material-design: true
   generate: true

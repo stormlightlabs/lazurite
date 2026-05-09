@@ -52,26 +52,29 @@ packages:
   atproto:
     dependency: "direct main"
     description:
-      name: atproto
-      sha256: "115944b8e4859bdaa0fe0d5162725ddf80269f14e79a33ab7ee05db972932ef9"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/atproto"
+      ref: oauth-client-id
+      resolved-ref: aafa5dfb0c67c4e7cbe2ea286500bf5891a9bfe6
+      url: "https://github.com/sprksocial/poptart.git"
+    source: git
     version: "1.4.1"
   atproto_core:
     dependency: "direct main"
     description:
-      name: atproto_core
-      sha256: "76b8c6237cf0c446c2f056cd76723eb5d7993ecaf7f7cc417b1b6bf26d8f24ce"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/atproto_core"
+      ref: oauth-client-id
+      resolved-ref: aafa5dfb0c67c4e7cbe2ea286500bf5891a9bfe6
+      url: "https://github.com/sprksocial/poptart.git"
+    source: git
     version: "1.2.0"
   atproto_oauth:
     dependency: "direct main"
     description:
-      name: atproto_oauth
-      sha256: "42a3a98dae11eb8c2a8a83051ebda9d0a711aec998c280c4f94a1a7127ba0aed"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/atproto_oauth"
+      ref: oauth-client-id
+      resolved-ref: aafa5dfb0c67c4e7cbe2ea286500bf5891a9bfe6
+      url: "https://github.com/sprksocial/poptart.git"
+    source: git
     version: "0.2.0"
   base_codecs:
     dependency: transitive
@@ -100,18 +103,20 @@ packages:
   bluesky:
     dependency: "direct main"
     description:
-      name: bluesky
-      sha256: "21539161860842fde4f03094d2e3f117624808b606c6a6f5905bf1238683dc4f"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/bluesky"
+      ref: oauth-client-id
+      resolved-ref: aafa5dfb0c67c4e7cbe2ea286500bf5891a9bfe6
+      url: "https://github.com/sprksocial/poptart.git"
+    source: git
     version: "1.4.1"
   bluesky_text:
     dependency: "direct main"
     description:
-      name: bluesky_text
-      sha256: effbb9dc7579744b1a24fff6e79e6ce9285162f29833afd427eaa9d53f4c0daa
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/bluesky_text"
+      ref: oauth-client-id
+      resolved-ref: aafa5dfb0c67c4e7cbe2ea286500bf5891a9bfe6
+      url: "https://github.com/sprksocial/poptart.git"
+    source: git
     version: "1.1.1"
   boolean_selector:
     dependency: transitive
