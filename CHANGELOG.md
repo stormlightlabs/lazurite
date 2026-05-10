@@ -1,6 +1,12 @@
 # CHANGELOG
 
-## v1.0.0 (Alpha 6 - unreleased)
+## v1.0.0 (Alpha 7)
+
+### Fixed
+
+- Token refresh race condition
+
+## v1.0.0 (Alpha 6)
 
 ### Added
 
