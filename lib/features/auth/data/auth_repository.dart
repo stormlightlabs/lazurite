@@ -130,25 +130,7 @@ class AuthRepository {
       return null;
     }
 
-    final authMethod = account.dpopPrivateKey != null && account.dpopPublicKey != null
-        ? AuthMethod.oauth
-        : AuthMethod.appPassword;
-
-    return AuthTokens(
-      accessToken: account.accessToken,
-      refreshToken: account.refreshToken,
-      expiresAt: account.expiresAt,
-      did: account.did,
-      handle: account.handle,
-      displayName: account.displayName,
-      service: account.service,
-      oauthService: authMethod == AuthMethod.oauth ? normalizeAtprotoServiceHost(account.oauthService) : null,
-      oauthClientId: authMethod == AuthMethod.oauth ? account.oauthClientId : null,
-      dpopNonce: account.dpopNonce,
-      dpopPublicKey: account.dpopPublicKey,
-      dpopPrivateKey: account.dpopPrivateKey,
-      authMethod: authMethod,
-    );
+    return _tokensFromAccount(account);
   }
 
   Future<AuthTokens?> restoreSession() async {
@@ -227,7 +209,7 @@ class AuthRepository {
       late final String resolvedPdsHost;
       String? resolvedAuthService;
       try {
-        resolvedPdsHost = await _resolveServiceForIdentifier(_pendingHandle!);
+        resolvedPdsHost = await resolveServiceForIdentifier(_pendingHandle!);
       } on atcore.InvalidRequestException catch (error, stackTrace) {
         final failure = _handleResolutionFailureForIdentifier(_pendingHandle!, error);
         log.w(
@@ -248,25 +230,29 @@ class AuthRepository {
           stackTrace: stackTrace,
         );
       }
-      final oauthServices = _oauthAuthorizeServiceCandidates(
+      final oauthServices = oauthAuthorizeServiceCandidates(
         preferredAuthService: preferredOauthService,
         resolvedPdsHost: resolvedPdsHost,
         resolvedAuthService: resolvedAuthService,
       );
+
       log.i('AuthRepository: Starting OAuth login for ${_pendingHandle!}');
       log.d('AuthRepository: OAuth auth service candidates: ${oauthServices.join(', ')}');
 
       final metadata = await _loadClientMetadata(kClientId);
+
       log.d('AuthRepository: Loaded client metadata with redirect URIs: ${metadata.redirectUris.join(', ')}');
+
       final isAndroidNative = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
       final isIosNative = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
-      final redirectUri = _selectOAuthRedirectUriTemplate(
+      final redirectUri = selectOAuthRedirectUriTemplate(
         metadata.redirectUris,
         isAndroid: isAndroidNative,
         httpsAndroidCallbackEnabled: _androidHttpsCallbackEnabled,
         isIos: isIosNative,
         httpsIosCallbackEnabled: _iosHttpsCallbackEnabled,
       );
+
       log.d(
         'AuthRepository: OAuth callback strategy '
         'androidNative=$isAndroidNative '
@@ -336,7 +322,7 @@ class AuthRepository {
   Future<AuthTokens?> loginWithAppPassword(String handle, String appPassword) async {
     try {
       log.i('AuthRepository: Starting app password login for ${handle.trim()}');
-      final service = await _resolveServiceForIdentifier(handle);
+      final service = await resolveServiceForIdentifier(handle);
       log.d('AuthRepository: Resolved app password login service to $service');
       final session = await atp.createSession(identifier: handle, password: appPassword, service: service);
 
@@ -409,14 +395,16 @@ class AuthRepository {
       try {
         final metadataClientId = _resolveOauthClientId(currentSession.oauthClientId);
         final metadata = await _loadClientMetadata(metadataClientId);
-        final restoredSession = _restoreOAuthSession(
-          currentSession: currentSession,
+        final restoredSession = atcore.restoreOAuthSession(
+          accessToken: currentSession.accessToken,
+          refreshToken: currentSession.refreshToken!,
+          dPoPNonce: currentSession.dpopNonce,
           publicKey: publicKey,
           privateKey: privateKey,
         );
         final issuerHost = normalizeAtprotoServiceHost(restoredSession.accessTokenJwt.iss);
         final storedAuthHost = normalizeAtprotoServiceHost(currentSession.oauthService);
-        final oauthServices = _oauthRefreshServiceCandidates(
+        final oauthServices = oauthRefreshServiceCandidates(
           storedAuthService: currentSession.oauthService,
           issuer: issuerHost,
         );
@@ -433,8 +421,10 @@ class AuthRepository {
             refreshedSession = await _oauthRefreshSession(
               metadata: metadata,
               service: oauthService,
-              session: _restoreOAuthSession(
-                currentSession: currentSession,
+              session: atcore.restoreOAuthSession(
+                accessToken: currentSession.accessToken,
+                refreshToken: currentSession.refreshToken!,
+                dPoPNonce: currentSession.dpopNonce,
                 publicKey: publicKey,
                 privateKey: privateKey,
               ),
@@ -606,7 +596,7 @@ class AuthRepository {
       return false;
     }
 
-    final normalizedCallbackUri = _normalizeOAuthCallbackUri(callbackUri);
+    final normalizedCallbackUri = normalizeOAuthCallbackUri(callbackUri);
     if (normalizedCallbackUri == null) {
       log.w('AuthRepository: Ignoring unsupported OAuth callback URI ${_sanitizeUriForLog(callbackUri)}');
       return false;
@@ -615,7 +605,7 @@ class AuthRepository {
     final joiningInFlightExchange = _pendingOAuthCallbackExchange != null;
     try {
       log.i('AuthRepository: Processing OAuth callback URI ${_sanitizeUriForLog(normalizedCallbackUri)}');
-      final tokens = await _runOAuthCallbackExchangeOnce(normalizedCallbackUri, _handleOAuthCallback);
+      final tokens = await runOAuthCallbackExchangeOnce(normalizedCallbackUri, _handleOAuthCallback);
       if (_oauthCompleter?.isCompleted == false) {
         _oauthCompleter?.complete(tokens);
       }
@@ -633,7 +623,8 @@ class AuthRepository {
     }
   }
 
-  Future<AuthTokens> _runOAuthCallbackExchangeOnce(
+  @visibleForTesting
+  Future<AuthTokens> runOAuthCallbackExchangeOnce(
     Uri normalizedCallbackUri,
     Future<AuthTokens> Function(String callbackUrl) exchangeCallback,
   ) async {
@@ -710,7 +701,8 @@ class AuthRepository {
     );
   }
 
-  Future<String> _resolveServiceForIdentifier(String identifier) async {
+  @visibleForTesting
+  Future<String> resolveServiceForIdentifier(String identifier) async {
     log.d('AuthRepository: Resolving AT Protocol service for $identifier');
     final resolvedIdentity = await _resolveIdentityForIdentifier(identifier);
     log.d('AuthRepository: Resolved identifier $identifier to DID ${resolvedIdentity.did}');
@@ -903,7 +895,7 @@ class AuthRepository {
   }
 
   Future<void> _launchUrl(Uri url) async {
-    final launchMode = _oauthLaunchModeForPlatform(isWeb: kIsWeb, platform: defaultTargetPlatform);
+    final launchMode = oauthLaunchModeForPlatform(isWeb: kIsWeb, platform: defaultTargetPlatform);
     log.d('AuthRepository: Launching OAuth URL ${_sanitizeUriForLog(url)} with mode $launchMode');
 
     if (!await _launchUrlWithMode(url, launchMode)) {
@@ -934,14 +926,10 @@ class AuthRepository {
     }
   }
 
-  @visibleForTesting
-  static LaunchMode oauthLaunchModeForTest({required bool isWeb, required TargetPlatform platform}) {
-    return _oauthLaunchModeForPlatform(isWeb: isWeb, platform: platform);
-  }
-
   /// ATProto OAuth providers can enforce browser-like fetch metadata semantics.
   /// Prefer the system browser app on mobile for consistent behavior.
-  static LaunchMode _oauthLaunchModeForPlatform({required bool isWeb, required TargetPlatform platform}) {
+  @visibleForTesting
+  static LaunchMode oauthLaunchModeForPlatform({required bool isWeb, required TargetPlatform platform}) {
     if (isWeb) {
       return LaunchMode.platformDefault;
     }
@@ -954,7 +942,7 @@ class AuthRepository {
   }
 
   @visibleForTesting
-  Future<void> dismissOAuthBrowserForTest(LaunchMode mode) async {
+  Future<void> dismissOAuthBrowserForLaunchMode(LaunchMode mode) async {
     _oauthLaunchMode = mode;
     await _dismissOAuthBrowserIfNeeded();
   }
@@ -969,7 +957,8 @@ class AuthRepository {
         redirectUri.path == _httpsOAuthRedirectPath;
   }
 
-  Uri? _normalizeOAuthCallbackUri(Uri callbackUri) {
+  @visibleForTesting
+  Uri? normalizeOAuthCallbackUri(Uri callbackUri) {
     if (_isSupportedCustomSchemeRedirect(callbackUri)) {
       return callbackUri;
     }
@@ -1010,7 +999,8 @@ class AuthRepository {
         (queryParameters.containsKey('code') || queryParameters.containsKey('error'));
   }
 
-  Uri _selectOAuthRedirectUriTemplate(
+  @visibleForTesting
+  Uri selectOAuthRedirectUriTemplate(
     List<String> redirectUris, {
     required bool isAndroid,
     required bool httpsAndroidCallbackEnabled,
@@ -1049,34 +1039,6 @@ class AuthRepository {
     throw UnsupportedError(
       'No supported OAuth redirect URI found. Lazurite currently supports '
       '${_mobileOAuthRedirectUri.toString()} and ${_httpsOAuthRedirectUri.toString()}.',
-    );
-  }
-
-  @visibleForTesting
-  Uri? normalizeOAuthCallbackUriForTest(Uri callbackUri) => _normalizeOAuthCallbackUri(callbackUri);
-
-  @visibleForTesting
-  Future<AuthTokens> runOAuthCallbackExchangeOnceForTest(
-    Uri normalizedCallbackUri,
-    Future<AuthTokens> Function(String callbackUrl) exchangeCallback,
-  ) {
-    return _runOAuthCallbackExchangeOnce(normalizedCallbackUri, exchangeCallback);
-  }
-
-  @visibleForTesting
-  Uri selectOAuthRedirectUriTemplateForTest(
-    List<String> redirectUris, {
-    required bool isAndroid,
-    required bool httpsAndroidCallbackEnabled,
-    required bool isIos,
-    required bool httpsIosCallbackEnabled,
-  }) {
-    return _selectOAuthRedirectUriTemplate(
-      redirectUris,
-      isAndroid: isAndroid,
-      httpsAndroidCallbackEnabled: httpsAndroidCallbackEnabled,
-      isIos: isIos,
-      httpsIosCallbackEnabled: httpsIosCallbackEnabled,
     );
   }
 
@@ -1262,20 +1224,6 @@ class AuthRepository {
     }
   }
 
-  OAuthSession _restoreOAuthSession({
-    required AuthTokens currentSession,
-    required String publicKey,
-    required String privateKey,
-  }) {
-    return atcore.restoreOAuthSession(
-      accessToken: currentSession.accessToken,
-      refreshToken: currentSession.refreshToken!,
-      dPoPNonce: currentSession.dpopNonce,
-      publicKey: publicKey,
-      privateKey: privateKey,
-    );
-  }
-
   static Future<OAuthSession> _defaultOAuthRefreshSession({
     required OAuthClientMetadata metadata,
     required String service,
@@ -1322,7 +1270,8 @@ class AuthRepository {
     return message.length <= 240 ? message : '${message.substring(0, 237)}...';
   }
 
-  static List<String> _oauthRefreshServiceCandidates({required String? storedAuthService, required String? issuer}) {
+  @visibleForTesting
+  static List<String> oauthRefreshServiceCandidates({required String? storedAuthService, required String? issuer}) {
     final candidates = <String>{};
     final issuerHost = normalizeAtprotoServiceHost(issuer);
     if (issuerHost != null) {
@@ -1339,7 +1288,8 @@ class AuthRepository {
     return candidates.toList(growable: false);
   }
 
-  static List<String> _oauthAuthorizeServiceCandidates({
+  @visibleForTesting
+  static List<String> oauthAuthorizeServiceCandidates({
     required String? preferredAuthService,
     required String? resolvedPdsHost,
     required String? resolvedAuthService,
@@ -1366,28 +1316,4 @@ class AuthRepository {
     candidates.add(_fallbackService);
     return candidates.toList(growable: false);
   }
-
-  @visibleForTesting
-  static List<String> oauthRefreshServiceCandidatesForTest({
-    required String? storedAuthService,
-    required String? issuer,
-  }) {
-    return _oauthRefreshServiceCandidates(storedAuthService: storedAuthService, issuer: issuer);
-  }
-
-  @visibleForTesting
-  static List<String> oauthAuthorizeServiceCandidatesForTest({
-    required String? preferredAuthService,
-    required String? resolvedPdsHost,
-    required String? resolvedAuthService,
-  }) {
-    return _oauthAuthorizeServiceCandidates(
-      preferredAuthService: preferredAuthService,
-      resolvedPdsHost: resolvedPdsHost,
-      resolvedAuthService: resolvedAuthService,
-    );
-  }
-
-  @visibleForTesting
-  Future<String> resolveServiceForIdentifierForTest(String identifier) => _resolveServiceForIdentifier(identifier);
 }
