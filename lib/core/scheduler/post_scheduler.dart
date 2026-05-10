@@ -4,7 +4,7 @@ import 'dart:typed_data';
 
 import 'package:poptart_core/poptart_core.dart' show Blob;
 import 'package:poptart_lex/app/bsky/video/defs.dart' show KnownJobStatusState;
-import 'package:bluesky_text/bluesky_text.dart';
+import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';

@@ -9,7 +9,7 @@ import 'package:poptart_lex/app/bsky/labeler/defs.dart';
 import 'package:poptart_lex/app/bsky/labeler/get_services.dart';
 import 'package:poptart_lex/app/bsky/notification/list_notifications.dart' as notifications;
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
-import 'package:bsky_moderation/bsky_moderation.dart' as bsky_moderation;
+import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';

@@ -5,7 +5,7 @@ import 'dart:ui' as ui;
 
 import 'package:poptart_core/poptart_core.dart' show AtUri, Blob, BlobRef, XRPCException;
 import 'package:poptart_lex/app/bsky/video/defs.dart' show KnownJobStatusState;
-import 'package:bluesky_text/bluesky_text.dart';
+import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
 import 'package:characters/characters.dart';
 import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';

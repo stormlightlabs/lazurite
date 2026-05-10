@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:poptart_lex/app/bsky/richtext/facet.dart';
-import 'package:bluesky_text/bluesky_text.dart';
+import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';

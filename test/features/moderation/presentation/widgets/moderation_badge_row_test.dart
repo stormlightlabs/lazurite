@@ -1,5 +1,5 @@
 import 'package:poptart_lex/com/atproto/label/defs.dart';
-import 'package:bsky_moderation/bsky_moderation.dart' as bsky_moderation;
+import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';

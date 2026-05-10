@@ -65,13 +65,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "10.0.0"
-  bluesky_text:
-    dependency: "direct main"
-    description:
-      path: "packages/bluesky_text"
-      relative: true
-    source: path
-    version: "0.1.0"
   boolean_selector:
     dependency: transitive
     description:
@@ -80,13 +73,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
-  bsky_moderation:
-    dependency: "direct main"
-    description:
-      path: "packages/bsky_moderation"
-      relative: true
-    source: path
-    version: "0.1.0"
   buffer:
     dependency: transitive
     description:
@@ -1222,65 +1208,74 @@ packages:
   poptart:
     dependency: "direct main"
     description:
-      path: "packages/poptart"
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      resolved-ref: f452e900c89930976c185818eb6e350a37ab9808
-      url: "https://github.com/sprksocial/poptart.git"
-    source: git
+      name: poptart
+      sha256: "5631a6e4a1ffa25101db2aa76b82e2410941fa5fec4d4c18ea2c2c7d95b70f0b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
+  poptart_bluesky_moderation:
+    dependency: "direct main"
+    description:
+      name: poptart_bluesky_moderation
+      sha256: d9d4cdcd04e5874edc8eadf0cd39f5e6e0e23a7d362a67876430ddb39c8ccf79
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
+  poptart_bluesky_text:
+    dependency: "direct main"
+    description:
+      name: poptart_bluesky_text
+      sha256: "77449712a9f0c9270025d42693e7a70426e24f193376c3a86d9df211f09bc334"
+      url: "https://pub.dev"
+    source: hosted
     version: "0.1.0"
   poptart_core:
     dependency: "direct main"
     description:
-      path: "packages/poptart_core"
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      resolved-ref: f452e900c89930976c185818eb6e350a37ab9808
-      url: "https://github.com/sprksocial/poptart.git"
-    source: git
+      name: poptart_core
+      sha256: "4401f47c4e7f6d1f5142a207aa7e543408f83c43b5aaabdf6d4f60ef8f00ad84"
+      url: "https://pub.dev"
+    source: hosted
     version: "0.1.0"
   poptart_lex:
     dependency: "direct main"
     description:
-      path: "packages/poptart_lex"
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      resolved-ref: f452e900c89930976c185818eb6e350a37ab9808
-      url: "https://github.com/sprksocial/poptart.git"
-    source: git
+      name: poptart_lex
+      sha256: d26ad7869e03cb70a724cac0b7f1b07eddc3cd7f36151b59e0fad3678017976f
+      url: "https://pub.dev"
+    source: hosted
     version: "0.1.0"
   poptart_multiformats:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "packages/poptart_multiformats"
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      resolved-ref: f452e900c89930976c185818eb6e350a37ab9808
-      url: "https://github.com/sprksocial/poptart.git"
-    source: git
+      name: poptart_multiformats
+      sha256: "37931daf50f600656942ee4bbe72727980de92d4d2b902a641486b00c75cd1ae"
+      url: "https://pub.dev"
+    source: hosted
     version: "0.1.0"
   poptart_oauth:
     dependency: "direct main"
     description:
-      path: "packages/poptart_oauth"
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      resolved-ref: f452e900c89930976c185818eb6e350a37ab9808
-      url: "https://github.com/sprksocial/poptart.git"
-    source: git
+      name: poptart_oauth
+      sha256: e268a6947833aab9368dfd67069888962fdea91a0158609b1680faee95e4f8f0
+      url: "https://pub.dev"
+    source: hosted
     version: "0.1.0"
   poptart_primitives:
-    dependency: "direct main"
+    dependency: transitive
     description:
-      path: "packages/poptart_primitives"
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      resolved-ref: f452e900c89930976c185818eb6e350a37ab9808
-      url: "https://github.com/sprksocial/poptart.git"
-    source: git
+      name: poptart_primitives
+      sha256: "3bb32c3269964a7c40b2e7b185b9dcbb2f7e297b78cfbe27fae141474476dd27"
+      url: "https://pub.dev"
+    source: hosted
     version: "0.1.0"
   poptart_xrpc:
     dependency: "direct main"
     description:
-      path: "packages/poptart_xrpc"
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      resolved-ref: f452e900c89930976c185818eb6e350a37ab9808
-      url: "https://github.com/sprksocial/poptart.git"
-    source: git
+      name: poptart_xrpc
+      sha256: b54f94fab23d21666ce88a442f22c146f7ec6b4ba54ccd8857063e60cfb62d0a
+      url: "https://pub.dev"
+    source: hosted
     version: "0.1.0"
   provider:
     dependency: "direct main"

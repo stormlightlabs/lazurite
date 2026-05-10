@@ -12,40 +12,13 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  poptart:
-    git:
-      url: https://github.com/sprksocial/poptart.git
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      path: packages/poptart
-  poptart_core:
-    git:
-      url: https://github.com/sprksocial/poptart.git
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      path: packages/poptart_core
-  poptart_oauth:
-    git:
-      url: https://github.com/sprksocial/poptart.git
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      path: packages/poptart_oauth
-  poptart_lex:
-    git:
-      url: https://github.com/sprksocial/poptart.git
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      path: packages/poptart_lex
-  poptart_primitives:
-    git:
-      url: https://github.com/sprksocial/poptart.git
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      path: packages/poptart_primitives
-  poptart_xrpc:
-    git:
-      url: https://github.com/sprksocial/poptart.git
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      path: packages/poptart_xrpc
-  bluesky_text:
-    path: packages/bluesky_text
-  bsky_moderation:
-    path: packages/bsky_moderation
+  poptart: ^0.1.0
+  poptart_core: ^0.1.0
+  poptart_oauth: ^0.1.0
+  poptart_lex: ^0.1.0
+  poptart_xrpc: ^0.1.0
+  poptart_bluesky_text: ^0.1.0
+  poptart_bluesky_moderation: ^0.1.0
   flutter_bloc: ^9.1.1
   drift: ^2.24.0
   drift_flutter: ^0.2.8
@@ -102,33 +75,6 @@ dev_dependencies:
   mocktail: ^1.0.4
   objectbox_generator: ^5.3.1
   # flutter_native_splash: ^2.4.7
-
-dependency_overrides:
-  poptart_core:
-    git:
-      url: https://github.com/sprksocial/poptart.git
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      path: packages/poptart_core
-  poptart_oauth:
-    git:
-      url: https://github.com/sprksocial/poptart.git
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      path: packages/poptart_oauth
-  poptart_primitives:
-    git:
-      url: https://github.com/sprksocial/poptart.git
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      path: packages/poptart_primitives
-  poptart_xrpc:
-    git:
-      url: https://github.com/sprksocial/poptart.git
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      path: packages/poptart_xrpc
-  poptart_multiformats:
-    git:
-      url: https://github.com/sprksocial/poptart.git
-      ref: f452e900c89930976c185818eb6e350a37ab9808
-      path: packages/poptart_multiformats
 
 flutter:
   uses-material-design: true
