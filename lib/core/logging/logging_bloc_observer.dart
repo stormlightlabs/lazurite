@@ -5,14 +5,14 @@ class LoggingBlocObserver extends BlocObserver {
   @override
   void onCreate(BlocBase bloc) {
     super.onCreate(bloc);
-    log.d('${bloc.runtimeType}: Created');
+    log.t('${bloc.runtimeType}: Created');
   }
 
   @override
   void onChange(BlocBase bloc, Change change) {
     super.onChange(bloc, change);
     if (bloc is Bloc) {
-      log.d('${bloc.runtimeType}: Transition: ${change.currentState.runtimeType} → ${change.nextState.runtimeType}');
+      log.t('${bloc.runtimeType}: Transition: ${change.currentState.runtimeType} → ${change.nextState.runtimeType}');
     }
   }
 
@@ -31,6 +31,6 @@ class LoggingBlocObserver extends BlocObserver {
   @override
   void onClose(BlocBase bloc) {
     super.onClose(bloc);
-    log.d('${bloc.runtimeType}: Closed');
+    log.t('${bloc.runtimeType}: Closed');
   }
 }
