@@ -246,6 +246,41 @@ class AppDatabase extends _$AppDatabase {
     return rowsAffected > 0;
   }
 
+  Future<bool> updateAccountSessionIfRefreshTokenMatches(
+    String did, {
+    required String expectedRefreshToken,
+    required String handle,
+    required String accessToken,
+    required String refreshToken,
+    DateTime? expiresAt,
+    String? displayName,
+    String? service,
+    String? oauthService,
+    String? oauthClientId,
+    String? dpopNonce,
+    String? dpopPublicKey,
+    String? dpopPrivateKey,
+  }) async {
+    final query = update(accounts)..where((a) => a.did.equals(did) & a.refreshToken.equals(expectedRefreshToken));
+    final rowsAffected = await query.write(
+      AccountsCompanion(
+        handle: Value(handle),
+        displayName: displayName != null ? Value(displayName) : const Value.absent(),
+        service: service != null ? Value(service) : const Value.absent(),
+        oauthService: oauthService != null ? Value(oauthService) : const Value.absent(),
+        oauthClientId: oauthClientId != null ? Value(oauthClientId) : const Value.absent(),
+        accessToken: Value(accessToken),
+        refreshToken: Value(refreshToken),
+        dpopNonce: dpopNonce != null ? Value(dpopNonce) : const Value.absent(),
+        dpopPublicKey: dpopPublicKey != null ? Value(dpopPublicKey) : const Value.absent(),
+        dpopPrivateKey: dpopPrivateKey != null ? Value(dpopPrivateKey) : const Value.absent(),
+        expiresAt: expiresAt != null ? Value(expiresAt) : const Value.absent(),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+    return rowsAffected > 0;
+  }
+
   Future<int> cacheProfile({
     required String did,
     required String handle,

@@ -28,6 +28,7 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
   @override
   void initState() {
     super.initState();
+    context.read<FeedPreferencesCubit>().loadPreferences(emitCachedFirst: false);
     _loadSuggestedFeeds();
   }
 
@@ -54,6 +55,11 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
         actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Done'))],
       ),
       body: BlocConsumer<FeedPreferencesCubit, FeedPreferencesState>(
+        listenWhen: (previous, current) =>
+            current.status == FeedPreferencesStatus.saveError ||
+            (current.status == FeedPreferencesStatus.loaded &&
+                current.message != null &&
+                current.message != previous.message),
         listener: (context, state) {
           if (state.status == FeedPreferencesStatus.saveError) {
             showAppSnackBar(
@@ -62,6 +68,8 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
               actionLabel: 'Dismiss',
               onAction: () => context.read<FeedPreferencesCubit>().clearError(),
             );
+          } else if (state.status == FeedPreferencesStatus.loaded && state.message != null) {
+            showAppSnackBar(context, state.message!);
           }
         },
         builder: (context, state) {

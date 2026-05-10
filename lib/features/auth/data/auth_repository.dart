@@ -2,9 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:lazurite/core/network/poptart_client_adapter.dart' as atp;
-import 'package:poptart_core/poptart_core.dart' as atcore;
-import 'package:poptart_oauth/poptart_oauth.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -12,11 +9,14 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/atproto_host_resolver.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart' as atp;
 import 'package:lazurite/core/network/slingshot_client.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/features/auth/data/atproto_identifier.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:poptart_core/poptart_core.dart' as atcore;
+import 'package:poptart_oauth/poptart_oauth.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 typedef LaunchUrlWithMode = Future<bool> Function(Uri url, LaunchMode mode);
@@ -119,6 +119,7 @@ class AuthRepository {
   OAuthClient? _pendingOAuthClient;
   OAuthContext? _pendingOAuthContext;
   Future<AuthTokens>? _pendingOAuthCallbackExchange;
+  final Map<String, Future<AuthTokens?>> _sessionRefreshesByDid = <String, Future<AuthTokens?>>{};
   String? _pendingHandle;
   String? _pendingService;
   LaunchMode? _oauthLaunchMode;
@@ -129,25 +130,7 @@ class AuthRepository {
       return null;
     }
 
-    final authMethod = account.dpopPrivateKey != null && account.dpopPublicKey != null
-        ? AuthMethod.oauth
-        : AuthMethod.appPassword;
-
-    return AuthTokens(
-      accessToken: account.accessToken,
-      refreshToken: account.refreshToken,
-      expiresAt: account.expiresAt,
-      did: account.did,
-      handle: account.handle,
-      displayName: account.displayName,
-      service: account.service,
-      oauthService: authMethod == AuthMethod.oauth ? normalizeAtprotoServiceHost(account.oauthService) : null,
-      oauthClientId: authMethod == AuthMethod.oauth ? account.oauthClientId : null,
-      dpopNonce: account.dpopNonce,
-      dpopPublicKey: account.dpopPublicKey,
-      dpopPrivateKey: account.dpopPrivateKey,
-      authMethod: authMethod,
-    );
+    return _tokensFromAccount(account);
   }
 
   Future<AuthTokens?> restoreSession() async {
@@ -220,13 +203,13 @@ class AuthRepository {
       _pendingHandle = normalizeAtProtoIdentifierForAuth(handle);
       final validationError = validateAtProtoIdentifierForAuth(_pendingHandle!);
       if (validationError != null) {
-        throw AuthIdentifierResolutionException(_identifierValidationMessage(validationError));
+        throw AuthIdentifierResolutionException(validationError.code.message);
       }
       final preferredOauthService = normalizeAtprotoServiceHost(_oauthServiceResolver()) ?? _oauthService;
       late final String resolvedPdsHost;
       String? resolvedAuthService;
       try {
-        resolvedPdsHost = await _resolveServiceForIdentifier(_pendingHandle!);
+        resolvedPdsHost = await resolveServiceForIdentifier(_pendingHandle!);
       } on atcore.InvalidRequestException catch (error, stackTrace) {
         final failure = _handleResolutionFailureForIdentifier(_pendingHandle!, error);
         log.w(
@@ -247,25 +230,29 @@ class AuthRepository {
           stackTrace: stackTrace,
         );
       }
-      final oauthServices = _oauthAuthorizeServiceCandidates(
+      final oauthServices = oauthAuthorizeServiceCandidates(
         preferredAuthService: preferredOauthService,
         resolvedPdsHost: resolvedPdsHost,
         resolvedAuthService: resolvedAuthService,
       );
+
       log.i('AuthRepository: Starting OAuth login for ${_pendingHandle!}');
       log.d('AuthRepository: OAuth auth service candidates: ${oauthServices.join(', ')}');
 
       final metadata = await _loadClientMetadata(kClientId);
+
       log.d('AuthRepository: Loaded client metadata with redirect URIs: ${metadata.redirectUris.join(', ')}');
+
       final isAndroidNative = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
       final isIosNative = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
-      final redirectUri = _selectOAuthRedirectUriTemplate(
+      final redirectUri = selectOAuthRedirectUriTemplate(
         metadata.redirectUris,
         isAndroid: isAndroidNative,
         httpsAndroidCallbackEnabled: _androidHttpsCallbackEnabled,
         isIos: isIosNative,
         httpsIosCallbackEnabled: _iosHttpsCallbackEnabled,
       );
+
       log.d(
         'AuthRepository: OAuth callback strategy '
         'androidNative=$isAndroidNative '
@@ -335,7 +322,7 @@ class AuthRepository {
   Future<AuthTokens?> loginWithAppPassword(String handle, String appPassword) async {
     try {
       log.i('AuthRepository: Starting app password login for ${handle.trim()}');
-      final service = await _resolveServiceForIdentifier(handle);
+      final service = await resolveServiceForIdentifier(handle);
       log.d('AuthRepository: Resolved app password login service to $service');
       final session = await atp.createSession(identifier: handle, password: appPassword, service: service);
 
@@ -364,26 +351,62 @@ class AuthRepository {
       throw Exception('No refresh token available for session refresh');
     }
 
-    if (currentSession.usesOAuth) {
-      log.i('AuthRepository: Refreshing OAuth session for ${currentSession.handle}');
-      final publicKey = currentSession.dpopPublicKey;
-      final privateKey = currentSession.dpopPrivateKey;
+    final existingRefresh = _sessionRefreshesByDid[currentSession.did];
+    if (existingRefresh != null) {
+      log.d('AuthRepository: Joining in-flight session refresh for ${currentSession.handle}');
+      return existingRefresh;
+    }
+
+    late final Future<AuthTokens?> refresh;
+    refresh = _refreshSession(currentSession).whenComplete(() {
+      if (identical(_sessionRefreshesByDid[currentSession.did], refresh)) {
+        _sessionRefreshesByDid.remove(currentSession.did);
+      }
+    });
+    _sessionRefreshesByDid[currentSession.did] = refresh;
+    return refresh;
+  }
+
+  Future<AuthTokens?> _refreshSession(AuthTokens currentSession) async {
+    var session = currentSession;
+    final storedReplacement = await _storedSessionIfRefreshTokenChanged(currentSession);
+    if (storedReplacement != null) {
+      if (!storedReplacement.isExpired) {
+        log.i(
+          'AuthRepository: Using newer stored session for ${storedReplacement.handle}; '
+          'requested refresh token is stale.',
+        );
+        return storedReplacement;
+      }
+      log.i(
+        'AuthRepository: Refreshing newer stored session for ${storedReplacement.handle}; '
+        'requested refresh token is stale.',
+      );
+      session = storedReplacement;
+    }
+
+    if (session.usesOAuth) {
+      log.i('AuthRepository: Refreshing OAuth session for ${session.handle}');
+      final publicKey = session.dpopPublicKey;
+      final privateKey = session.dpopPrivateKey;
       if (publicKey == null || privateKey == null) {
         throw Exception('Stored OAuth session is missing DPoP keys');
       }
 
       try {
-        final metadataClientId = _resolveOauthClientId(currentSession.oauthClientId);
+        final metadataClientId = _resolveOauthClientId(session.oauthClientId);
         final metadata = await _loadClientMetadata(metadataClientId);
-        final restoredSession = _restoreOAuthSession(
-          currentSession: currentSession,
+        final restoredSession = atcore.restoreOAuthSession(
+          accessToken: session.accessToken,
+          refreshToken: session.refreshToken!,
+          dPoPNonce: session.dpopNonce,
           publicKey: publicKey,
           privateKey: privateKey,
         );
         final issuerHost = normalizeAtprotoServiceHost(restoredSession.accessTokenJwt.iss);
-        final storedAuthHost = normalizeAtprotoServiceHost(currentSession.oauthService);
-        final oauthServices = _oauthRefreshServiceCandidates(
-          storedAuthService: currentSession.oauthService,
+        final storedAuthHost = normalizeAtprotoServiceHost(session.oauthService);
+        final oauthServices = oauthRefreshServiceCandidates(
+          storedAuthService: session.oauthService,
           issuer: issuerHost,
         );
 
@@ -399,8 +422,10 @@ class AuthRepository {
             refreshedSession = await _oauthRefreshSession(
               metadata: metadata,
               service: oauthService,
-              session: _restoreOAuthSession(
-                currentSession: currentSession,
+              session: atcore.restoreOAuthSession(
+                accessToken: session.accessToken,
+                refreshToken: session.refreshToken!,
+                dPoPNonce: session.dpopNonce,
                 publicKey: publicKey,
                 privateKey: privateKey,
               ),
@@ -442,24 +467,24 @@ class AuthRepository {
           );
         }
 
-        final fallbackPdsHost = normalizeAtprotoServiceHost(currentSession.service) ?? _fallbackService;
+        final fallbackPdsHost = normalizeAtprotoServiceHost(session.service) ?? _fallbackService;
         final refreshedTokens = await _buildOAuthTokens(
           refreshedSession,
-          fallbackHandle: currentSession.handle,
+          fallbackHandle: session.handle,
           fallbackPdsHost: fallbackPdsHost,
-          oauthService: successfulOauthService ?? currentSession.oauthService ?? _oauthService,
-          oauthClientId: currentSession.oauthClientId,
+          oauthService: successfulOauthService ?? session.oauthService ?? _oauthService,
+          oauthClientId: session.oauthClientId,
         );
 
-        await saveSession(
-          refreshedTokens,
-          makeActive: await _database.getSetting(AppDatabase.activeAccountDidSettingKey) == currentSession.did,
+        final persistedTokens = await _persistRefreshedSession(
+          previousSession: session,
+          refreshedSession: refreshedTokens,
         );
         log.i(
-          'AuthRepository: OAuth session refresh succeeded for ${refreshedTokens.handle} '
-          'using auth service ${refreshedTokens.oauthService ?? successfulOauthService ?? 'unknown'}',
+          'AuthRepository: OAuth session refresh succeeded for ${persistedTokens.handle} '
+          'using auth service ${persistedTokens.oauthService ?? successfulOauthService ?? 'unknown'}',
         );
-        return refreshedTokens;
+        return persistedTokens;
       } catch (error, stackTrace) {
         final shouldInvalidate = _shouldInvalidateSessionAfterRefreshFailure(error);
         log.e(
@@ -469,18 +494,15 @@ class AuthRepository {
           stackTrace: stackTrace,
         );
         if (shouldInvalidate) {
-          await _invalidateSession(currentSession);
+          await _invalidateSessionIfStillCurrent(session);
         }
         throw Exception('Failed to refresh OAuth session: $error');
       }
     }
 
     try {
-      log.i('AuthRepository: Refreshing app password session for ${currentSession.handle}');
-      final refreshed = await _appPasswordRefreshSession(
-        refreshJwt: currentSession.refreshToken!,
-        service: currentSession.service,
-      );
+      log.i('AuthRepository: Refreshing app password session for ${session.handle}');
+      final refreshed = await _appPasswordRefreshSession(refreshJwt: session.refreshToken!, service: session.service);
 
       final tokens = AuthTokens(
         accessToken: refreshed.data.accessJwt,
@@ -488,17 +510,14 @@ class AuthRepository {
         expiresAt: refreshed.data.accessTokenJwt.exp,
         did: refreshed.data.did,
         handle: refreshed.data.handle,
-        displayName: currentSession.displayName,
-        service: currentSession.service,
+        displayName: session.displayName,
+        service: session.service,
         authMethod: AuthMethod.appPassword,
       );
 
-      await saveSession(
-        tokens,
-        makeActive: await _database.getSetting(AppDatabase.activeAccountDidSettingKey) == currentSession.did,
-      );
-      log.i('AuthRepository: App password session refresh succeeded for ${tokens.handle}');
-      return tokens;
+      final persistedTokens = await _persistRefreshedSession(previousSession: session, refreshedSession: tokens);
+      log.i('AuthRepository: App password session refresh succeeded for ${persistedTokens.handle}');
+      return persistedTokens;
     } catch (error, stackTrace) {
       final shouldInvalidate = _shouldInvalidateSessionAfterRefreshFailure(error);
       log.e(
@@ -508,7 +527,7 @@ class AuthRepository {
         stackTrace: stackTrace,
       );
       if (shouldInvalidate) {
-        await _invalidateSession(currentSession);
+        await _invalidateSessionIfStillCurrent(session);
       }
       throw Exception('Failed to refresh session: $error');
     }
@@ -575,7 +594,7 @@ class AuthRepository {
       return false;
     }
 
-    final normalizedCallbackUri = _normalizeOAuthCallbackUri(callbackUri);
+    final normalizedCallbackUri = normalizeOAuthCallbackUri(callbackUri);
     if (normalizedCallbackUri == null) {
       log.w('AuthRepository: Ignoring unsupported OAuth callback URI ${_sanitizeUriForLog(callbackUri)}');
       return false;
@@ -584,7 +603,7 @@ class AuthRepository {
     final joiningInFlightExchange = _pendingOAuthCallbackExchange != null;
     try {
       log.i('AuthRepository: Processing OAuth callback URI ${_sanitizeUriForLog(normalizedCallbackUri)}');
-      final tokens = await _runOAuthCallbackExchangeOnce(normalizedCallbackUri, _handleOAuthCallback);
+      final tokens = await runOAuthCallbackExchangeOnce(normalizedCallbackUri, _handleOAuthCallback);
       if (_oauthCompleter?.isCompleted == false) {
         _oauthCompleter?.complete(tokens);
       }
@@ -602,7 +621,8 @@ class AuthRepository {
     }
   }
 
-  Future<AuthTokens> _runOAuthCallbackExchangeOnce(
+  @visibleForTesting
+  Future<AuthTokens> runOAuthCallbackExchangeOnce(
     Uri normalizedCallbackUri,
     Future<AuthTokens> Function(String callbackUrl) exchangeCallback,
   ) async {
@@ -679,7 +699,8 @@ class AuthRepository {
     );
   }
 
-  Future<String> _resolveServiceForIdentifier(String identifier) async {
+  @visibleForTesting
+  Future<String> resolveServiceForIdentifier(String identifier) async {
     log.d('AuthRepository: Resolving AT Protocol service for $identifier');
     final resolvedIdentity = await _resolveIdentityForIdentifier(identifier);
     log.d('AuthRepository: Resolved identifier $identifier to DID ${resolvedIdentity.did}');
@@ -748,18 +769,6 @@ class AuthRepository {
       postClient: XrpcNetworkInterceptor.wrapPostClient(),
     );
     return (await client.identity.resolveHandle(handle: handle)).data.did;
-  }
-
-  String _identifierValidationMessage(AtProtoIdentifierValidationError validationError) {
-    return switch (validationError.code) {
-      AtProtoIdentifierValidationErrorCode.empty => 'Enter a Bluesky handle or DID.',
-      AtProtoIdentifierValidationErrorCode.unsupportedDid =>
-        'Unsupported DID format. Use a did:plc:... or did:web:... identifier.',
-      AtProtoIdentifierValidationErrorCode.invalidDid =>
-        'Invalid DID format. Enter a complete did:plc:... or did:web:... identifier.',
-      AtProtoIdentifierValidationErrorCode.invalidHandle =>
-        'Invalid handle format. Enter a full handle like username.bsky.social.',
-    };
   }
 
   AuthIdentifierResolutionException _handleResolutionFailureForIdentifier(
@@ -884,7 +893,7 @@ class AuthRepository {
   }
 
   Future<void> _launchUrl(Uri url) async {
-    final launchMode = _oauthLaunchModeForPlatform(isWeb: kIsWeb, platform: defaultTargetPlatform);
+    final launchMode = oauthLaunchModeForPlatform(isWeb: kIsWeb, platform: defaultTargetPlatform);
     log.d('AuthRepository: Launching OAuth URL ${_sanitizeUriForLog(url)} with mode $launchMode');
 
     if (!await _launchUrlWithMode(url, launchMode)) {
@@ -915,14 +924,10 @@ class AuthRepository {
     }
   }
 
-  @visibleForTesting
-  static LaunchMode oauthLaunchModeForTest({required bool isWeb, required TargetPlatform platform}) {
-    return _oauthLaunchModeForPlatform(isWeb: isWeb, platform: platform);
-  }
-
   /// ATProto OAuth providers can enforce browser-like fetch metadata semantics.
   /// Prefer the system browser app on mobile for consistent behavior.
-  static LaunchMode _oauthLaunchModeForPlatform({required bool isWeb, required TargetPlatform platform}) {
+  @visibleForTesting
+  static LaunchMode oauthLaunchModeForPlatform({required bool isWeb, required TargetPlatform platform}) {
     if (isWeb) {
       return LaunchMode.platformDefault;
     }
@@ -935,7 +940,7 @@ class AuthRepository {
   }
 
   @visibleForTesting
-  Future<void> dismissOAuthBrowserForTest(LaunchMode mode) async {
+  Future<void> dismissOAuthBrowserForLaunchMode(LaunchMode mode) async {
     _oauthLaunchMode = mode;
     await _dismissOAuthBrowserIfNeeded();
   }
@@ -950,7 +955,8 @@ class AuthRepository {
         redirectUri.path == _httpsOAuthRedirectPath;
   }
 
-  Uri? _normalizeOAuthCallbackUri(Uri callbackUri) {
+  @visibleForTesting
+  Uri? normalizeOAuthCallbackUri(Uri callbackUri) {
     if (_isSupportedCustomSchemeRedirect(callbackUri)) {
       return callbackUri;
     }
@@ -991,7 +997,8 @@ class AuthRepository {
         (queryParameters.containsKey('code') || queryParameters.containsKey('error'));
   }
 
-  Uri _selectOAuthRedirectUriTemplate(
+  @visibleForTesting
+  Uri selectOAuthRedirectUriTemplate(
     List<String> redirectUris, {
     required bool isAndroid,
     required bool httpsAndroidCallbackEnabled,
@@ -1033,34 +1040,6 @@ class AuthRepository {
     );
   }
 
-  @visibleForTesting
-  Uri? normalizeOAuthCallbackUriForTest(Uri callbackUri) => _normalizeOAuthCallbackUri(callbackUri);
-
-  @visibleForTesting
-  Future<AuthTokens> runOAuthCallbackExchangeOnceForTest(
-    Uri normalizedCallbackUri,
-    Future<AuthTokens> Function(String callbackUrl) exchangeCallback,
-  ) {
-    return _runOAuthCallbackExchangeOnce(normalizedCallbackUri, exchangeCallback);
-  }
-
-  @visibleForTesting
-  Uri selectOAuthRedirectUriTemplateForTest(
-    List<String> redirectUris, {
-    required bool isAndroid,
-    required bool httpsAndroidCallbackEnabled,
-    required bool isIos,
-    required bool httpsIosCallbackEnabled,
-  }) {
-    return _selectOAuthRedirectUriTemplate(
-      redirectUris,
-      isAndroid: isAndroid,
-      httpsAndroidCallbackEnabled: httpsAndroidCallbackEnabled,
-      isIos: isIos,
-      httpsIosCallbackEnabled: httpsIosCallbackEnabled,
-    );
-  }
-
   String _sanitizeUriForLog(Uri uri) {
     return uri.replace(query: null, fragment: null).toString();
   }
@@ -1070,6 +1049,120 @@ class AuthRepository {
     if (await _database.getSetting(AppDatabase.activeAccountDidSettingKey) == tokens.did) {
       await _database.deleteSetting(AppDatabase.activeAccountDidSettingKey);
     }
+  }
+
+  Future<AuthTokens> _persistRefreshedSession({
+    required AuthTokens previousSession,
+    required AuthTokens refreshedSession,
+  }) async {
+    final mergedSession = _mergeRefreshedSession(previousSession: previousSession, refreshedSession: refreshedSession);
+    final previousRefreshToken = previousSession.refreshToken;
+    final makeActive = await _database.getSetting(AppDatabase.activeAccountDidSettingKey) == previousSession.did;
+    if (previousRefreshToken == null) {
+      await saveSession(mergedSession, makeActive: makeActive);
+      return mergedSession;
+    }
+
+    final updated = await _database.updateAccountSessionIfRefreshTokenMatches(
+      previousSession.did,
+      expectedRefreshToken: previousRefreshToken,
+      handle: mergedSession.handle,
+      accessToken: mergedSession.accessToken,
+      refreshToken: mergedSession.refreshToken ?? previousRefreshToken,
+      expiresAt: mergedSession.expiresAt,
+      displayName: mergedSession.displayName,
+      service: mergedSession.service,
+      oauthService: mergedSession.oauthService,
+      oauthClientId: mergedSession.oauthClientId,
+      dpopNonce: mergedSession.dpopNonce,
+      dpopPublicKey: mergedSession.dpopPublicKey,
+      dpopPrivateKey: mergedSession.dpopPrivateKey,
+    );
+    if (updated) {
+      return mergedSession;
+    }
+
+    final storedAccount = await _database.getAccount(previousSession.did);
+    if (storedAccount != null && storedAccount.refreshToken != previousRefreshToken) {
+      log.w(
+        'AuthRepository: Refresh persistence lost token race for ${previousSession.handle}; '
+        'using newer stored session.',
+      );
+      return _tokensFromAccount(storedAccount);
+    }
+
+    log.w(
+      'AuthRepository: Refresh compare-and-swap found no current row for ${previousSession.handle}; '
+      'falling back to session upsert.',
+    );
+    await saveSession(mergedSession, makeActive: makeActive);
+    return mergedSession;
+  }
+
+  AuthTokens _mergeRefreshedSession({required AuthTokens previousSession, required AuthTokens refreshedSession}) {
+    return AuthTokens(
+      accessToken: refreshedSession.accessToken,
+      refreshToken: refreshedSession.refreshToken ?? previousSession.refreshToken,
+      expiresAt: refreshedSession.expiresAt ?? previousSession.expiresAt,
+      did: refreshedSession.did,
+      handle: refreshedSession.handle,
+      displayName: refreshedSession.displayName ?? previousSession.displayName,
+      service: refreshedSession.service ?? previousSession.service,
+      oauthService: refreshedSession.oauthService ?? previousSession.oauthService,
+      oauthClientId: refreshedSession.oauthClientId ?? previousSession.oauthClientId,
+      dpopNonce: refreshedSession.dpopNonce ?? previousSession.dpopNonce,
+      dpopPublicKey: refreshedSession.dpopPublicKey ?? previousSession.dpopPublicKey,
+      dpopPrivateKey: refreshedSession.dpopPrivateKey ?? previousSession.dpopPrivateKey,
+      authMethod: refreshedSession.authMethod,
+    );
+  }
+
+  Future<void> _invalidateSessionIfStillCurrent(AuthTokens tokens) async {
+    final storedAccount = await _database.getAccount(tokens.did);
+    if (storedAccount == null) {
+      log.w('AuthRepository: Skipping session invalidation for ${tokens.handle}; account is no longer stored.');
+      return;
+    }
+
+    if (storedAccount.refreshToken != tokens.refreshToken) {
+      log.w(
+        'AuthRepository: Skipping session invalidation for ${tokens.handle}; '
+        'stored refresh token changed after this refresh attempt began.',
+      );
+      return;
+    }
+
+    await _invalidateSession(tokens);
+  }
+
+  Future<AuthTokens?> _storedSessionIfRefreshTokenChanged(AuthTokens tokens) async {
+    final storedAccount = await _database.getAccount(tokens.did);
+    if (storedAccount == null || storedAccount.refreshToken == tokens.refreshToken) {
+      return null;
+    }
+    return _tokensFromAccount(storedAccount);
+  }
+
+  AuthTokens _tokensFromAccount(Account account) {
+    final authMethod = account.dpopPrivateKey != null && account.dpopPublicKey != null
+        ? AuthMethod.oauth
+        : AuthMethod.appPassword;
+
+    return AuthTokens(
+      accessToken: account.accessToken,
+      refreshToken: account.refreshToken,
+      expiresAt: account.expiresAt,
+      did: account.did,
+      handle: account.handle,
+      displayName: account.displayName,
+      service: account.service,
+      oauthService: authMethod == AuthMethod.oauth ? normalizeAtprotoServiceHost(account.oauthService) : null,
+      oauthClientId: authMethod == AuthMethod.oauth ? account.oauthClientId : null,
+      dpopNonce: account.dpopNonce,
+      dpopPublicKey: account.dpopPublicKey,
+      dpopPrivateKey: account.dpopPrivateKey,
+      authMethod: authMethod,
+    );
   }
 
   bool _shouldInvalidateSessionAfterRefreshFailure(Object error) {
@@ -1148,20 +1241,6 @@ class AuthRepository {
     }
   }
 
-  OAuthSession _restoreOAuthSession({
-    required AuthTokens currentSession,
-    required String publicKey,
-    required String privateKey,
-  }) {
-    return atcore.restoreOAuthSession(
-      accessToken: currentSession.accessToken,
-      refreshToken: currentSession.refreshToken!,
-      dPoPNonce: currentSession.dpopNonce,
-      publicKey: publicKey,
-      privateKey: privateKey,
-    );
-  }
-
   static Future<OAuthSession> _defaultOAuthRefreshSession({
     required OAuthClientMetadata metadata,
     required String service,
@@ -1208,7 +1287,8 @@ class AuthRepository {
     return message.length <= 240 ? message : '${message.substring(0, 237)}...';
   }
 
-  static List<String> _oauthRefreshServiceCandidates({required String? storedAuthService, required String? issuer}) {
+  @visibleForTesting
+  static List<String> oauthRefreshServiceCandidates({required String? storedAuthService, required String? issuer}) {
     final candidates = <String>{};
     final issuerHost = normalizeAtprotoServiceHost(issuer);
     if (issuerHost != null) {
@@ -1225,7 +1305,8 @@ class AuthRepository {
     return candidates.toList(growable: false);
   }
 
-  static List<String> _oauthAuthorizeServiceCandidates({
+  @visibleForTesting
+  static List<String> oauthAuthorizeServiceCandidates({
     required String? preferredAuthService,
     required String? resolvedPdsHost,
     required String? resolvedAuthService,
@@ -1252,28 +1333,4 @@ class AuthRepository {
     candidates.add(_fallbackService);
     return candidates.toList(growable: false);
   }
-
-  @visibleForTesting
-  static List<String> oauthRefreshServiceCandidatesForTest({
-    required String? storedAuthService,
-    required String? issuer,
-  }) {
-    return _oauthRefreshServiceCandidates(storedAuthService: storedAuthService, issuer: issuer);
-  }
-
-  @visibleForTesting
-  static List<String> oauthAuthorizeServiceCandidatesForTest({
-    required String? preferredAuthService,
-    required String? resolvedPdsHost,
-    required String? resolvedAuthService,
-  }) {
-    return _oauthAuthorizeServiceCandidates(
-      preferredAuthService: preferredAuthService,
-      resolvedPdsHost: resolvedPdsHost,
-      resolvedAuthService: resolvedAuthService,
-    );
-  }
-
-  @visibleForTesting
-  Future<String> resolveServiceForIdentifierForTest(String identifier) => _resolveServiceForIdentifier(identifier);
 }

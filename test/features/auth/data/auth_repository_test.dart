@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:poptart_core/poptart_core.dart' as atcore;
-import 'package:poptart_oauth/poptart_oauth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
@@ -10,6 +8,8 @@ import 'package:lazurite/core/network/slingshot_client.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:poptart_core/poptart_core.dart' as atcore;
+import 'package:poptart_oauth/poptart_oauth.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MockAppDatabase extends Mock implements AppDatabase {}
@@ -30,6 +30,24 @@ void main() {
   setUp(() {
     mockDatabase = MockAppDatabase();
     mockSlingshotClient = MockSlingshotClient();
+    when(() => mockDatabase.getAccount(any())).thenAnswer((_) async => null);
+    when(
+      () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
+        any(),
+        expectedRefreshToken: any(named: 'expectedRefreshToken'),
+        handle: any(named: 'handle'),
+        accessToken: any(named: 'accessToken'),
+        refreshToken: any(named: 'refreshToken'),
+        expiresAt: any(named: 'expiresAt'),
+        displayName: any(named: 'displayName'),
+        service: any(named: 'service'),
+        oauthService: any(named: 'oauthService'),
+        oauthClientId: any(named: 'oauthClientId'),
+        dpopNonce: any(named: 'dpopNonce'),
+        dpopPublicKey: any(named: 'dpopPublicKey'),
+        dpopPrivateKey: any(named: 'dpopPrivateKey'),
+      ),
+    ).thenAnswer((_) async => false);
     authRepository = AuthRepository(database: mockDatabase);
   });
 
@@ -200,6 +218,196 @@ void main() {
     });
 
     group('app password refresh', () {
+      test('coalesces concurrent refreshes for the same DID', () async {
+        final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+        final refreshedAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds + 3600,
+          iatEpochSeconds: nowEpochSeconds,
+        );
+        final refreshStarted = Completer<void>();
+        final allowRefreshToComplete = Completer<void>();
+        var refreshCalls = 0;
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          appPasswordRefreshSession: ({required String refreshJwt, String? service}) async {
+            refreshCalls += 1;
+            refreshStarted.complete();
+            await allowRefreshToComplete.future;
+            return _appPasswordRefreshResponse(
+              did: 'did:plc:abc123',
+              handle: 'user.bsky.social',
+              accessJwt: refreshedAccessToken,
+              refreshJwt: 'new-refresh-token',
+            );
+          },
+        );
+
+        const currentSession = AuthTokens(
+          accessToken: 'expired-access-token',
+          refreshToken: 'refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+
+        when(
+          () => mockDatabase.getAccount(currentSession.did),
+        ).thenAnswer((_) async => _accountForTokens(currentSession));
+        when(
+          () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
+        ).thenAnswer((_) async => currentSession.did);
+        when(
+          () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
+            currentSession.did,
+            expectedRefreshToken: currentSession.refreshToken!,
+            handle: 'user.bsky.social',
+            accessToken: refreshedAccessToken,
+            refreshToken: 'new-refresh-token',
+            expiresAt: any(named: 'expiresAt'),
+            displayName: null,
+            service: 'bsky.social',
+            oauthService: null,
+            oauthClientId: null,
+            dpopNonce: null,
+            dpopPublicKey: null,
+            dpopPrivateKey: null,
+          ),
+        ).thenAnswer((_) async => true);
+
+        final firstRefresh = authRepository.refreshSession(currentSession);
+        await refreshStarted.future;
+        final secondRefresh = authRepository.refreshSession(currentSession);
+        allowRefreshToComplete.complete();
+
+        final refreshed = await Future.wait([firstRefresh, secondRefresh]);
+
+        expect(refreshCalls, equals(1));
+        expect(refreshed.map((tokens) => tokens?.refreshToken), everyElement('new-refresh-token'));
+      });
+
+      test('returns newer stored session when caller holds stale refresh token', () async {
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          appPasswordRefreshSession: ({required String refreshJwt, String? service}) async =>
+              throw StateError('stale refresh token should not be used'),
+        );
+
+        const currentSession = AuthTokens(
+          accessToken: 'expired-access-token',
+          refreshToken: 'stale-refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+        final newerSession = AuthTokens(
+          accessToken: 'new-access-token',
+          refreshToken: 'new-refresh-token',
+          expiresAt: DateTime.now().add(const Duration(hours: 1)),
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+
+        when(
+          () => mockDatabase.getAccount(currentSession.did),
+        ).thenAnswer((_) async => _accountForTokens(newerSession));
+
+        final refreshed = await authRepository.refreshSession(currentSession);
+
+        expect(refreshed, isNotNull);
+        expect(refreshed!.refreshToken, equals('new-refresh-token'));
+        verifyNever(
+          () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
+            any(),
+            expectedRefreshToken: any(named: 'expectedRefreshToken'),
+            handle: any(named: 'handle'),
+            accessToken: any(named: 'accessToken'),
+            refreshToken: any(named: 'refreshToken'),
+            expiresAt: any(named: 'expiresAt'),
+            displayName: any(named: 'displayName'),
+            service: any(named: 'service'),
+            oauthService: any(named: 'oauthService'),
+            oauthClientId: any(named: 'oauthClientId'),
+            dpopNonce: any(named: 'dpopNonce'),
+            dpopPublicKey: any(named: 'dpopPublicKey'),
+            dpopPrivateKey: any(named: 'dpopPrivateKey'),
+          ),
+        );
+      });
+
+      test('uses newer stored session when compare-and-swap persistence loses a token race', () async {
+        final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+        final refreshedAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds + 3600,
+          iatEpochSeconds: nowEpochSeconds,
+        );
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          appPasswordRefreshSession: ({required String refreshJwt, String? service}) async {
+            return _appPasswordRefreshResponse(
+              did: 'did:plc:abc123',
+              handle: 'user.bsky.social',
+              accessJwt: refreshedAccessToken,
+              refreshJwt: 'refresh-from-this-call',
+            );
+          },
+        );
+
+        const currentSession = AuthTokens(
+          accessToken: 'expired-access-token',
+          refreshToken: 'old-refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+        final newerSession = AuthTokens(
+          accessToken: 'newer-access-token',
+          refreshToken: 'newer-refresh-token',
+          expiresAt: DateTime.now().add(const Duration(hours: 1)),
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+        var getAccountCalls = 0;
+        when(() => mockDatabase.getAccount(currentSession.did)).thenAnswer((_) async {
+          getAccountCalls += 1;
+          return getAccountCalls == 1 ? _accountForTokens(currentSession) : _accountForTokens(newerSession);
+        });
+        when(
+          () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
+        ).thenAnswer((_) async => currentSession.did);
+        when(
+          () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
+            any(),
+            expectedRefreshToken: any(named: 'expectedRefreshToken'),
+            handle: any(named: 'handle'),
+            accessToken: any(named: 'accessToken'),
+            refreshToken: any(named: 'refreshToken'),
+            expiresAt: any(named: 'expiresAt'),
+            displayName: any(named: 'displayName'),
+            service: any(named: 'service'),
+            oauthService: any(named: 'oauthService'),
+            oauthClientId: any(named: 'oauthClientId'),
+            dpopNonce: any(named: 'dpopNonce'),
+            dpopPublicKey: any(named: 'dpopPublicKey'),
+            dpopPrivateKey: any(named: 'dpopPrivateKey'),
+          ),
+        ).thenAnswer((_) async => false);
+
+        final refreshed = await authRepository.refreshSession(currentSession);
+
+        expect(refreshed, isNotNull);
+        expect(refreshed!.refreshToken, equals('newer-refresh-token'));
+        verifyNever(() => mockDatabase.insertAccount(any()));
+      });
+
       test('preserves account when refresh fails transiently', () async {
         authRepository = AuthRepository(
           database: mockDatabase,
@@ -238,6 +446,9 @@ void main() {
           authMethod: AuthMethod.appPassword,
         );
 
+        when(
+          () => mockDatabase.getAccount(currentSession.did),
+        ).thenAnswer((_) async => _accountForTokens(currentSession));
         when(() => mockDatabase.deleteAccount(currentSession.did)).thenAnswer((_) async => 1);
         when(
           () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
@@ -249,11 +460,47 @@ void main() {
         verify(() => mockDatabase.deleteAccount(currentSession.did)).called(1);
         verify(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).called(1);
       });
+
+      test('does not invalidate account when rejected refresh token is already stale', () async {
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          appPasswordRefreshSession: ({required String refreshJwt, String? service}) async =>
+              throw _unauthorizedRefreshException(),
+        );
+
+        const currentSession = AuthTokens(
+          accessToken: 'expired-access-token',
+          refreshToken: 'stale-refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+        const newerSession = AuthTokens(
+          accessToken: 'new-access-token',
+          refreshToken: 'new-refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+
+        when(
+          () => mockDatabase.getAccount(currentSession.did),
+        ).thenAnswer((_) async => _accountForTokens(newerSession));
+
+        final refreshed = await authRepository.refreshSession(currentSession);
+
+        expect(refreshed, isNotNull);
+        expect(refreshed!.refreshToken, equals('new-refresh-token'));
+        verifyNever(() => mockDatabase.deleteAccount(any()));
+        verifyNever(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey));
+      });
     });
 
     group('oauth refresh', () {
       test('orders issuer host before stored auth host and deduplicates candidates', () {
-        final candidates = AuthRepository.oauthRefreshServiceCandidatesForTest(
+        final candidates = AuthRepository.oauthRefreshServiceCandidates(
           storedAuthService: 'https://bsky.social',
           issuer: 'https://bsky.social',
         );
@@ -262,7 +509,7 @@ void main() {
       });
 
       test('uses stored oauth auth host when issuer is unavailable', () {
-        final candidates = AuthRepository.oauthRefreshServiceCandidatesForTest(
+        final candidates = AuthRepository.oauthRefreshServiceCandidates(
           storedAuthService: 'https://oauth.custom.example',
           issuer: null,
         );
@@ -342,6 +589,89 @@ void main() {
         expect(refreshed.oauthService, equals('bsky.social'));
         verifyNever(() => mockDatabase.deleteAccount(any()));
         verify(() => mockDatabase.insertAccount(any())).called(1);
+      });
+
+      test('preserves stored nullable OAuth fields when refresh does not re-fetch them', () async {
+        final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+        final expiredAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds - 3600,
+          iatEpochSeconds: nowEpochSeconds - 7200,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://bsky.social',
+        );
+        final refreshedAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds + 3600,
+          iatEpochSeconds: nowEpochSeconds,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://bsky.social',
+        );
+
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          loadClientMetadata: (_) async => _testClientMetadata(),
+          oauthRefreshSession:
+              ({required OAuthClientMetadata metadata, required String service, required OAuthSession session}) async {
+                return OAuthSession(
+                  accessToken: refreshedAccessToken,
+                  refreshToken: session.refreshToken,
+                  tokenType: 'DPoP',
+                  scope: 'atproto',
+                  expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+                  sub: session.sub,
+                  $dPoPNonce: 'new-nonce',
+                  $publicKey: session.$publicKey,
+                  $privateKey: session.$privateKey,
+                );
+              },
+        );
+
+        final currentSession = AuthTokens(
+          accessToken: expiredAccessToken,
+          refreshToken: 'refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          displayName: 'Stored User',
+          service: 'porcini.us-east.host.bsky.network',
+          oauthService: 'bsky.social',
+          oauthClientId: AuthRepository.kClientId,
+          dpopNonce: 'old-nonce',
+          dpopPublicKey: 'public-key',
+          dpopPrivateKey: 'private-key',
+          authMethod: AuthMethod.oauth,
+        );
+
+        when(
+          () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
+        ).thenAnswer((_) async => currentSession.did);
+        when(
+          () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
+            currentSession.did,
+            expectedRefreshToken: currentSession.refreshToken!,
+            handle: currentSession.handle,
+            accessToken: refreshedAccessToken,
+            refreshToken: currentSession.refreshToken!,
+            expiresAt: any(named: 'expiresAt'),
+            displayName: currentSession.displayName,
+            service: currentSession.service,
+            oauthService: currentSession.oauthService,
+            oauthClientId: currentSession.oauthClientId,
+            dpopNonce: 'new-nonce',
+            dpopPublicKey: currentSession.dpopPublicKey,
+            dpopPrivateKey: currentSession.dpopPrivateKey,
+          ),
+        ).thenAnswer((_) async => true);
+
+        final refreshed = await authRepository.refreshSession(currentSession);
+
+        expect(refreshed, isNotNull);
+        expect(refreshed!.refreshToken, equals('refresh-token'));
+        expect(refreshed.displayName, equals('Stored User'));
+        expect(refreshed.service, equals('porcini.us-east.host.bsky.network'));
+        expect(refreshed.oauthClientId, equals(AuthRepository.kClientId));
+        expect(refreshed.dpopNonce, equals('new-nonce'));
+        verifyNever(() => mockDatabase.insertAccount(any()));
       });
 
       test('loads OAuth refresh metadata using stored oauthClientId', () async {
@@ -554,6 +884,9 @@ void main() {
           authMethod: AuthMethod.oauth,
         );
 
+        when(
+          () => mockDatabase.getAccount(currentSession.did),
+        ).thenAnswer((_) async => _accountForTokens(currentSession));
         when(() => mockDatabase.deleteAccount(currentSession.did)).thenAnswer((_) async => 1);
         when(
           () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
@@ -564,6 +897,63 @@ void main() {
 
         verify(() => mockDatabase.deleteAccount(currentSession.did)).called(1);
         verify(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).called(1);
+      });
+
+      test('does not invalidate OAuth account when rejected refresh token is already stale', () async {
+        final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+        final expiredAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds - 3600,
+          iatEpochSeconds: nowEpochSeconds - 7200,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://bsky.social',
+        );
+        final newerAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds + 3600,
+          iatEpochSeconds: nowEpochSeconds,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://bsky.social',
+        );
+
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          loadClientMetadata: (_) async => _testClientMetadata(),
+          oauthRefreshSession:
+              ({required OAuthClientMetadata metadata, required String service, required OAuthSession session}) async {
+                throw const OAuthException('{"error":"invalid_grant"}');
+              },
+        );
+
+        final currentSession = AuthTokens(
+          accessToken: expiredAccessToken,
+          refreshToken: 'stale-refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'porcini.us-east.host.bsky.network',
+          oauthService: 'bsky.social',
+          oauthClientId: AuthRepository.kClientId,
+          dpopNonce: 'nonce',
+          dpopPublicKey: 'public-key',
+          dpopPrivateKey: 'private-key',
+          authMethod: AuthMethod.oauth,
+        );
+        final newerSession = currentSession.copyWith(
+          accessToken: newerAccessToken,
+          refreshToken: 'new-refresh-token',
+          dpopNonce: 'new-nonce',
+        );
+
+        when(
+          () => mockDatabase.getAccount(currentSession.did),
+        ).thenAnswer((_) async => _accountForTokens(newerSession));
+
+        final refreshed = await authRepository.refreshSession(currentSession);
+
+        expect(refreshed, isNotNull);
+        expect(refreshed!.refreshToken, equals('new-refresh-token'));
+        verifyNever(() => mockDatabase.deleteAccount(any()));
+        verifyNever(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey));
       });
 
       test('does not invalidate when only fallback OAuth candidates reject credentials', () async {
@@ -614,7 +1004,7 @@ void main() {
 
     group('oauth authorize candidates', () {
       test('prioritizes resolved auth service before provider preference', () {
-        final candidates = AuthRepository.oauthAuthorizeServiceCandidatesForTest(
+        final candidates = AuthRepository.oauthAuthorizeServiceCandidates(
           preferredAuthService: 'blacksky.community',
           resolvedPdsHost: 'https://porcini.us-east.host.bsky.network',
           resolvedAuthService: 'https://bsky.social',
@@ -624,7 +1014,7 @@ void main() {
       });
 
       test('deduplicates when preferred and resolved hosts match defaults', () {
-        final candidates = AuthRepository.oauthAuthorizeServiceCandidatesForTest(
+        final candidates = AuthRepository.oauthAuthorizeServiceCandidates(
           preferredAuthService: 'https://bsky.social',
           resolvedPdsHost: 'bsky.social',
           resolvedAuthService: 'bsky.social',
@@ -643,7 +1033,7 @@ void main() {
           resolveHandleDid: (_) async => throw Exception('resolveHandle down'),
         );
 
-        expect(() => authRepository.resolveServiceForIdentifierForTest('alice.bsky.social'), throwsA(isA<Exception>()));
+        expect(() => authRepository.resolveServiceForIdentifier('alice.bsky.social'), throwsA(isA<Exception>()));
         verifyNever(() => mockSlingshotClient.resolveMiniDoc(any()));
       });
 
@@ -666,7 +1056,7 @@ void main() {
           },
         );
 
-        final service = await authRepository.resolveServiceForIdentifierForTest('alice.bsky.social');
+        final service = await authRepository.resolveServiceForIdentifier('alice.bsky.social');
 
         expect(service, equals('pds.alice.example'));
         verify(() => mockSlingshotClient.resolveMiniDoc('alice.bsky.social')).called(1);
@@ -681,7 +1071,7 @@ void main() {
             isA<AuthIdentifierResolutionException>().having(
               (error) => error.toString(),
               'message',
-              contains('Invalid handle format'),
+              contains('Enter a full handle like username.bsky.social'),
             ),
           ),
         );
@@ -715,7 +1105,7 @@ void main() {
           },
         );
 
-        final service = await authRepository.resolveServiceForIdentifierForTest('DID:PLC:ABC123');
+        final service = await authRepository.resolveServiceForIdentifier('DID:PLC:ABC123');
         expect(service, equals('pds.example'));
       });
 
@@ -726,7 +1116,7 @@ void main() {
             isA<AuthIdentifierResolutionException>().having(
               (error) => error.toString(),
               'message',
-              contains('Invalid DID format'),
+              contains('Enter a complete DID like did:plc:... or did:web:...'),
             ),
           ),
         );
@@ -735,7 +1125,7 @@ void main() {
 
     group('oauth callback normalization', () {
       test('accepts canonical custom scheme callback URI', () {
-        final normalized = authRepository.normalizeOAuthCallbackUriForTest(
+        final normalized = authRepository.normalizeOAuthCallbackUri(
           Uri.parse('org.stormlightlabs.lazurite:/oauth/callback?code=abc&state=xyz'),
         );
 
@@ -745,16 +1135,14 @@ void main() {
       });
 
       test('normalizes path-only callback URI to canonical custom scheme', () {
-        final normalized = authRepository.normalizeOAuthCallbackUriForTest(
-          Uri.parse('/oauth/callback?code=abc&state=xyz'),
-        );
+        final normalized = authRepository.normalizeOAuthCallbackUri(Uri.parse('/oauth/callback?code=abc&state=xyz'));
 
         expect(normalized, isNotNull);
         expect(normalized!.toString(), equals('org.stormlightlabs.lazurite:/oauth/callback?code=abc&state=xyz'));
       });
 
       test('normalizes authority-style custom scheme callback URI to canonical custom scheme', () {
-        final normalized = authRepository.normalizeOAuthCallbackUriForTest(
+        final normalized = authRepository.normalizeOAuthCallbackUri(
           Uri.parse('org.stormlightlabs.lazurite://oauth/callback?code=abc&state=xyz'),
         );
 
@@ -763,20 +1151,20 @@ void main() {
       });
 
       test('normalizes compatibility callback path to canonical custom scheme', () {
-        final normalized = authRepository.normalizeOAuthCallbackUriForTest(Uri.parse('/callback?code=abc&state=xyz'));
+        final normalized = authRepository.normalizeOAuthCallbackUri(Uri.parse('/callback?code=abc&state=xyz'));
 
         expect(normalized, isNotNull);
         expect(normalized!.toString(), equals('org.stormlightlabs.lazurite:/oauth/callback?code=abc&state=xyz'));
       });
 
       test('rejects path-only callback without oauth response parameters', () {
-        final normalized = authRepository.normalizeOAuthCallbackUriForTest(Uri.parse('/callback?foo=bar'));
+        final normalized = authRepository.normalizeOAuthCallbackUri(Uri.parse('/callback?foo=bar'));
 
         expect(normalized, isNull);
       });
 
       test('accepts exact HTTPS callback URI with oauth query parameters', () {
-        final normalized = authRepository.normalizeOAuthCallbackUriForTest(
+        final normalized = authRepository.normalizeOAuthCallbackUri(
           Uri.parse(
             'https://lazurite.stormlightlabs.org/oauth/callback?code=abc&state=xyz&iss=https%3A%2F%2Fbsky.social',
           ),
@@ -791,7 +1179,7 @@ void main() {
       });
 
       test('rejects HTTPS callback URI with unexpected host', () {
-        final normalized = authRepository.normalizeOAuthCallbackUriForTest(
+        final normalized = authRepository.normalizeOAuthCallbackUri(
           Uri.parse('https://example.com/oauth/callback?code=abc&state=xyz'),
         );
 
@@ -799,7 +1187,7 @@ void main() {
       });
 
       test('rejects HTTPS callback URI with unexpected path', () {
-        final normalized = authRepository.normalizeOAuthCallbackUriForTest(
+        final normalized = authRepository.normalizeOAuthCallbackUri(
           Uri.parse('https://lazurite.stormlightlabs.org/callback?code=abc&state=xyz'),
         );
 
@@ -819,11 +1207,11 @@ void main() {
           return exchangeCompleter.future;
         }
 
-        final firstResult = authRepository.runOAuthCallbackExchangeOnceForTest(
+        final firstResult = authRepository.runOAuthCallbackExchangeOnce(
           Uri.parse('org.stormlightlabs.lazurite:/oauth/callback?code=abc&state=xyz'),
           exchange,
         );
-        final secondResult = authRepository.runOAuthCallbackExchangeOnceForTest(
+        final secondResult = authRepository.runOAuthCallbackExchangeOnce(
           Uri.parse('org.stormlightlabs.lazurite:/oauth/callback?code=abc&state=xyz'),
           exchange,
         );
@@ -841,7 +1229,7 @@ void main() {
 
     group('oauth redirect URI selection', () {
       test('prefers HTTPS callback on Android when flag is enabled', () {
-        final selected = authRepository.selectOAuthRedirectUriTemplateForTest(
+        final selected = authRepository.selectOAuthRedirectUriTemplate(
           const ['org.stormlightlabs.lazurite:/oauth/callback', 'https://lazurite.stormlightlabs.org/oauth/callback'],
           isAndroid: true,
           httpsAndroidCallbackEnabled: true,
@@ -853,7 +1241,7 @@ void main() {
       });
 
       test('uses custom scheme callback on Android when HTTPS flag is disabled', () {
-        final selected = authRepository.selectOAuthRedirectUriTemplateForTest(
+        final selected = authRepository.selectOAuthRedirectUriTemplate(
           const ['org.stormlightlabs.lazurite:/oauth/callback', 'https://lazurite.stormlightlabs.org/oauth/callback'],
           isAndroid: true,
           httpsAndroidCallbackEnabled: false,
@@ -865,7 +1253,7 @@ void main() {
       });
 
       test('uses custom scheme callback when HTTPS callback is unavailable', () {
-        final selected = authRepository.selectOAuthRedirectUriTemplateForTest(
+        final selected = authRepository.selectOAuthRedirectUriTemplate(
           const ['org.stormlightlabs.lazurite:/oauth/callback'],
           isAndroid: true,
           httpsAndroidCallbackEnabled: true,
@@ -877,7 +1265,7 @@ void main() {
       });
 
       test('uses HTTPS callback when custom scheme callback is unavailable', () {
-        final selected = authRepository.selectOAuthRedirectUriTemplateForTest(
+        final selected = authRepository.selectOAuthRedirectUriTemplate(
           const ['https://lazurite.stormlightlabs.org/oauth/callback'],
           isAndroid: true,
           httpsAndroidCallbackEnabled: true,
@@ -889,7 +1277,7 @@ void main() {
       });
 
       test('prefers HTTPS callback on iOS when flag is enabled', () {
-        final selected = authRepository.selectOAuthRedirectUriTemplateForTest(
+        final selected = authRepository.selectOAuthRedirectUriTemplate(
           const ['org.stormlightlabs.lazurite:/oauth/callback', 'https://lazurite.stormlightlabs.org/oauth/callback'],
           isAndroid: false,
           httpsAndroidCallbackEnabled: true,
@@ -901,7 +1289,7 @@ void main() {
       });
 
       test('uses custom scheme callback on iOS when HTTPS flag is disabled', () {
-        final selected = authRepository.selectOAuthRedirectUriTemplateForTest(
+        final selected = authRepository.selectOAuthRedirectUriTemplate(
           const ['org.stormlightlabs.lazurite:/oauth/callback', 'https://lazurite.stormlightlabs.org/oauth/callback'],
           isAndroid: false,
           httpsAndroidCallbackEnabled: true,
@@ -914,7 +1302,7 @@ void main() {
 
       test('throws when no supported callback URI is present', () {
         expect(
-          () => authRepository.selectOAuthRedirectUriTemplateForTest(
+          () => authRepository.selectOAuthRedirectUriTemplate(
             const ['https://example.com/oauth/callback'],
             isAndroid: true,
             httpsAndroidCallbackEnabled: true,
@@ -987,32 +1375,32 @@ void main() {
     group('oauth browser launch mode', () {
       test('uses external application on iOS', () {
         expect(
-          AuthRepository.oauthLaunchModeForTest(isWeb: false, platform: TargetPlatform.iOS),
+          AuthRepository.oauthLaunchModeForPlatform(isWeb: false, platform: TargetPlatform.iOS),
           equals(LaunchMode.externalApplication),
         );
       });
 
       test('uses external application on Android', () {
         expect(
-          AuthRepository.oauthLaunchModeForTest(isWeb: false, platform: TargetPlatform.android),
+          AuthRepository.oauthLaunchModeForPlatform(isWeb: false, platform: TargetPlatform.android),
           equals(LaunchMode.externalApplication),
         );
       });
 
       test('uses external application on non-mobile native platforms', () {
         expect(
-          AuthRepository.oauthLaunchModeForTest(isWeb: false, platform: TargetPlatform.macOS),
+          AuthRepository.oauthLaunchModeForPlatform(isWeb: false, platform: TargetPlatform.macOS),
           equals(LaunchMode.externalApplication),
         );
         expect(
-          AuthRepository.oauthLaunchModeForTest(isWeb: false, platform: TargetPlatform.windows),
+          AuthRepository.oauthLaunchModeForPlatform(isWeb: false, platform: TargetPlatform.windows),
           equals(LaunchMode.externalApplication),
         );
       });
 
       test('uses platform default mode on web', () {
         expect(
-          AuthRepository.oauthLaunchModeForTest(isWeb: true, platform: TargetPlatform.iOS),
+          AuthRepository.oauthLaunchModeForPlatform(isWeb: true, platform: TargetPlatform.iOS),
           equals(LaunchMode.platformDefault),
         );
       });
@@ -1034,7 +1422,7 @@ void main() {
           },
         );
 
-        await authRepository.dismissOAuthBrowserForTest(LaunchMode.inAppBrowserView);
+        await authRepository.dismissOAuthBrowserForLaunchMode(LaunchMode.inAppBrowserView);
 
         expect(supportChecks, equals(1));
         expect(closeCalls, equals(1));
@@ -1055,7 +1443,7 @@ void main() {
           },
         );
 
-        await authRepository.dismissOAuthBrowserForTest(LaunchMode.externalApplication);
+        await authRepository.dismissOAuthBrowserForLaunchMode(LaunchMode.externalApplication);
 
         expect(supportChecks, equals(0));
         expect(closeCalls, equals(0));
@@ -1064,49 +1452,78 @@ void main() {
   });
 }
 
-atcore.InvalidRequestException _invalidResolveHandleRequestException() {
-  return atcore.InvalidRequestException(
-    atcore.XRPCResponse(
-      headers: const {},
-      status: atcore.HttpStatus.badRequest,
-      request: atcore.XRPCRequest(
-        method: atcore.HttpMethod.get,
-        url: Uri.https('bsky.social', '/xrpc/com.atproto.identity.resolveHandle'),
-      ),
-      rateLimit: atcore.RateLimit.unlimited(),
-      data: const atcore.XRPCError(error: 'InvalidRequest', message: 'Could not resolve handle'),
+atcore.InvalidRequestException _invalidResolveHandleRequestException() => atcore.InvalidRequestException(
+  atcore.XRPCResponse(
+    headers: const {},
+    status: atcore.HttpStatus.badRequest,
+    request: atcore.XRPCRequest(
+      method: atcore.HttpMethod.get,
+      url: Uri.https('bsky.social', '/xrpc/com.atproto.identity.resolveHandle'),
     ),
-  );
-}
+    rateLimit: atcore.RateLimit.unlimited(),
+    data: const atcore.XRPCError(error: 'InvalidRequest', message: 'Could not resolve handle'),
+  ),
+);
 
-atcore.UnauthorizedException _unauthorizedRefreshException() {
-  return atcore.UnauthorizedException(
-    atcore.XRPCResponse(
-      headers: const {},
-      status: atcore.HttpStatus.unauthorized,
-      request: atcore.XRPCRequest(
-        method: atcore.HttpMethod.post,
-        url: Uri.https('bsky.social', '/xrpc/com.atproto.server.refreshSession'),
-      ),
-      rateLimit: atcore.RateLimit.unlimited(),
-      data: const atcore.XRPCError(error: 'ExpiredToken', message: 'Refresh token rejected'),
+atcore.UnauthorizedException _unauthorizedRefreshException() => atcore.UnauthorizedException(
+  atcore.XRPCResponse(
+    headers: const {},
+    status: atcore.HttpStatus.unauthorized,
+    request: atcore.XRPCRequest(
+      method: atcore.HttpMethod.post,
+      url: Uri.https('bsky.social', '/xrpc/com.atproto.server.refreshSession'),
     ),
-  );
-}
+    rateLimit: atcore.RateLimit.unlimited(),
+    data: const atcore.XRPCError(error: 'ExpiredToken', message: 'Refresh token rejected'),
+  ),
+);
 
-OAuthClientMetadata _testClientMetadata() {
-  return const OAuthClientMetadata(
-    clientId: AuthRepository.kClientId,
-    applicationType: 'native',
-    clientName: 'Lazurite Test',
-    clientUri: 'https://lazurite.stormlightlabs.org',
-    redirectUris: ['https://lazurite.stormlightlabs.org/oauth/callback', 'org.stormlightlabs.lazurite:/oauth/callback'],
-    responseTypes: ['code'],
-    grantTypes: ['authorization_code', 'refresh_token'],
-    scope: 'atproto',
-    tokenEndpointAuthMethod: 'none',
-  );
-}
+atcore.XRPCResponse<atcore.Session> _appPasswordRefreshResponse({
+  required String did,
+  required String handle,
+  required String accessJwt,
+  required String refreshJwt,
+}) => atcore.XRPCResponse(
+  headers: const {},
+  status: atcore.HttpStatus.ok,
+  request: atcore.XRPCRequest(
+    method: atcore.HttpMethod.post,
+    url: Uri.https('bsky.social', '/xrpc/com.atproto.server.refreshSession'),
+  ),
+  rateLimit: atcore.RateLimit.unlimited(),
+  data: atcore.Session(did: did, handle: handle, accessJwt: accessJwt, refreshJwt: refreshJwt),
+);
+
+OAuthClientMetadata _testClientMetadata() => const OAuthClientMetadata(
+  clientId: AuthRepository.kClientId,
+  applicationType: 'native',
+  clientName: 'Lazurite Test',
+  clientUri: 'https://lazurite.stormlightlabs.org',
+  redirectUris: ['https://lazurite.stormlightlabs.org/oauth/callback', 'org.stormlightlabs.lazurite:/oauth/callback'],
+  responseTypes: ['code'],
+  grantTypes: ['authorization_code', 'refresh_token'],
+  scope: 'atproto',
+  tokenEndpointAuthMethod: 'none',
+);
+
+Account _accountForTokens(AuthTokens tokens) => Account(
+  did: tokens.did,
+  handle: tokens.handle,
+  service: tokens.service,
+  oauthService: tokens.oauthService,
+  oauthClientId: tokens.oauthClientId,
+  accessToken: tokens.accessToken,
+  refreshToken: tokens.refreshToken,
+  dpopPublicKey: tokens.dpopPublicKey,
+  dpopPrivateKey: tokens.dpopPrivateKey,
+  dpopNonce: tokens.dpopNonce,
+  displayName: tokens.displayName,
+  expiresAt: tokens.expiresAt,
+  createdAt: DateTime.now(),
+  updatedAt: DateTime.now(),
+);
+
+String _encodePart(Map<String, Object?> value) => base64Url.encode(utf8.encode(jsonEncode(value))).replaceAll('=', '');
 
 String _buildJwt({
   required String sub,
@@ -1115,12 +1532,8 @@ String _buildJwt({
   String? aud,
   String? iss,
 }) {
-  String encodePart(Map<String, Object?> value) {
-    return base64Url.encode(utf8.encode(jsonEncode(value))).replaceAll('=', '');
-  }
-
-  final header = encodePart(const {'alg': 'none', 'typ': 'JWT'});
-  final payload = encodePart({
+  final header = _encodePart(const {'alg': 'none', 'typ': 'JWT'});
+  final payload = _encodePart({
     'sub': sub,
     'exp': expEpochSeconds,
     'iat': iatEpochSeconds,

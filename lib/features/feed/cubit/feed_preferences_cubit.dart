@@ -25,14 +25,14 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
   final AppDatabase _database;
   final String _accountDid;
 
-  Future<void> loadPreferences() async {
+  Future<void> loadPreferences({bool emitCachedFirst = true}) async {
     log.d('FeedPreferencesCubit: Loading feed preferences for $_accountDid');
     _safeEmit(state.copyWith(status: FeedPreferencesStatus.loading));
 
     try {
       final cachedFeeds = await _database.getSavedFeeds(_accountDid);
 
-      if (cachedFeeds.isNotEmpty) {
+      if (emitCachedFirst && cachedFeeds.isNotEmpty) {
         final feeds = cachedFeeds.map(_mapFromCached).toList();
         log.d('FeedPreferencesCubit: Loaded ${feeds.length} cached feeds for $_accountDid');
         _emitLoaded(feeds);
@@ -57,12 +57,13 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
       final cachedFeeds = await _database.getSavedFeeds(_accountDid);
       if (cachedFeeds.isNotEmpty) {
         final feeds = cachedFeeds.map(_mapFromCached).toList();
+        const message = 'Could not refresh feed preferences; showing cached feeds.';
         log.w(
           'FeedPreferencesCubit: Falling back to ${feeds.length} cached feeds for $_accountDid after load failure',
           error: e,
           stackTrace: stackTrace,
         );
-        _emitLoaded(feeds);
+        _emitLoaded(feeds, message: message);
         await _hydrateGeneratorViews(feeds);
       } else {
         log.e(
@@ -206,8 +207,10 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
 
   String _generateId() => const Uuid().v4();
 
-  void _emitLoaded(List<SavedFeed> feeds) {
-    _safeEmit(FeedPreferencesState.loaded(feeds: feeds, generatorViews: _retainGeneratorViews(feeds)));
+  void _emitLoaded(List<SavedFeed> feeds, {String? message}) {
+    _safeEmit(
+      FeedPreferencesState.loaded(feeds: feeds, generatorViews: _retainGeneratorViews(feeds), message: message),
+    );
   }
 
   List<SavedFeed> _ensureDefaultFeeds(List<SavedFeed> feeds) {
@@ -262,16 +265,23 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
         final chunkViews = await _feedRepository.getFeedGenerators(chunk);
         generatorViews.addAll(chunkViews);
         continue;
-      } catch (_) {
+      } catch (error, stackTrace) {
         log.d(
           'FeedPreferencesCubit: Batch hydration failed for ${chunk.length} generators, falling back to individual fetches for $_accountDid',
+          error: error,
+          stackTrace: stackTrace,
         );
       }
 
       for (final feedUri in chunk) {
         try {
           generatorViews.add(await _feedRepository.getFeedGenerator(feedUri));
-        } catch (_) {
+        } catch (error, stackTrace) {
+          log.w(
+            'FeedPreferencesCubit: Failed to hydrate feed generator $feedUri for $_accountDid',
+            error: error,
+            stackTrace: stackTrace,
+          );
           continue;
         }
       }
@@ -334,8 +344,11 @@ class FeedPreferencesState extends Equatable {
 
   const FeedPreferencesState.initial() : this._(status: FeedPreferencesStatus.initial);
 
-  const FeedPreferencesState.loaded({required List<SavedFeed> feeds, List<GeneratorView> generatorViews = const []})
-    : this._(status: FeedPreferencesStatus.loaded, feeds: feeds, generatorViews: generatorViews);
+  const FeedPreferencesState.loaded({
+    required List<SavedFeed> feeds,
+    List<GeneratorView> generatorViews = const [],
+    String? message,
+  }) : this._(status: FeedPreferencesStatus.loaded, feeds: feeds, generatorViews: generatorViews, message: message);
 
   const FeedPreferencesState.error({required String message})
     : this._(status: FeedPreferencesStatus.error, message: message);
