@@ -126,7 +126,14 @@ class Bluesky {
     P? parameters,
     I? input,
   }) {
-    return _client.call(method, service: service, headers: headers, parameters: parameters, input: input);
+    final descriptor = method.methodDescriptor;
+    return _client.call(
+      method,
+      service: service,
+      headers: headers,
+      parameters: _coerceDescriptorParameters(descriptor, parameters) as P?,
+      input: _coerceDescriptorInput(descriptor, input) as I?,
+    );
   }
 
   Future<XRPCResponse<T>> get<T>(
@@ -508,16 +515,45 @@ Future<XRPCResponse<dynamic>> _invokeDescriptor(
   dynamic input,
 }) {
   final normalized = _normalizeJson(values ?? const <String, dynamic>{}) as Map<String, dynamic>;
-  final dynamic parameters = descriptor.isQuery ? descriptor.parametersFromJson?.call(normalized) ?? normalized : null;
-  final normalizedInput = input is Map ? _normalizeJson(input) as Map<String, dynamic> : input;
+  final dynamic parameters = descriptor.isQuery ? _coerceDescriptorParameters(descriptor, normalized) : null;
   final dynamic body =
-      (normalizedInput is Map<String, dynamic>
-          ? descriptor.inputFromJson?.call(normalizedInput) ?? normalizedInput
-          : normalizedInput) ??
+      _coerceDescriptorInput(descriptor, input) ??
       (descriptor.isProcedure
           ? descriptor.inputFromJson?.call(normalized) ?? (normalized.isEmpty ? null : normalized)
           : null);
   return client.call(descriptor, service: service, headers: headers, parameters: parameters, input: body);
+}
+
+dynamic _coerceDescriptorParameters(XRPCMethodDescriptor<dynamic, dynamic, dynamic> descriptor, dynamic parameters) {
+  if (parameters == null) {
+    return null;
+  }
+  if (parameters is! Map) {
+    return parameters;
+  }
+
+  final normalized = _normalizeJson(parameters) as Map<String, dynamic>;
+  final converter = descriptor.parametersFromJson;
+  if (converter != null) {
+    return converter.call(normalized);
+  }
+  return normalized.isEmpty ? null : normalized;
+}
+
+dynamic _coerceDescriptorInput(XRPCMethodDescriptor<dynamic, dynamic, dynamic> descriptor, dynamic input) {
+  if (input == null) {
+    return null;
+  }
+  if (input is! Map) {
+    return input;
+  }
+
+  final normalized = _normalizeJson(input) as Map<String, dynamic>;
+  final converter = descriptor.inputFromJson;
+  if (converter != null) {
+    return converter.call(normalized);
+  }
+  return normalized.isEmpty ? null : normalized;
 }
 
 XRPCMethodDescriptor<dynamic, dynamic, dynamic>? _descriptorFor(String nsid) {
