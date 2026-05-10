@@ -368,6 +368,7 @@ class AuthRepository {
   }
 
   Future<AuthTokens?> _refreshSession(AuthTokens currentSession) async {
+    var session = currentSession;
     final storedReplacement = await _storedSessionIfRefreshTokenChanged(currentSession);
     if (storedReplacement != null) {
       if (!storedReplacement.isExpired) {
@@ -381,31 +382,31 @@ class AuthRepository {
         'AuthRepository: Refreshing newer stored session for ${storedReplacement.handle}; '
         'requested refresh token is stale.',
       );
-      currentSession = storedReplacement;
+      session = storedReplacement;
     }
 
-    if (currentSession.usesOAuth) {
-      log.i('AuthRepository: Refreshing OAuth session for ${currentSession.handle}');
-      final publicKey = currentSession.dpopPublicKey;
-      final privateKey = currentSession.dpopPrivateKey;
+    if (session.usesOAuth) {
+      log.i('AuthRepository: Refreshing OAuth session for ${session.handle}');
+      final publicKey = session.dpopPublicKey;
+      final privateKey = session.dpopPrivateKey;
       if (publicKey == null || privateKey == null) {
         throw Exception('Stored OAuth session is missing DPoP keys');
       }
 
       try {
-        final metadataClientId = _resolveOauthClientId(currentSession.oauthClientId);
+        final metadataClientId = _resolveOauthClientId(session.oauthClientId);
         final metadata = await _loadClientMetadata(metadataClientId);
         final restoredSession = atcore.restoreOAuthSession(
-          accessToken: currentSession.accessToken,
-          refreshToken: currentSession.refreshToken!,
-          dPoPNonce: currentSession.dpopNonce,
+          accessToken: session.accessToken,
+          refreshToken: session.refreshToken!,
+          dPoPNonce: session.dpopNonce,
           publicKey: publicKey,
           privateKey: privateKey,
         );
         final issuerHost = normalizeAtprotoServiceHost(restoredSession.accessTokenJwt.iss);
-        final storedAuthHost = normalizeAtprotoServiceHost(currentSession.oauthService);
+        final storedAuthHost = normalizeAtprotoServiceHost(session.oauthService);
         final oauthServices = oauthRefreshServiceCandidates(
-          storedAuthService: currentSession.oauthService,
+          storedAuthService: session.oauthService,
           issuer: issuerHost,
         );
 
@@ -422,9 +423,9 @@ class AuthRepository {
               metadata: metadata,
               service: oauthService,
               session: atcore.restoreOAuthSession(
-                accessToken: currentSession.accessToken,
-                refreshToken: currentSession.refreshToken!,
-                dPoPNonce: currentSession.dpopNonce,
+                accessToken: session.accessToken,
+                refreshToken: session.refreshToken!,
+                dPoPNonce: session.dpopNonce,
                 publicKey: publicKey,
                 privateKey: privateKey,
               ),
@@ -466,17 +467,17 @@ class AuthRepository {
           );
         }
 
-        final fallbackPdsHost = normalizeAtprotoServiceHost(currentSession.service) ?? _fallbackService;
+        final fallbackPdsHost = normalizeAtprotoServiceHost(session.service) ?? _fallbackService;
         final refreshedTokens = await _buildOAuthTokens(
           refreshedSession,
-          fallbackHandle: currentSession.handle,
+          fallbackHandle: session.handle,
           fallbackPdsHost: fallbackPdsHost,
-          oauthService: successfulOauthService ?? currentSession.oauthService ?? _oauthService,
-          oauthClientId: currentSession.oauthClientId,
+          oauthService: successfulOauthService ?? session.oauthService ?? _oauthService,
+          oauthClientId: session.oauthClientId,
         );
 
         final persistedTokens = await _persistRefreshedSession(
-          previousSession: currentSession,
+          previousSession: session,
           refreshedSession: refreshedTokens,
         );
         log.i(
@@ -493,18 +494,15 @@ class AuthRepository {
           stackTrace: stackTrace,
         );
         if (shouldInvalidate) {
-          await _invalidateSessionIfStillCurrent(currentSession);
+          await _invalidateSessionIfStillCurrent(session);
         }
         throw Exception('Failed to refresh OAuth session: $error');
       }
     }
 
     try {
-      log.i('AuthRepository: Refreshing app password session for ${currentSession.handle}');
-      final refreshed = await _appPasswordRefreshSession(
-        refreshJwt: currentSession.refreshToken!,
-        service: currentSession.service,
-      );
+      log.i('AuthRepository: Refreshing app password session for ${session.handle}');
+      final refreshed = await _appPasswordRefreshSession(refreshJwt: session.refreshToken!, service: session.service);
 
       final tokens = AuthTokens(
         accessToken: refreshed.data.accessJwt,
@@ -512,12 +510,12 @@ class AuthRepository {
         expiresAt: refreshed.data.accessTokenJwt.exp,
         did: refreshed.data.did,
         handle: refreshed.data.handle,
-        displayName: currentSession.displayName,
-        service: currentSession.service,
+        displayName: session.displayName,
+        service: session.service,
         authMethod: AuthMethod.appPassword,
       );
 
-      final persistedTokens = await _persistRefreshedSession(previousSession: currentSession, refreshedSession: tokens);
+      final persistedTokens = await _persistRefreshedSession(previousSession: session, refreshedSession: tokens);
       log.i('AuthRepository: App password session refresh succeeded for ${persistedTokens.handle}');
       return persistedTokens;
     } catch (error, stackTrace) {
@@ -529,7 +527,7 @@ class AuthRepository {
         stackTrace: stackTrace,
       );
       if (shouldInvalidate) {
-        await _invalidateSessionIfStillCurrent(currentSession);
+        await _invalidateSessionIfStillCurrent(session);
       }
       throw Exception('Failed to refresh session: $error');
     }

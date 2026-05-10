@@ -152,7 +152,7 @@ void main() {
         isA<FeedPreferencesState>()
             .having((s) => s.status, 'status', FeedPreferencesStatus.loaded)
             .having((s) => s.feeds.length, 'feeds.length', 1)
-            .having((s) => s.message, 'message', contains('showing cached feeds')),
+            .having((s) => s.message, 'message', 'Could not refresh feed preferences; showing cached feeds.'),
       ],
     );
 

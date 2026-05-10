@@ -57,7 +57,7 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
       final cachedFeeds = await _database.getSavedFeeds(_accountDid);
       if (cachedFeeds.isNotEmpty) {
         final feeds = cachedFeeds.map(_mapFromCached).toList();
-        final message = 'Could not refresh feed preferences; showing cached feeds. ${e.toString()}';
+        const message = 'Could not refresh feed preferences; showing cached feeds.';
         log.w(
           'FeedPreferencesCubit: Falling back to ${feeds.length} cached feeds for $_accountDid after load failure',
           error: e,
