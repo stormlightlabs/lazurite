@@ -147,7 +147,56 @@ void main() {
         isA<FeedPreferencesState>().having((s) => s.status, 'status', FeedPreferencesStatus.loading),
         isA<FeedPreferencesState>()
             .having((s) => s.status, 'status', FeedPreferencesStatus.loaded)
-            .having((s) => s.feeds.length, 'feeds.length', 1),
+            .having((s) => s.feeds.length, 'feeds.length', 1)
+            .having((s) => s.message, 'message', null),
+        isA<FeedPreferencesState>()
+            .having((s) => s.status, 'status', FeedPreferencesStatus.loaded)
+            .having((s) => s.feeds.length, 'feeds.length', 1)
+            .having((s) => s.message, 'message', contains('showing cached feeds')),
+      ],
+    );
+
+    blocTest<FeedPreferencesCubit, FeedPreferencesState>(
+      'loadPreferences can skip cached first emit for explicit refresh',
+      build: () =>
+          FeedPreferencesCubit(feedRepository: mockFeedRepository, database: database, accountDid: 'did:plc:test'),
+      setUp: () async {
+        await database.replaceSavedFeeds('did:plc:test', [
+          SavedFeedsCompanion(
+            id: const Value('cached-1'),
+            accountDid: const Value('did:plc:test'),
+            type: const Value('{"\$type":"app.bsky.actor.defs#savedFeedTypeKnownValue","data":"feed"}'),
+            value: const Value('at://did:plc:test/app.bsky.feed.generator/cached'),
+            pinned: const Value(true),
+            sortOrder: const Value(0),
+            updatedAt: Value(DateTime.now()),
+          ),
+        ]);
+        when(() => mockFeedRepository.getPreferences()).thenAnswer(
+          (_) async => PreferencesResult(
+            preferences: [
+              UPreferences.savedFeedsPrefV2(
+                data: SavedFeedsPrefV2(
+                  items: [
+                    createTestFeed(
+                      id: 'remote-1',
+                      value: 'at://did:plc:test/app.bsky.feed.generator/remote',
+                      pinned: true,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+        when(() => mockFeedRepository.getFeedGenerators(any())).thenAnswer((_) async => const []);
+      },
+      act: (cubit) => cubit.loadPreferences(emitCachedFirst: false),
+      expect: () => [
+        isA<FeedPreferencesState>().having((s) => s.status, 'status', FeedPreferencesStatus.loading),
+        isA<FeedPreferencesState>()
+            .having((s) => s.status, 'status', FeedPreferencesStatus.loaded)
+            .having((s) => s.feeds.single.id, 'feed id', 'remote-1'),
       ],
     );
 

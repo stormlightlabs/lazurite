@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:poptart_lex/com/atproto/repo/strong_ref.dart';
 
 void main() {
@@ -40,6 +41,70 @@ void main() {
         },
         'createdAt': '2026-05-10T15:08:56.000Z',
       });
+    });
+
+    test('actor.putPreferences encodes procedure values through descriptor type conversion', () async {
+      Object? capturedBody;
+      final bluesky = Bluesky.fromSession(
+        const Session(did: 'did:plc:test', handle: 'test.bsky.social', accessJwt: 'access', refreshJwt: 'refresh'),
+        service: 'example.com',
+        postClient: (url, {headers, body, encoding}) async {
+          capturedBody = body;
+          return http.Response('{}', 200, request: http.Request('POST', url));
+        },
+      );
+
+      const feed = SavedFeed(
+        id: 'feed-1',
+        type: SavedFeedType.knownValue(data: KnownSavedFeedType.feed),
+        value: 'at://did:plc:feed/app.bsky.feed.generator/news',
+        pinned: true,
+      );
+
+      await bluesky.actor.putPreferences(
+        preferences: [
+          const UPreferences.savedFeedsPrefV2(data: SavedFeedsPrefV2(items: [feed])),
+        ],
+      );
+
+      final body = jsonDecode(capturedBody! as String) as Map<String, dynamic>;
+      expect(body['preferences'], [
+        {
+          r'$type': 'app.bsky.actor.defs#savedFeedsPrefV2',
+          'items': [
+            {
+              r'$type': 'app.bsky.actor.defs#savedFeed',
+              'id': 'feed-1',
+              'type': 'feed',
+              'value': 'at://did:plc:feed/app.bsky.feed.generator/news',
+              'pinned': true,
+            },
+          ],
+        },
+      ]);
+    });
+
+    test('feed.getFeedGenerators encodes query parameters through descriptor type conversion', () async {
+      Uri? capturedUrl;
+      final bluesky = Bluesky.fromSession(
+        const Session(did: 'did:plc:test', handle: 'test.bsky.social', accessJwt: 'access', refreshJwt: 'refresh'),
+        service: 'example.com',
+        getClient: (url, {headers}) async {
+          capturedUrl = url;
+          return http.Response(
+            '{"feeds":[{"uri":"at://did:plc:feed/app.bsky.feed.generator/news","cid":"cid-feed","did":"did:web:feed.example","creator":{"did":"did:plc:feed","handle":"feed.example"},"displayName":"News","indexedAt":"2026-05-10T15:08:56.000Z"}]}',
+            200,
+            request: http.Request('GET', url),
+          );
+        },
+      );
+
+      final feeds = await bluesky.feed.getFeedGenerators(
+        feeds: [AtUri.parse('at://did:plc:feed/app.bsky.feed.generator/news')],
+      );
+
+      expect(feeds.data.feeds.single.displayName, 'News');
+      expect(capturedUrl!.queryParametersAll['feeds'], ['at://did:plc:feed/app.bsky.feed.generator/news']);
     });
   });
 }

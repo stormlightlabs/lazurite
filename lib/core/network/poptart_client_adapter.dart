@@ -509,7 +509,7 @@ Future<XRPCResponse<dynamic>> _invokeDescriptor(
 }) {
   final normalized = _normalizeJson(values ?? const <String, dynamic>{}) as Map<String, dynamic>;
   final dynamic parameters = descriptor.isQuery ? descriptor.parametersFromJson?.call(normalized) ?? normalized : null;
-  final normalizedInput = input is Map<String, dynamic> ? _normalizeJson(input) as Map<String, dynamic> : input;
+  final normalizedInput = input is Map ? _normalizeJson(input) as Map<String, dynamic> : input;
   final dynamic body =
       (normalizedInput is Map<String, dynamic>
           ? descriptor.inputFromJson?.call(normalizedInput) ?? normalizedInput
