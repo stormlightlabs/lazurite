@@ -1,4 +1,4 @@
-import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
+import 'package:poptart_lex/app/bsky/notification/list_notifications.dart' as bsky;
 import 'package:flutter/material.dart';
 
 class NotificationIconStyle {

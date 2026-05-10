@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:atproto_core/atproto_core.dart'
+import 'package:poptart_core/poptart_core.dart'
     show Blob, BlobRef, HttpMethod, HttpStatus, RateLimit, UnauthorizedException, XRPCError, XRPCRequest, XRPCResponse;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';

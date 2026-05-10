@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:math' show min;
 import 'dart:typed_data';
 
-import 'package:bluesky/app_bsky_feed_defs.dart';
+import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/embedding/embedding_service.dart';
 import 'package:lazurite/core/logging/app_logger.dart';

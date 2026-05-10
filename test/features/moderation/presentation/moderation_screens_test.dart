@@ -1,9 +1,9 @@
-import 'package:atproto/com_atproto_label_defs.dart';
-import 'package:atproto_core/atproto_core.dart';
-import 'package:bluesky/app_bsky_actor_defs.dart';
-import 'package:bluesky/app_bsky_labeler_defs.dart';
-import 'package:bluesky/app_bsky_labeler_getservices.dart';
-import 'package:bluesky/moderation.dart' as bsky_moderation;
+import 'package:poptart_lex/com/atproto/label/defs.dart';
+import 'package:poptart_core/poptart_core.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/labeler/defs.dart';
+import 'package:poptart_lex/app/bsky/labeler/get_services.dart';
+import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';

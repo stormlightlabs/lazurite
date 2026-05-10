@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:bluesky_text/bluesky_text.dart';
+import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
 import 'package:http/http.dart' as http;
 
 class LinkPreviewData {

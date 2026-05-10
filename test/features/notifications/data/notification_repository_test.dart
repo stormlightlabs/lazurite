@@ -1,12 +1,11 @@
-import 'package:atproto_core/atproto_core.dart';
-import 'package:bluesky/app_bsky_actor_defs.dart';
-import 'package:bluesky/app_bsky_notification_listnotifications.dart' as bsky;
-import 'package:bluesky/bluesky.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/features/notifications/data/notification_repository.dart';
-import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:http/http.dart' as http;
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/notification/list_notifications.dart' as bsky;
 
 class MockNotificationRepository extends Mock implements NotificationRepository {}
 

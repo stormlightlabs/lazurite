@@ -1,18 +1,17 @@
 import 'dart:async';
 
-import 'package:atproto/atproto.dart';
-import 'package:atproto/com_atproto_identity_resolvehandle.dart';
-import 'package:atproto/com_atproto_repo_describerepo.dart';
-import 'package:atproto/com_atproto_repo_getrecord.dart';
-import 'package:atproto/com_atproto_repo_listrecords.dart';
-import 'package:atproto_core/atproto_core.dart';
-import 'package:bluesky/app_bsky_actor_defs.dart';
-import 'package:bluesky/app_bsky_actor_searchactorstypeahead.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/actor_repository_service_resolver.dart';
 import 'package:lazurite/core/network/atproto_host_resolver.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/actor/search_actors_typeahead.dart';
+import 'package:poptart_lex/com/atproto/identity/resolve_handle.dart';
+import 'package:poptart_lex/com/atproto/repo/describe_repo.dart';
+import 'package:poptart_lex/com/atproto/repo/get_record.dart';
+import 'package:poptart_lex/com/atproto/repo/list_records.dart';
 
 part 'dev_tools_state.dart';
 

@@ -12,11 +12,13 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  atproto: ^1.4.1
-  atproto_core: ^1.2.0
-  bluesky: ^1.4.1
-  bluesky_text: ^1.1.1
-  atproto_oauth: ^0.2.0
+  poptart: ^0.1.0
+  poptart_core: ^0.1.0
+  poptart_oauth: ^0.1.0
+  poptart_lex: ^0.1.0
+  poptart_xrpc: ^0.1.0
+  poptart_bluesky_text: ^0.1.0
+  poptart_bluesky_moderation: ^0.1.0
   flutter_bloc: ^9.1.1
   drift: ^2.24.0
   drift_flutter: ^0.2.8
@@ -73,33 +75,6 @@ dev_dependencies:
   mocktail: ^1.0.4
   objectbox_generator: ^5.3.1
   # flutter_native_splash: ^2.4.7
-
-dependency_overrides:
-  atproto:
-    git:
-      url: https://github.com/sprksocial/poptart.git
-      ref: oauth-client-id
-      path: packages/atproto
-  atproto_core:
-    git:
-      url: https://github.com/sprksocial/poptart.git
-      ref: oauth-client-id
-      path: packages/atproto_core
-  bluesky:
-    git:
-      url: https://github.com/sprksocial/poptart.git
-      ref: oauth-client-id
-      path: packages/bluesky
-  bluesky_text:
-    git:
-      url: https://github.com/sprksocial/poptart.git
-      ref: oauth-client-id
-      path: packages/bluesky_text
-  atproto_oauth:
-    git:
-      url: https://github.com/sprksocial/poptart.git
-      ref: oauth-client-id
-      path: packages/atproto_oauth
 
 flutter:
   uses-material-design: true

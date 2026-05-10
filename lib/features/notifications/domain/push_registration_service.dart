@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:atproto_core/atproto_core.dart' as atcore show UnauthorizedException;
+import 'package:poptart_core/poptart_core.dart' as atcore show UnauthorizedException;
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';

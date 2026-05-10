@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:atproto/atproto.dart' as atp;
-import 'package:atproto_core/atproto_core.dart' as atcore;
-import 'package:atproto_oauth/atproto_oauth.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart' as atp;
+import 'package:poptart_core/poptart_core.dart' as atcore;
+import 'package:poptart_oauth/poptart_oauth.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;

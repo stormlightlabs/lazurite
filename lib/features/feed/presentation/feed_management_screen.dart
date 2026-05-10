@@ -1,5 +1,5 @@
-import 'package:bluesky/app_bsky_actor_defs.dart';
-import 'package:bluesky/app_bsky_feed_defs.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

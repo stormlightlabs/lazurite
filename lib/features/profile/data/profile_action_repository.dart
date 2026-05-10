@@ -1,10 +1,9 @@
-import 'package:atproto/com_atproto_admin_defs.dart';
-import 'package:atproto/com_atproto_moderation_createreport.dart';
-import 'package:atproto/com_atproto_moderation_defs.dart';
-import 'package:atproto/com_atproto_repo_strongref.dart';
-import 'package:atproto_core/atproto_core.dart';
-import 'package:bluesky/bluesky.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:poptart_lex/com/atproto/admin/defs.dart';
+import 'package:poptart_lex/com/atproto/moderation/create_report.dart';
+import 'package:poptart_lex/com/atproto/moderation/defs.dart';
+import 'package:poptart_lex/com/atproto/repo/strong_ref.dart';
 
 class ProfileActionRepository {
   ProfileActionRepository({

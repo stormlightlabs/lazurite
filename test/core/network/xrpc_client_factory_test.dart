@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:atproto_core/atproto_core.dart' as atp_core;
+import 'package:poptart_core/poptart_core.dart' as atp_core;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';

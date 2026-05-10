@@ -1,5 +1,5 @@
-import 'package:bluesky/chat_bsky_actor_defs.dart';
-import 'package:bluesky/chat_bsky_convo_defs.dart';
+import 'package:poptart_lex/chat/bsky/actor/defs.dart';
+import 'package:poptart_lex/chat/bsky/convo/defs.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

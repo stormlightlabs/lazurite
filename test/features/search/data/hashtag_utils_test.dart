@@ -1,8 +1,8 @@
-import 'package:atproto_core/atproto_core.dart';
-import 'package:bluesky/app_bsky_actor_defs.dart';
-import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bluesky/app_bsky_feed_post.dart';
-import 'package:bluesky/app_bsky_richtext_facet.dart';
+import 'package:poptart_core/poptart_core.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:poptart_lex/app/bsky/feed/post.dart';
+import 'package:poptart_lex/app/bsky/richtext/facet.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/search/data/hashtag_utils.dart';
 

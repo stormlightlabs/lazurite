@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:atproto_core/atproto_core.dart' as atcore;
-import 'package:atproto_oauth/atproto_oauth.dart';
+import 'package:poptart_core/poptart_core.dart' as atcore;
+import 'package:poptart_oauth/poptart_oauth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';

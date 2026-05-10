@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import 'package:atproto_core/atproto_core.dart';
-import 'package:bluesky/app_bsky_actor_defs.dart';
-import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bluesky/app_bsky_feed_searchposts.dart';
-import 'package:bluesky/app_bsky_graph_defs.dart';
+import 'package:poptart_core/poptart_core.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:poptart_lex/app/bsky/feed/search_posts.dart';
+import 'package:poptart_lex/app/bsky/graph/defs.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lazurite/core/network/app_view_fallback_service.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';

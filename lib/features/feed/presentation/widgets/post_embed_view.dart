@@ -1,10 +1,10 @@
-import 'package:bluesky/app_bsky_embed_external.dart';
-import 'package:bluesky/app_bsky_embed_images.dart';
-import 'package:bluesky/app_bsky_embed_record.dart';
-import 'package:bluesky/app_bsky_embed_recordwithmedia.dart';
-import 'package:bluesky/app_bsky_embed_video.dart';
-import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bluesky/moderation.dart' as bsky_moderation;
+import 'package:poptart_lex/app/bsky/embed/external.dart';
+import 'package:poptart_lex/app/bsky/embed/images.dart';
+import 'package:poptart_lex/app/bsky/embed/record.dart';
+import 'package:poptart_lex/app/bsky/embed/record_with_media.dart';
+import 'package:poptart_lex/app/bsky/embed/video.dart';
+import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';

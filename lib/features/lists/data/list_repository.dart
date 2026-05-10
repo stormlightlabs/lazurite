@@ -1,11 +1,11 @@
 import 'dart:typed_data';
 
-import 'package:atproto_core/atproto_core.dart' show AtUri, BlobRef;
-import 'package:bluesky/app_bsky_actor_defs.dart';
-import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bluesky/app_bsky_graph_defs.dart';
-import 'package:bluesky/app_bsky_graph_getlists.dart';
-import 'package:bluesky/app_bsky_graph_getlistswithmembership.dart';
+import 'package:poptart_core/poptart_core.dart' show AtUri, BlobRef;
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:poptart_lex/app/bsky/graph/defs.dart';
+import 'package:poptart_lex/app/bsky/graph/get_lists.dart';
+import 'package:poptart_lex/app/bsky/graph/get_lists_with_membership.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 

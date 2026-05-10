@@ -1,4 +1,4 @@
-import 'package:bluesky/app_bsky_graph_defs.dart' as bsky_graph;
+import 'package:poptart_lex/app/bsky/graph/defs.dart' as bsky_graph;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

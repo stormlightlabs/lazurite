@@ -1,5 +1,5 @@
-import 'package:bluesky/app_bsky_labeler_defs.dart';
-import 'package:bluesky/app_bsky_labeler_getservices.dart';
+import 'package:poptart_lex/app/bsky/labeler/defs.dart';
+import 'package:poptart_lex/app/bsky/labeler/get_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';

@@ -1,7 +1,7 @@
-import 'package:atproto/com_atproto_repo_strongref.dart';
-import 'package:atproto_core/atproto_core.dart';
-import 'package:bluesky/app_bsky_bookmark_defs.dart';
-import 'package:bluesky/app_bsky_bookmark_getbookmarks.dart';
+import 'package:poptart_lex/com/atproto/repo/strong_ref.dart';
+import 'package:poptart_core/poptart_core.dart';
+import 'package:poptart_lex/app/bsky/bookmark/defs.dart';
+import 'package:poptart_lex/app/bsky/bookmark/get_bookmarks.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';

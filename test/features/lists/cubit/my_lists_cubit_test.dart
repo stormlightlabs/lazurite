@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
-import 'package:atproto_core/atproto_core.dart' show AtUri, BlobRef;
-import 'package:bluesky/app_bsky_actor_defs.dart';
-import 'package:bluesky/app_bsky_graph_defs.dart';
+import 'package:poptart_core/poptart_core.dart' show AtUri, BlobRef;
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/graph/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/lists/cubit/my_lists_cubit.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';

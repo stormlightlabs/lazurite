@@ -1,6 +1,6 @@
-import 'package:bluesky/app_bsky_embed_recordwithmedia.dart';
-import 'package:bluesky/app_bsky_feed_defs.dart';
-import 'package:bluesky/app_bsky_feed_post.dart';
+import 'package:poptart_lex/app/bsky/embed/record_with_media.dart';
+import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:poptart_lex/app/bsky/feed/post.dart';
 
 /// Extracts a single searchable string from a [PostView] for embedding.
 ///

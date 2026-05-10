@@ -1,6 +1,6 @@
-import 'package:atproto/com_atproto_repo_listrecords.dart';
-import 'package:atproto_core/atproto_core.dart';
-import 'package:bluesky/app_bsky_actor_defs.dart';
+import 'package:poptart_lex/com/atproto/repo/list_records.dart';
+import 'package:poptart_core/poptart_core.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
 

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:atproto_core/atproto_core.dart' show Blob, BlobRef;
+import 'package:poptart_core/poptart_core.dart' show Blob, BlobRef;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
