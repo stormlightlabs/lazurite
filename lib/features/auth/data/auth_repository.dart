@@ -1057,30 +1057,31 @@ class AuthRepository {
     required AuthTokens previousSession,
     required AuthTokens refreshedSession,
   }) async {
+    final mergedSession = _mergeRefreshedSession(previousSession: previousSession, refreshedSession: refreshedSession);
     final previousRefreshToken = previousSession.refreshToken;
     final makeActive = await _database.getSetting(AppDatabase.activeAccountDidSettingKey) == previousSession.did;
     if (previousRefreshToken == null) {
-      await saveSession(refreshedSession, makeActive: makeActive);
-      return refreshedSession;
+      await saveSession(mergedSession, makeActive: makeActive);
+      return mergedSession;
     }
 
     final updated = await _database.updateAccountSessionIfRefreshTokenMatches(
       previousSession.did,
       expectedRefreshToken: previousRefreshToken,
-      handle: refreshedSession.handle,
-      accessToken: refreshedSession.accessToken,
-      refreshToken: refreshedSession.refreshToken ?? previousRefreshToken,
-      expiresAt: refreshedSession.expiresAt,
-      displayName: refreshedSession.displayName,
-      service: refreshedSession.service,
-      oauthService: refreshedSession.oauthService,
-      oauthClientId: refreshedSession.oauthClientId,
-      dpopNonce: refreshedSession.dpopNonce,
-      dpopPublicKey: refreshedSession.dpopPublicKey,
-      dpopPrivateKey: refreshedSession.dpopPrivateKey,
+      handle: mergedSession.handle,
+      accessToken: mergedSession.accessToken,
+      refreshToken: mergedSession.refreshToken ?? previousRefreshToken,
+      expiresAt: mergedSession.expiresAt,
+      displayName: mergedSession.displayName,
+      service: mergedSession.service,
+      oauthService: mergedSession.oauthService,
+      oauthClientId: mergedSession.oauthClientId,
+      dpopNonce: mergedSession.dpopNonce,
+      dpopPublicKey: mergedSession.dpopPublicKey,
+      dpopPrivateKey: mergedSession.dpopPrivateKey,
     );
     if (updated) {
-      return refreshedSession;
+      return mergedSession;
     }
 
     final storedAccount = await _database.getAccount(previousSession.did);
@@ -1096,8 +1097,26 @@ class AuthRepository {
       'AuthRepository: Refresh compare-and-swap found no current row for ${previousSession.handle}; '
       'falling back to session upsert.',
     );
-    await saveSession(refreshedSession, makeActive: makeActive);
-    return refreshedSession;
+    await saveSession(mergedSession, makeActive: makeActive);
+    return mergedSession;
+  }
+
+  AuthTokens _mergeRefreshedSession({required AuthTokens previousSession, required AuthTokens refreshedSession}) {
+    return AuthTokens(
+      accessToken: refreshedSession.accessToken,
+      refreshToken: refreshedSession.refreshToken ?? previousSession.refreshToken,
+      expiresAt: refreshedSession.expiresAt ?? previousSession.expiresAt,
+      did: refreshedSession.did,
+      handle: refreshedSession.handle,
+      displayName: refreshedSession.displayName ?? previousSession.displayName,
+      service: refreshedSession.service ?? previousSession.service,
+      oauthService: refreshedSession.oauthService ?? previousSession.oauthService,
+      oauthClientId: refreshedSession.oauthClientId ?? previousSession.oauthClientId,
+      dpopNonce: refreshedSession.dpopNonce ?? previousSession.dpopNonce,
+      dpopPublicKey: refreshedSession.dpopPublicKey ?? previousSession.dpopPublicKey,
+      dpopPrivateKey: refreshedSession.dpopPrivateKey ?? previousSession.dpopPrivateKey,
+      authMethod: refreshedSession.authMethod,
+    );
   }
 
   Future<void> _invalidateSessionIfStillCurrent(AuthTokens tokens) async {

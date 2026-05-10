@@ -212,6 +212,48 @@ void main() {
         expect(retrieved.dpopNonce, equals('nonce-1'));
       });
 
+      test('should preserve nullable session fields when compare-and-swap update omits them', () async {
+        final expiresAt = DateTime.utc(2026, 5, 10, 12);
+        final account = AccountsCompanion.insert(
+          did: 'did:plc:oauth123',
+          handle: 'user.bsky.social',
+          accessToken: 'old-access',
+          refreshToken: const Value('old-refresh'),
+          displayName: const Value('Stored User'),
+          service: const Value('porcini.us-east.host.bsky.network'),
+          oauthService: const Value('bsky.social'),
+          oauthClientId: const Value('https://lazurite.stormlightlabs.org/client-metadata.json'),
+          dpopNonce: const Value('old-nonce'),
+          dpopPublicKey: const Value('public-key'),
+          dpopPrivateKey: const Value('private-key'),
+          expiresAt: Value(expiresAt),
+        );
+
+        await database.insertAccount(account);
+        final updated = await database.updateAccountSessionIfRefreshTokenMatches(
+          'did:plc:oauth123',
+          expectedRefreshToken: 'old-refresh',
+          handle: 'user.bsky.social',
+          accessToken: 'new-access',
+          refreshToken: 'new-refresh',
+        );
+
+        expect(updated, isTrue);
+
+        final retrieved = await database.getAccount('did:plc:oauth123');
+        expect(retrieved, isNotNull);
+        expect(retrieved!.accessToken, equals('new-access'));
+        expect(retrieved.refreshToken, equals('new-refresh'));
+        expect(retrieved.displayName, equals('Stored User'));
+        expect(retrieved.service, equals('porcini.us-east.host.bsky.network'));
+        expect(retrieved.oauthService, equals('bsky.social'));
+        expect(retrieved.oauthClientId, equals('https://lazurite.stormlightlabs.org/client-metadata.json'));
+        expect(retrieved.dpopNonce, equals('old-nonce'));
+        expect(retrieved.dpopPublicKey, equals('public-key'));
+        expect(retrieved.dpopPrivateKey, equals('private-key'));
+        expect(retrieved.expiresAt?.toUtc(), equals(expiresAt));
+      });
+
       test('should persist oauth service separately from pds service', () async {
         final account = AccountsCompanion.insert(
           did: 'did:plc:oauth123',

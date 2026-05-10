@@ -591,6 +591,89 @@ void main() {
         verify(() => mockDatabase.insertAccount(any())).called(1);
       });
 
+      test('preserves stored nullable OAuth fields when refresh does not re-fetch them', () async {
+        final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+        final expiredAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds - 3600,
+          iatEpochSeconds: nowEpochSeconds - 7200,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://bsky.social',
+        );
+        final refreshedAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds + 3600,
+          iatEpochSeconds: nowEpochSeconds,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://bsky.social',
+        );
+
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          loadClientMetadata: (_) async => _testClientMetadata(),
+          oauthRefreshSession:
+              ({required OAuthClientMetadata metadata, required String service, required OAuthSession session}) async {
+                return OAuthSession(
+                  accessToken: refreshedAccessToken,
+                  refreshToken: session.refreshToken,
+                  tokenType: 'DPoP',
+                  scope: 'atproto',
+                  expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+                  sub: session.sub,
+                  $dPoPNonce: 'new-nonce',
+                  $publicKey: session.$publicKey,
+                  $privateKey: session.$privateKey,
+                );
+              },
+        );
+
+        final currentSession = AuthTokens(
+          accessToken: expiredAccessToken,
+          refreshToken: 'refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          displayName: 'Stored User',
+          service: 'porcini.us-east.host.bsky.network',
+          oauthService: 'bsky.social',
+          oauthClientId: AuthRepository.kClientId,
+          dpopNonce: 'old-nonce',
+          dpopPublicKey: 'public-key',
+          dpopPrivateKey: 'private-key',
+          authMethod: AuthMethod.oauth,
+        );
+
+        when(
+          () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
+        ).thenAnswer((_) async => currentSession.did);
+        when(
+          () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
+            currentSession.did,
+            expectedRefreshToken: currentSession.refreshToken!,
+            handle: currentSession.handle,
+            accessToken: refreshedAccessToken,
+            refreshToken: currentSession.refreshToken!,
+            expiresAt: any(named: 'expiresAt'),
+            displayName: currentSession.displayName,
+            service: currentSession.service,
+            oauthService: currentSession.oauthService,
+            oauthClientId: currentSession.oauthClientId,
+            dpopNonce: 'new-nonce',
+            dpopPublicKey: currentSession.dpopPublicKey,
+            dpopPrivateKey: currentSession.dpopPrivateKey,
+          ),
+        ).thenAnswer((_) async => true);
+
+        final refreshed = await authRepository.refreshSession(currentSession);
+
+        expect(refreshed, isNotNull);
+        expect(refreshed!.refreshToken, equals('refresh-token'));
+        expect(refreshed.displayName, equals('Stored User'));
+        expect(refreshed.service, equals('porcini.us-east.host.bsky.network'));
+        expect(refreshed.oauthClientId, equals(AuthRepository.kClientId));
+        expect(refreshed.dpopNonce, equals('new-nonce'));
+        verifyNever(() => mockDatabase.insertAccount(any()));
+      });
+
       test('loads OAuth refresh metadata using stored oauthClientId', () async {
         final requestedClientIds = <String>[];
         final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
