@@ -2,9 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:lazurite/core/network/poptart_client_adapter.dart' as atp;
-import 'package:poptart_core/poptart_core.dart' as atcore;
-import 'package:poptart_oauth/poptart_oauth.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -12,11 +9,14 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/atproto_host_resolver.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart' as atp;
 import 'package:lazurite/core/network/slingshot_client.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/features/auth/data/atproto_identifier.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:poptart_core/poptart_core.dart' as atcore;
+import 'package:poptart_oauth/poptart_oauth.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 typedef LaunchUrlWithMode = Future<bool> Function(Uri url, LaunchMode mode);
@@ -119,6 +119,7 @@ class AuthRepository {
   OAuthClient? _pendingOAuthClient;
   OAuthContext? _pendingOAuthContext;
   Future<AuthTokens>? _pendingOAuthCallbackExchange;
+  final Map<String, Future<AuthTokens?>> _sessionRefreshesByDid = <String, Future<AuthTokens?>>{};
   String? _pendingHandle;
   String? _pendingService;
   LaunchMode? _oauthLaunchMode;
@@ -220,7 +221,7 @@ class AuthRepository {
       _pendingHandle = normalizeAtProtoIdentifierForAuth(handle);
       final validationError = validateAtProtoIdentifierForAuth(_pendingHandle!);
       if (validationError != null) {
-        throw AuthIdentifierResolutionException(_identifierValidationMessage(validationError));
+        throw AuthIdentifierResolutionException(validationError.code.message);
       }
       final preferredOauthService = normalizeAtprotoServiceHost(_oauthServiceResolver()) ?? _oauthService;
       late final String resolvedPdsHost;
@@ -364,6 +365,39 @@ class AuthRepository {
       throw Exception('No refresh token available for session refresh');
     }
 
+    final existingRefresh = _sessionRefreshesByDid[currentSession.did];
+    if (existingRefresh != null) {
+      log.d('AuthRepository: Joining in-flight session refresh for ${currentSession.handle}');
+      return existingRefresh;
+    }
+
+    late final Future<AuthTokens?> refresh;
+    refresh = _refreshSession(currentSession).whenComplete(() {
+      if (identical(_sessionRefreshesByDid[currentSession.did], refresh)) {
+        _sessionRefreshesByDid.remove(currentSession.did);
+      }
+    });
+    _sessionRefreshesByDid[currentSession.did] = refresh;
+    return refresh;
+  }
+
+  Future<AuthTokens?> _refreshSession(AuthTokens currentSession) async {
+    final storedReplacement = await _storedSessionIfRefreshTokenChanged(currentSession);
+    if (storedReplacement != null) {
+      if (!storedReplacement.isExpired) {
+        log.i(
+          'AuthRepository: Using newer stored session for ${storedReplacement.handle}; '
+          'requested refresh token is stale.',
+        );
+        return storedReplacement;
+      }
+      log.i(
+        'AuthRepository: Refreshing newer stored session for ${storedReplacement.handle}; '
+        'requested refresh token is stale.',
+      );
+      currentSession = storedReplacement;
+    }
+
     if (currentSession.usesOAuth) {
       log.i('AuthRepository: Refreshing OAuth session for ${currentSession.handle}');
       final publicKey = currentSession.dpopPublicKey;
@@ -451,15 +485,15 @@ class AuthRepository {
           oauthClientId: currentSession.oauthClientId,
         );
 
-        await saveSession(
-          refreshedTokens,
-          makeActive: await _database.getSetting(AppDatabase.activeAccountDidSettingKey) == currentSession.did,
+        final persistedTokens = await _persistRefreshedSession(
+          previousSession: currentSession,
+          refreshedSession: refreshedTokens,
         );
         log.i(
-          'AuthRepository: OAuth session refresh succeeded for ${refreshedTokens.handle} '
-          'using auth service ${refreshedTokens.oauthService ?? successfulOauthService ?? 'unknown'}',
+          'AuthRepository: OAuth session refresh succeeded for ${persistedTokens.handle} '
+          'using auth service ${persistedTokens.oauthService ?? successfulOauthService ?? 'unknown'}',
         );
-        return refreshedTokens;
+        return persistedTokens;
       } catch (error, stackTrace) {
         final shouldInvalidate = _shouldInvalidateSessionAfterRefreshFailure(error);
         log.e(
@@ -469,7 +503,7 @@ class AuthRepository {
           stackTrace: stackTrace,
         );
         if (shouldInvalidate) {
-          await _invalidateSession(currentSession);
+          await _invalidateSessionIfStillCurrent(currentSession);
         }
         throw Exception('Failed to refresh OAuth session: $error');
       }
@@ -493,12 +527,9 @@ class AuthRepository {
         authMethod: AuthMethod.appPassword,
       );
 
-      await saveSession(
-        tokens,
-        makeActive: await _database.getSetting(AppDatabase.activeAccountDidSettingKey) == currentSession.did,
-      );
-      log.i('AuthRepository: App password session refresh succeeded for ${tokens.handle}');
-      return tokens;
+      final persistedTokens = await _persistRefreshedSession(previousSession: currentSession, refreshedSession: tokens);
+      log.i('AuthRepository: App password session refresh succeeded for ${persistedTokens.handle}');
+      return persistedTokens;
     } catch (error, stackTrace) {
       final shouldInvalidate = _shouldInvalidateSessionAfterRefreshFailure(error);
       log.e(
@@ -508,7 +539,7 @@ class AuthRepository {
         stackTrace: stackTrace,
       );
       if (shouldInvalidate) {
-        await _invalidateSession(currentSession);
+        await _invalidateSessionIfStillCurrent(currentSession);
       }
       throw Exception('Failed to refresh session: $error');
     }
@@ -748,18 +779,6 @@ class AuthRepository {
       postClient: XrpcNetworkInterceptor.wrapPostClient(),
     );
     return (await client.identity.resolveHandle(handle: handle)).data.did;
-  }
-
-  String _identifierValidationMessage(AtProtoIdentifierValidationError validationError) {
-    return switch (validationError.code) {
-      AtProtoIdentifierValidationErrorCode.empty => 'Enter a Bluesky handle or DID.',
-      AtProtoIdentifierValidationErrorCode.unsupportedDid =>
-        'Unsupported DID format. Use a did:plc:... or did:web:... identifier.',
-      AtProtoIdentifierValidationErrorCode.invalidDid =>
-        'Invalid DID format. Enter a complete did:plc:... or did:web:... identifier.',
-      AtProtoIdentifierValidationErrorCode.invalidHandle =>
-        'Invalid handle format. Enter a full handle like username.bsky.social.',
-    };
   }
 
   AuthIdentifierResolutionException _handleResolutionFailureForIdentifier(
@@ -1070,6 +1089,101 @@ class AuthRepository {
     if (await _database.getSetting(AppDatabase.activeAccountDidSettingKey) == tokens.did) {
       await _database.deleteSetting(AppDatabase.activeAccountDidSettingKey);
     }
+  }
+
+  Future<AuthTokens> _persistRefreshedSession({
+    required AuthTokens previousSession,
+    required AuthTokens refreshedSession,
+  }) async {
+    final previousRefreshToken = previousSession.refreshToken;
+    final makeActive = await _database.getSetting(AppDatabase.activeAccountDidSettingKey) == previousSession.did;
+    if (previousRefreshToken == null) {
+      await saveSession(refreshedSession, makeActive: makeActive);
+      return refreshedSession;
+    }
+
+    final updated = await _database.updateAccountSessionIfRefreshTokenMatches(
+      previousSession.did,
+      expectedRefreshToken: previousRefreshToken,
+      handle: refreshedSession.handle,
+      accessToken: refreshedSession.accessToken,
+      refreshToken: refreshedSession.refreshToken ?? previousRefreshToken,
+      expiresAt: refreshedSession.expiresAt,
+      displayName: refreshedSession.displayName,
+      service: refreshedSession.service,
+      oauthService: refreshedSession.oauthService,
+      oauthClientId: refreshedSession.oauthClientId,
+      dpopNonce: refreshedSession.dpopNonce,
+      dpopPublicKey: refreshedSession.dpopPublicKey,
+      dpopPrivateKey: refreshedSession.dpopPrivateKey,
+    );
+    if (updated) {
+      return refreshedSession;
+    }
+
+    final storedAccount = await _database.getAccount(previousSession.did);
+    if (storedAccount != null && storedAccount.refreshToken != previousRefreshToken) {
+      log.w(
+        'AuthRepository: Refresh persistence lost token race for ${previousSession.handle}; '
+        'using newer stored session.',
+      );
+      return _tokensFromAccount(storedAccount);
+    }
+
+    log.w(
+      'AuthRepository: Refresh compare-and-swap found no current row for ${previousSession.handle}; '
+      'falling back to session upsert.',
+    );
+    await saveSession(refreshedSession, makeActive: makeActive);
+    return refreshedSession;
+  }
+
+  Future<void> _invalidateSessionIfStillCurrent(AuthTokens tokens) async {
+    final storedAccount = await _database.getAccount(tokens.did);
+    if (storedAccount == null) {
+      log.w('AuthRepository: Skipping session invalidation for ${tokens.handle}; account is no longer stored.');
+      return;
+    }
+
+    if (storedAccount.refreshToken != tokens.refreshToken) {
+      log.w(
+        'AuthRepository: Skipping session invalidation for ${tokens.handle}; '
+        'stored refresh token changed after this refresh attempt began.',
+      );
+      return;
+    }
+
+    await _invalidateSession(tokens);
+  }
+
+  Future<AuthTokens?> _storedSessionIfRefreshTokenChanged(AuthTokens tokens) async {
+    final storedAccount = await _database.getAccount(tokens.did);
+    if (storedAccount == null || storedAccount.refreshToken == tokens.refreshToken) {
+      return null;
+    }
+    return _tokensFromAccount(storedAccount);
+  }
+
+  AuthTokens _tokensFromAccount(Account account) {
+    final authMethod = account.dpopPrivateKey != null && account.dpopPublicKey != null
+        ? AuthMethod.oauth
+        : AuthMethod.appPassword;
+
+    return AuthTokens(
+      accessToken: account.accessToken,
+      refreshToken: account.refreshToken,
+      expiresAt: account.expiresAt,
+      did: account.did,
+      handle: account.handle,
+      displayName: account.displayName,
+      service: account.service,
+      oauthService: authMethod == AuthMethod.oauth ? normalizeAtprotoServiceHost(account.oauthService) : null,
+      oauthClientId: authMethod == AuthMethod.oauth ? account.oauthClientId : null,
+      dpopNonce: account.dpopNonce,
+      dpopPublicKey: account.dpopPublicKey,
+      dpopPrivateKey: account.dpopPrivateKey,
+      authMethod: authMethod,
+    );
   }
 
   bool _shouldInvalidateSessionAfterRefreshFailure(Object error) {

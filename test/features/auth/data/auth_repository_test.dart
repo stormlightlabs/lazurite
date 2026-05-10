@@ -30,6 +30,24 @@ void main() {
   setUp(() {
     mockDatabase = MockAppDatabase();
     mockSlingshotClient = MockSlingshotClient();
+    when(() => mockDatabase.getAccount(any())).thenAnswer((_) async => null);
+    when(
+      () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
+        any(),
+        expectedRefreshToken: any(named: 'expectedRefreshToken'),
+        handle: any(named: 'handle'),
+        accessToken: any(named: 'accessToken'),
+        refreshToken: any(named: 'refreshToken'),
+        expiresAt: any(named: 'expiresAt'),
+        displayName: any(named: 'displayName'),
+        service: any(named: 'service'),
+        oauthService: any(named: 'oauthService'),
+        oauthClientId: any(named: 'oauthClientId'),
+        dpopNonce: any(named: 'dpopNonce'),
+        dpopPublicKey: any(named: 'dpopPublicKey'),
+        dpopPrivateKey: any(named: 'dpopPrivateKey'),
+      ),
+    ).thenAnswer((_) async => false);
     authRepository = AuthRepository(database: mockDatabase);
   });
 
@@ -200,6 +218,196 @@ void main() {
     });
 
     group('app password refresh', () {
+      test('coalesces concurrent refreshes for the same DID', () async {
+        final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+        final refreshedAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds + 3600,
+          iatEpochSeconds: nowEpochSeconds,
+        );
+        final refreshStarted = Completer<void>();
+        final allowRefreshToComplete = Completer<void>();
+        var refreshCalls = 0;
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          appPasswordRefreshSession: ({required String refreshJwt, String? service}) async {
+            refreshCalls += 1;
+            refreshStarted.complete();
+            await allowRefreshToComplete.future;
+            return _appPasswordRefreshResponse(
+              did: 'did:plc:abc123',
+              handle: 'user.bsky.social',
+              accessJwt: refreshedAccessToken,
+              refreshJwt: 'new-refresh-token',
+            );
+          },
+        );
+
+        const currentSession = AuthTokens(
+          accessToken: 'expired-access-token',
+          refreshToken: 'refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+
+        when(
+          () => mockDatabase.getAccount(currentSession.did),
+        ).thenAnswer((_) async => _accountForTokens(currentSession));
+        when(
+          () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
+        ).thenAnswer((_) async => currentSession.did);
+        when(
+          () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
+            currentSession.did,
+            expectedRefreshToken: currentSession.refreshToken!,
+            handle: 'user.bsky.social',
+            accessToken: refreshedAccessToken,
+            refreshToken: 'new-refresh-token',
+            expiresAt: any(named: 'expiresAt'),
+            displayName: null,
+            service: 'bsky.social',
+            oauthService: null,
+            oauthClientId: null,
+            dpopNonce: null,
+            dpopPublicKey: null,
+            dpopPrivateKey: null,
+          ),
+        ).thenAnswer((_) async => true);
+
+        final firstRefresh = authRepository.refreshSession(currentSession);
+        await refreshStarted.future;
+        final secondRefresh = authRepository.refreshSession(currentSession);
+        allowRefreshToComplete.complete();
+
+        final refreshed = await Future.wait([firstRefresh, secondRefresh]);
+
+        expect(refreshCalls, equals(1));
+        expect(refreshed.map((tokens) => tokens?.refreshToken), everyElement('new-refresh-token'));
+      });
+
+      test('returns newer stored session when caller holds stale refresh token', () async {
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          appPasswordRefreshSession: ({required String refreshJwt, String? service}) async =>
+              throw StateError('stale refresh token should not be used'),
+        );
+
+        const currentSession = AuthTokens(
+          accessToken: 'expired-access-token',
+          refreshToken: 'stale-refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+        final newerSession = AuthTokens(
+          accessToken: 'new-access-token',
+          refreshToken: 'new-refresh-token',
+          expiresAt: DateTime.now().add(const Duration(hours: 1)),
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+
+        when(
+          () => mockDatabase.getAccount(currentSession.did),
+        ).thenAnswer((_) async => _accountForTokens(newerSession));
+
+        final refreshed = await authRepository.refreshSession(currentSession);
+
+        expect(refreshed, isNotNull);
+        expect(refreshed!.refreshToken, equals('new-refresh-token'));
+        verifyNever(
+          () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
+            any(),
+            expectedRefreshToken: any(named: 'expectedRefreshToken'),
+            handle: any(named: 'handle'),
+            accessToken: any(named: 'accessToken'),
+            refreshToken: any(named: 'refreshToken'),
+            expiresAt: any(named: 'expiresAt'),
+            displayName: any(named: 'displayName'),
+            service: any(named: 'service'),
+            oauthService: any(named: 'oauthService'),
+            oauthClientId: any(named: 'oauthClientId'),
+            dpopNonce: any(named: 'dpopNonce'),
+            dpopPublicKey: any(named: 'dpopPublicKey'),
+            dpopPrivateKey: any(named: 'dpopPrivateKey'),
+          ),
+        );
+      });
+
+      test('uses newer stored session when compare-and-swap persistence loses a token race', () async {
+        final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+        final refreshedAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds + 3600,
+          iatEpochSeconds: nowEpochSeconds,
+        );
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          appPasswordRefreshSession: ({required String refreshJwt, String? service}) async {
+            return _appPasswordRefreshResponse(
+              did: 'did:plc:abc123',
+              handle: 'user.bsky.social',
+              accessJwt: refreshedAccessToken,
+              refreshJwt: 'refresh-from-this-call',
+            );
+          },
+        );
+
+        const currentSession = AuthTokens(
+          accessToken: 'expired-access-token',
+          refreshToken: 'old-refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+        final newerSession = AuthTokens(
+          accessToken: 'newer-access-token',
+          refreshToken: 'newer-refresh-token',
+          expiresAt: DateTime.now().add(const Duration(hours: 1)),
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+        var getAccountCalls = 0;
+        when(() => mockDatabase.getAccount(currentSession.did)).thenAnswer((_) async {
+          getAccountCalls += 1;
+          return getAccountCalls == 1 ? _accountForTokens(currentSession) : _accountForTokens(newerSession);
+        });
+        when(
+          () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
+        ).thenAnswer((_) async => currentSession.did);
+        when(
+          () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
+            any(),
+            expectedRefreshToken: any(named: 'expectedRefreshToken'),
+            handle: any(named: 'handle'),
+            accessToken: any(named: 'accessToken'),
+            refreshToken: any(named: 'refreshToken'),
+            expiresAt: any(named: 'expiresAt'),
+            displayName: any(named: 'displayName'),
+            service: any(named: 'service'),
+            oauthService: any(named: 'oauthService'),
+            oauthClientId: any(named: 'oauthClientId'),
+            dpopNonce: any(named: 'dpopNonce'),
+            dpopPublicKey: any(named: 'dpopPublicKey'),
+            dpopPrivateKey: any(named: 'dpopPrivateKey'),
+          ),
+        ).thenAnswer((_) async => false);
+
+        final refreshed = await authRepository.refreshSession(currentSession);
+
+        expect(refreshed, isNotNull);
+        expect(refreshed!.refreshToken, equals('newer-refresh-token'));
+        verifyNever(() => mockDatabase.insertAccount(any()));
+      });
+
       test('preserves account when refresh fails transiently', () async {
         authRepository = AuthRepository(
           database: mockDatabase,
@@ -238,6 +446,9 @@ void main() {
           authMethod: AuthMethod.appPassword,
         );
 
+        when(
+          () => mockDatabase.getAccount(currentSession.did),
+        ).thenAnswer((_) async => _accountForTokens(currentSession));
         when(() => mockDatabase.deleteAccount(currentSession.did)).thenAnswer((_) async => 1);
         when(
           () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
@@ -248,6 +459,42 @@ void main() {
 
         verify(() => mockDatabase.deleteAccount(currentSession.did)).called(1);
         verify(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).called(1);
+      });
+
+      test('does not invalidate account when rejected refresh token is already stale', () async {
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          appPasswordRefreshSession: ({required String refreshJwt, String? service}) async =>
+              throw _unauthorizedRefreshException(),
+        );
+
+        const currentSession = AuthTokens(
+          accessToken: 'expired-access-token',
+          refreshToken: 'stale-refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+        const newerSession = AuthTokens(
+          accessToken: 'new-access-token',
+          refreshToken: 'new-refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+
+        when(
+          () => mockDatabase.getAccount(currentSession.did),
+        ).thenAnswer((_) async => _accountForTokens(newerSession));
+
+        final refreshed = await authRepository.refreshSession(currentSession);
+
+        expect(refreshed, isNotNull);
+        expect(refreshed!.refreshToken, equals('new-refresh-token'));
+        verifyNever(() => mockDatabase.deleteAccount(any()));
+        verifyNever(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey));
       });
     });
 
@@ -554,6 +801,9 @@ void main() {
           authMethod: AuthMethod.oauth,
         );
 
+        when(
+          () => mockDatabase.getAccount(currentSession.did),
+        ).thenAnswer((_) async => _accountForTokens(currentSession));
         when(() => mockDatabase.deleteAccount(currentSession.did)).thenAnswer((_) async => 1);
         when(
           () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
@@ -564,6 +814,63 @@ void main() {
 
         verify(() => mockDatabase.deleteAccount(currentSession.did)).called(1);
         verify(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).called(1);
+      });
+
+      test('does not invalidate OAuth account when rejected refresh token is already stale', () async {
+        final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+        final expiredAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds - 3600,
+          iatEpochSeconds: nowEpochSeconds - 7200,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://bsky.social',
+        );
+        final newerAccessToken = _buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds + 3600,
+          iatEpochSeconds: nowEpochSeconds,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://bsky.social',
+        );
+
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          loadClientMetadata: (_) async => _testClientMetadata(),
+          oauthRefreshSession:
+              ({required OAuthClientMetadata metadata, required String service, required OAuthSession session}) async {
+                throw const OAuthException('{"error":"invalid_grant"}');
+              },
+        );
+
+        final currentSession = AuthTokens(
+          accessToken: expiredAccessToken,
+          refreshToken: 'stale-refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'porcini.us-east.host.bsky.network',
+          oauthService: 'bsky.social',
+          oauthClientId: AuthRepository.kClientId,
+          dpopNonce: 'nonce',
+          dpopPublicKey: 'public-key',
+          dpopPrivateKey: 'private-key',
+          authMethod: AuthMethod.oauth,
+        );
+        final newerSession = currentSession.copyWith(
+          accessToken: newerAccessToken,
+          refreshToken: 'new-refresh-token',
+          dpopNonce: 'new-nonce',
+        );
+
+        when(
+          () => mockDatabase.getAccount(currentSession.did),
+        ).thenAnswer((_) async => _accountForTokens(newerSession));
+
+        final refreshed = await authRepository.refreshSession(currentSession);
+
+        expect(refreshed, isNotNull);
+        expect(refreshed!.refreshToken, equals('new-refresh-token'));
+        verifyNever(() => mockDatabase.deleteAccount(any()));
+        verifyNever(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey));
       });
 
       test('does not invalidate when only fallback OAuth candidates reject credentials', () async {
@@ -681,7 +988,7 @@ void main() {
             isA<AuthIdentifierResolutionException>().having(
               (error) => error.toString(),
               'message',
-              contains('Invalid handle format'),
+              contains('Enter a full handle like username.bsky.social'),
             ),
           ),
         );
@@ -726,7 +1033,7 @@ void main() {
             isA<AuthIdentifierResolutionException>().having(
               (error) => error.toString(),
               'message',
-              contains('Invalid DID format'),
+              contains('Enter a complete DID like did:plc:... or did:web:...'),
             ),
           ),
         );
@@ -1094,6 +1401,24 @@ atcore.UnauthorizedException _unauthorizedRefreshException() {
   );
 }
 
+atcore.XRPCResponse<atcore.Session> _appPasswordRefreshResponse({
+  required String did,
+  required String handle,
+  required String accessJwt,
+  required String refreshJwt,
+}) {
+  return atcore.XRPCResponse(
+    headers: const {},
+    status: atcore.HttpStatus.ok,
+    request: atcore.XRPCRequest(
+      method: atcore.HttpMethod.post,
+      url: Uri.https('bsky.social', '/xrpc/com.atproto.server.refreshSession'),
+    ),
+    rateLimit: atcore.RateLimit.unlimited(),
+    data: atcore.Session(did: did, handle: handle, accessJwt: accessJwt, refreshJwt: refreshJwt),
+  );
+}
+
 OAuthClientMetadata _testClientMetadata() {
   return const OAuthClientMetadata(
     clientId: AuthRepository.kClientId,
@@ -1105,6 +1430,25 @@ OAuthClientMetadata _testClientMetadata() {
     grantTypes: ['authorization_code', 'refresh_token'],
     scope: 'atproto',
     tokenEndpointAuthMethod: 'none',
+  );
+}
+
+Account _accountForTokens(AuthTokens tokens) {
+  return Account(
+    did: tokens.did,
+    handle: tokens.handle,
+    service: tokens.service,
+    oauthService: tokens.oauthService,
+    oauthClientId: tokens.oauthClientId,
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+    dpopPublicKey: tokens.dpopPublicKey,
+    dpopPrivateKey: tokens.dpopPrivateKey,
+    dpopNonce: tokens.dpopNonce,
+    displayName: tokens.displayName,
+    expiresAt: tokens.expiresAt,
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
   );
 }
 
