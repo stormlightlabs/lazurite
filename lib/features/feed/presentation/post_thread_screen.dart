@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
@@ -923,7 +922,7 @@ class _FocusedPostContent extends StatelessWidget {
     final post = thread.post;
 
     await HapticHelper.lightImpact();
-    await cubit.toggleSave(postUri: post.uri.toString(), postJson: PoptartCacheCodecs.postView.encode(post));
+    await cubit.toggleSave(post);
   }
 
   void _showMoreOptions(BuildContext context) {

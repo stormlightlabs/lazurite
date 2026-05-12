@@ -5,7 +5,6 @@ import 'package:poptart_lex/app/bsky/feed/post.dart';
 import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
@@ -298,18 +297,14 @@ class _PostCardWithActionsContent extends StatelessWidget {
     final cubit = context.read<SavedPostsCubit>();
     final post = feedViewPost.post;
     await HapticHelper.lightImpact();
-    await cubit.toggleSave(postUri: post.uri.toString(), postJson: PoptartCacheCodecs.postView.encode(post));
+    await cubit.toggleSave(post);
   }
 
   Future<void> _onCloudSave(BuildContext context) async {
     final cubit = context.read<SavedPostsCubit>();
     final post = feedViewPost.post;
     await HapticHelper.lightImpact();
-    await cubit.cloudSave(
-      postUri: post.uri.toString(),
-      cid: post.cid,
-      postJson: PoptartCacheCodecs.postView.encode(post),
-    );
+    await cubit.cloudSave(post);
   }
 
   Future<void> _onCloudUnsave(BuildContext context) async {
