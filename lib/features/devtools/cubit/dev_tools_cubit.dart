@@ -85,7 +85,7 @@ final class AtprotoDevToolsRepository implements DevToolsRepository {
     final response = await _atproto.repo.listRecords(
       repo: repo,
       collection: collection,
-      limit: limit,
+      limit: limit ?? 50,
       cursor: cursor,
       reverse: reverse,
       $service: serviceHost,
