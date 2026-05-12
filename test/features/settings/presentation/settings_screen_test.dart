@@ -18,6 +18,7 @@ import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class MockAccountSwitcherCubit extends MockCubit<AccountSwitcherState> implements AccountSwitcherCubit {}
 
@@ -64,6 +65,13 @@ void main() {
     settingsCubit = MockSettingsCubit();
     cacheMaintenanceService = MockLocalCacheMaintenanceService();
     crashReportingService = FakeCrashReportingService();
+    PackageInfo.setMockInitialValues(
+      appName: 'Lazurite',
+      packageName: 'org.stormlightlabs.lazurite',
+      version: '1.0.0',
+      buildNumber: '6',
+      buildSignature: '',
+    );
 
     when(() => authBloc.state).thenReturn(const AuthState.unauthenticated());
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.unauthenticated());
@@ -207,6 +215,16 @@ void main() {
     expect(find.text('Feed Layout'), findsOneWidget);
     expect(find.text('Thread Auto-Collapse'), findsOneWidget);
     expect(find.text('Animations'), findsOneWidget);
+  });
+
+  testWidgets('renders native app version and build number', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Lazurite v1.0.0 alpha 6'), 500);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Lazurite v1.0.0 alpha 6'), findsOneWidget);
   });
 
   testWidgets('shows the AT Protocol connection card for the authenticated account', (tester) async {

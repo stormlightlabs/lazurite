@@ -1,6 +1,6 @@
 ---
 title: Release and Distribution Guide
-updated: 2026-05-02
+updated: 2026-05-12
 ---
 
 ## Shared Release Baseline
@@ -18,6 +18,45 @@ updated: 2026-05-02
 4. Tag immutable source.
    - `git tag vX.Y.Z`
 5. Build store artifacts from that exact tag/commit.
+
+## Versioning
+
+Use `pubspec.yaml` as the tracked source of truth for local builds:
+
+```yaml
+version: 1.0.0+6
+```
+
+The part before `+` is Flutter's build name. Keep it numeric and App
+Store-safe because iOS maps it to `CFBundleShortVersionString`. Do not put
+prerelease text such as `-alpha.6` in the build name or iOS
+`MARKETING_VERSION`.
+
+The part after `+` is Flutter's build number. It maps to Android
+`versionCode` and iOS `CFBundleVersion`, so it must be a monotonically
+increasing integer for every uploaded build. It is not automatically "commits
+since tag." Use the store or CI build sequence as the source of truth. For a
+`v1.0.0-alpha.6` tag, build number `6` is valid only if `6` is the next upload
+number for that app ID/package. If building from commits after the tag, assign
+the next unused build number instead of reusing the tag's ordinal.
+
+Keep platform files aligned:
+
+- iOS: update the Runner target `MARKETING_VERSION` in
+  `ios/Runner.xcodeproj/project.pbxproj` to the numeric public version, for
+  example `1.0.0`. `Info.plist` should continue to read
+  `$(FLUTTER_BUILD_NAME)` and `$(FLUTTER_BUILD_NUMBER)`.
+- Android: keep `android/app/build.gradle.kts` reading `versionName` and
+  `versionCode` from Flutter (`flutter.versionName` and `flutter.versionCode`).
+
+For prerelease UI labels, update `AppVersion.prereleaseLabel` in
+`lib/core/app/app_version.dart`. With `version: 1.0.0+6` and label `alpha`, the
+app renders `Lazurite v1.0.0 alpha 6`.
+
+After changing versions, run `flutter pub get`, then build from Flutter or the
+IDE once so ignored local generated files such as
+`ios/Flutter/Generated.xcconfig` and `android/local.properties` reflect the
+current build name and number.
 
 ## Environment Variables
 
@@ -252,6 +291,9 @@ Keep push-enabled binaries for Play/App Store/AltStore/Obtainium, and maintain a
 
 - Flutter Android release: <https://docs.flutter.dev/deployment/android>
 - Flutter iOS release: <https://docs.flutter.dev/deployment/ios>
+- Apple bundle short version (`CFBundleShortVersionString`): <https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundleshortversionstring>
+- Apple build version (`CFBundleVersion`): <https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundleversion>
+- Android app versioning: <https://developer.android.com/studio/publish/versioning>
 - Android signing + Play App Signing: <https://developer.android.com/studio/publish/app-signing>
 - Play App Signing help: <https://support.google.com/googleplay/android-developer/answer/9842756>
 - App Store Connect uploads: <https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds/>

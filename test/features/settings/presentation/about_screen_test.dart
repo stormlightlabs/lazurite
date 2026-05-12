@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/settings/presentation/about_screen.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 class _FakeUrlLauncher extends Fake with MockPlatformInterfaceMixin implements UrlLauncherPlatform {
   final List<String> launchedUrls = [];
@@ -30,6 +31,13 @@ void main() {
   setUp(() {
     fakeUrlLauncher = _FakeUrlLauncher();
     UrlLauncherPlatform.instance = fakeUrlLauncher;
+    PackageInfo.setMockInitialValues(
+      appName: 'Lazurite',
+      packageName: 'org.stormlightlabs.lazurite',
+      version: '1.0.0',
+      buildNumber: '6',
+      buildSignature: '',
+    );
   });
 
   Widget buildSubject() => const MaterialApp(home: AboutScreen());
@@ -72,9 +80,9 @@ void main() {
 
     testWidgets('renders version string', (tester) async {
       await tester.pumpWidget(buildSubject());
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      expect(find.textContaining('Lazurite v'), findsOneWidget);
+      expect(find.text('Lazurite v1.0.0 alpha 6'), findsOneWidget);
     });
 
     testWidgets('renders email icon', (tester) async {

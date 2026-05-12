@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:lazurite/core/app/app_version_label.dart';
 import 'package:lazurite/features/settings/presentation/widgets/contact_section.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -123,7 +124,7 @@ class TermsOfServiceScreen extends StatelessWidget {
           ),
           ContactSection(onStormlightLabsTap: () => _launch(_websiteUrl), onEmailTap: () => _launch(_emailUrl)),
           const SizedBox(height: 12),
-          Center(child: Text('Lazurite v1.0.0', style: textTheme.bodySmall)),
+          const Center(child: AppVersionLabel()),
         ],
       ),
     );

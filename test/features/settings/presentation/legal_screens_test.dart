@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/settings/presentation/privacy_policy_screen.dart';
 import 'package:lazurite/features/settings/presentation/terms_of_service_screen.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
@@ -31,6 +32,13 @@ void main() {
   setUp(() {
     fakeUrlLauncher = _FakeUrlLauncher();
     UrlLauncherPlatform.instance = fakeUrlLauncher;
+    PackageInfo.setMockInitialValues(
+      appName: 'Lazurite',
+      packageName: 'org.stormlightlabs.lazurite',
+      version: '1.0.0',
+      buildNumber: '6',
+      buildSignature: '',
+    );
   });
 
   group('PrivacyPolicyScreen', () {
@@ -60,6 +68,16 @@ void main() {
 
       expect(fakeUrlLauncher.launchedUrls, contains('https://stormlightlabs.org'));
       expect(fakeUrlLauncher.launchedUrls, contains('mailto:info@stormlightlabs.org'));
+    });
+
+    testWidgets('renders version string', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: PrivacyPolicyScreen()));
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(find.text('Lazurite v1.0.0 alpha 6'), 300);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Lazurite v1.0.0 alpha 6'), findsOneWidget);
     });
   });
 
@@ -92,6 +110,16 @@ void main() {
 
       expect(fakeUrlLauncher.launchedUrls, contains('https://stormlightlabs.org'));
       expect(fakeUrlLauncher.launchedUrls, contains('mailto:info@stormlightlabs.org'));
+    });
+
+    testWidgets('renders version string', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: TermsOfServiceScreen()));
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(find.text('Lazurite v1.0.0 alpha 6'), 300);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Lazurite v1.0.0 alpha 6'), findsOneWidget);
     });
   });
 }
