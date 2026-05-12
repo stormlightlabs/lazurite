@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/app/app_version_label.dart';
 import 'package:lazurite/core/cache/local_cache_maintenance_service.dart';
 import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
@@ -184,7 +185,7 @@ class SettingsScreen extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 24),
-          Center(child: Text('Lazurite v1.0.0', style: context.textTheme.bodySmall)),
+          const Center(child: AppVersionLabel()),
           const SizedBox(height: 24),
         ],
       ),

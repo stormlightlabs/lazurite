@@ -23,6 +23,9 @@ Use `just` for common workflows:
 | `just gen`             | Run `build_runner` for code generation                |
 | `just check`           | Format, lint, and test in sequence                    |
 
+For release versioning, signing, packaging, and distribution, see the
+[release documentation](docs/release.md).
+
 ## Website
 
 The public website lives in `www` as an Astro project.

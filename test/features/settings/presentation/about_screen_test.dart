@@ -34,7 +34,7 @@ void main() {
     PackageInfo.setMockInitialValues(
       appName: 'Lazurite',
       packageName: 'org.stormlightlabs.lazurite',
-      version: '1.0.0-alpha',
+      version: '1.0.0',
       buildNumber: '6',
       buildSignature: '',
     );
