@@ -17,6 +17,27 @@ void main() {
       expect(label, equals('Lazurite v1.0.0 alpha 6'));
     });
 
+    test('uses app name from package metadata', () {
+      final label = AppVersion.displayLabelFor(
+        PackageInfo(
+          appName: 'Lazurite Nightly',
+          packageName: 'org.stormlightlabs.lazurite.nightly',
+          version: '1.0.0',
+          buildNumber: '6',
+        ),
+      );
+
+      expect(label, equals('Lazurite Nightly v1.0.0 alpha 6'));
+    });
+
+    test('falls back to Lazurite when package app name is empty', () {
+      final label = AppVersion.displayLabelFor(
+        PackageInfo(appName: ' ', packageName: 'org.stormlightlabs.lazurite', version: '1.0.0', buildNumber: '6'),
+      );
+
+      expect(label, equals('Lazurite v1.0.0 alpha 6'));
+    });
+
     test('shows prerelease channel and build number together', () {
       final label = AppVersion.displayLabelFor(
         PackageInfo(

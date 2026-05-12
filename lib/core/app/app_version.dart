@@ -11,6 +11,8 @@ final class AppVersion {
   }
 
   static String displayLabelFor(PackageInfo packageInfo, {String? prereleaseLabel = AppVersion.prereleaseLabel}) {
+    final rawAppName = packageInfo.appName.trim();
+    final appName = rawAppName.isEmpty ? 'Lazurite' : rawAppName;
     final rawVersion = packageInfo.version.trim();
     final version = rawVersion.isEmpty ? '1.0.0' : rawVersion;
     final buildNumber = packageInfo.buildNumber.trim();
@@ -28,11 +30,11 @@ final class AppVersion {
           : channelHasNumber
           ? ' (build $buildNumber)'
           : ' $buildNumber';
-      return 'Lazurite v${parsedVersion.baseVersion} $channel$suffix';
+      return '$appName v${parsedVersion.baseVersion} $channel$suffix';
     }
 
     final buildSuffix = hasBuildNumber ? ' (build $buildNumber)' : '';
-    return 'Lazurite v$version$buildSuffix';
+    return '$appName v$version$buildSuffix';
   }
 
   static String? _prereleaseChannelFromBuild(String buildNumber, String? prereleaseLabel) {
