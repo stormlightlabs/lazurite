@@ -30,6 +30,17 @@ typedef OAuthRefreshSession =
     });
 typedef AppPasswordRefreshSession =
     Future<atcore.XRPCResponse<atcore.Session>> Function({required String refreshJwt, String? service});
+typedef OAuthAuthorizeSession = Future<(Uri, OAuthContext)> Function(OAuthClient client, String? identity);
+typedef OAuthCallbackSession =
+    Future<OAuthSession> Function(OAuthClient client, String callbackUrl, OAuthContext context);
+typedef OAuthTokenBuilder =
+    Future<AuthTokens> Function(
+      OAuthSession session, {
+      required String fallbackHandle,
+      required String fallbackPdsHost,
+      required String oauthService,
+      String? oauthClientId,
+    });
 
 final class AuthIdentifierResolutionException implements Exception {
   const AuthIdentifierResolutionException(this.message);
@@ -65,24 +76,33 @@ class AuthRepository {
     SupportsCloseForMode supportsCloseForMode = supportsCloseForLaunchMode,
     OAuthRefreshSession oauthRefreshSession = _defaultOAuthRefreshSession,
     AppPasswordRefreshSession appPasswordRefreshSession = _defaultAppPasswordRefreshSession,
+    OAuthAuthorizeSession oauthAuthorizeSession = _defaultOAuthAuthorizeSession,
+    OAuthCallbackSession oauthCallbackSession = _defaultOAuthCallbackSession,
+    OAuthTokenBuilder? oauthTokenBuilder,
     Future<OAuthClientMetadata> Function(String clientId) loadClientMetadata = getClientMetadata,
     String Function()? oauthServiceResolver,
     bool Function()? slingshotIdentityFallbackEnabledResolver,
     SlingshotClient? slingshotClient,
     Future<String> Function(String handle)? resolveHandleDid,
     Future<Map<String, dynamic>> Function(String did)? resolveDidDocument,
+    Future<String?> Function(String pdsHost)? resolveAuthorizationServiceForPdsHost,
   }) : _database = database,
        _launchUrlWithMode = launchUrlWithMode,
        _closeInAppBrowser = closeInAppBrowser,
        _supportsCloseForMode = supportsCloseForMode,
        _oauthRefreshSession = oauthRefreshSession,
        _appPasswordRefreshSession = appPasswordRefreshSession,
+       _oauthAuthorizeSession = oauthAuthorizeSession,
+       _oauthCallbackSession = oauthCallbackSession,
+       _oauthTokenBuilder = oauthTokenBuilder,
        _loadClientMetadata = loadClientMetadata,
        _oauthServiceResolver = oauthServiceResolver ?? _defaultOAuthServiceResolver,
        _slingshotIdentityFallbackEnabledResolver = slingshotIdentityFallbackEnabledResolver ?? _defaultFalse,
        _slingshotClient = slingshotClient ?? SlingshotClient(),
        _resolveHandleDid = resolveHandleDid,
-       _resolveDidDocumentOverride = resolveDidDocument;
+       _resolveDidDocumentOverride = resolveDidDocument,
+       _resolveAuthorizationServiceForPdsHost =
+           resolveAuthorizationServiceForPdsHost ?? _defaultResolveAuthorizationServiceForPdsHost;
 
   static const String kClientId = 'https://lazurite.stormlightlabs.org/client-metadata.json';
   static const String _oauthService = 'bsky.social';
@@ -108,12 +128,16 @@ class AuthRepository {
   final SupportsCloseForMode _supportsCloseForMode;
   final OAuthRefreshSession _oauthRefreshSession;
   final AppPasswordRefreshSession _appPasswordRefreshSession;
+  final OAuthAuthorizeSession _oauthAuthorizeSession;
+  final OAuthCallbackSession _oauthCallbackSession;
+  final OAuthTokenBuilder? _oauthTokenBuilder;
   final Future<OAuthClientMetadata> Function(String clientId) _loadClientMetadata;
   final String Function() _oauthServiceResolver;
   final bool Function() _slingshotIdentityFallbackEnabledResolver;
   final SlingshotClient _slingshotClient;
   final Future<String> Function(String handle)? _resolveHandleDid;
   final Future<Map<String, dynamic>> Function(String did)? _resolveDidDocumentOverride;
+  final Future<String?> Function(String pdsHost) _resolveAuthorizationServiceForPdsHost;
 
   Completer<AuthTokens?>? _oauthCompleter;
   OAuthClient? _pendingOAuthClient;
@@ -273,7 +297,7 @@ class AuthRepository {
             metadata.copyWith(redirectUris: [redirectUri.toString()]),
             service: oauthService,
           );
-          final (authorizationUrl, context) = await oauthClient.authorize(_pendingHandle);
+          final (authorizationUrl, context) = await _oauthAuthorizeSession(oauthClient, _pendingHandle);
 
           _pendingService = oauthService;
           _pendingOAuthClient = oauthClient;
@@ -562,18 +586,32 @@ class AuthRepository {
     }
 
     final callbackUri = Uri.parse(callbackUrl);
+    final exchangeService = oauthCallbackExchangeService(pendingService: service, callbackUri: callbackUri);
+    final normalizedPendingService = normalizeAtprotoServiceHost(service) ?? service;
+    final exchangeClient = exchangeService == normalizedPendingService
+        ? oauthClient
+        : OAuthClient(oauthClient.metadata, service: exchangeService);
+
+    if (exchangeClient.service != oauthClient.service) {
+      log.w(
+        'AuthRepository: OAuth callback issuer ${exchangeClient.service} differs from pending auth service '
+        '${oauthClient.service}; exchanging authorization code at callback issuer.',
+      );
+    }
+
     log.d(
       'AuthRepository: Exchanging OAuth callback for session using '
       '${callbackUri.path} with query keys: ${callbackUri.queryParameters.keys.join(', ')}',
     );
-    final oauthSession = await oauthClient.callback(callbackUrl, oauthContext);
+    final oauthSession = await _oauthCallbackSession(exchangeClient, callbackUrl, oauthContext);
     log.i('AuthRepository: OAuth token exchange succeeded for DID ${oauthSession.sub}');
-    final tokens = await _buildOAuthTokens(
+    final buildTokens = _oauthTokenBuilder ?? _buildOAuthTokens;
+    final tokens = await buildTokens(
       oauthSession,
       fallbackHandle: fallbackHandle,
       fallbackPdsHost: _fallbackService,
-      oauthService: service,
-      oauthClientId: oauthClient.metadata.clientId,
+      oauthService: exchangeClient.service,
+      oauthClientId: exchangeClient.metadata.clientId,
     );
     await saveSession(tokens, makeActive: true);
     log.i('AuthRepository: OAuth login completed for ${tokens.handle}');
@@ -782,7 +820,7 @@ class AuthRepository {
     return AuthIdentifierResolutionException('Unable to resolve "$identifier". $sanitizedMessage');
   }
 
-  Future<String?> _resolveAuthorizationServiceForPdsHost(String pdsHost) async {
+  static Future<String?> _defaultResolveAuthorizationServiceForPdsHost(String pdsHost) async {
     final normalizedPdsHost = normalizeAtprotoServiceHost(pdsHost);
     if (normalizedPdsHost == null) {
       return null;
@@ -1040,7 +1078,7 @@ class AuthRepository {
     );
   }
 
-  String _sanitizeUriForLog(Uri uri) {
+  static String _sanitizeUriForLog(Uri uri) {
     return uri.replace(query: null, fragment: null).toString();
   }
 
@@ -1257,6 +1295,18 @@ class AuthRepository {
     return atp.refreshSession(refreshJwt: refreshJwt, service: service);
   }
 
+  static Future<(Uri, OAuthContext)> _defaultOAuthAuthorizeSession(OAuthClient client, String? identity) {
+    return client.authorize(identity);
+  }
+
+  static Future<OAuthSession> _defaultOAuthCallbackSession(
+    OAuthClient client,
+    String callbackUrl,
+    OAuthContext context,
+  ) {
+    return client.callback(callbackUrl, context);
+  }
+
   static String _defaultOAuthServiceResolver() {
     return AppViewProviders.descriptorForSetting(AppViewProviders.defaultKey).entrywayUrl.host;
   }
@@ -1318,19 +1368,29 @@ class AuthRepository {
       candidates.add(resolvedAuthHost);
     }
 
-    final resolvedHost = normalizeAtprotoServiceHost(resolvedPdsHost);
-    if (resolvedHost != null) {
-      candidates.add(resolvedHost);
-    }
-
-    candidates.add(_oauthService);
-
     final preferredHost = normalizeAtprotoServiceHost(preferredAuthService);
     if (preferredHost != null) {
       candidates.add(preferredHost);
     }
 
+    candidates.add(_oauthService);
+
+    final resolvedHost = normalizeAtprotoServiceHost(resolvedPdsHost);
+    if (resolvedHost != null) {
+      candidates.add(resolvedHost);
+    }
+
     candidates.add(_fallbackService);
     return candidates.toList(growable: false);
+  }
+
+  @visibleForTesting
+  static String oauthCallbackExchangeService({required String pendingService, required Uri callbackUri}) {
+    final issuerHost = normalizeAtprotoServiceHost(callbackUri.queryParameters['iss']);
+    if (issuerHost != null) {
+      return issuerHost;
+    }
+
+    return normalizeAtprotoServiceHost(pendingService) ?? pendingService;
   }
 }

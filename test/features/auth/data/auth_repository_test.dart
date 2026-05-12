@@ -1003,14 +1003,14 @@ void main() {
     });
 
     group('oauth authorize candidates', () {
-      test('prioritizes resolved auth service before provider preference', () {
+      test('prioritizes resolved auth service, then preferred auth hosts, before PDS fallback', () {
         final candidates = AuthRepository.oauthAuthorizeServiceCandidates(
           preferredAuthService: 'blacksky.community',
           resolvedPdsHost: 'https://porcini.us-east.host.bsky.network',
           resolvedAuthService: 'https://bsky.social',
         );
 
-        expect(candidates, equals(['bsky.social', 'porcini.us-east.host.bsky.network', 'blacksky.community']));
+        expect(candidates, equals(['bsky.social', 'blacksky.community', 'porcini.us-east.host.bsky.network']));
       });
 
       test('deduplicates when preferred and resolved hosts match defaults', () {
@@ -1021,6 +1021,125 @@ void main() {
         );
 
         expect(candidates, equals(['bsky.social']));
+      });
+    });
+
+    group('oauth callback exchange service', () {
+      test('uses callback issuer when present', () {
+        final service = AuthRepository.oauthCallbackExchangeService(
+          pendingService: 'porcini.us-east.host.bsky.network',
+          callbackUri: Uri.parse(
+            'https://lazurite.stormlightlabs.org/oauth/callback?code=abc&state=xyz&iss=https%3A%2F%2Fbsky.social',
+          ),
+        );
+
+        expect(service, equals('bsky.social'));
+      });
+
+      test('falls back to pending auth service when callback has no issuer', () {
+        final service = AuthRepository.oauthCallbackExchangeService(
+          pendingService: 'https://auth.example.com',
+          callbackUri: Uri.parse('org.stormlightlabs.lazurite:/oauth/callback?code=abc&state=xyz'),
+        );
+
+        expect(service, equals('auth.example.com'));
+      });
+
+      test('redeems callback with issuer host when it differs from launched auth service', () async {
+        final authorizeServices = <String>[];
+        final callbackServices = <String>[];
+        final launchedUrls = <Uri>[];
+
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          loadClientMetadata: (_) async => _testClientMetadata(),
+          oauthServiceResolver: () => 'pending-auth.example',
+          resolveHandleDid: (_) async => 'did:plc:alice',
+          resolveDidDocument: (_) async => const {
+            'service': [
+              {
+                'id': '#atproto_pds',
+                'type': 'AtprotoPersonalDataServer',
+                'serviceEndpoint': 'https://porcini.us-east.host.bsky.network',
+              },
+            ],
+          },
+          resolveAuthorizationServiceForPdsHost: (_) async => null,
+          launchUrlWithMode: (url, _) async {
+            launchedUrls.add(url);
+            return true;
+          },
+          oauthAuthorizeSession: (client, identity) async {
+            authorizeServices.add(client.service);
+            expect(identity, equals('alice.bsky.social'));
+            return (
+              Uri.https(client.service, '/oauth/authorize', const {'request_uri': 'urn:request'}),
+              const OAuthContext(codeVerifier: 'verifier', state: 'state', dpopNonce: 'nonce'),
+            );
+          },
+          oauthCallbackSession: (client, callbackUrl, context) async {
+            callbackServices.add(client.service);
+            expect(context.state, equals('state'));
+            expect(Uri.parse(callbackUrl).queryParameters['code'], equals('abc'));
+            return OAuthSession(
+              accessToken: 'access',
+              refreshToken: 'refresh',
+              tokenType: 'DPoP',
+              scope: 'atproto',
+              expiresAt: DateTime.now().add(const Duration(hours: 1)),
+              sub: 'did:plc:alice',
+              $dPoPNonce: 'next-nonce',
+              $publicKey: 'public-key',
+              $privateKey: 'private-key',
+            );
+          },
+          oauthTokenBuilder:
+              (
+                session, {
+                required fallbackHandle,
+                required fallbackPdsHost,
+                required oauthService,
+                oauthClientId,
+              }) async => AuthTokens(
+                accessToken: session.accessToken,
+                refreshToken: session.refreshToken,
+                expiresAt: session.expiresAt,
+                did: session.sub,
+                handle: fallbackHandle,
+                service: fallbackPdsHost,
+                oauthService: oauthService,
+                oauthClientId: oauthClientId,
+                dpopNonce: session.$dPoPNonce,
+                dpopPublicKey: session.$publicKey,
+                dpopPrivateKey: session.$privateKey,
+                authMethod: AuthMethod.oauth,
+              ),
+        );
+        when(() => mockDatabase.insertAccount(any())).thenAnswer((_) async => 1);
+        when(
+          () => mockDatabase.setSetting(AppDatabase.activeAccountDidSettingKey, 'did:plc:alice'),
+        ).thenAnswer((_) async => 1);
+
+        final loginFuture = authRepository.loginWithOAuth('alice.bsky.social');
+        await Future<void>.delayed(Duration.zero);
+
+        expect(authorizeServices, equals(['pending-auth.example']));
+        expect(launchedUrls, hasLength(1));
+
+        final handled = await authRepository.completeOAuthCallbackFromUri(
+          Uri.parse(
+            'https://lazurite.stormlightlabs.org/oauth/callback?code=abc&state=state&iss=https%3A%2F%2Fbsky.social',
+          ),
+        );
+
+        expect(handled, isTrue);
+        final tokens = await loginFuture;
+
+        expect(callbackServices, equals(['bsky.social']));
+        expect(tokens, isNotNull);
+        expect(tokens!.oauthService, equals('bsky.social'));
+        verify(() => mockDatabase.insertAccount(any())).called(1);
+        verify(() => mockDatabase.setSetting(AppDatabase.activeAccountDidSettingKey, 'did:plc:alice')).called(1);
       });
     });
 

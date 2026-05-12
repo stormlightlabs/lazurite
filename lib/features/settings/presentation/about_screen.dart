@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:lazurite/core/app/app_version.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -94,9 +95,34 @@ class AboutScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 32),
-          Center(child: Text('Lazurite v1.0.0', style: theme.textTheme.bodySmall)),
+          const Center(child: _AppVersionLabel()),
         ],
       ),
+    );
+  }
+}
+
+class _AppVersionLabel extends StatefulWidget {
+  const _AppVersionLabel();
+
+  @override
+  State<_AppVersionLabel> createState() => _AppVersionLabelState();
+}
+
+class _AppVersionLabelState extends State<_AppVersionLabel> {
+  late final Future<String> _displayLabel = AppVersion.displayLabel();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String>(
+      future: _displayLabel,
+      builder: (context, snapshot) {
+        final label = snapshot.data;
+        if (label == null) {
+          return const SizedBox.shrink();
+        }
+        return Text(label, style: Theme.of(context).textTheme.bodySmall);
+      },
     );
   }
 }
