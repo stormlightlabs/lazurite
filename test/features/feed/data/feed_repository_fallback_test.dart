@@ -3,19 +3,20 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/app_view_fallback_service.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _StubBluesky {}
+import '../../../helpers/test_bluesky_client.dart';
 
 class MockAppDatabase extends Mock implements AppDatabase {}
 
 void main() {
-  late _StubBluesky bluesky;
+  late Bluesky bluesky;
   late MockAppDatabase database;
 
   setUp(() {
-    bluesky = _StubBluesky();
+    bluesky = testBluesky();
     database = MockAppDatabase();
   });
 

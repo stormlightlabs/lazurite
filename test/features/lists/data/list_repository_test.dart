@@ -1,33 +1,40 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:poptart_core/poptart_core.dart' show AtUri, Blob, BlobRef;
+import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/actor/search_actors_typeahead.dart';
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:poptart_lex/app/bsky/feed/get_list_feed.dart';
 import 'package:poptart_lex/app/bsky/graph/defs.dart';
+import 'package:poptart_lex/app/bsky/graph/get_list.dart';
 import 'package:poptart_lex/app/bsky/graph/get_lists.dart';
 import 'package:poptart_lex/app/bsky/graph/get_lists_with_membership.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/features/lists/data/list_repository.dart';
+import 'package:poptart_lex/com/atproto/repo/create_record.dart';
+import 'package:poptart_lex/com/atproto/repo/delete_record.dart';
+import 'package:poptart_lex/com/atproto/repo/put_record.dart';
+import 'package:poptart_lex/com/atproto/repo/upload_blob.dart';
 
 void main() {
-  late _FakeGraphService graph;
-  late _FakeFeedService feed;
-  late _FakeActorService actor;
+  late _FakeXrpcTransport transport;
   late ListRepository repository;
 
   final listUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.list/list-1');
   final listItemUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.listitem/item-1');
   final blockUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.listblock/block-1');
 
-  late _FakeAtprotoService atproto;
-
   setUp(() {
-    graph = _FakeGraphService();
-    feed = _FakeFeedService();
-    actor = _FakeActorService();
-    atproto = _FakeAtprotoService();
+    transport = _FakeXrpcTransport();
     repository = ListRepository(
-      bluesky: _FakeBlueskyClient(graph: graph, feed: feed, actor: actor, atproto: atproto),
+      bluesky: Bluesky.fromSession(
+        _session,
+        service: 'bsky.social',
+        getClient: transport.get,
+        postClient: transport.post,
+      ),
     );
   });
 
@@ -52,103 +59,106 @@ void main() {
     );
 
     test('getLists requests curation and moderation lists by default', () async {
-      graph.getListsResult = _FakeListsData(lists: [listView], cursor: 'cursor-1');
+      transport.getListsResult = GraphGetListsOutput(lists: [listView], cursor: 'cursor-1');
 
       final result = await repository.getLists(actor: 'did:plc:creator', limit: 25);
 
       expect(result.lists, [listView]);
       expect(result.cursor, 'cursor-1');
-      expect(graph.lastGetListsActor, 'did:plc:creator');
-      expect(graph.lastGetListsLimit, 25);
-      expect(graph.lastGetListsPurposes?.map((purpose) => purpose.toJson()).toList(), ['curatelist', 'modlist']);
+      expect(transport.lastGetListsActor, 'did:plc:creator');
+      expect(transport.lastGetListsLimit, 25);
+      expect(transport.lastGetListsPurposes?.map((purpose) => purpose.toJson()).toList(), ['curatelist', 'modlist']);
     });
 
     test('getList returns the hydrated list and members', () async {
-      graph.getListResult = _FakeListData(list: listView, items: [listItem], cursor: null);
+      transport.getListResult = GraphGetListOutput(list: listView, items: [listItem]);
 
       final result = await repository.getList(listUri: listUri);
 
       expect(result.list, listView);
       expect(result.items, [listItem]);
-      expect(graph.lastGetListUri, listUri);
+      expect(transport.lastGetListUri, listUri);
     });
 
     test('getListFeed returns feed posts and cursor', () async {
-      feed.getListFeedResult = _FakeListFeedData(feed: [feedPost], cursor: 'cursor-2');
+      transport.getListFeedResult = FeedGetListFeedOutput(feed: [feedPost], cursor: 'cursor-2');
 
       final result = await repository.getListFeed(listUri: listUri);
 
       expect(result.posts, [feedPost]);
       expect(result.cursor, 'cursor-2');
-      expect(feed.lastListUri, listUri);
+      expect(transport.lastListUri, listUri);
     });
 
     test('getListsWithMembership returns membership records', () async {
-      graph.getListsWithMembershipResult = _FakeListsWithMembershipData(
+      transport.getListsWithMembershipResult = GraphGetListsWithMembershipOutput(
         listsWithMembership: [ListWithMembership(list: listView, listItem: listItem)],
-        cursor: null,
       );
 
       final result = await repository.getListsWithMembership(actor: 'did:plc:member-1');
 
       expect(result.lists.length, 1);
       expect(result.lists.single.listItem, listItem);
-      expect(graph.lastGetListsWithMembershipPurposes?.map((purpose) => purpose.toJson()).toList(), [
+      expect(transport.lastGetListsWithMembershipPurposes?.map((purpose) => purpose.toJson()).toList(), [
         'curatelist',
         'modlist',
       ]);
     });
 
     test('searchActorsTypeahead returns matching actors', () async {
-      actor.searchActorsResult = const _FakeActorsData(
+      transport.searchActorsResult = const ActorSearchActorsTypeaheadOutput(
         actors: [ProfileViewBasic(did: 'did:plc:member-1', handle: 'member1.bsky.social')],
       );
 
       final result = await repository.searchActorsTypeahead(query: 'member', limit: 5);
 
       expect(result.single.did, 'did:plc:member-1');
-      expect(actor.lastQuery, 'member');
-      expect(actor.lastLimit, 5);
+      expect(transport.lastQuery, 'member');
+      expect(transport.lastLimit, 5);
     });
 
     test('add and remove list members call the record accessors', () async {
-      graph.listitem.createdUri = listItemUri;
+      transport.createdListItemUri = listItemUri;
 
       final createdUri = await repository.addListItem(listUri: listUri, subjectDid: 'did:plc:member-1');
       await repository.removeListItem(listItemUri: listItemUri);
 
       expect(createdUri, listItemUri.toString());
-      expect(graph.listitem.lastCreatedList, listUri);
-      expect(graph.listitem.lastCreatedSubject, 'did:plc:member-1');
-      expect(graph.listitem.lastDeletedRkey, listItemUri.rkey);
+      expect(transport.lastCreateCollection, 'app.bsky.graph.listitem');
+      expect(transport.lastCreateRecord?['list'], listUri.toString());
+      expect(transport.lastCreateRecord?['subject'], 'did:plc:member-1');
+      expect(transport.lastDeleteCollection, 'app.bsky.graph.listitem');
+      expect(transport.lastDeleteRkey, listItemUri.rkey);
     });
 
     test('mute and unmute list call graph endpoints', () async {
       await repository.muteList(listUri: listUri);
       await repository.unmuteList(listUri: listUri);
 
-      expect(graph.lastMutedList, listUri);
-      expect(graph.lastUnmutedList, listUri);
+      expect(transport.lastMutedList, listUri);
+      expect(transport.lastUnmutedList, listUri);
     });
 
     test('block and unblock list call listblock accessors', () async {
-      graph.listblock.createdUri = blockUri;
+      transport.createdBlockUri = blockUri;
 
       final createdUri = await repository.blockList(listUri: listUri);
       await repository.unblockList(blockUri: blockUri);
 
       expect(createdUri, blockUri.toString());
-      expect(graph.listblock.lastCreatedSubject, listUri);
-      expect(graph.listblock.lastDeletedRkey, blockUri.rkey);
+      expect(transport.lastCreateCollection, 'app.bsky.graph.listblock');
+      expect(transport.lastCreateRecord?['subject'], listUri.toString());
+      expect(transport.lastDeleteCollection, 'app.bsky.graph.listblock');
+      expect(transport.lastDeleteRkey, blockUri.rkey);
     });
 
-    test('uploadListAvatar uploads bytes and returns BlobRef', () async {
+    test('uploadListAvatar uploads bytes and returns Blob', () async {
       final bytes = [1, 2, 3, 4];
-      final ref = await repository.uploadListAvatar(bytes: bytes, mimeType: 'image/png');
+      final blob = await repository.uploadListAvatar(bytes: bytes, mimeType: 'image/png');
 
-      expect(ref, atproto.repo.uploadedBlobRef);
-      expect(atproto.repo.lastUploadedBytes, Uint8List.fromList(bytes));
-      expect(atproto.repo.lastUploadHeaders, {'Content-Type': 'image/png'});
+      expect(blob, transport.uploadedBlob);
+      expect(transport.lastUploadedBytes, Uint8List.fromList(bytes));
+      expect(transport.lastUploadHeaders, containsPair('Content-Type', 'image/png'));
     });
 
     test('createList creates a record and returns the new URI', () async {
@@ -159,26 +169,30 @@ void main() {
         description: 'A great list',
       );
 
-      expect(createdUri, atproto.repo.createdListUri);
-      expect(atproto.repo.lastCreateRepo, 'did:plc:creator');
-      expect(atproto.repo.lastCreateCollection, 'app.bsky.graph.list');
-      expect(atproto.repo.lastCreateRecord?[r'$type'], 'app.bsky.graph.list');
-      expect(atproto.repo.lastCreateRecord?['name'], 'My List');
-      expect(atproto.repo.lastCreateRecord?['purpose'], 'app.bsky.graph.defs#curatelist');
-      expect(atproto.repo.lastCreateRecord?['description'], 'A great list');
+      expect(createdUri, transport.createdListUri);
+      expect(transport.lastCreateRepo, 'did:plc:creator');
+      expect(transport.lastCreateCollection, 'app.bsky.graph.list');
+      expect(transport.lastCreateRecord?[r'$type'], 'app.bsky.graph.list');
+      expect(transport.lastCreateRecord?['name'], 'My List');
+      expect(transport.lastCreateRecord?['purpose'], 'app.bsky.graph.defs#curatelist');
+      expect(transport.lastCreateRecord?['description'], 'A great list');
     });
 
     test('createList embeds avatar blob when provided', () async {
-      const blobRef = BlobRef(link: 'bafkreiavatarblob');
+      const avatarBlob = Blob(
+        ref: BlobRef(link: 'bafkreiavatarblob'),
+        mimeType: 'image/jpeg',
+        size: 1,
+      );
 
       await repository.createList(
         userDid: 'did:plc:creator',
         name: 'List With Avatar',
         purpose: 'app.bsky.graph.defs#modlist',
-        avatarBlob: blobRef,
+        avatarBlob: avatarBlob,
       );
 
-      expect(atproto.repo.lastCreateRecord?['avatar'], blobRef.toJson());
+      expect(transport.lastCreateRecord?['avatar'], avatarBlob.toJson());
     });
 
     test('updateList puts an updated record', () async {
@@ -190,22 +204,29 @@ void main() {
         description: 'Updated description',
       );
 
-      expect(atproto.repo.lastPutRepo, 'did:plc:creator');
-      expect(atproto.repo.lastPutCollection, 'app.bsky.graph.list');
-      expect(atproto.repo.lastPutRkey, listUri.rkey);
-      expect(atproto.repo.lastPutRecord?['name'], 'Updated Name');
-      expect(atproto.repo.lastPutRecord?['description'], 'Updated description');
+      expect(transport.lastPutRepo, 'did:plc:creator');
+      expect(transport.lastPutCollection, 'app.bsky.graph.list');
+      expect(transport.lastPutRkey, listUri.rkey);
+      expect(transport.lastPutRecord?['name'], 'Updated Name');
+      expect(transport.lastPutRecord?['description'], 'Updated description');
     });
 
     test('deleteList deletes the record by rkey', () async {
       await repository.deleteList(listUri: listUri, userDid: 'did:plc:creator');
 
-      expect(atproto.repo.lastDeleteRepo, 'did:plc:creator');
-      expect(atproto.repo.lastDeleteCollection, 'app.bsky.graph.list');
-      expect(atproto.repo.lastDeleteRkey, listUri.rkey);
+      expect(transport.lastDeleteRepo, 'did:plc:creator');
+      expect(transport.lastDeleteCollection, 'app.bsky.graph.list');
+      expect(transport.lastDeleteRkey, listUri.rkey);
     });
   });
 }
+
+const _session = Session(
+  did: 'did:plc:creator',
+  handle: 'creator.bsky.social',
+  accessJwt: 'access-token',
+  refreshJwt: 'refresh-token',
+);
 
 ListView _buildListView(AtUri uri) {
   return ListView(
@@ -218,25 +239,30 @@ ListView _buildListView(AtUri uri) {
   );
 }
 
-class _FakeBlueskyClient {
-  _FakeBlueskyClient({required this.graph, required this.feed, required this.actor, _FakeAtprotoService? atproto})
-    : atproto = atproto ?? _FakeAtprotoService();
+class _FakeXrpcTransport {
+  GraphGetListsOutput? getListsResult;
+  GraphGetListOutput? getListResult;
+  FeedGetListFeedOutput? getListFeedResult;
+  GraphGetListsWithMembershipOutput? getListsWithMembershipResult;
+  ActorSearchActorsTypeaheadOutput? searchActorsResult;
 
-  final _FakeGraphService graph;
-  final _FakeFeedService feed;
-  final _FakeActorService actor;
-  final _FakeAtprotoService atproto;
-}
+  AtUri createdListUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.list/created-list');
+  AtUri createdListItemUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.listitem/item-created');
+  AtUri createdBlockUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.listblock/block-created');
+  Blob uploadedBlob = const Blob(
+    ref: BlobRef(link: 'bafkreitestblobref'),
+    mimeType: 'image/jpeg',
+    size: 4,
+  );
 
-class _FakeAtprotoService {
-  _FakeAtprotoService() : repo = _FakeRepoService();
-
-  final _FakeRepoService repo;
-}
-
-class _FakeRepoService {
-  final AtUri createdListUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.list/created-list');
-  final BlobRef uploadedBlobRef = const BlobRef(link: 'bafkreitestblobref');
+  String? lastGetListsActor;
+  int? lastGetListsLimit;
+  List<GraphGetListsPurposes>? lastGetListsPurposes;
+  AtUri? lastGetListUri;
+  AtUri? lastListUri;
+  List<GraphGetListsWithMembershipPurposes>? lastGetListsWithMembershipPurposes;
+  String? lastQuery;
+  int? lastLimit;
 
   String? lastCreateRepo;
   String? lastCreateCollection;
@@ -251,246 +277,121 @@ class _FakeRepoService {
   String? lastDeleteCollection;
   String? lastDeleteRkey;
 
+  AtUri? lastMutedList;
+  AtUri? lastUnmutedList;
+
   Uint8List? lastUploadedBytes;
   Map<String, String>? lastUploadHeaders;
 
-  Future<_FakeResponse<_FakeCreateRecordData>> createRecord({
-    required String repo,
-    required String collection,
-    required Map<String, dynamic> record,
-    String? rkey,
-    Map<String, String>? $headers,
-  }) async {
-    lastCreateRepo = repo;
-    lastCreateCollection = collection;
-    lastCreateRecord = record;
-    return _FakeResponse(_FakeCreateRecordData(createdListUri));
+  Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
+    final query = url.queryParameters;
+
+    switch (url.pathSegments.last) {
+      case 'app.bsky.graph.getLists':
+        lastGetListsActor = query['actor'];
+        lastGetListsLimit = int.tryParse(query['limit'] ?? '');
+        lastGetListsPurposes = _getListPurposes(url.queryParametersAll['purposes'] ?? const []);
+        return _jsonResponse(url, 'GET', getListsResult!.toJson());
+      case 'app.bsky.graph.getList':
+        lastGetListUri = AtUri.parse(query['list']!);
+        return _jsonResponse(url, 'GET', getListResult!.toJson());
+      case 'app.bsky.feed.getListFeed':
+        lastListUri = AtUri.parse(query['list']!);
+        return _jsonResponse(url, 'GET', getListFeedResult!.toJson());
+      case 'app.bsky.graph.getListsWithMembership':
+        lastGetListsWithMembershipPurposes = _getMembershipPurposes(url.queryParametersAll['purposes'] ?? const []);
+        return _jsonResponse(url, 'GET', getListsWithMembershipResult!.toJson());
+      case 'app.bsky.actor.searchActorsTypeahead':
+        lastQuery = query['q'];
+        lastLimit = int.tryParse(query['limit'] ?? '');
+        return _jsonResponse(url, 'GET', searchActorsResult!.toJson());
+      default:
+        throw StateError('Unexpected GET ${url.path}');
+    }
   }
 
-  Future<_FakeResponse<Object>> putRecord({
-    required String repo,
-    required String collection,
-    required String rkey,
-    required Map<String, dynamic> record,
-    Map<String, String>? $headers,
-  }) async {
-    lastPutRepo = repo;
-    lastPutCollection = collection;
-    lastPutRkey = rkey;
-    lastPutRecord = record;
-    return _FakeResponse(Object());
+  Future<http.Response> post(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
+    switch (url.pathSegments.last) {
+      case 'com.atproto.repo.createRecord':
+        final input = _decodeJsonBody(body);
+        lastCreateRepo = input['repo'] as String?;
+        lastCreateCollection = input['collection'] as String?;
+        lastCreateRecord = (input['record'] as Map).cast<String, dynamic>();
+        return _jsonResponse(
+          url,
+          'POST',
+          RepoCreateRecordOutput(uri: _createdUriFor(lastCreateCollection), cid: 'cid-created').toJson(),
+        );
+      case 'com.atproto.repo.putRecord':
+        final input = _decodeJsonBody(body);
+        lastPutRepo = input['repo'] as String?;
+        lastPutCollection = input['collection'] as String?;
+        lastPutRkey = input['rkey'] as String?;
+        lastPutRecord = (input['record'] as Map).cast<String, dynamic>();
+        return _jsonResponse(
+          url,
+          'POST',
+          RepoPutRecordOutput(
+            uri: AtUri.parse('at://$lastPutRepo/$lastPutCollection/$lastPutRkey'),
+            cid: 'cid-put',
+          ).toJson(),
+        );
+      case 'com.atproto.repo.deleteRecord':
+        final input = _decodeJsonBody(body);
+        lastDeleteRepo = input['repo'] as String?;
+        lastDeleteCollection = input['collection'] as String?;
+        lastDeleteRkey = input['rkey'] as String?;
+        return _jsonResponse(url, 'POST', const RepoDeleteRecordOutput().toJson());
+      case 'com.atproto.repo.uploadBlob':
+        lastUploadedBytes = Uint8List.fromList((body as List<int>?) ?? const []);
+        lastUploadHeaders = headers;
+        return _jsonResponse(url, 'POST', RepoUploadBlobOutput(blob: uploadedBlob).toJson());
+      case 'app.bsky.graph.muteActorList':
+        lastMutedList = AtUri.parse(_decodeJsonBody(body)['list'] as String);
+        return _jsonResponse(url, 'POST', const {});
+      case 'app.bsky.graph.unmuteActorList':
+        lastUnmutedList = AtUri.parse(_decodeJsonBody(body)['list'] as String);
+        return _jsonResponse(url, 'POST', const {});
+      default:
+        throw StateError('Unexpected POST ${url.path}');
+    }
   }
 
-  Future<_FakeResponse<Object>> deleteRecord({
-    required String repo,
-    required String collection,
-    required String rkey,
-    Map<String, String>? $headers,
-  }) async {
-    lastDeleteRepo = repo;
-    lastDeleteCollection = collection;
-    lastDeleteRkey = rkey;
-    return _FakeResponse(Object());
+  AtUri _createdUriFor(String? collection) {
+    return switch (collection) {
+      'app.bsky.graph.list' => createdListUri,
+      'app.bsky.graph.listitem' => createdListItemUri,
+      'app.bsky.graph.listblock' => createdBlockUri,
+      _ => AtUri.parse('at://did:plc:creator/${collection ?? 'unknown'}/created'),
+    };
   }
 
-  Future<_FakeResponse<_FakeUploadBlobData>> uploadBlob({
-    required Uint8List bytes,
-    Map<String, String>? $headers,
-  }) async {
-    lastUploadedBytes = bytes;
-    lastUploadHeaders = $headers;
-    return _FakeResponse(_FakeUploadBlobData(Blob(mimeType: 'image/jpeg', size: bytes.length, ref: uploadedBlobRef)));
-  }
-}
-
-class _FakeCreateRecordData {
-  const _FakeCreateRecordData(this.uri);
-
-  final AtUri uri;
-}
-
-class _FakeUploadBlobData {
-  const _FakeUploadBlobData(this.blob);
-
-  final Blob blob;
-}
-
-class _FakeGraphService {
-  _FakeGraphService() : listitem = _FakeListitemAccessor(), listblock = _FakeListblockAccessor();
-
-  _FakeListsData? getListsResult;
-  _FakeListData? getListResult;
-  _FakeListsWithMembershipData? getListsWithMembershipResult;
-
-  String? lastGetListsActor;
-  int? lastGetListsLimit;
-  List<GraphGetListsPurposes>? lastGetListsPurposes;
-  AtUri? lastGetListUri;
-  AtUri? lastMutedList;
-  AtUri? lastUnmutedList;
-  List<GraphGetListsWithMembershipPurposes>? lastGetListsWithMembershipPurposes;
-
-  final _FakeListitemAccessor listitem;
-  final _FakeListblockAccessor listblock;
-
-  Future<_FakeResponse<_FakeListsData>> getLists({
-    required String actor,
-    int? limit,
-    String? cursor,
-    List<GraphGetListsPurposes>? purposes,
-    Map<String, String>? $headers,
-  }) async {
-    lastGetListsActor = actor;
-    lastGetListsLimit = limit;
-    lastGetListsPurposes = purposes;
-    return _FakeResponse(getListsResult!);
+  List<GraphGetListsPurposes> _getListPurposes(List<String> values) {
+    return values.map((value) => GraphGetListsPurposes.valueOf(value)!).toList(growable: false);
   }
 
-  Future<_FakeResponse<_FakeListData>> getList({
-    required AtUri list,
-    int? limit,
-    String? cursor,
-    Map<String, String>? $headers,
-  }) async {
-    lastGetListUri = list;
-    return _FakeResponse(getListResult!);
+  List<GraphGetListsWithMembershipPurposes> _getMembershipPurposes(List<String> values) {
+    return values.map((value) => GraphGetListsWithMembershipPurposes.valueOf(value)!).toList(growable: false);
   }
 
-  Future<_FakeResponse<_FakeListsWithMembershipData>> getListsWithMembership({
-    required String actor,
-    int? limit,
-    String? cursor,
-    List<GraphGetListsWithMembershipPurposes>? purposes,
-    Map<String, String>? $headers,
-  }) async {
-    lastGetListsWithMembershipPurposes = purposes;
-    return _FakeResponse(getListsWithMembershipResult!);
+  Map<String, dynamic> _decodeJsonBody(Object? body) {
+    if (body is String) {
+      return (jsonDecode(body) as Map).cast<String, dynamic>();
+    }
+
+    if (body == null) {
+      return const {};
+    }
+
+    throw ArgumentError.value(body, 'body', 'Expected a JSON string body.');
   }
 
-  Future<void> muteActorList({required AtUri list, Map<String, String>? $headers}) async {
-    lastMutedList = list;
+  http.Response _jsonResponse(Uri url, String method, Map<String, dynamic> body) {
+    return http.Response(
+      jsonEncode(body),
+      200,
+      headers: {'content-type': 'application/json; charset=utf-8'},
+      request: http.Request(method, url),
+    );
   }
-
-  Future<void> unmuteActorList({required AtUri list, Map<String, String>? $headers}) async {
-    lastUnmutedList = list;
-  }
-}
-
-class _FakeFeedService {
-  _FakeListFeedData? getListFeedResult;
-  AtUri? lastListUri;
-
-  Future<_FakeResponse<_FakeListFeedData>> getListFeed({
-    required AtUri list,
-    int? limit,
-    String? cursor,
-    Map<String, String>? $headers,
-  }) async {
-    lastListUri = list;
-    return _FakeResponse(getListFeedResult!);
-  }
-}
-
-class _FakeActorService {
-  _FakeActorsData? searchActorsResult;
-  String? lastQuery;
-  int? lastLimit;
-
-  Future<_FakeResponse<_FakeActorsData>> searchActorsTypeahead({
-    required String q,
-    int? limit,
-    Map<String, String>? $headers,
-  }) async {
-    lastQuery = q;
-    lastLimit = limit;
-    return _FakeResponse(searchActorsResult!);
-  }
-}
-
-class _FakeListitemAccessor {
-  AtUri createdUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.listitem/item-created');
-  AtUri? lastCreatedList;
-  String? lastCreatedSubject;
-  String? lastDeletedRkey;
-
-  Future<_FakeResponse<_FakeUriData>> create({
-    required String subject,
-    required AtUri list,
-    DateTime? createdAt,
-    Map<String, String>? $headers,
-  }) async {
-    lastCreatedList = list;
-    lastCreatedSubject = subject;
-    return _FakeResponse(_FakeUriData(createdUri));
-  }
-
-  Future<void> delete({required String rkey, Map<String, String>? $headers}) async {
-    lastDeletedRkey = rkey;
-  }
-}
-
-class _FakeListblockAccessor {
-  AtUri createdUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.listblock/block-created');
-  AtUri? lastCreatedSubject;
-  String? lastDeletedRkey;
-
-  Future<_FakeResponse<_FakeUriData>> create({
-    required AtUri subject,
-    DateTime? createdAt,
-    Map<String, String>? $headers,
-  }) async {
-    lastCreatedSubject = subject;
-    return _FakeResponse(_FakeUriData(createdUri));
-  }
-
-  Future<void> delete({required String rkey, Map<String, String>? $headers}) async {
-    lastDeletedRkey = rkey;
-  }
-}
-
-class _FakeResponse<T> {
-  _FakeResponse(this.data);
-
-  final T data;
-}
-
-class _FakeListsData {
-  const _FakeListsData({required this.lists, this.cursor});
-
-  final List<ListView> lists;
-  final String? cursor;
-}
-
-class _FakeListData {
-  const _FakeListData({required this.list, required this.items, this.cursor});
-
-  final ListView list;
-  final List<ListItemView> items;
-  final String? cursor;
-}
-
-class _FakeListsWithMembershipData {
-  const _FakeListsWithMembershipData({required this.listsWithMembership, this.cursor});
-
-  final List<ListWithMembership> listsWithMembership;
-  final String? cursor;
-}
-
-class _FakeListFeedData {
-  const _FakeListFeedData({required this.feed, this.cursor});
-
-  final List<FeedViewPost> feed;
-  final String? cursor;
-}
-
-class _FakeActorsData {
-  const _FakeActorsData({required this.actors});
-
-  final List<ProfileViewBasic> actors;
-}
-
-class _FakeUriData {
-  const _FakeUriData(this.uri);
-
-  final AtUri uri;
 }

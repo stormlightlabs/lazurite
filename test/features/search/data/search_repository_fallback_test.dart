@@ -2,15 +2,16 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/network/app_view_fallback_service.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 
-class _StubBluesky {}
+import '../../../helpers/test_bluesky_client.dart';
 
 void main() {
-  late dynamic bluesky;
+  late Bluesky bluesky;
 
   setUp(() {
-    bluesky = _StubBluesky();
+    bluesky = testBluesky();
   });
 
   test('search public reads do not fallback when disabled', () async {

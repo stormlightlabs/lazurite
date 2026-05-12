@@ -2,12 +2,18 @@ import 'dart:convert';
 
 import 'package:poptart_core/poptart_core.dart' show AtUri;
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/actor/get_profiles.dart';
 import 'package:poptart_lex/app/bsky/graph/defs.dart';
+import 'package:poptart_lex/app/bsky/graph/get_list.dart';
+import 'package:poptart_lex/com/atproto/repo/list_records.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:lazurite/core/network/constellation_client.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart' show Bluesky;
 import 'package:lazurite/features/profile/data/profile_context_repository.dart';
+
+import '../../../helpers/test_bluesky_client.dart';
 
 ProfileView _buildProfileView(String did, String handle) {
   return ProfileView(did: did, handle: handle, indexedAt: DateTime.utc(2026, 1, 1));
@@ -43,12 +49,102 @@ ConstellationClient _constellationWithResponses(Map<String, dynamic> Function(Ur
   );
 }
 
-class _FakeBluesky {
-  _FakeBluesky({required this.actor, required this.graph, required this.atproto});
+Bluesky _fakeBluesky({required dynamic actor, required dynamic graph, required dynamic atproto}) {
+  final transport = _ProfileContextTransport(actor: actor, graph: graph, atproto: atproto);
+  return testBluesky(did: 'did:plc:actor', handle: 'actor.bsky.social', getClient: transport.get);
+}
+
+class _ProfileContextTransport {
+  const _ProfileContextTransport({required this.actor, required this.graph, required this.atproto});
 
   final dynamic actor;
   final dynamic graph;
   final dynamic atproto;
+
+  Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
+    final query = url.queryParameters;
+    switch (url.pathSegments.last) {
+      case 'app.bsky.actor.getProfiles':
+        final response = await actor.getProfiles(
+          actors: url.queryParametersAll['actors'] ?? const [],
+          $service: url.host,
+          $headers: headers,
+        );
+        return jsonResponse(
+          url,
+          'GET',
+          ActorGetProfilesOutput(
+            profiles: response.data.profiles.map<ProfileViewDetailed>(_toDetailedProfile).toList(growable: false),
+          ).toJson(),
+        );
+      case 'app.bsky.actor.getProfile':
+        final response = await actor.getProfile(actor: query['actor']!, $service: url.host, $headers: headers);
+        return jsonResponse(url, 'GET', _toDetailedProfile(response.data).toJson());
+      case 'app.bsky.graph.getList':
+        final response = await graph.getList(list: AtUri.parse(query['list']!), $service: url.host, $headers: headers);
+        return jsonResponse(url, 'GET', GraphGetListOutput(list: response.data.list, items: const []).toJson());
+      case 'com.atproto.repo.listRecords':
+        final response = await atproto.repo.listRecords(
+          repo: query['repo']!,
+          collection: query['collection']!,
+          limit: int.tryParse(query['limit'] ?? '') ?? 50,
+          cursor: query['cursor'],
+        );
+        return jsonResponse(
+          url,
+          'GET',
+          RepoListRecordsOutput(
+            records: [
+              for (var i = 0; i < response.data.records.length; i++)
+                RepoListRecordsRecord(
+                  uri: AtUri.parse('at://${query['repo']}/${query['collection']}/$i'),
+                  cid: 'cid-$i',
+                  value: _recordValue(response.data.records[i].value),
+                ),
+            ],
+            cursor: response.data.cursor,
+          ).toJson(),
+        );
+      default:
+        return unexpectedGetClient(url, headers: headers);
+    }
+  }
+}
+
+ProfileViewDetailed _toDetailedProfile(dynamic profile) {
+  if (profile is ProfileViewDetailed) {
+    return profile;
+  }
+
+  if (profile is ProfileView) {
+    return ProfileViewDetailed(
+      did: profile.did,
+      handle: profile.handle,
+      displayName: profile.displayName,
+      description: profile.description,
+      avatar: profile.avatar,
+      associated: profile.associated,
+      indexedAt: profile.indexedAt,
+      createdAt: profile.createdAt,
+      viewer: profile.viewer,
+      labels: profile.labels,
+      verification: profile.verification,
+      status: profile.status,
+      debug: profile.debug,
+    );
+  }
+
+  throw ArgumentError.value(profile, 'profile', 'Expected ProfileView or ProfileViewDetailed');
+}
+
+Map<String, dynamic> _recordValue(Map<String, dynamic> value) {
+  if (value.containsKey(r'$type')) {
+    return value;
+  }
+  if (value.containsKey('subject') && value['subject'] is String) {
+    return {r'$type': 'app.bsky.graph.block', 'createdAt': '2026-01-01T00:00:00.000Z', ...value};
+  }
+  return value;
 }
 
 class _FakeAtProto {
@@ -286,12 +382,12 @@ void main() {
 
       test('falls back to getProfile for DIDs missing from getProfiles', () async {
         final repo = ProfileContextRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _fakeBluesky(
             actor: _ThrowingActorService(),
             graph: _FakeGraphService(),
             atproto: _FakeAtProto(repo: _FakeRepoService(records: [])),
           ),
-          publicBluesky: _FakeBluesky(
+          publicBluesky: _fakeBluesky(
             actor: _FakeActorService(
               profiles: const [],
               profileByActor: {'did:plc:alice': _buildProfileViewDetailed('did:plc:alice', 'alice.bsky.social')},
@@ -316,12 +412,12 @@ void main() {
 
       test('falls back to per-DID getProfile when batch getProfiles fails', () async {
         final repo = ProfileContextRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _fakeBluesky(
             actor: _ThrowingActorService(),
             graph: _FakeGraphService(),
             atproto: _FakeAtProto(repo: _FakeRepoService(records: [])),
           ),
-          publicBluesky: _FakeBluesky(
+          publicBluesky: _fakeBluesky(
             actor: _BatchThrowingActorService(
               profileByActor: {'did:plc:alice': _buildProfileViewDetailed('did:plc:alice', 'alice.bsky.social')},
             ),
@@ -347,12 +443,12 @@ void main() {
 
       test('uses public bluesky client for batch profile hydration', () async {
         final repo = ProfileContextRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _fakeBluesky(
             actor: _ThrowingActorService(),
             graph: _FakeGraphService(),
             atproto: _FakeAtProto(repo: _FakeRepoService(records: [])),
           ),
-          publicBluesky: _FakeBluesky(
+          publicBluesky: _fakeBluesky(
             actor: _FakeActorService(profiles: [_buildProfileViewDetailed('did:plc:alice', 'alice.bsky.social')]),
             graph: _FakeGraphService(),
             atproto: _FakeAtProto(repo: _FakeRepoService(records: [])),
@@ -452,12 +548,12 @@ void main() {
       test('collects blocked-by DIDs across pages before hydrating', () async {
         var getDistinctCalls = 0;
         final repo = ProfileContextRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _fakeBluesky(
             actor: _ThrowingActorService(),
             graph: _FakeGraphService(),
             atproto: _FakeAtProto(repo: _FakeRepoService(records: [])),
           ),
-          publicBluesky: _FakeBluesky(
+          publicBluesky: _fakeBluesky(
             actor: _FakeActorService(
               profiles: [_buildProfileViewDetailed('did:plc:alice', 'alice.bsky.social')],
               profileByActor: const {},
@@ -507,7 +603,7 @@ void main() {
         final constellation = _constellationWithResponses((_) => {'total': 30, 'dids': dids});
 
         final repo = ProfileContextRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _fakeBluesky(
             actor: _BatchTrackingActorService(profiles: profiles, batchSizes: batchSizes),
             graph: _FakeGraphService(),
             atproto: _FakeAtProto(repo: _FakeRepoService(records: [])),
@@ -592,12 +688,12 @@ void main() {
         );
 
         final repo = ProfileContextRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _fakeBluesky(
             actor: _ThrowingActorService(),
             graph: _FakeGraphService(),
             atproto: _FakeAtProto(repo: _FakeRepoService(records: [])),
           ),
-          publicBluesky: _FakeBluesky(
+          publicBluesky: _fakeBluesky(
             actor: _FakeActorService(
               profiles: resolvedProfiles,
               errorsByActor: const {
@@ -674,7 +770,7 @@ void main() {
       test('passes cursor to listRecords and returns cursor from response', () async {
         String? capturedCursor;
         final repo = ProfileContextRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _fakeBluesky(
             actor: _FakeActorService(profiles: []),
             graph: _FakeGraphService(),
             atproto: _FakeAtProto(
@@ -698,7 +794,7 @@ void main() {
     group('getBlockingCount', () {
       test('counts records across every listRecords page', () async {
         final repo = ProfileContextRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _fakeBluesky(
             actor: _FakeActorService(profiles: []),
             graph: _FakeGraphService(),
             atproto: _FakeAtProto(
@@ -751,12 +847,12 @@ void main() {
         });
 
         final repo = ProfileContextRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _fakeBluesky(
             actor: _FakeActorService(profiles: const []),
             graph: _ThrowingGraphService(),
             atproto: _FakeAtProto(repo: _FakeRepoService(records: [])),
           ),
-          publicBluesky: _FakeBluesky(
+          publicBluesky: _fakeBluesky(
             actor: _FakeActorService(profiles: const []),
             graph: _FakeGraphService(lists: {listUri: listView}),
             atproto: _FakeAtProto(repo: _FakeRepoService(records: [])),
@@ -832,7 +928,7 @@ void main() {
         AtUri? capturedUri;
 
         final repo = ProfileContextRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _fakeBluesky(
             actor: _FakeActorService(profiles: []),
             graph: _UriCapturingGraphService(lists: {listUri: listView}, onGetList: (u) => capturedUri = u),
             atproto: _FakeAtProto(repo: _FakeRepoService(records: [])),
@@ -862,7 +958,7 @@ void main() {
         var getListCalls = 0;
 
         final repo = ProfileContextRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _fakeBluesky(
             actor: _FakeActorService(profiles: []),
             graph: _CountingGraphService(lists: {listUri: listView}, onGetList: () => getListCalls += 1),
             atproto: _FakeAtProto(repo: _FakeRepoService(records: [])),
@@ -925,12 +1021,12 @@ void main() {
       test('trims and deduplicates DIDs before public hydration', () async {
         final capturedActors = <List<String>>[];
         final repo = ProfileContextRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _fakeBluesky(
             actor: _ThrowingActorService(),
             graph: _FakeGraphService(),
             atproto: _FakeAtProto(repo: _FakeRepoService(records: [])),
           ),
-          publicBluesky: _FakeBluesky(
+          publicBluesky: _fakeBluesky(
             actor: _BatchTrackingActorService(
               profiles: [_buildProfileView('did:plc:alice', 'alice.bsky.social')],
               batchSizes: [],
@@ -959,14 +1055,14 @@ void main() {
   });
 }
 
-_FakeBluesky _buildBluesky({
+Bluesky _buildBluesky({
   List<dynamic> profiles = const [],
   Map<String, dynamic> profileByActor = const {},
   Map<String, ListView> lists = const {},
   List<Map<String, dynamic>> blockRecords = const [],
   String? blockRecordsCursor,
 }) {
-  return _FakeBluesky(
+  return _fakeBluesky(
     actor: _FakeActorService(profiles: profiles, profileByActor: profileByActor),
     graph: _FakeGraphService(lists: lists),
     atproto: _FakeAtProto(

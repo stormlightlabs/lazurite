@@ -1,11 +1,18 @@
 import 'package:poptart_core/poptart_core.dart';
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:poptart_lex/app/bsky/feed/get_actor_likes.dart';
+import 'package:poptart_lex/app/bsky/feed/get_posts.dart';
+import 'package:poptart_lex/com/atproto/repo/list_records.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/actor_repository_service_resolver.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart' show Bluesky;
 import 'package:lazurite/features/profile/data/profile_repository.dart';
+
+import '../../../helpers/test_bluesky_client.dart';
 
 void main() {
   late AppDatabase database;
@@ -29,7 +36,7 @@ void main() {
       hydratedPosts: const [],
     );
     final repoService = _FakeRepoService(recordsData: const _FakeListRecordsData(records: []));
-    final bluesky = _FakeBlueskyClient(
+    final bluesky = _testBlueskyClient(
       session: const _FakeSession('did:plc:me', 'me.bsky.social'),
       feed: feedService,
       repo: repoService,
@@ -57,13 +64,15 @@ void main() {
         records: [
           _FakeRepoRecord(
             value: {
-              'subject': {'uri': firstSubject},
+              r'$type': 'app.bsky.feed.like',
+              'subject': {'uri': firstSubject, 'cid': 'cid-first'},
               'createdAt': '2026-05-02T01:34:47.734Z',
             },
           ),
           _FakeRepoRecord(
             value: {
-              'subject': {'uri': secondSubject},
+              r'$type': 'app.bsky.feed.like',
+              'subject': {'uri': secondSubject, 'cid': 'cid-second'},
               'createdAt': '2026-05-02T01:00:00.000Z',
             },
           ),
@@ -73,7 +82,7 @@ void main() {
     final actorRepoResolver = _FakeActorRepositoryServiceResolver(
       const ActorRepositoryServiceResolution(actor: actorDid, did: actorDid, pdsHost: 'friend.host'),
     );
-    final bluesky = _FakeBlueskyClient(
+    final bluesky = _testBlueskyClient(
       session: const _FakeSession('did:plc:me', 'me.bsky.social'),
       feed: feedService,
       repo: repoService,
@@ -114,13 +123,13 @@ PostView _makePostView(String uri) {
   );
 }
 
-class _FakeBlueskyClient {
-  _FakeBlueskyClient({required this.session, required this.feed, required _FakeRepoService repo})
-    : atproto = _FakeAtprotoClient(repo: repo);
-
-  final _FakeSession session;
-  final _FakeFeedService feed;
-  final _FakeAtprotoClient atproto;
+Bluesky _testBlueskyClient({
+  required _FakeSession session,
+  required _FakeFeedService feed,
+  required _FakeRepoService repo,
+}) {
+  final transport = _FakeActorLikesTransport(feed: feed, repo: repo);
+  return testBluesky(did: session.did, handle: session.handle, getClient: transport.get);
 }
 
 class _FakeSession {
@@ -128,12 +137,6 @@ class _FakeSession {
 
   final String did;
   final String handle;
-}
-
-class _FakeAtprotoClient {
-  const _FakeAtprotoClient({required this.repo});
-
-  final _FakeRepoService repo;
 }
 
 class _FakeFeedService {
@@ -166,6 +169,64 @@ class _FakeFeedService {
     getPostsCallCount++;
     lastGetPostsServiceHost = $service;
     return _FakeResponse(_FakeGetPostsData(posts: _hydratedPosts));
+  }
+}
+
+class _FakeActorLikesTransport {
+  const _FakeActorLikesTransport({required this.feed, required this.repo});
+
+  final _FakeFeedService feed;
+  final _FakeRepoService repo;
+
+  Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
+    final query = url.queryParameters;
+    switch (url.pathSegments.last) {
+      case 'app.bsky.feed.getActorLikes':
+        final response = await feed.getActorLikes(
+          actor: query['actor']!,
+          cursor: query['cursor'],
+          limit: int.tryParse(query['limit'] ?? ''),
+          $headers: headers,
+        );
+        return jsonResponse(
+          url,
+          'GET',
+          FeedGetActorLikesOutput(feed: response.data.feed, cursor: response.data.cursor).toJson(),
+        );
+      case 'app.bsky.feed.getPosts':
+        final response = await feed.getPosts(
+          uris: (url.queryParametersAll['uris'] ?? const []).map(AtUri.parse).toList(growable: false),
+          $service: url.host,
+          $headers: headers,
+        );
+        return jsonResponse(url, 'GET', FeedGetPostsOutput(posts: response.data.posts).toJson());
+      case 'com.atproto.repo.listRecords':
+        final response = await repo.listRecords(
+          repo: query['repo']!,
+          collection: query['collection']!,
+          limit: int.tryParse(query['limit'] ?? ''),
+          cursor: query['cursor'],
+          reverse: query['reverse'] == 'true',
+          $service: url.host,
+        );
+        return jsonResponse(
+          url,
+          'GET',
+          RepoListRecordsOutput(
+            records: [
+              for (var i = 0; i < response.data.records.length; i++)
+                RepoListRecordsRecord(
+                  uri: AtUri.parse('at://${query['repo']}/${query['collection']}/$i'),
+                  cid: 'cid-$i',
+                  value: response.data.records[i].value,
+                ),
+            ],
+            cursor: response.data.cursor,
+          ).toJson(),
+        );
+      default:
+        return unexpectedGetClient(url, headers: headers);
+    }
   }
 }
 

@@ -3,22 +3,11 @@ import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/search_posts.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:lazurite/features/search/data/post_search_filters.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 
-class _FakeResponse<T> {
-  _FakeResponse(this.data);
-
-  final T data;
-}
-
-class _FakeSearchPostsData {
-  _FakeSearchPostsData({required this.posts, this.cursor, this.hitsTotal});
-
-  final List<PostView> posts;
-  final String? cursor;
-  final int? hitsTotal;
-}
+import '../../../helpers/test_bluesky_client.dart';
 
 class _FakeFeedService {
   String? lastQ;
@@ -34,36 +23,29 @@ class _FakeFeedService {
   String? lastCursor;
   int? lastLimit;
 
-  Future<_FakeResponse<_FakeSearchPostsData>> searchPosts({
-    required String q,
-    FeedSearchPostsSort? sort,
-    String? since,
-    String? until,
-    String? mentions,
-    String? author,
-    String? lang,
-    String? domain,
-    String? url,
-    List<String>? tag,
-    String? cursor,
-    int? limit,
-    Map<String, String>? $headers,
-  }) async {
-    lastQ = q;
-    lastSort = sort;
-    lastSince = since;
-    lastUntil = until;
-    lastMentions = mentions;
-    lastAuthor = author;
-    lastLang = lang;
-    lastDomain = domain;
-    lastUrl = url;
-    lastTags = tag;
-    lastCursor = cursor;
-    lastLimit = limit;
+  Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
+    if (url.pathSegments.last != 'app.bsky.feed.searchPosts') {
+      return unexpectedGetClient(url, headers: headers);
+    }
 
-    return _FakeResponse(
-      _FakeSearchPostsData(
+    final query = url.queryParameters;
+    lastQ = query['q'];
+    lastSort = FeedSearchPostsSort.valueOf(query['sort']);
+    lastSince = query['since'];
+    lastUntil = query['until'];
+    lastMentions = query['mentions'];
+    lastAuthor = query['author'];
+    lastLang = query['lang'];
+    lastDomain = query['domain'];
+    lastUrl = query['url'];
+    lastTags = url.queryParametersAll['tag'];
+    lastCursor = query['cursor'];
+    lastLimit = int.tryParse(query['limit'] ?? '');
+
+    return jsonResponse(
+      url,
+      'GET',
+      FeedSearchPostsOutput(
         posts: [
           PostView(
             uri: AtUri.parse('at://did:plc:test/app.bsky.feed.post/1'),
@@ -75,15 +57,9 @@ class _FakeFeedService {
         ],
         cursor: 'next',
         hitsTotal: 42,
-      ),
+      ).toJson(),
     );
   }
-}
-
-class _FakeBluesky {
-  _FakeBluesky(this.feed);
-
-  final _FakeFeedService feed;
 }
 
 void main() {
@@ -93,7 +69,7 @@ void main() {
 
     setUp(() {
       feed = _FakeFeedService();
-      repository = SearchRepository(bluesky: _FakeBluesky(feed));
+      repository = SearchRepository(bluesky: testBluesky(getClient: feed.get));
     });
 
     test('maps all filters and sort to SDK call', () async {

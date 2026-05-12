@@ -6,6 +6,7 @@ import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:poptart_lex/app/bsky/actor.dart' as actor_methods;
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:poptart_lex/app/bsky/feed.dart' as feed_methods;
+import 'package:poptart_lex/app/bsky/feed/post.dart';
 import 'package:poptart_lex/com/atproto/repo/strong_ref.dart';
 
 void main() {
@@ -106,7 +107,7 @@ void main() {
 
       await bluesky.feed.post.put(
         rkey: 'post1',
-        record: {r'$type': 'app.bsky.feed.post', 'text': 'Hello', 'createdAt': DateTime.utc(2026, 5, 10, 15, 8, 56)},
+        record: FeedPostRecord(text: 'Hello', createdAt: DateTime.utc(2026, 5, 10, 15, 8, 56)),
       );
       await bluesky.feed.post.delete(rkey: 'post1');
 
@@ -209,8 +210,8 @@ void main() {
         },
       );
 
-      final response = await (bluesky as dynamic).call(
-        feed_methods.appBskyFeedGetFeedGenerators,
+      final response = await bluesky.call(
+        feed_methods.appBskyFeedGetFeedGenerators as XRPCMethod<dynamic, dynamic, dynamic>,
         parameters: {
           'feeds': [AtUri.parse('at://did:plc:feed/app.bsky.feed.generator/news')],
         },
@@ -231,7 +232,10 @@ void main() {
         },
       );
 
-      final response = await (bluesky as dynamic).call(actor_methods.appBskyActorGetPreferences, parameters: {});
+      final response = await bluesky.call(
+        actor_methods.appBskyActorGetPreferences as XRPCMethod<dynamic, dynamic, dynamic>,
+        parameters: {},
+      );
 
       expect(response.data.preferences, isEmpty);
       expect(capturedUrl!.query, isEmpty);
@@ -255,8 +259,8 @@ void main() {
         pinned: true,
       );
 
-      await (bluesky as dynamic).call(
-        actor_methods.appBskyActorPutPreferences,
+      await bluesky.call(
+        actor_methods.appBskyActorPutPreferences as XRPCMethod<dynamic, dynamic, dynamic>,
         input: {
           'preferences': [
             const UPreferences.savedFeedsPrefV2(data: SavedFeedsPrefV2(items: [feed])),

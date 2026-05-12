@@ -1,15 +1,20 @@
 import 'dart:convert';
 
 import 'package:poptart_lex/com/atproto/label/defs.dart';
-import 'package:poptart_core/poptart_core.dart';
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/actor/get_preferences.dart';
+import 'package:poptart_lex/app/bsky/actor/put_preferences.dart';
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:poptart_lex/app/bsky/labeler/defs.dart';
 import 'package:poptart_lex/app/bsky/labeler/get_services.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
+
+import '../../../helpers/test_bluesky_client.dart';
 
 const _customLabelerDid = 'did:plc:custom-labeler';
 const _accountDid = 'did:plc:test-user';
@@ -28,7 +33,7 @@ void main() {
   group('ModerationService', () {
     test('initializes moderation opts, userDid, and accepted labeler headers', () async {
       final service = ModerationService(
-        bluesky: _FakeBlueskyClient(
+        bluesky: _testBlueskyClient(
           actor: _FakeActorService(
             preferences: [
               const UPreferences.adultContentPref(data: AdultContentPref(enabled: false)),
@@ -56,7 +61,7 @@ void main() {
 
     test('filters labeled posts in list contexts', () async {
       final service = ModerationService(
-        bluesky: _FakeBlueskyClient(
+        bluesky: _testBlueskyClient(
           actor: _FakeActorService(
             preferences: [const UPreferences.adultContentPref(data: AdultContentPref(enabled: false))],
           ),
@@ -96,7 +101,7 @@ void main() {
 
     test('falls back to cached preferences after a request failure', () async {
       final seededService = ModerationService(
-        bluesky: _FakeBlueskyClient(
+        bluesky: _testBlueskyClient(
           actor: _FakeActorService(
             preferences: [
               const UPreferences.labelersPref(
@@ -114,7 +119,7 @@ void main() {
       seededService.dispose();
 
       final fallbackService = ModerationService(
-        bluesky: _FakeBlueskyClient(
+        bluesky: _testBlueskyClient(
           actor: _FakeActorService(error: Exception('offline')),
           labeler: _FakeLabelerService(error: Exception('offline')),
         ),
@@ -134,7 +139,7 @@ void main() {
     test('subscribeToLabeler writes updated preferences and refreshes headers', () async {
       final actor = _FakeActorService(preferences: const []);
       final service = ModerationService(
-        bluesky: _FakeBlueskyClient(actor: actor, labeler: const _FakeLabelerService()),
+        bluesky: _testBlueskyClient(actor: actor, labeler: const _FakeLabelerService()),
         database: database,
         accountDid: _accountDid,
         userDid: _accountDid,
@@ -161,7 +166,7 @@ void main() {
     test('does not force AppView proxy headers for preference reads and writes', () async {
       final actor = _FakeActorService(preferences: const []);
       final service = ModerationService(
-        bluesky: _FakeBlueskyClient(actor: actor, labeler: const _FakeLabelerService()),
+        bluesky: _testBlueskyClient(actor: actor, labeler: const _FakeLabelerService()),
         database: database,
         accountDid: _accountDid,
         userDid: _accountDid,
@@ -191,7 +196,7 @@ void main() {
         ),
       );
       final service = ModerationService(
-        bluesky: _FakeBlueskyClient(actor: actor, labeler: const _FakeLabelerService()),
+        bluesky: _testBlueskyClient(actor: actor, labeler: const _FakeLabelerService()),
         database: database,
         accountDid: _accountDid,
         userDid: _accountDid,
@@ -212,7 +217,7 @@ void main() {
     test('setLabelPreference stores contentLabelPref entries', () async {
       final actor = _FakeActorService(preferences: const []);
       final service = ModerationService(
-        bluesky: _FakeBlueskyClient(actor: actor, labeler: const _FakeLabelerService()),
+        bluesky: _testBlueskyClient(actor: actor, labeler: const _FakeLabelerService()),
         database: database,
         accountDid: _accountDid,
         userDid: _accountDid,
@@ -238,7 +243,7 @@ void main() {
     });
 
     test('dispose is idempotent', () {
-      final service = ModerationService(bluesky: _FakeBlueskyClient());
+      final service = ModerationService(bluesky: _testBlueskyClient());
 
       expect(() => service.dispose(), returnsNormally);
       expect(() => service.dispose(), returnsNormally);
@@ -246,7 +251,7 @@ void main() {
 
     test('caches moderation preferences in the settings table', () async {
       final service = ModerationService(
-        bluesky: _FakeBlueskyClient(
+        bluesky: _testBlueskyClient(
           actor: _FakeActorService(
             preferences: [
               const UPreferences.labelersPref(
@@ -273,7 +278,7 @@ void main() {
 
     test('resolves localized custom label names from labeler policies', () async {
       final service = ModerationService(
-        bluesky: _FakeBlueskyClient(
+        bluesky: _testBlueskyClient(
           actor: _FakeActorService(
             preferences: [
               const UPreferences.labelersPref(
@@ -317,13 +322,48 @@ void main() {
   });
 }
 
-class _FakeBlueskyClient {
-  _FakeBlueskyClient({_FakeActorService? actor, _FakeLabelerService? labeler})
+Bluesky _testBlueskyClient({_FakeActorService? actor, _FakeLabelerService? labeler}) {
+  final transport = _FakeModerationTransport(
+    actor: actor ?? _FakeActorService(),
+    labeler: labeler ?? const _FakeLabelerService(),
+  );
+  return testBluesky(getClient: transport.get, postClient: transport.post);
+}
+
+class _FakeModerationTransport {
+  _FakeModerationTransport({_FakeActorService? actor, _FakeLabelerService? labeler})
     : actor = actor ?? _FakeActorService(),
       labeler = labeler ?? const _FakeLabelerService();
 
   final _FakeActorService actor;
   final _FakeLabelerService labeler;
+
+  Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
+    switch (url.pathSegments.last) {
+      case 'app.bsky.actor.getPreferences':
+        final response = await actor.getPreferences($headers: headers);
+        return jsonResponse(url, 'GET', ActorGetPreferencesOutput(preferences: response.data.preferences).toJson());
+      case 'app.bsky.labeler.getServices':
+        final response = await labeler.getServices(
+          dids: url.queryParametersAll['dids'] ?? const [],
+          detailed: url.queryParameters['detailed'] == 'true',
+          $headers: headers,
+        );
+        return jsonResponse(url, 'GET', LabelerGetServicesOutput(views: response.data.views).toJson());
+      default:
+        return unexpectedGetClient(url, headers: headers);
+    }
+  }
+
+  Future<http.Response> post(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
+    if (url.pathSegments.last != 'app.bsky.actor.putPreferences') {
+      return unexpectedPostClient(url, headers: headers, body: body, encoding: encoding);
+    }
+
+    final input = ActorPutPreferencesInput.fromJson((jsonDecode(body as String) as Map).cast<String, Object?>());
+    await actor.putPreferences(preferences: input.preferences, $headers: headers);
+    return jsonResponse(url, 'POST', const {});
+  }
 }
 
 class _FakeActorService {

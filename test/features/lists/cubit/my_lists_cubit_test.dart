@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
-import 'package:poptart_core/poptart_core.dart' show AtUri, BlobRef;
+import 'package:poptart_core/poptart_core.dart' show AtUri, Blob, BlobRef;
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:poptart_lex/app/bsky/graph/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -144,21 +144,21 @@ void main() {
 
     test('createList uploads avatar when bytes provided', () async {
       final cubit = MyListsCubit(listRepository: mockListRepository);
-      const avatarRef = BlobRef(link: 'bafkreiavatarblob');
+      const avatar = Blob(ref: BlobRef(link: 'bafkreiavatarblob'), mimeType: 'image/jpeg', size: 3);
 
       when(
         () => mockListRepository.uploadListAvatar(
           bytes: any(named: 'bytes'),
           mimeType: any(named: 'mimeType'),
         ),
-      ).thenAnswer((_) async => avatarRef);
+      ).thenAnswer((_) async => avatar);
       when(
         () => mockListRepository.createList(
           userDid: actor,
           name: 'With Avatar',
           purpose: 'app.bsky.graph.defs#modlist',
           description: any(named: 'description'),
-          avatarBlob: avatarRef,
+          avatarBlob: avatar,
         ),
       ).thenAnswer((_) async => newListUri);
 

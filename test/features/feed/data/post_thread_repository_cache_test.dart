@@ -6,38 +6,27 @@ import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/get_post_thread.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
 
-class _FakeThreadResponse {
-  _FakeThreadResponse(this.data);
+import '../../../helpers/test_bluesky_client.dart';
 
-  final FeedGetPostThreadOutput data;
-}
+class _FakeThreadFeedTransport {
+  _FakeThreadFeedTransport({required this.getPostThreadHandler});
 
-class _FakeThreadFeedApi {
-  _FakeThreadFeedApi({required this.getPostThreadHandler});
+  final Future<FeedGetPostThreadOutput> Function({required AtUri uri}) getPostThreadHandler;
 
-  final Future<_FakeThreadResponse> Function({required AtUri uri}) getPostThreadHandler;
+  Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
+    if (url.pathSegments.last != 'app.bsky.feed.getPostThread') {
+      return unexpectedGetClient(url, headers: headers);
+    }
 
-  Future<_FakeThreadResponse> getPostThread({
-    required AtUri uri,
-    int? depth,
-    int? parentHeight,
-    String? $service,
-    Map<String, String>? $headers,
-    Map<String, String>? $unknown,
-  }) {
-    return getPostThreadHandler(uri: uri);
+    final output = await getPostThreadHandler(uri: AtUri.parse(url.queryParameters['uri']!));
+    return jsonResponse(url, 'GET', output.toJson());
   }
-}
-
-class _FakeBluesky {
-  _FakeBluesky(this.feed);
-
-  final _FakeThreadFeedApi feed;
 }
 
 void main() {
@@ -59,12 +48,12 @@ void main() {
         post: childPost,
         parent: UThreadViewPostParent.threadViewPost(data: root),
       );
-      final feedApi = _FakeThreadFeedApi(
+      final feedApi = _FakeThreadFeedTransport(
         getPostThreadHandler: ({required uri}) async =>
-            _FakeThreadResponse(FeedGetPostThreadOutput(thread: UFeedGetPostThreadThread.threadViewPost(data: thread))),
+            FeedGetPostThreadOutput(thread: UFeedGetPostThreadThread.threadViewPost(data: thread)),
       );
       final repository = PostThreadRepository(
-        bluesky: _FakeBluesky(feedApi),
+        bluesky: testBluesky(getClient: feedApi.get),
         database: database,
         accountDid: 'did:plc:test',
       );
@@ -88,9 +77,11 @@ void main() {
         rootUri: root.post.uri.toString(),
         payload: jsonEncode(root.toJson()),
       );
-      final feedApi = _FakeThreadFeedApi(getPostThreadHandler: ({required uri}) async => throw Exception('offline'));
+      final feedApi = _FakeThreadFeedTransport(
+        getPostThreadHandler: ({required uri}) async => throw Exception('offline'),
+      );
       final repository = PostThreadRepository(
-        bluesky: _FakeBluesky(feedApi),
+        bluesky: testBluesky(getClient: feedApi.get),
         database: database,
         accountDid: 'did:plc:test',
       );
@@ -113,12 +104,12 @@ void main() {
       }
 
       final newest = _thread(uri: 'at://did:plc:new/app.bsky.feed.post/newest', cid: 'cid-new', text: 'Newest');
-      final feedApi = _FakeThreadFeedApi(
+      final feedApi = _FakeThreadFeedTransport(
         getPostThreadHandler: ({required uri}) async =>
-            _FakeThreadResponse(FeedGetPostThreadOutput(thread: UFeedGetPostThreadThread.threadViewPost(data: newest))),
+            FeedGetPostThreadOutput(thread: UFeedGetPostThreadThread.threadViewPost(data: newest)),
       );
       final repository = PostThreadRepository(
-        bluesky: _FakeBluesky(feedApi),
+        bluesky: testBluesky(getClient: feedApi.get),
         database: database,
         accountDid: 'did:plc:test',
       );
@@ -138,29 +129,27 @@ void main() {
       var fallbackCalls = 0;
       var refreshCalls = 0;
       final thread = _thread(uri: 'at://did:plc:retry/app.bsky.feed.post/retry', cid: 'cid-retry', text: 'Retry');
-      final primaryFeedApi = _FakeThreadFeedApi(
+      final primaryFeedApi = _FakeThreadFeedTransport(
         getPostThreadHandler: ({required uri}) async {
           primaryCalls += 1;
           throw _unauthorizedException('app.bsky.feed.getPostThread');
         },
       );
-      final fallbackFeedApi = _FakeThreadFeedApi(
+      final fallbackFeedApi = _FakeThreadFeedTransport(
         getPostThreadHandler: ({required uri}) async {
           fallbackCalls += 1;
-          return _FakeThreadResponse(
-            FeedGetPostThreadOutput(thread: UFeedGetPostThreadThread.threadViewPost(data: thread)),
-          );
+          return FeedGetPostThreadOutput(thread: UFeedGetPostThreadThread.threadViewPost(data: thread));
         },
       );
       final repository = PostThreadRepository(
-        bluesky: _FakeBluesky(primaryFeedApi),
+        bluesky: testBluesky(getClient: primaryFeedApi.get),
         database: database,
         accountDid: 'did:plc:test',
         onUnauthorized: () async {
           refreshCalls += 1;
           return _testTokens();
         },
-        blueskyClientFactory: (_) => _FakeBluesky(fallbackFeedApi),
+        blueskyClientFactory: (_) => testBluesky(getClient: fallbackFeedApi.get),
       );
 
       final resolved = await repository.getPostThread(thread.post.uri.toString());

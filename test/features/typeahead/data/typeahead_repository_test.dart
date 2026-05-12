@@ -2,12 +2,16 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/actor/search_actors_typeahead.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:lazurite/core/network/poptart_client_adapter.dart' show Bluesky;
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/test_bluesky_client.dart';
 
 class MockModerationService extends Mock implements ModerationService {}
 
@@ -41,7 +45,7 @@ void main() {
       ).thenReturn(true);
 
       final repository = TypeaheadRepository(
-        bluesky: _FakeBlueskyClient(actor: actorService),
+        bluesky: _fakeBlueskyClient(actor: actorService),
         provider: TypeaheadRepository.blueskyProvider,
         moderationService: moderationService,
       );
@@ -127,7 +131,7 @@ void main() {
       final client = _CallbackClient((_) async => http.Response('upstream unavailable', 503));
 
       final repository = TypeaheadRepository(
-        bluesky: _FakeBlueskyClient(actor: actorService),
+        bluesky: _fakeBlueskyClient(actor: actorService),
         provider: TypeaheadRepository.communityProvider,
         moderationService: moderationService,
         httpClient: client,
@@ -161,7 +165,7 @@ void main() {
       });
 
       final repository = TypeaheadRepository(
-        bluesky: _FakeBlueskyClient(actor: actorService),
+        bluesky: _fakeBlueskyClient(actor: actorService),
         providerResolver: () => selectedProvider,
         moderationService: moderationService,
         httpClient: client,
@@ -265,11 +269,7 @@ void main() {
   });
 }
 
-class _FakeBlueskyClient {
-  _FakeBlueskyClient({required this.actor});
-
-  final _FakeActorService actor;
-}
+Bluesky _fakeBlueskyClient({required _FakeActorService actor}) => testBluesky(getClient: actor.get);
 
 class _FakeActorService {
   _FakeActorsData? searchActorsResult;
@@ -277,15 +277,15 @@ class _FakeActorService {
   int? lastLimit;
   Map<String, String>? lastHeaders;
 
-  Future<_FakeResponse<_FakeActorsData>> searchActorsTypeahead({
-    required String q,
-    int? limit,
-    Map<String, String>? $headers,
-  }) async {
-    lastQuery = q;
-    lastLimit = limit;
-    lastHeaders = $headers;
-    return _FakeResponse(searchActorsResult!);
+  Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
+    if (url.pathSegments.last != 'app.bsky.actor.searchActorsTypeahead') {
+      return unexpectedGetClient(url, headers: headers);
+    }
+
+    lastQuery = url.queryParameters['q'];
+    lastLimit = int.tryParse(url.queryParameters['limit'] ?? '');
+    lastHeaders = headers;
+    return jsonResponse(url, 'GET', ActorSearchActorsTypeaheadOutput(actors: searchActorsResult!.actors).toJson());
   }
 }
 
@@ -293,12 +293,6 @@ class _FakeActorsData {
   const _FakeActorsData({required this.actors});
 
   final List<ProfileViewBasic> actors;
-}
-
-class _FakeResponse<T> {
-  _FakeResponse(this.data);
-
-  final T data;
 }
 
 class _CallbackClient implements http.Client {
