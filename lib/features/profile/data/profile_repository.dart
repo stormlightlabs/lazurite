@@ -9,6 +9,7 @@ import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/like.dart';
 import 'package:poptart_lex/com/atproto/repo/list_records.dart';
 import 'package:characters/characters.dart';
+import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
@@ -85,7 +86,9 @@ class ProfileRepository {
       final cachedProfile = await _getCachedProfile(actor);
       if (cachedProfile != null) {
         log.w('ProfileRepository: Using cached profile for $actor after request failure');
-        log.w('ProfileRepository: getProfile cached JSON ${jsonEncode(cachedProfile.toJson())}');
+        log.w(
+          'ProfileRepository: getProfile cached JSON ${PoptartCacheCodecs.profileViewDetailed.encode(cachedProfile)}',
+        );
         if (_moderationService?.shouldFilterProfileDetailedInView(cachedProfile) ?? false) {
           throw Exception('Profile hidden by moderation preferences');
         }
@@ -401,12 +404,16 @@ class ProfileRepository {
     }
 
     log.d('ProfileRepository: Found cached profile for $actor');
-    return ProfileViewDetailed.fromJson(jsonDecode(cachedProfile.payload) as Map<String, dynamic>);
+    return PoptartCacheCodecs.profileViewDetailed.decode(cachedProfile.payload);
   }
 
   Future<void> _cacheProfileSafely(ProfileViewDetailed profile) async {
     try {
-      await _database.cacheProfile(did: profile.did, handle: profile.handle, payload: jsonEncode(profile.toJson()));
+      await _database.cacheProfile(
+        did: profile.did,
+        handle: profile.handle,
+        payload: PoptartCacheCodecs.profileViewDetailed.encode(profile),
+      );
       log.d('ProfileRepository: Cached profile ${profile.did} (${profile.handle})');
     } catch (error, stackTrace) {
       log.w(

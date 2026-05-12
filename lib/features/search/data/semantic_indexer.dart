@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:convert';
 import 'dart:math' show min;
 import 'dart:typed_data';
 
-import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/embedding/embedding_service.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
@@ -161,31 +160,12 @@ class SemanticIndexer {
 
   String _extractText(String postJson) {
     try {
-      final map = jsonDecode(postJson) as Map<String, dynamic>;
-      final postView = _resolvePostView(map);
-      if (postView == null) return '';
+      final postView = PoptartCacheCodecs.decodeSavedOrLikedPostView(postJson);
       return _textExtractor.extract(postView);
-    } catch (_) {
+    } catch (error) {
+      log.d('Failed to extract semantic index text from cached post JSON: $error');
       return '';
     }
-  }
-
-  /// Resolves a [PostView] from a raw JSON map.
-  ///
-  /// Handles two formats:
-  /// - FeedViewPost JSON (liked posts): top-level `post` key maps to PostView.
-  /// - PostView JSON (saved posts): parsed directly.
-  PostView? _resolvePostView(Map<String, dynamic> map) {
-    final nested = map['post'];
-    if (nested is Map<String, dynamic>) {
-      try {
-        return PostView.fromJson(nested);
-      } catch (_) {}
-    }
-    try {
-      return PostView.fromJson(map);
-    } catch (_) {}
-    return null;
   }
 
   List<double> _toDoubleList(Float32List embedding) => embedding.toList();

@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:poptart_core/poptart_core.dart';
 import 'package:poptart_lex/app/bsky/bookmark/defs.dart';
 import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
@@ -275,7 +275,9 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
         final output = await _postActionRepository.getBookmarks(limit: 100, cursor: cursor);
         for (final bookmark in output.bookmarks) {
           final postUri = bookmark.subject.uri.toString();
-          final postJson = bookmark.item.isPostView ? jsonEncode(bookmark.item.postView!.toJson()) : '{}';
+          final postJson = bookmark.item.isPostView
+              ? PoptartCacheCodecs.postView.encode(bookmark.item.postView!)
+              : '{}';
           final existing = await _database.getSavedPost(_accountDid, postUri);
           if (existing == null) {
             await _database.savePost(

@@ -1,7 +1,6 @@
-import 'dart:convert';
-
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
@@ -55,7 +54,7 @@ class LikedPostsRepository {
       for (final FeedViewPost feedViewPost in posts) {
         final postUri = feedViewPost.post.uri.toString();
         final likedAt = _resolveLikedAt(feedViewPost);
-        final postJson = jsonEncode(feedViewPost.toJson());
+        final postJson = PoptartCacheCodecs.feedViewPost.encode(feedViewPost);
 
         final existing = await _database.getLikedPost(accountDid, postUri);
         if (existing != null) {

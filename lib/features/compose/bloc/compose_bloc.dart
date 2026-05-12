@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -26,6 +25,7 @@ import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/scheduler/post_scheduler.dart';
+import 'package:lazurite/features/compose/data/draft_embed_payload.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/compose/data/link_preview_service.dart';
 
@@ -247,7 +247,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
   Future<void> _onDraftSaved(DraftSaved event, Emitter<ComposeState> emit) async {
     emit(state.copyWith(isSavingDraft: true));
     try {
-      final embedJson = _buildEmbedJson();
+      final embedPayload = _buildEmbedPayload();
       final draft = DraftsCompanion(
         id: state.draftId != null ? Value(state.draftId!) : const Value.absent(),
         accountDid: Value(_accountDid),
@@ -256,9 +256,9 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         replyCid: state.replyParentCid != null ? Value(state.replyParentCid!) : const Value.absent(),
         rootUri: state.replyRootUri != null ? Value(state.replyRootUri!) : const Value.absent(),
         rootCid: state.replyRootCid != null ? Value(state.replyRootCid!) : const Value.absent(),
-        embedJson: embedJson != null ? Value(jsonEncode(embedJson)) : const Value.absent(),
+        embedJson: embedPayload != null ? Value(embedPayload.encode()) : const Value.absent(),
         mediaPaths: state.mediaAttachments.isNotEmpty
-            ? Value(jsonEncode(state.mediaAttachments.map((m) => m.localPath).toList()))
+            ? Value(DraftEmbedPayload.encodeMediaPaths(state.mediaAttachments.map((m) => m.localPath)))
             : const Value.absent(),
         scheduledAt: state.scheduledAt != null ? Value(state.scheduledAt!) : const Value.absent(),
         updatedAt: Value(DateTime.now()),
@@ -278,20 +278,15 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
 
       List<MediaAttachment> attachments = [];
 
-      if (draft.embedJson != null) {
+      final embedPayload = DraftEmbedPayload.tryDecode(draft.embedJson);
+      if (embedPayload is DraftImagesEmbedPayload) {
         try {
-          final decoded = jsonDecode(draft.embedJson!) as Map<String, dynamic>;
-          final type = decoded['type'] as String?;
-          if (type == 'images') {
-            final paths = decoded['paths'] as List<dynamic>? ?? [];
-            final alts = decoded['altTexts'] as List<dynamic>? ?? [];
-            attachments = paths.asMap().entries.where((e) => File(e.value as String).existsSync()).map((e) {
-              return MediaAttachment(
-                localPath: e.value as String,
-                altText: e.key < alts.length ? (alts[e.key] as String? ?? '') : '',
-              );
-            }).toList();
-          }
+          attachments = embedPayload.paths.asMap().entries.where((e) => File(e.value).existsSync()).map((e) {
+            return MediaAttachment(
+              localPath: e.value,
+              altText: e.key < embedPayload.altTexts.length ? embedPayload.altTexts[e.key] : '',
+            );
+          }).toList();
         } catch (e) {
           log.w('Failed to parse embedJson from draft', error: e);
         }
@@ -299,12 +294,9 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
 
       if (attachments.isEmpty && draft.mediaPaths != null) {
         try {
-          final paths = jsonDecode(draft.mediaPaths!) as List<dynamic>;
-          attachments = paths
-              .whereType<String>()
-              .where((path) => File(path).existsSync())
-              .map((path) => MediaAttachment(localPath: path))
-              .toList();
+          attachments = DraftEmbedPayload.decodeMediaPaths(
+            draft.mediaPaths!,
+          ).where((path) => File(path).existsSync()).map((path) => MediaAttachment(localPath: path)).toList();
         } catch (e) {
           log.w('Failed to parse mediaPaths from draft', error: e);
         }
@@ -450,7 +442,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
       }
 
       if (state.scheduledAt != null && state.scheduledAt!.isAfter(DateTime.now())) {
-        final embedJson = _buildEmbedJson();
+        final embedPayload = _buildEmbedPayload();
         final draft = DraftsCompanion(
           accountDid: Value(_accountDid),
           content: Value(state.text),
@@ -458,9 +450,9 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
           replyCid: state.replyParentCid != null ? Value(state.replyParentCid!) : const Value.absent(),
           rootUri: state.replyRootUri != null ? Value(state.replyRootUri!) : const Value.absent(),
           rootCid: state.replyRootCid != null ? Value(state.replyRootCid!) : const Value.absent(),
-          embedJson: embedJson != null ? Value(jsonEncode(embedJson)) : const Value.absent(),
+          embedJson: embedPayload != null ? Value(embedPayload.encode()) : const Value.absent(),
           mediaPaths: state.mediaAttachments.isNotEmpty
-              ? Value(jsonEncode(state.mediaAttachments.map((m) => m.localPath).toList()))
+              ? Value(DraftEmbedPayload.encodeMediaPaths(state.mediaAttachments.map((m) => m.localPath)))
               : const Value.absent(),
           scheduledAt: Value(state.scheduledAt!),
           updatedAt: Value(DateTime.now()),
@@ -621,7 +613,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
 
   Future<void> _saveFailedSubmissionAsDraft(Emitter<ComposeState> emit, Object error) async {
     try {
-      final embedJson = _buildEmbedJson();
+      final embedPayload = _buildEmbedPayload();
       final draft = DraftsCompanion(
         accountDid: Value(_accountDid),
         content: Value(state.text),
@@ -629,9 +621,9 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         replyCid: state.replyParentCid != null ? Value(state.replyParentCid!) : const Value.absent(),
         rootUri: state.replyRootUri != null ? Value(state.replyRootUri!) : const Value.absent(),
         rootCid: state.replyRootCid != null ? Value(state.replyRootCid!) : const Value.absent(),
-        embedJson: embedJson != null ? Value(jsonEncode(embedJson)) : const Value.absent(),
+        embedJson: embedPayload != null ? Value(embedPayload.encode()) : const Value.absent(),
         mediaPaths: state.mediaAttachments.isNotEmpty
-            ? Value(jsonEncode(state.mediaAttachments.map((m) => m.localPath).toList()))
+            ? Value(DraftEmbedPayload.encodeMediaPaths(state.mediaAttachments.map((m) => m.localPath)))
             : const Value.absent(),
         scheduledAt: state.scheduledAt != null ? Value(state.scheduledAt!) : const Value.absent(),
         updatedAt: Value(DateTime.now()),
@@ -657,16 +649,15 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
     );
   }
 
-  Map<String, dynamic>? _buildEmbedJson() {
+  DraftEmbedPayload? _buildEmbedPayload() {
     if (state.mediaAttachments.isNotEmpty) {
-      return {
-        'type': 'images',
-        'paths': state.mediaAttachments.map((m) => m.localPath).toList(),
-        'altTexts': state.mediaAttachments.map((m) => m.altText).toList(),
-      };
+      return DraftEmbedPayload.images(
+        paths: state.mediaAttachments.map((m) => m.localPath).toList(growable: false),
+        altTexts: state.mediaAttachments.map((m) => m.altText).toList(growable: false),
+      );
     }
     if (state.videoAttachment != null) {
-      return {'type': 'video', 'path': state.videoAttachment!.localPath, 'alt': state.videoAttachment!.altText};
+      return DraftEmbedPayload.video(path: state.videoAttachment!.localPath, alt: state.videoAttachment!.altText);
     }
     return null;
   }

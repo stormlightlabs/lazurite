@@ -1,8 +1,7 @@
-import 'dart:convert';
-
 import 'package:poptart_core/poptart_core.dart' as atcore;
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/get_post_thread.dart';
+import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
@@ -89,7 +88,11 @@ class PostThreadRepository {
 
   Future<void> _cacheThread(ThreadViewPost thread) async {
     final rootUri = _threadRoot(thread).post.uri.toString();
-    await _database.cacheThreadRoot(accountDid: _accountDid, rootUri: rootUri, payload: jsonEncode(thread.toJson()));
+    await _database.cacheThreadRoot(
+      accountDid: _accountDid,
+      rootUri: rootUri,
+      payload: PoptartCacheCodecs.threadViewPost.encode(thread),
+    );
     await _database.pruneCachedThreadRoots(_accountDid, OfflineCachePolicy.threadRootLimit);
   }
 
@@ -97,7 +100,7 @@ class PostThreadRepository {
     final direct = await _database.getCachedThreadRoot(_accountDid, requestedUri);
     if (direct != null) {
       try {
-        return ThreadViewPost.fromJson(jsonDecode(direct.payload) as Map<String, dynamic>);
+        return PoptartCacheCodecs.threadViewPost.decode(direct.payload);
       } catch (error, stackTrace) {
         log.d(
           'thread.cache failed to decode direct snapshot for requestedUri=$requestedUri',
@@ -112,7 +115,7 @@ class PostThreadRepository {
     )..where((row) => row.accountDid.equals(_accountDid))).get();
     for (final candidate in all) {
       try {
-        final decoded = ThreadViewPost.fromJson(jsonDecode(candidate.payload) as Map<String, dynamic>);
+        final decoded = PoptartCacheCodecs.threadViewPost.decode(candidate.payload);
         if (_containsPostUri(decoded, requestedUri)) {
           return decoded;
         }

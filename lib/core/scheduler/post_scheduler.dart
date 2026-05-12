@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -17,6 +16,7 @@ import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
+import 'package:lazurite/features/compose/data/draft_embed_payload.dart';
 import 'package:lazurite/features/notifications/background/notification_background_worker.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -101,15 +101,11 @@ Future<void> _submitScheduledDraft(int draftId) async {
 
     UFeedPostEmbed? embed;
 
-    if (draft.embedJson != null) {
-      final decoded = jsonDecode(draft.embedJson!) as Map<String, dynamic>;
-      final type = decoded['type'] as String?;
-
-      if (type == 'images') {
-        embed = await _buildImageEmbed(composeRepo, decoded);
-      } else if (type == 'video') {
-        embed = await _buildVideoEmbed(composeRepo, decoded);
-      }
+    final embedPayload = DraftEmbedPayload.tryDecode(draft.embedJson);
+    if (embedPayload is DraftImagesEmbedPayload) {
+      embed = await _buildImageEmbed(composeRepo, embedPayload);
+    } else if (embedPayload is DraftVideoEmbedPayload) {
+      embed = await _buildVideoEmbed(composeRepo, embedPayload);
     }
 
     ReplyRef? reply;
@@ -139,10 +135,10 @@ Future<void> _submitScheduledDraft(int draftId) async {
   }
 }
 
-/// Uploads images from [embedJson] `{ "paths": [...], "altTexts": [...] }`.
-Future<UFeedPostEmbed?> _buildImageEmbed(ComposeRepository repo, Map<String, dynamic> embedJson) async {
-  final paths = (embedJson['paths'] as List<dynamic>? ?? []).cast<String>();
-  final alts = (embedJson['altTexts'] as List<dynamic>? ?? []).cast<String>();
+/// Uploads images from a draft embed payload.
+Future<UFeedPostEmbed?> _buildImageEmbed(ComposeRepository repo, DraftImagesEmbedPayload payload) async {
+  final paths = payload.paths;
+  final alts = payload.altTexts;
   final images = <EmbedImagesImage>[];
 
   for (var i = 0; i < paths.length; i++) {
@@ -183,11 +179,9 @@ Future<UFeedPostEmbed?> _buildImageEmbed(ComposeRepository repo, Map<String, dyn
 }
 
 /// Re-uploads a video from its local path and polls the processing job.
-Future<UFeedPostEmbed?> _buildVideoEmbed(ComposeRepository repo, Map<String, dynamic> embedJson) async {
-  final path = embedJson['path'] as String?;
-  final altText = (embedJson['alt'] as String?) ?? '';
-
-  if (path == null) return null;
+Future<UFeedPostEmbed?> _buildVideoEmbed(ComposeRepository repo, DraftVideoEmbedPayload payload) async {
+  final path = payload.path;
+  final altText = payload.alt;
 
   final file = File(path);
   if (!file.existsSync()) {
