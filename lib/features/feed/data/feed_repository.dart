@@ -11,6 +11,7 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_fallback_service.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
@@ -19,7 +20,7 @@ import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class FeedRepository {
   FeedRepository({
-    required dynamic bluesky,
+    required Bluesky bluesky,
     required AppDatabase database,
     required String accountDid,
     ModerationService? moderationService,
@@ -31,7 +32,7 @@ class FeedRepository {
     int routingEpoch = 0,
     int Function()? routingEpochResolver,
     Future<AuthTokens?> Function()? onUnauthorized,
-    dynamic Function(AuthTokens tokens)? blueskyClientFactory,
+    Bluesky? Function(AuthTokens tokens)? blueskyClientFactory,
   }) : _database = database,
        _accountDid = accountDid,
        _moderationService = moderationService,
@@ -44,7 +45,7 @@ class FeedRepository {
        _appViewFallbackService = appViewFallbackService ?? AppViewFallbackService(),
        _routingEpoch = routingEpoch,
        _routingEpochResolver = routingEpochResolver {
-    _authRecovery = UnauthorizedRecoveryRunner<dynamic>(
+    _authRecovery = UnauthorizedRecoveryRunner<Bluesky>(
       initialClient: bluesky,
       onUnauthorized: onUnauthorized,
       clientFactory: blueskyClientFactory ?? createBlueskyClient,
@@ -54,7 +55,7 @@ class FeedRepository {
     );
   }
 
-  late final UnauthorizedRecoveryRunner<dynamic> _authRecovery;
+  late final UnauthorizedRecoveryRunner<Bluesky> _authRecovery;
   final AppDatabase _database;
   final String _accountDid;
   final ModerationService? _moderationService;

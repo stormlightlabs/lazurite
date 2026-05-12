@@ -62,7 +62,7 @@ class PostActionRepository {
 
   Future<BookmarkGetBookmarksOutput> getBookmarks({int? limit, String? cursor}) async {
     final response = await _bluesky.bookmark.getBookmarks(
-      limit: limit,
+      limit: limit ?? 50,
       cursor: cursor,
       $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.bookmark.getBookmarks'),
     );
