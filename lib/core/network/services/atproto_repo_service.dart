@@ -9,14 +9,12 @@ class AtProtoRepoService {
     required String repo,
     Map<String, String>? $headers,
     String? $service,
-  }) {
-    return _client.call(
-      comAtprotoRepoDescribeRepo,
-      headers: $headers,
-      service: $service,
-      parameters: RepoDescribeRepoInput(repo: repo),
-    );
-  }
+  }) => _client.call(
+    comAtprotoRepoDescribeRepo,
+    headers: $headers,
+    service: $service,
+    parameters: RepoDescribeRepoInput(repo: repo),
+  );
 
   Future<XRPCResponse<RepoGetRecordOutput>> getRecord({
     required String repo,
@@ -25,14 +23,12 @@ class AtProtoRepoService {
     String? cid,
     Map<String, String>? $headers,
     String? $service,
-  }) {
-    return _client.call(
-      comAtprotoRepoGetRecord,
-      headers: $headers,
-      service: $service,
-      parameters: RepoGetRecordInput(repo: repo, collection: collection, rkey: rkey, cid: cid),
-    );
-  }
+  }) => _client.call(
+    comAtprotoRepoGetRecord,
+    headers: $headers,
+    service: $service,
+    parameters: RepoGetRecordInput(repo: repo, collection: collection, rkey: rkey, cid: cid),
+  );
 
   Future<XRPCResponse<RepoListRecordsOutput>> listRecords({
     required String repo,
@@ -42,20 +38,18 @@ class AtProtoRepoService {
     bool? reverse,
     Map<String, String>? $headers,
     String? $service,
-  }) {
-    return _client.call(
-      comAtprotoRepoListRecords,
-      headers: $headers,
-      service: $service,
-      parameters: RepoListRecordsInput(
-        repo: repo,
-        collection: collection,
-        limit: limit,
-        cursor: cursor,
-        reverse: reverse,
-      ),
-    );
-  }
+  }) => _client.call(
+    comAtprotoRepoListRecords,
+    headers: $headers,
+    service: $service,
+    parameters: RepoListRecordsInput(
+      repo: repo,
+      collection: collection,
+      limit: limit,
+      cursor: cursor,
+      reverse: reverse,
+    ),
+  );
 
   Future<XRPCResponse<RepoCreateRecordOutput>> createRecord({
     required String repo,
@@ -66,21 +60,19 @@ class AtProtoRepoService {
     String? swapCommit,
     Map<String, String>? $headers,
     String? $service,
-  }) {
-    return _client.call(
-      comAtprotoRepoCreateRecord,
-      headers: $headers,
-      service: $service,
-      input: RepoCreateRecordInput(
-        repo: repo,
-        collection: collection,
-        rkey: rkey,
-        validate: validate,
-        record: _normalizeJson(record) as Map<String, dynamic>,
-        swapCommit: swapCommit,
-      ),
-    );
-  }
+  }) => _client.call(
+    comAtprotoRepoCreateRecord,
+    headers: $headers,
+    service: $service,
+    input: RepoCreateRecordInput(
+      repo: repo,
+      collection: collection,
+      rkey: rkey,
+      validate: validate,
+      record: _normalizeJson(record) as Map<String, dynamic>,
+      swapCommit: swapCommit,
+    ),
+  );
 
   Future<XRPCResponse<RepoPutRecordOutput>> putRecord({
     required String repo,
@@ -92,22 +84,20 @@ class AtProtoRepoService {
     String? swapCommit,
     Map<String, String>? $headers,
     String? $service,
-  }) {
-    return _client.call(
-      comAtprotoRepoPutRecord,
-      headers: $headers,
-      service: $service,
-      input: RepoPutRecordInput(
-        repo: repo,
-        collection: collection,
-        rkey: rkey,
-        validate: validate,
-        record: _normalizeJson(record) as Map<String, dynamic>,
-        swapRecord: swapRecord,
-        swapCommit: swapCommit,
-      ),
-    );
-  }
+  }) => _client.call(
+    comAtprotoRepoPutRecord,
+    headers: $headers,
+    service: $service,
+    input: RepoPutRecordInput(
+      repo: repo,
+      collection: collection,
+      rkey: rkey,
+      validate: validate,
+      record: _normalizeJson(record) as Map<String, dynamic>,
+      swapRecord: swapRecord,
+      swapCommit: swapCommit,
+    ),
+  );
 
   Future<XRPCResponse<RepoDeleteRecordOutput>> deleteRecord({
     required String repo,
@@ -117,20 +107,18 @@ class AtProtoRepoService {
     String? swapCommit,
     Map<String, String>? $headers,
     String? $service,
-  }) {
-    return _client.call(
-      comAtprotoRepoDeleteRecord,
-      headers: $headers,
-      service: $service,
-      input: RepoDeleteRecordInput(
-        repo: repo,
-        collection: collection,
-        rkey: rkey,
-        swapRecord: swapRecord,
-        swapCommit: swapCommit,
-      ),
-    );
-  }
+  }) => _client.call(
+    comAtprotoRepoDeleteRecord,
+    headers: $headers,
+    service: $service,
+    input: RepoDeleteRecordInput(
+      repo: repo,
+      collection: collection,
+      rkey: rkey,
+      swapRecord: swapRecord,
+      swapCommit: swapCommit,
+    ),
+  );
 
   Future<XRPCResponse<RepoUploadBlobOutput>> uploadBlob({
     required Uint8List bytes,
@@ -147,12 +135,15 @@ class AtProtoRepoService {
     String? swapCommit,
     Map<String, String>? $headers,
     String? $service,
-  }) {
-    return _client.call(
-      comAtprotoRepoApplyWrites,
-      headers: $headers,
-      service: $service,
-      input: RepoApplyWritesInput(repo: repo, validate: validate, writes: writes, swapCommit: swapCommit),
-    );
-  }
+  }) => _client.call(
+    comAtprotoRepoApplyWrites,
+    headers: $headers,
+    service: $service,
+    input:
+        _coerceDescriptorInput(
+              comAtprotoRepoApplyWrites.methodDescriptor,
+              RepoApplyWritesInput(repo: repo, validate: validate, writes: writes, swapCommit: swapCommit),
+            )
+            as RepoApplyWritesInput,
+  );
 }

@@ -13,40 +13,39 @@ class BlueskyActorService {
     required List<UPreferences> preferences,
     Map<String, String>? $headers,
     String? $service,
-  }) {
-    return _client.call(
-      appBskyActorPutPreferences,
-      headers: $headers,
-      service: $service,
-      input: ActorPutPreferencesInput(preferences: preferences),
-    );
-  }
+  }) => _client.call(
+    appBskyActorPutPreferences,
+    headers: $headers,
+    service: $service,
+    input:
+        _coerceDescriptorInput(
+              appBskyActorPutPreferences.methodDescriptor,
+              ActorPutPreferencesInput(preferences: preferences),
+            )
+            as ActorPutPreferencesInput,
+  );
 
   Future<XRPCResponse<ProfileViewDetailed>> getProfile({
     required String actor,
     Map<String, String>? $headers,
     String? $service,
-  }) {
-    return _client.call(
-      appBskyActorGetProfile,
-      headers: $headers,
-      service: $service,
-      parameters: ActorGetProfileInput(actor: actor),
-    );
-  }
+  }) => _client.call(
+    appBskyActorGetProfile,
+    headers: $headers,
+    service: $service,
+    parameters: ActorGetProfileInput(actor: actor),
+  );
 
   Future<XRPCResponse<ActorGetProfilesOutput>> getProfiles({
     required List<String> actors,
     Map<String, String>? $headers,
     String? $service,
-  }) {
-    return _client.call(
-      appBskyActorGetProfiles,
-      headers: $headers,
-      service: $service,
-      parameters: ActorGetProfilesInput(actors: actors),
-    );
-  }
+  }) => _client.call(
+    appBskyActorGetProfiles,
+    headers: $headers,
+    service: $service,
+    parameters: ActorGetProfilesInput(actors: actors),
+  );
 
   Future<XRPCResponse<ActorSearchActorsOutput>> searchActors({
     String? q,
@@ -54,26 +53,22 @@ class BlueskyActorService {
     String? cursor,
     Map<String, String>? $headers,
     String? $service,
-  }) {
-    return _client.call(
-      appBskyActorSearchActors,
-      headers: $headers,
-      service: $service,
-      parameters: ActorSearchActorsInput(q: q, limit: limit, cursor: cursor),
-    );
-  }
+  }) => _client.call(
+    appBskyActorSearchActors,
+    headers: $headers,
+    service: $service,
+    parameters: ActorSearchActorsInput(q: q, limit: limit, cursor: cursor),
+  );
 
   Future<XRPCResponse<ActorSearchActorsTypeaheadOutput>> searchActorsTypeahead({
     String? q,
     int limit = 10,
     Map<String, String>? $headers,
     String? $service,
-  }) {
-    return _client.call(
-      appBskyActorSearchActorsTypeahead,
-      headers: $headers,
-      service: $service,
-      parameters: ActorSearchActorsTypeaheadInput(q: q, limit: limit),
-    );
-  }
+  }) => _client.call(
+    appBskyActorSearchActorsTypeahead,
+    headers: $headers,
+    service: $service,
+    parameters: ActorSearchActorsTypeaheadInput(q: q, limit: limit),
+  );
 }

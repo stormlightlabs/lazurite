@@ -22,11 +22,12 @@ dynamic _coerceDescriptorParameters(XRPCMethodDescriptor<dynamic, dynamic, dynam
   if (parameters == null) {
     return null;
   }
-  if (parameters is! Map) {
+
+  final normalized = _normalizeDescriptorJson(value: parameters, encoder: descriptor.parametersToJson);
+  if (normalized == null) {
     return parameters;
   }
 
-  final normalized = _normalizeJson(parameters) as Map<String, dynamic>;
   final converter = descriptor.parametersFromJson;
   if (converter != null) {
     return converter.call(normalized);
@@ -38,11 +39,12 @@ dynamic _coerceDescriptorInput(XRPCMethodDescriptor<dynamic, dynamic, dynamic> d
   if (input == null) {
     return null;
   }
-  if (input is! Map) {
+
+  final normalized = _normalizeDescriptorJson(value: input, encoder: descriptor.inputToJson);
+  if (normalized == null) {
     return input;
   }
 
-  final normalized = _normalizeJson(input) as Map<String, dynamic>;
   final converter = descriptor.inputFromJson;
   if (converter != null) {
     return converter.call(normalized);
@@ -50,22 +52,51 @@ dynamic _coerceDescriptorInput(XRPCMethodDescriptor<dynamic, dynamic, dynamic> d
   return normalized.isEmpty ? null : normalized;
 }
 
-dynamic _normalizeJson(dynamic value) {
-  if (value == null || value is String || value is num || value is bool) return value;
-  if (value is DateTime) return value.toUtc().toIso8601String();
+Map<String, dynamic>? _normalizeDescriptorJson({
+  required Object value,
+  required Map<String, dynamic> Function(dynamic value)? encoder,
+}) {
+  if (value is Map) {
+    return _normalizeJson(value) as Map<String, dynamic>;
+  }
+  if (encoder == null) {
+    return null;
+  }
+  return _normalizeJson(encoder.call(value)) as Map<String, dynamic>;
+}
+
+dynamic _normalizeJson(dynamic value, {String? key}) {
+  if (value == null) return value;
+  if (value is String) {
+    return _isDateTimeJsonField(key) ? formatAtProtoDateTimeString(value) ?? value : value;
+  }
+  if (value is num || value is bool) return value;
+  if (value is DateTime) return formatAtProtoDateTime(value);
   if (value is AtUri || value is NSID) return value.toString();
   if (value is Blob || value is BlobRef) return value.toJson();
-  if (value is List) return value.map(_normalizeJson).toList(growable: false);
+  if (value is List) return value.map((item) => _normalizeJson(item)).toList(growable: false);
   if (value is Map) {
-    return value.map((key, val) => MapEntry(key.toString(), _normalizeJson(val)));
+    return value.map((key, val) {
+      final stringKey = key.toString();
+      return MapEntry(stringKey, _normalizeJson(val, key: stringKey));
+    });
   }
   final dynamic dynamicValue = value;
   try {
-    return dynamicValue.toJson();
-  } catch (_) {
+    return _normalizeJson(dynamicValue.toJson());
+  } catch (error, stackTrace) {
+    developer.log(
+      'Falling back to string serialization for ${value.runtimeType}.',
+      name: 'lazurite.network.poptart',
+      error: error,
+      stackTrace: stackTrace,
+      level: 500,
+    );
     return value.toString();
   }
 }
+
+bool _isDateTimeJsonField(String? key) => key != null && key.endsWith('At');
 
 String _repoDid(PoptartClient client) {
   return client.session?.did ??
