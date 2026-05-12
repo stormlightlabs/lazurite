@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Home (Tablet) — Lazurite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="tablet-shell">
+
+      <!-- Sidebar Navigation -->
+      <nav class="sidebar expanded">
+        <!-- Logo -->
+        <div class="sidebar-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+
+        <div class="sidebar-nav">
+          <!-- Home -->
+          <a href="home.html" class="sidebar-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span class="sidebar-item-label">Home</span>
+          </a>
+
+          <!-- Search -->
+          <a href="#" class="sidebar-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <span class="sidebar-item-label">Search</span>
+          </a>
+
+          <!-- Notifications -->
+          <a href="notifications.html" class="sidebar-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="sidebar-item-label">Notifications</span>
+            <span class="sidebar-badge">3</span>
+          </a>
+
+          <!-- Messages -->
+          <a href="messages.html" class="sidebar-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span class="sidebar-item-label">Messages</span>
+          </a>
+
+          <!-- Feeds -->
+          <a href="#" class="sidebar-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 11a9 9 0 0 1 9 9"/>
+              <path d="M4 4a16 16 0 0 1 16 16"/>
+              <circle cx="5" cy="19" r="1"/>
+            </svg>
+            <span class="sidebar-item-label">Feeds</span>
+          </a>
+
+          <!-- Lists -->
+          <a href="#" class="sidebar-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"/>
+              <line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/>
+              <line x1="3" y1="12" x2="3.01" y2="12"/>
+              <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            <span class="sidebar-item-label">Lists</span>
+          </a>
+
+          <div class="sidebar-divider"></div>
+
+          <!-- Profile -->
+          <a href="profile.html" class="sidebar-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span class="sidebar-item-label">Profile</span>
+          </a>
+
+          <!-- Settings -->
+          <a href="#" class="sidebar-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span class="sidebar-item-label">Settings</span>
+          </a>
+        </div>
+
+        <!-- Compose button -->
+        <button class="sidebar-compose">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span class="compose-label">New Post</span>
+        </button>
+
+        <!-- User avatar row -->
+        <div class="sidebar-avatar-row">
+          <div class="avatar avatar-sm sidebar-avatar">JD</div>
+          <div>
+            <div class="sidebar-avatar-name">Jane Doe</div>
+            <div class="sidebar-avatar-handle">@jane.bsky.social</div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Main Content -->
+      <div class="tablet-main">
+        <!-- Feed Column -->
+        <div class="content-pane">
+          <!-- Header -->
+          <div class="content-pane-header">
+            <h1 class="content-pane-title">Home</h1>
+          </div>
+
+          <!-- Compose Box -->
+          <div class="compose-box">
+            <div class="compose-inner">
+              <div class="avatar avatar-sm">JD</div>
+              <div class="compose-input-wrapper">
+                <textarea class="compose-input" placeholder="What's on your mind?" rows="2"></textarea>
+              </div>
+            </div>
+            <div class="compose-actions">
+              <div class="compose-tools">
+                <button class="compose-tool" title="Add image">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </button>
+                <button class="compose-tool" title="Add GIF">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <text x="4" y="16" font-family="inherit" font-size="12" font-weight="bold" fill="currentColor">GIF</text>
+                  </svg>
+                </button>
+                <button class="compose-tool" title="Add poll">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"/>
+                    <line x1="12" y1="20" x2="12" y2="4"/>
+                    <line x1="6" y1="20" x2="6" y2="14"/>
+                  </svg>
+                </button>
+                <button class="compose-tool" title="Emoji">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                    <line x1="9" y1="9" x2="9.01" y2="9"/>
+                    <line x1="15" y1="9" x2="15.01" y2="9"/>
+                  </svg>
+                </button>
+              </div>
+              <button class="compose-submit">Post</button>
+            </div>
+          </div>
+
+          <!-- Feed Tabs -->
+          <div class="feed-tabs" style="top: 65px;">
+            <button class="feed-tab active">Following</button>
+            <button class="feed-tab">Discover</button>
+          </div>
+
+          <!-- Posts -->
+          <article class="post-card">
+            <div class="post-header">
+              <div class="avatar">AS</div>
+              <div class="post-author">
+                <div class="post-author-name">Alice Smith</div>
+                <div class="post-author-handle">@alice.bsky.social · <span class="post-timestamp">2h</span></div>
+              </div>
+            </div>
+            <div class="post-content">
+              Just launched my new project! Check out the demo at <a href="#" class="post-facet-link">example.com</a>.
+              Special thanks to <a href="#" class="post-facet-mention">@bob.bsky.social</a> for the help!
+              <a href="#" class="post-facet-hashtag">#buildinpublic</a> <a href="#" class="post-facet-hashtag">#dev</a>
+            </div>
+            <div class="post-embed">
+              <div class="post-embed-image">[Project Screenshot]</div>
+              <div class="post-embed-content">
+                <div class="post-embed-title">My Awesome Project</div>
+                <div class="post-embed-url">example.com</div>
+              </div>
+            </div>
+            <div class="post-actions">
+              <button class="post-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                12
+              </button>
+              <button class="post-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                5
+              </button>
+              <button class="post-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                48
+              </button>
+              <button class="post-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              </button>
+            </div>
+          </article>
+
+          <article class="post-card">
+            <div class="post-header">
+              <div class="avatar">BJ</div>
+              <div class="post-author">
+                <div class="post-author-name">Bob Johnson</div>
+                <div class="post-author-handle">@bob.bsky.social · <span class="post-timestamp">4h</span></div>
+              </div>
+            </div>
+            <div class="post-content">
+              Working on some exciting features for the next release! Improved search, better notifications, and dark mode support.
+              <a href="#" class="post-facet-hashtag">#bluesky</a> <a href="#" class="post-facet-hashtag">#atproto</a>
+            </div>
+            <div class="post-actions">
+              <button class="post-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                8
+              </button>
+              <button class="post-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                24
+              </button>
+              <button class="post-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                156
+              </button>
+              <button class="post-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              </button>
+            </div>
+          </article>
+
+          <article class="post-card">
+            <div class="post-header">
+              <div class="avatar">CW</div>
+              <div class="post-author">
+                <div class="post-author-name">Carol White</div>
+                <div class="post-author-handle">@carol.dev · <span class="post-timestamp">6h</span></div>
+              </div>
+            </div>
+            <div class="post-content">
+              The <a href="#" class="post-facet-mention">@atproto</a> team has been doing amazing work! Read their latest
+              blog post about federation: <a href="#" class="post-facet-link">atproto.com/blog/federation</a><br><br>
+              <a href="#" class="post-facet-hashtag">#atprotocol</a>
+              <a href="#" class="post-facet-hashtag">#decentralized</a>
+              <a href="#" class="post-facet-hashtag">#socialweb</a>
+            </div>
+            <div class="post-actions">
+              <button class="post-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                34
+              </button>
+              <button class="post-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                12
+              </button>
+              <button class="post-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                289
+              </button>
+              <button class="post-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              </button>
+            </div>
+          </article>
+
+          <article class="post-card">
+            <div class="post-header">
+              <div class="avatar">DM</div>
+              <div class="post-author">
+                <div class="post-author-name">David Miller</div>
+                <div class="post-author-handle">@davidm.bsky.social · <span class="post-timestamp">8h</span></div>
+              </div>
+            </div>
+            <div class="post-content">
+              Beautiful sunset from my hike today!
+              <a href="#" class="post-facet-hashtag">#nature</a>
+              <a href="#" class="post-facet-hashtag">#photography</a>
+              <a href="#" class="post-facet-hashtag">#hiking</a>
+            </div>
+            <div class="post-embed">
+              <div class="post-embed-image">[Sunset Photo]</div>
+            </div>
+            <div class="post-actions">
+              <button class="post-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                6
+              </button>
+              <button class="post-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                18
+              </button>
+              <button class="post-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                423
+              </button>
+              <button class="post-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              </button>
+            </div>
+          </article>
+        </div>
+
+        <!-- Right Panel — Trends & Suggestions -->
+        <aside class="right-panel">
+          <!-- Search -->
+          <div class="search-bar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" placeholder="Search" />
+          </div>
+
+          <!-- Trending Topics -->
+          <div class="widget">
+            <div class="widget-header">Trending</div>
+            <div class="widget-item">
+              <div class="widget-item-label">Technology</div>
+              <div class="widget-item-title">#ATProtocol</div>
+              <div class="widget-item-count">4,821 posts</div>
+            </div>
+            <div class="widget-item">
+              <div class="widget-item-label">Developer</div>
+              <div class="widget-item-title">#BuildInPublic</div>
+              <div class="widget-item-count">2,340 posts</div>
+            </div>
+            <div class="widget-item">
+              <div class="widget-item-label">Open Source</div>
+              <div class="widget-item-title">#Bluesky</div>
+              <div class="widget-item-count">18,203 posts</div>
+            </div>
+            <div class="widget-item">
+              <div class="widget-item-label">Social Web</div>
+              <div class="widget-item-title">#Fediverse</div>
+              <div class="widget-item-count">9,112 posts</div>
+            </div>
+            <div class="widget-item" style="border-bottom: none;">
+              <div class="widget-item-label">Design</div>
+              <div class="widget-item-title">#UXDesign</div>
+              <div class="widget-item-count">6,044 posts</div>
+            </div>
+          </div>
+
+          <!-- Who to Follow -->
+          <div class="widget">
+            <div class="widget-header">Who to Follow</div>
+            <div class="widget-follow-item">
+              <div class="avatar avatar-sm">EP</div>
+              <div class="widget-follow-info">
+                <div class="widget-follow-name">Eve Parker</div>
+                <div class="widget-follow-handle">@eve.bsky.social</div>
+              </div>
+              <button class="widget-follow-btn">Follow</button>
+            </div>
+            <div class="widget-follow-item">
+              <div class="avatar avatar-sm">FL</div>
+              <div class="widget-follow-info">
+                <div class="widget-follow-name">Frank Lee</div>
+                <div class="widget-follow-handle">@frank.bsky.social</div>
+              </div>
+              <button class="widget-follow-btn">Follow</button>
+            </div>
+            <div class="widget-follow-item" style="border-bottom: none;">
+              <div class="avatar avatar-sm">GR</div>
+              <div class="widget-follow-info">
+                <div class="widget-follow-name">Grace Rivera</div>
+                <div class="widget-follow-handle">@grace.dev</div>
+              </div>
+              <button class="widget-follow-btn">Follow</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <script>
+      if (localStorage.getItem("theme") === "dark") {
+        document.documentElement.setAttribute("data-theme", "dark");
+      }
+    </script>
+  </body>
+</html>
