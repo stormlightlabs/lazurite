@@ -19,7 +19,7 @@ const _maxCustomLabelers = 20;
 
 class ModerationService {
   ModerationService({
-    required dynamic bluesky,
+    required Bluesky bluesky,
     AppDatabase? database,
     String? accountDid,
     String? userDid,
@@ -39,7 +39,7 @@ class ModerationService {
     );
   }
 
-  final dynamic _bluesky;
+  final Bluesky _bluesky;
   final AppDatabase? _database;
   final String? _accountDid;
   final String? _userDid;
@@ -629,12 +629,7 @@ class ModerationService {
       return explicitUserDid;
     }
 
-    final bluesky = _bluesky;
-    if (bluesky is Bluesky) {
-      return bluesky.oAuthSession?.sub ?? bluesky.session?.did;
-    }
-
-    return null;
+    return _bluesky.oAuthSession?.sub ?? _bluesky.session?.did;
   }
 
   LabelValueDefinition? _labelValueDefinitionForIdentifier(LabelerPolicies? policies, String identifier) {
