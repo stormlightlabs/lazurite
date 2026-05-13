@@ -44,6 +44,36 @@ void main() {
       expect(refreshedTransport.lastUploadedBytes, [1, 2, 3]);
       expect(refreshedTransport.lastUploadHeaders, containsPair('Content-Type', 'image/png'));
     });
+
+    test('editPost preserves unknown top-level post record fields', () async {
+      final transport = _EditPostTransport(
+        initialRecord: {
+          r'$type': 'app.bsky.feed.post',
+          'text': 'Original text',
+          'createdAt': '2026-04-14T10:00:00.000Z',
+          'futurePostField': {'enabled': true},
+        },
+      );
+      final repository = ComposeRepository(
+        bluesky: testBluesky(getClient: transport.get, postClient: transport.post),
+      );
+
+      final result = await repository.editPost(
+        postUri: _EditPostTransport.postUri,
+        currentCid: 'cid-current',
+        originalRecord: transport.initialRecord,
+        text: 'Updated text',
+        facets: const [],
+        repo: 'did:plc:test',
+      );
+
+      expect(result.isSuccess, isTrue);
+      expect(transport.createdRecords, hasLength(1));
+      final record = transport.createdRecords.single['record'] as Map<String, dynamic>;
+      expect(record['text'], 'Updated text');
+      expect(record['futurePostField'], {'enabled': true});
+      expect(record.containsKey(r'$unknown'), isFalse);
+    });
   });
 }
 
@@ -82,5 +112,41 @@ class _UploadBlobTransport {
         ),
       ).toJson(),
     );
+  }
+}
+
+class _EditPostTransport {
+  _EditPostTransport({required Map<String, dynamic> initialRecord}) : initialRecord = Map.of(initialRecord) {
+    _currentRecord = Map.of(initialRecord);
+  }
+
+  static const postUri = 'at://did:plc:test/app.bsky.feed.post/abc123';
+
+  final Map<String, dynamic> initialRecord;
+  final createdRecords = <Map<String, dynamic>>[];
+  late Map<String, dynamic> _currentRecord;
+  String _currentCid = 'cid-current';
+
+  Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
+    if (url.pathSegments.last != 'com.atproto.repo.getRecord') {
+      return unexpectedGetClient(url, headers: headers);
+    }
+
+    return jsonResponse(url, 'GET', {'uri': postUri, 'cid': _currentCid, 'value': _currentRecord});
+  }
+
+  Future<http.Response> post(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
+    switch (url.pathSegments.last) {
+      case 'com.atproto.repo.deleteRecord':
+        return jsonResponse(url, 'POST', const {});
+      case 'com.atproto.repo.createRecord':
+        final decoded = (jsonDecode(body! as String) as Map).cast<String, dynamic>();
+        createdRecords.add(decoded);
+        _currentRecord = Map<String, dynamic>.from(decoded['record'] as Map);
+        _currentCid = 'cid-new';
+        return jsonResponse(url, 'POST', const {'uri': postUri, 'cid': 'cid-new'});
+      default:
+        return unexpectedPostClient(url, headers: headers, body: body, encoding: encoding);
+    }
   }
 }

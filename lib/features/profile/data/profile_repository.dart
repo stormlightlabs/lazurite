@@ -325,7 +325,7 @@ class ProfileRepository {
         collection: 'app.bsky.actor.profile',
         rkey: 'self',
         validate: true,
-        record: updatedRecord.toJson(),
+        record: _profileRecordJson(updatedRecord),
         swapRecord: response.data.cid,
       ),
     );
@@ -356,6 +356,10 @@ class ProfileRepository {
     }
 
     return const ActorProfileRecordConverter().fromJson(value);
+  }
+
+  Map<String, dynamic> _profileRecordJson(ActorProfileRecord record) {
+    return const ActorProfileRecordConverter().toJson(record);
   }
 
   void _validateProfileEditDraft(ProfileEditDraft draft) {

@@ -238,6 +238,7 @@ void main() {
           'description': 'Old description',
           'labels': {r'$type': 'com.atproto.label.defs#selfLabels', 'values': []},
           'createdAt': '2026-01-01T00:00:00.000Z',
+          'futureProfileField': {'enabled': true},
         },
         cid: 'bafy-current',
       );
@@ -272,6 +273,8 @@ void main() {
       expect(put.record['website'], 'https://alice.example');
       expect(put.record['labels'], isA<Map>());
       expect(put.record['createdAt'], '2026-01-01T00:00:00.000Z');
+      expect(put.record['futureProfileField'], {'enabled': true});
+      expect(put.record.containsKey(r'$unknown'), isFalse);
     });
 
     test('removes emptied optional text fields and uploads selected profile images', () async {

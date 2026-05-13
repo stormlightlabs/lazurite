@@ -810,8 +810,11 @@ class ComposeRepository {
       );
 
       await _authRecovery.run(
-        (client) =>
-            client.atproto.repo.createRecord(repo: repo, collection: 'app.bsky.feed.post', record: record.toJson()),
+        (client) => client.atproto.repo.createRecord(
+          repo: repo,
+          collection: 'app.bsky.feed.post',
+          record: _postRecordJson(record),
+        ),
       );
       return true;
     } catch (e, stackTrace) {
@@ -945,7 +948,7 @@ class ComposeRepository {
             repo: targetRepo,
             collection: collection,
             rkey: rkey,
-            record: updatedRecord.toJson(),
+            record: _postRecordJson(updatedRecord),
           ),
         );
         newCid = created.data.cid;
@@ -1043,7 +1046,7 @@ class ComposeRepository {
           repo: repo,
           collection: collection,
           rkey: rkey,
-          record: originalRecord.toJson(),
+          record: _postRecordJson(originalRecord),
         ),
       );
       return true;
@@ -1075,6 +1078,10 @@ class ComposeRepository {
       log.w('ComposeRepository: skipped malformed feed post record', error: error, stackTrace: stackTrace);
       return null;
     }
+  }
+
+  Map<String, dynamic> _postRecordJson(FeedPostRecord record) {
+    return const FeedPostRecordConverter().toJson(record);
   }
 
   Future<String?> _resolveRepoServiceHost(String repo) async {
