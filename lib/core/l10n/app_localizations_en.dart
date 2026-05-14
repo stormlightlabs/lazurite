@@ -284,6 +284,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get labelRepostedByCard => 'Reposted by';
+
+  @override
   String formatSavedOn(String date) {
     return 'Saved on $date';
   }

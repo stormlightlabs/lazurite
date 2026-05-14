@@ -391,6 +391,10 @@
       }
     }
   },
+  "labelRepostedByCard": "Reposted by",
+  "@labelRepostedByCard": {
+    "description": "Post card context label shown before a reposter profile link"
+  },
   "formatSavedOn": "Saved on {date}",
   "@formatSavedOn": {
     "description": "Fallback saved-post card subtitle showing when a post was saved",

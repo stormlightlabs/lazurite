@@ -541,6 +541,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 Repost} other{{count} Reposts}}'**
   String formatRepostsCount(int count);
 
+  /// Post card context label shown before a reposter profile link
+  ///
+  /// In en, this message translates to:
+  /// **'Reposted by'**
+  String get labelRepostedByCard;
+
   /// Fallback saved-post card subtitle showing when a post was saved
   ///
   /// In en, this message translates to:
