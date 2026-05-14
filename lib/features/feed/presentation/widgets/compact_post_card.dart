@@ -6,6 +6,7 @@ import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_embed_view.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_repost_context.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
@@ -53,6 +54,10 @@ class CompactPostCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (feedViewPost.reason?.isReasonRepost == true) ...[
+                      PostRepostContext(reason: feedViewPost.reason),
+                      const SizedBox(height: 8),
+                    ],
                     _buildHeader(context, post.author, createdAt),
                     if (postUi.alert || postUi.inform) ...[const SizedBox(height: 10), ModerationBadgeRow(ui: postUi)],
                     if (record != null && record.text.isNotEmpty) ...[

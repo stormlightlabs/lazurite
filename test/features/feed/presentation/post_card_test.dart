@@ -38,15 +38,25 @@ class _FakeUrlLauncher extends Fake with MockPlatformInterfaceMixin implements U
   Future<bool> canLaunch(String url) async => true;
 }
 
-FeedViewPost _makePost({String text = 'Hello'}) {
+FeedViewPost _makePost({String text = 'Hello', UFeedViewPostReason? reason}) {
   final record = FeedPostRecord(text: text, createdAt: DateTime.utc(2026, 3, 16));
   return FeedViewPost(
+    reason: reason,
     post: PostView(
       uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
       cid: 'cid-xyz',
       author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
       record: record.toJson(),
       indexedAt: DateTime.utc(2026, 3, 16),
+    ),
+  );
+}
+
+UFeedViewPostReason _makeRepostReason() {
+  return UFeedViewPostReason.reasonRepost(
+    data: ReasonRepost(
+      by: const ProfileViewBasic(did: 'did:plc:reposter', handle: 'reposter.bsky.social', displayName: 'Reposter'),
+      indexedAt: DateTime.utc(2026, 3, 17),
     ),
   );
 }
@@ -272,6 +282,42 @@ void main() {
     await tester.pumpWidget(buildSubject(post));
 
     expect(find.text('@TEST.BSKY.SOCIAL'), findsOneWidget);
+  });
+
+  testWidgets('renders repost context and navigates to reposter profile', (tester) async {
+    final post = _makePost(reason: _makeRepostReason());
+    String? pushedRoute;
+
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => Scaffold(body: PostCard(feedViewPost: post)),
+        ),
+        GoRoute(
+          path: '/profile/:actor',
+          builder: (context, state) {
+            pushedRoute = state.uri.toString();
+            return const Scaffold(body: Text('profile'));
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(of: find.byKey(const ValueKey('post_repost_context')), matching: find.byIcon(Icons.repeat)),
+      findsOneWidget,
+    );
+    expect(find.text('Reposted by'), findsOneWidget);
+    expect(find.text('Reposter'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('post_repost_context')));
+    await tester.pumpAndSettle();
+
+    expect(pushedRoute, contains('did%3Aplc%3Areposter'));
   });
 
   testWidgets('keeps the reply label within narrow thread widths', (tester) async {

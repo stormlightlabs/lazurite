@@ -11,9 +11,10 @@ import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/feed/presentation/widgets/grid_post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
 
-FeedViewPost _makePost({String text = 'Hello', UPostViewEmbed? embed}) {
+FeedViewPost _makePost({String text = 'Hello', UPostViewEmbed? embed, UFeedViewPostReason? reason}) {
   final record = FeedPostRecord(text: text, createdAt: DateTime.utc(2026, 3, 16));
   return FeedViewPost(
+    reason: reason,
     post: PostView(
       uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
       cid: 'cid-xyz',
@@ -21,6 +22,15 @@ FeedViewPost _makePost({String text = 'Hello', UPostViewEmbed? embed}) {
       record: record.toJson(),
       indexedAt: DateTime.utc(2026, 3, 16),
       embed: embed,
+    ),
+  );
+}
+
+UFeedViewPostReason _makeRepostReason() {
+  return UFeedViewPostReason.reasonRepost(
+    data: ReasonRepost(
+      by: const ProfileViewBasic(did: 'did:plc:reposter', handle: 'reposter.bsky.social', displayName: 'Reposter'),
+      indexedAt: DateTime.utc(2026, 3, 17),
     ),
   );
 }
@@ -53,6 +63,18 @@ void main() {
     await tester.pumpWidget(_buildSubject(post));
 
     expect(find.text('Test User'), findsOneWidget);
+  });
+
+  testWidgets('renders repost context', (tester) async {
+    final post = _makePost(reason: _makeRepostReason());
+    await tester.pumpWidget(_buildSubject(post));
+
+    expect(
+      find.descendant(of: find.byKey(const ValueKey('post_repost_context')), matching: find.byIcon(Icons.repeat)),
+      findsOneWidget,
+    );
+    expect(find.text('Reposted by'), findsOneWidget);
+    expect(find.text('Reposter'), findsOneWidget);
   });
 
   testWidgets('renders body text', (tester) async {
