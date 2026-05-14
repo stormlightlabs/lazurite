@@ -4,8 +4,12 @@ import 'dart:typed_data';
 
 import 'package:poptart_core/poptart_core.dart' as atp_core;
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/actor/profile.dart';
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:poptart_lex/app/bsky/feed/like.dart';
+import 'package:poptart_lex/com/atproto/repo/list_records.dart';
 import 'package:characters/characters.dart';
+import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
@@ -20,13 +24,13 @@ import 'package:lazurite/features/moderation/data/moderation_service.dart';
 class ProfileRepository {
   ProfileRepository({
     required AppDatabase database,
-    required dynamic bluesky,
+    required Bluesky bluesky,
     ModerationService? moderationService,
     ActorRepositoryServiceResolver? actorRepositoryServiceResolver,
     String? appViewProvider,
     String Function()? appViewProviderResolver,
     Future<AuthTokens?> Function()? onUnauthorized,
-    dynamic Function(AuthTokens tokens)? blueskyClientFactory,
+    Bluesky? Function(AuthTokens tokens)? blueskyClientFactory,
   }) : _database = database,
        _moderationService = moderationService,
        _actorRepoResolver = actorRepositoryServiceResolver ?? _createActorRepositoryServiceResolver(),
@@ -34,7 +38,7 @@ class ProfileRepository {
          appViewProvider: appViewProvider,
          appViewProviderResolver: appViewProviderResolver,
        ) {
-    _authRecovery = UnauthorizedRecoveryRunner<dynamic>(
+    _authRecovery = UnauthorizedRecoveryRunner<Bluesky>(
       initialClient: bluesky,
       onUnauthorized: onUnauthorized,
       clientFactory: blueskyClientFactory ?? createBlueskyClient,
@@ -44,9 +48,9 @@ class ProfileRepository {
     );
   }
 
-  late final UnauthorizedRecoveryRunner<dynamic> _authRecovery;
+  late final UnauthorizedRecoveryRunner<Bluesky> _authRecovery;
   final AppDatabase _database;
-  dynamic get _bluesky => _authRecovery.client;
+  Bluesky get _bluesky => _authRecovery.client;
   final ModerationService? _moderationService;
   final ActorRepositoryServiceResolver? _actorRepoResolver;
   final AppViewRequestContext _appViewContext;
@@ -82,7 +86,9 @@ class ProfileRepository {
       final cachedProfile = await _getCachedProfile(actor);
       if (cachedProfile != null) {
         log.w('ProfileRepository: Using cached profile for $actor after request failure');
-        log.w('ProfileRepository: getProfile cached JSON ${jsonEncode(cachedProfile.toJson())}');
+        log.w(
+          'ProfileRepository: getProfile cached JSON ${PoptartCacheCodecs.profileViewDetailed.encode(cachedProfile)}',
+        );
         if (_moderationService?.shouldFilterProfileDetailedInView(cachedProfile) ?? false) {
           throw Exception('Profile hidden by moderation preferences');
         }
@@ -121,7 +127,9 @@ class ProfileRepository {
       final batch = normalizedActors.sublist(i, (i + _maxProfilesBatchSize).clamp(0, normalizedActors.length));
       final response = await _authRecovery.run((client) => client.actor.getProfiles(actors: batch, $headers: headers));
       profiles.addAll(
-        response.data.profiles.where((profile) => !(_moderationService?.shouldFilterProfileInList(profile) ?? false)),
+        response.data.profiles
+            .map(_profileViewFromDetailed)
+            .where((profile) => !(_moderationService?.shouldFilterProfileInList(profile) ?? false)),
       );
     }
 
@@ -151,12 +159,8 @@ class ProfileRepository {
     final response = await _authRecovery.run(
       (client) => client.graph.getFollows(actor: actor, cursor: cursor, limit: limit, $headers: headers),
     );
-    final profiles = _filterProfileList(response.data.follows as List<ProfileView>);
-    return ProfileConnectionsPage(
-      subject: response.data.subject as ProfileView,
-      profiles: profiles,
-      cursor: response.data.cursor as String?,
-    );
+    final profiles = _filterProfileList(response.data.follows);
+    return ProfileConnectionsPage(subject: response.data.subject, profiles: profiles, cursor: response.data.cursor);
   }
 
   Future<ProfileConnectionsPage> getFollowers({required String actor, String? cursor, int limit = 50}) async {
@@ -167,12 +171,8 @@ class ProfileRepository {
     final response = await _authRecovery.run(
       (client) => client.graph.getFollowers(actor: actor, cursor: cursor, limit: limit, $headers: headers),
     );
-    final profiles = _filterProfileList(response.data.followers as List<ProfileView>);
-    return ProfileConnectionsPage(
-      subject: response.data.subject as ProfileView,
-      profiles: profiles,
-      cursor: response.data.cursor as String?,
-    );
+    final profiles = _filterProfileList(response.data.followers);
+    return ProfileConnectionsPage(subject: response.data.subject, profiles: profiles, cursor: response.data.cursor);
   }
 
   /// Likes transport matrix:
@@ -191,7 +191,7 @@ class ProfileRepository {
       final response = await _authRecovery.run(
         (client) => client.feed.getActorLikes(actor: actor, cursor: cursor, limit: limit, $headers: headers),
       );
-      final feed = (response.data.feed as List<dynamic>).whereType<FeedViewPost>().toList(growable: false);
+      final feed = response.data.feed;
       final moderationService = _moderationService;
       final posts = moderationService == null
           ? feed
@@ -221,7 +221,7 @@ class ProfileRepository {
         $service: resolved.pdsHost,
       ),
     );
-    final likeRecords = _extractLikeRecords(recordsResponse.data.records as List<dynamic>);
+    final likeRecords = _extractLikeRecords(recordsResponse.data.records);
     if (likeRecords.isEmpty) {
       return ProfileActorLikesResult(entries: const [], cursor: recordsResponse.data.cursor);
     }
@@ -302,23 +302,21 @@ class ProfileRepository {
     final response = await _authRecovery.run(
       (client) => client.atproto.repo.getRecord(repo: did, collection: 'app.bsky.actor.profile', rkey: 'self'),
     );
-    final currentRecord = Map<String, dynamic>.from(response.data.value as Map);
-    final updatedRecord = Map<String, dynamic>.from(currentRecord);
-    updatedRecord['\$type'] = 'app.bsky.actor.profile';
-
-    _setOptionalString(updatedRecord, 'displayName', draft.displayName);
-    _setOptionalString(updatedRecord, 'description', draft.description);
-    _setOptionalString(updatedRecord, 'pronouns', draft.pronouns);
-    _setOptionalString(updatedRecord, 'website', draft.website);
+    var updatedRecord = _profileRecordFromValue(response.data.value).copyWith(
+      displayName: _trimOptional(draft.displayName),
+      description: _trimOptional(draft.description),
+      pronouns: _trimOptional(draft.pronouns),
+      website: _trimOptional(draft.website),
+    );
 
     final avatar = draft.avatar;
     if (avatar != null) {
-      updatedRecord['avatar'] = (await _uploadProfileBlob(avatar)).toJson();
+      updatedRecord = updatedRecord.copyWith(avatar: await _uploadProfileBlob(avatar));
     }
 
     final banner = draft.banner;
     if (banner != null) {
-      updatedRecord['banner'] = (await _uploadProfileBlob(banner)).toJson();
+      updatedRecord = updatedRecord.copyWith(banner: await _uploadProfileBlob(banner));
     }
 
     await _authRecovery.run(
@@ -327,7 +325,7 @@ class ProfileRepository {
         collection: 'app.bsky.actor.profile',
         rkey: 'self',
         validate: true,
-        record: updatedRecord,
+        record: _profileRecordJson(updatedRecord),
         swapRecord: response.data.cid,
       ),
     );
@@ -340,16 +338,28 @@ class ProfileRepository {
         $headers: {'Content-Type': upload.mimeType},
       ),
     );
-    return response.data.blob as atp_core.Blob;
+    return response.data.blob;
   }
 
-  void _setOptionalString(Map<String, dynamic> record, String key, String? value) {
+  String? _trimOptional(String? value) {
     final trimmed = value?.trim();
     if (trimmed == null || trimmed.isEmpty) {
-      record.remove(key);
-      return;
+      return null;
     }
-    record[key] = trimmed;
+    return trimmed;
+  }
+
+  ActorProfileRecord _profileRecordFromValue(Map<String, dynamic> value) {
+    if (!ActorProfileRecord.validate(value)) {
+      log.w('ProfileRepository: current profile record missing app.bsky.actor.profile type; rebuilding typed record');
+      return const ActorProfileRecord();
+    }
+
+    return const ActorProfileRecordConverter().fromJson(value);
+  }
+
+  Map<String, dynamic> _profileRecordJson(ActorProfileRecord record) {
+    return const ActorProfileRecordConverter().toJson(record);
   }
 
   void _validateProfileEditDraft(ProfileEditDraft draft) {
@@ -398,12 +408,16 @@ class ProfileRepository {
     }
 
     log.d('ProfileRepository: Found cached profile for $actor');
-    return ProfileViewDetailed.fromJson(jsonDecode(cachedProfile.payload) as Map<String, dynamic>);
+    return PoptartCacheCodecs.profileViewDetailed.decode(cachedProfile.payload);
   }
 
   Future<void> _cacheProfileSafely(ProfileViewDetailed profile) async {
     try {
-      await _database.cacheProfile(did: profile.did, handle: profile.handle, payload: jsonEncode(profile.toJson()));
+      await _database.cacheProfile(
+        did: profile.did,
+        handle: profile.handle,
+        payload: PoptartCacheCodecs.profileViewDetailed.encode(profile),
+      );
       log.d('ProfileRepository: Cached profile ${profile.did} (${profile.handle})');
     } catch (error, stackTrace) {
       log.w(
@@ -416,10 +430,6 @@ class ProfileRepository {
 
   String _describeClientContext() {
     final bluesky = _bluesky;
-    if (bluesky is! Bluesky) {
-      return 'unknown client';
-    }
-
     final oauthSession = bluesky.oAuthSession;
     final session = bluesky.session;
     final configuredService = bluesky.service;
@@ -453,40 +463,15 @@ class ProfileRepository {
       return false;
     }
 
-    final bluesky = _bluesky;
-    if (bluesky is Bluesky) {
-      final session = bluesky.session;
-      final sessionDid = session?.did.trim().toLowerCase();
-      final sessionHandle = session?.handle.trim().toLowerCase();
-      if (normalizedActor == sessionDid || normalizedActor == sessionHandle) {
-        return true;
-      }
-
-      final oauthDid = bluesky.oAuthSession?.sub.trim().toLowerCase();
-      return normalizedActor == oauthDid;
+    final session = _bluesky.session;
+    final sessionDid = session?.did.trim().toLowerCase();
+    final sessionHandle = session?.handle.trim().toLowerCase();
+    if (normalizedActor == sessionDid || normalizedActor == sessionHandle) {
+      return true;
     }
 
-    try {
-      final session = bluesky.session;
-      final sessionDid = (session?.did as String?)?.trim().toLowerCase();
-      final sessionHandle = (session?.handle as String?)?.trim().toLowerCase();
-      if (normalizedActor == sessionDid || normalizedActor == sessionHandle) {
-        return true;
-      }
-    } catch (e) {
-      log.d('ProfileRepository: Unable to parse current session actor', error: e);
-    }
-
-    try {
-      final oauthSession = bluesky.oAuthSession;
-      final oauthDid = (oauthSession?.sub as String?)?.trim().toLowerCase();
-      if (normalizedActor == oauthDid) {
-        return true;
-      }
-    } catch (e) {
-      log.d('ProfileRepository: Unable to parse current session actor', error: e);
-    }
-    return false;
+    final oauthDid = _bluesky.oAuthSession?.sub.trim().toLowerCase();
+    return normalizedActor == oauthDid;
   }
 
   Future<ActorRepositoryServiceResolution> _resolveActorRepositoryService(String actor) async {
@@ -497,45 +482,59 @@ class ProfileRepository {
     return resolver.resolve(actor);
   }
 
-  List<_LikeRecord> _extractLikeRecords(List<dynamic> rawRecords) {
+  List<_LikeRecord> _extractLikeRecords(List<RepoListRecordsRecord> rawRecords) {
     final records = <_LikeRecord>[];
     for (final raw in rawRecords) {
-      final value = (raw as dynamic).value;
-      if (value is! Map) {
+      final value = raw.value;
+      if (!FeedLikeRecord.validate(value)) {
         continue;
       }
-      final subject = value['subject'];
-      if (subject is! Map) {
+      final like = const FeedLikeRecordConverter().fromJson(value);
+      final subjectUri = like.subject.uri.toString();
+      if (subjectUri.isEmpty) {
         continue;
       }
-      final subjectUri = subject['uri'];
-      if (subjectUri is String && subjectUri.isNotEmpty) {
-        final createdAtRaw = value['createdAt'];
-        final createdAt = createdAtRaw is String ? DateTime.tryParse(createdAtRaw) : null;
-        records.add(_LikeRecord(subjectUri: subjectUri, createdAt: createdAt));
-      }
+      records.add(_LikeRecord(subjectUri: subjectUri, createdAt: like.createdAt));
     }
     return records;
   }
 
-  DateTime? _extractLikedAtFromReason(dynamic reason) {
+  DateTime? _extractLikedAtFromReason(UFeedViewPostReason? reason) {
     if (reason == null) {
       return null;
     }
-    try {
-      final map = reason is Map ? reason : (reason as dynamic).toJson();
-      final indexedAt = map['indexedAt'] as String?;
-      return indexedAt == null ? null : DateTime.tryParse(indexedAt);
-    } catch (error, stackTrace) {
-      log.d('ProfileRepository: ignored malformed actor likes reason', error: error, stackTrace: stackTrace);
-      return null;
+
+    if (reason.isReasonRepost) {
+      return reason.reasonRepost!.indexedAt.toUtc();
     }
+
+    final indexedAt = reason.unknown?['indexedAt'];
+    return indexedAt is String ? DateTime.tryParse(indexedAt)?.toUtc() : null;
   }
 
   List<ProfileView> _filterProfileList(List<ProfileView> profiles) {
     final moderationService = _moderationService;
     if (moderationService == null) return profiles;
     return profiles.where((profile) => !moderationService.shouldFilterProfileInList(profile)).toList(growable: false);
+  }
+
+  ProfileView _profileViewFromDetailed(ProfileViewDetailed profile) {
+    return ProfileView(
+      did: profile.did,
+      handle: profile.handle,
+      displayName: profile.displayName,
+      pronouns: profile.pronouns,
+      description: profile.description,
+      avatar: profile.avatar,
+      associated: profile.associated,
+      indexedAt: profile.indexedAt,
+      createdAt: profile.createdAt,
+      viewer: profile.viewer,
+      labels: profile.labels,
+      verification: profile.verification,
+      status: profile.status,
+      debug: profile.debug,
+    );
   }
 }
 

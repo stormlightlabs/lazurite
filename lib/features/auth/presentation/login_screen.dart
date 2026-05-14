@@ -1,11 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
@@ -271,12 +270,7 @@ class _LoginScreenState extends State<LoginScreen> {
         return null;
       }
 
-      final json = jsonDecode(profile.payload);
-      if (json is! Map<String, dynamic>) {
-        return null;
-      }
-
-      final avatar = json['avatar'];
+      final avatar = PoptartCacheCodecs.profileViewDetailed.decode(profile.payload).avatar;
       if (avatar is String && avatar.isNotEmpty) {
         return avatar;
       }

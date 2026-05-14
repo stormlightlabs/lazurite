@@ -1,17 +1,18 @@
 import 'dart:typed_data';
 
-import 'package:poptart_core/poptart_core.dart' show AtUri, BlobRef;
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:poptart_lex/app/bsky/graph/defs.dart';
 import 'package:poptart_lex/app/bsky/graph/get_lists.dart';
 import 'package:poptart_lex/app/bsky/graph/get_lists_with_membership.dart';
+import 'package:poptart_lex/app/bsky/graph/list.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class ListRepository {
   ListRepository({
-    required dynamic bluesky,
+    required Bluesky bluesky,
     ModerationService? moderationService,
     String? appViewProvider,
     String Function()? appViewProviderResolver,
@@ -22,7 +23,7 @@ class ListRepository {
          appViewProviderResolver: appViewProviderResolver,
        );
 
-  final dynamic _bluesky;
+  final Bluesky _bluesky;
   final ModerationService? _moderationService;
   final AppViewRequestContext _appViewContext;
 
@@ -162,12 +163,12 @@ class ListRepository {
     );
   }
 
-  Future<BlobRef?> uploadListAvatar({required List<int> bytes, String mimeType = 'image/jpeg'}) async {
+  Future<Blob?> uploadListAvatar({required List<int> bytes, String mimeType = 'image/jpeg'}) async {
     final response = await _bluesky.atproto.repo.uploadBlob(
       bytes: Uint8List.fromList(bytes),
       $headers: {'Content-Type': mimeType},
     );
-    return response.data.blob.ref;
+    return response.data.blob;
   }
 
   Future<AtUri> createList({
@@ -175,21 +176,20 @@ class ListRepository {
     required String name,
     required String purpose,
     String? description,
-    BlobRef? avatarBlob,
+    Blob? avatarBlob,
   }) async {
-    final record = <String, dynamic>{
-      r'$type': 'app.bsky.graph.list',
-      'purpose': purpose,
-      'name': name,
-      'createdAt': DateTime.now().toUtc().toIso8601String(),
-    };
-    if (description != null) record['description'] = description;
-    if (avatarBlob != null) record['avatar'] = avatarBlob.toJson();
+    final record = GraphListRecord(
+      purpose: _listPurposeFromString(purpose),
+      name: name,
+      description: _trimOptional(description),
+      avatar: avatarBlob,
+      createdAt: DateTime.now().toUtc(),
+    );
 
     final response = await _bluesky.atproto.repo.createRecord(
       repo: userDid,
       collection: 'app.bsky.graph.list',
-      record: record,
+      record: record.toJson(),
     );
     return response.data.uri;
   }
@@ -200,22 +200,21 @@ class ListRepository {
     required String name,
     required String purpose,
     String? description,
-    BlobRef? avatarBlob,
+    Blob? avatarBlob,
   }) async {
-    final record = <String, dynamic>{
-      r'$type': 'app.bsky.graph.list',
-      'purpose': purpose,
-      'name': name,
-      'createdAt': DateTime.now().toUtc().toIso8601String(),
-    };
-    if (description != null) record['description'] = description;
-    if (avatarBlob != null) record['avatar'] = avatarBlob.toJson();
+    final record = GraphListRecord(
+      purpose: _listPurposeFromString(purpose),
+      name: name,
+      description: _trimOptional(description),
+      avatar: avatarBlob,
+      createdAt: DateTime.now().toUtc(),
+    );
 
     await _bluesky.atproto.repo.putRecord(
       repo: userDid,
       collection: 'app.bsky.graph.list',
       rkey: listUri.rkey,
-      record: record,
+      record: record.toJson(),
     );
   }
 
@@ -274,6 +273,19 @@ class ListRepository {
     GraphGetListsWithMembershipPurposes.knownValue(data: KnownGraphGetListsWithMembershipPurposes.curatelist),
     GraphGetListsWithMembershipPurposes.knownValue(data: KnownGraphGetListsWithMembershipPurposes.modlist),
   ];
+
+  ListPurpose _listPurposeFromString(String value) {
+    final purpose = ListPurpose.valueOf(value.trim());
+    if (purpose == null) {
+      throw ArgumentError.value(value, 'purpose', 'List purpose is required.');
+    }
+    return purpose;
+  }
+
+  String? _trimOptional(String? value) {
+    final trimmed = value?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+  }
 }
 
 class ListsResult {

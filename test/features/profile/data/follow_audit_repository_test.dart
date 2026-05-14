@@ -1,8 +1,16 @@
+import 'dart:convert';
+
 import 'package:poptart_lex/com/atproto/repo/apply_writes.dart';
 import 'package:poptart_core/poptart_core.dart' show AtUri;
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/actor/get_profiles.dart';
+import 'package:poptart_lex/com/atproto/repo/list_records.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:lazurite/core/network/poptart_client_adapter.dart' show Bluesky;
 import 'package:lazurite/features/profile/data/follow_audit_repository.dart';
+
+import '../../../helpers/test_bluesky_client.dart';
 
 ProfileView _profile(String did, String handle, {bool blockedBy = false, bool blocking = false}) {
   final viewer = ViewerState(
@@ -18,11 +26,9 @@ FollowRecord _followRecord(String did, {String? rkey}) {
   return FollowRecord(uri: 'at://did:plc:owner/app.bsky.graph.follow/$k', rkey: k, subjectDid: did);
 }
 
-class _FakeBluesky {
-  _FakeBluesky({required this.atproto, required this.actor});
-
-  final _FakeAtProtoClient atproto;
-  final _FakeActorService actor;
+Bluesky _fakeBluesky({required _FakeAtProtoClient atproto, required _FakeActorService actor}) {
+  final transport = _FollowAuditTransport(actor: actor, repo: atproto.repo);
+  return testBluesky(did: _ownerDid, handle: 'owner.bsky.social', getClient: transport.get, postClient: transport.post);
 }
 
 class _FakeAtProtoClient {
@@ -69,6 +75,105 @@ class _FakeRepoService {
     appliedWrites.add(_FakeApplyWritesCall(repo: repo, writes: w));
     applyWritesCallback?.call(repo, w);
   }
+}
+
+class _FollowAuditTransport {
+  const _FollowAuditTransport({required this.actor, required this.repo});
+
+  final _FakeActorService actor;
+  final _FakeRepoService repo;
+
+  Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
+    final query = url.queryParameters;
+    switch (url.pathSegments.last) {
+      case 'app.bsky.actor.getProfiles':
+        final response = await actor.getProfiles(
+          actors: url.queryParametersAll['actors'] ?? const [],
+          $service: url.host,
+          $headers: headers,
+        );
+        return jsonResponse(
+          url,
+          'GET',
+          ActorGetProfilesOutput(
+            profiles: response.data.profiles.map<ProfileViewDetailed>(_toDetailedProfile).toList(growable: false),
+          ).toJson(),
+        );
+      case 'app.bsky.actor.getProfile':
+        final response = await actor.getProfile(actor: query['actor']!, $service: url.host, $headers: headers);
+        return jsonResponse(url, 'GET', _toDetailedProfile(response.data).toJson());
+      case 'com.atproto.repo.listRecords':
+        final response = await repo.listRecords(
+          repo: query['repo']!,
+          collection: query['collection']!,
+          limit: int.tryParse(query['limit'] ?? '') ?? 100,
+          cursor: query['cursor'],
+        );
+        return jsonResponse(
+          url,
+          'GET',
+          RepoListRecordsOutput(
+            records: [
+              for (var i = 0; i < response.data.records.length; i++)
+                RepoListRecordsRecord(
+                  uri: AtUri.parse(response.data.records[i].uri),
+                  cid: 'cid-$i',
+                  value: _followRecordValue(response.data.records[i].value),
+                ),
+            ],
+            cursor: response.data.cursor,
+          ).toJson(),
+        );
+      default:
+        return unexpectedGetClient(url, headers: headers);
+    }
+  }
+
+  Future<http.Response> post(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
+    if (url.pathSegments.last != 'com.atproto.repo.applyWrites') {
+      return unexpectedPostClient(url, headers: headers, body: body, encoding: encoding);
+    }
+
+    final input = RepoApplyWritesInput.fromJson((jsonDecode(body as String) as Map).cast<String, Object?>());
+    await repo.applyWrites(
+      repo: input.repo,
+      writes: input.writes,
+      validate: input.validate,
+      swapCommit: input.swapCommit,
+    );
+    return jsonResponse(url, 'POST', const RepoApplyWritesOutput().toJson());
+  }
+}
+
+ProfileViewDetailed _toDetailedProfile(dynamic profile) {
+  if (profile is ProfileViewDetailed) {
+    return profile;
+  }
+  if (profile is ProfileView) {
+    return ProfileViewDetailed(
+      did: profile.did,
+      handle: profile.handle,
+      displayName: profile.displayName,
+      description: profile.description,
+      avatar: profile.avatar,
+      associated: profile.associated,
+      indexedAt: profile.indexedAt,
+      createdAt: profile.createdAt,
+      viewer: profile.viewer,
+      labels: profile.labels,
+      verification: profile.verification,
+      status: profile.status,
+      debug: profile.debug,
+    );
+  }
+  throw ArgumentError.value(profile, 'profile', 'Expected ProfileView or ProfileViewDetailed');
+}
+
+Map<String, dynamic> _followRecordValue(Map<String, dynamic> value) {
+  if (value.containsKey(r'$type')) {
+    return value;
+  }
+  return {r'$type': 'app.bsky.graph.follow', 'createdAt': '2026-01-01T00:00:00.000Z', ...value};
 }
 
 class _FakeApplyWritesCall {
@@ -159,7 +264,7 @@ class _FakeResponse<T> {
   final T data;
 }
 
-_FakeBluesky _bluesky({
+Bluesky _bluesky({
   List<List<(String, String)>> pages = const [],
   Map<String, ProfileView> batchProfiles = const {},
   Map<String, ProfileView> singleProfiles = const {},
@@ -168,7 +273,7 @@ _FakeBluesky _bluesky({
   int batchFailCount = 0,
   void Function(String repo, List<URepoApplyWritesWrites> writes)? applyWritesCallback,
 }) {
-  return _FakeBluesky(
+  return _fakeBluesky(
     atproto: _FakeAtProtoClient(
       repo: _FakeRepoService(pages: pages, applyWritesCallback: applyWritesCallback),
     ),
@@ -182,7 +287,7 @@ _FakeBluesky _bluesky({
   );
 }
 
-FollowAuditRepository _repo(_FakeBluesky client) => FollowAuditRepository(bluesky: client);
+FollowAuditRepository _repo(Bluesky client) => FollowAuditRepository(bluesky: client);
 
 const _ownerDid = 'did:plc:owner';
 
@@ -509,18 +614,22 @@ void main() {
 
   group('FollowAuditRepository.batchUnfollow', () {
     test('returns 0 for empty selection (no-op)', () async {
-      final client = _bluesky();
+      final repoService = _FakeRepoService();
+      final client = _fakeBluesky(
+        atproto: _FakeAtProtoClient(repo: repoService),
+        actor: _FakeActorService(),
+      );
       final repoInstance = _repo(client);
 
       final count = await repoInstance.batchUnfollow([], _ownerDid);
 
       expect(count, 0);
-      expect(client.atproto.repo.appliedWrites, isEmpty);
+      expect(repoService.appliedWrites, isEmpty);
     });
 
     test('deletes records in a single batch when fewer than 200', () async {
       final repoService = _FakeRepoService();
-      final client = _FakeBluesky(
+      final client = _fakeBluesky(
         atproto: _FakeAtProtoClient(repo: repoService),
         actor: _FakeActorService(),
       );
@@ -553,7 +662,7 @@ void main() {
 
     test('chunks into multiple batches of 200 when > 200 records', () async {
       final repoService = _FakeRepoService();
-      final client = _FakeBluesky(
+      final client = _fakeBluesky(
         atproto: _FakeAtProtoClient(repo: repoService),
         actor: _FakeActorService(),
       );
@@ -586,7 +695,7 @@ void main() {
           if (callCount > 1) throw Exception('applyWrites failed');
         },
       );
-      final client = _FakeBluesky(
+      final client = _fakeBluesky(
         atproto: _FakeAtProtoClient(repo: repoService),
         actor: _FakeActorService(),
       );

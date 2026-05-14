@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/post.dart';
@@ -923,7 +922,7 @@ class _FocusedPostContent extends StatelessWidget {
     final post = thread.post;
 
     await HapticHelper.lightImpact();
-    await cubit.toggleSave(postUri: post.uri.toString(), postJson: jsonEncode(post.toJson()));
+    await cubit.toggleSave(post);
   }
 
   void _showMoreOptions(BuildContext context) {

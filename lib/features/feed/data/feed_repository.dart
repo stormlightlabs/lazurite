@@ -1,16 +1,16 @@
-import 'dart:convert';
-
 import 'package:poptart_core/poptart_core.dart' as atcore show AtUri;
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/get_author_feed.dart';
 import 'package:poptart_lex/app/bsky/unspecced/defs.dart';
 import 'package:flutter/foundation.dart';
+import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_fallback_service.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
@@ -19,7 +19,7 @@ import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class FeedRepository {
   FeedRepository({
-    required dynamic bluesky,
+    required Bluesky bluesky,
     required AppDatabase database,
     required String accountDid,
     ModerationService? moderationService,
@@ -31,7 +31,7 @@ class FeedRepository {
     int routingEpoch = 0,
     int Function()? routingEpochResolver,
     Future<AuthTokens?> Function()? onUnauthorized,
-    dynamic Function(AuthTokens tokens)? blueskyClientFactory,
+    Bluesky? Function(AuthTokens tokens)? blueskyClientFactory,
   }) : _database = database,
        _accountDid = accountDid,
        _moderationService = moderationService,
@@ -44,7 +44,7 @@ class FeedRepository {
        _appViewFallbackService = appViewFallbackService ?? AppViewFallbackService(),
        _routingEpoch = routingEpoch,
        _routingEpochResolver = routingEpochResolver {
-    _authRecovery = UnauthorizedRecoveryRunner<dynamic>(
+    _authRecovery = UnauthorizedRecoveryRunner<Bluesky>(
       initialClient: bluesky,
       onUnauthorized: onUnauthorized,
       clientFactory: blueskyClientFactory ?? createBlueskyClient,
@@ -54,7 +54,7 @@ class FeedRepository {
     );
   }
 
-  late final UnauthorizedRecoveryRunner<dynamic> _authRecovery;
+  late final UnauthorizedRecoveryRunner<Bluesky> _authRecovery;
   final AppDatabase _database;
   final String _accountDid;
   final ModerationService? _moderationService;
@@ -135,7 +135,7 @@ class FeedRepository {
     final posts = <FeedViewPost>[];
     for (final entry in cachedPosts) {
       try {
-        posts.add(FeedViewPost.fromJson(jsonDecode(entry.postJson) as Map<String, dynamic>));
+        posts.add(PoptartCacheCodecs.feedViewPost.decode(entry.postJson));
       } catch (error, stackTrace) {
         log.w(
           'feed.getCachedFeedPage decode failed account=$_accountDid feedKey=$feedKey postUri=${entry.postUri}',
@@ -152,8 +152,7 @@ class FeedRepository {
     String? cursor;
     if (pageMeta != null) {
       try {
-        final decoded = jsonDecode(pageMeta.payload) as Map<String, dynamic>;
-        cursor = decoded['cursor'] as String?;
+        cursor = PoptartCacheCodecs.decodeFeedPageCursor(pageMeta.payload);
       } catch (error, stackTrace) {
         log.w(
           'feed.getCachedFeedPage pageMeta decode failed account=$_accountDid feedKey=$feedKey',
@@ -369,7 +368,7 @@ class FeedRepository {
               continue;
             }
             try {
-              addPost(FeedViewPost.fromJson(jsonDecode(cached.postJson) as Map<String, dynamic>));
+              addPost(PoptartCacheCodecs.feedViewPost.decode(cached.postJson));
             } catch (error, stackTrace) {
               log.w(
                 'feed.cacheWindow decode failed account=$_accountDid feedKey=$feedKey postUri=${cached.postUri}',
@@ -381,7 +380,7 @@ class FeedRepository {
         } else {
           for (final cached in existingPosts) {
             try {
-              addPost(FeedViewPost.fromJson(jsonDecode(cached.postJson) as Map<String, dynamic>));
+              addPost(PoptartCacheCodecs.feedViewPost.decode(cached.postJson));
             } catch (error, stackTrace) {
               log.w(
                 'feed.cacheWindow decode failed account=$_accountDid feedKey=$feedKey postUri=${cached.postUri}',
@@ -406,7 +405,7 @@ class FeedRepository {
               accountDid: _accountDid,
               feedKey: feedKey,
               postUri: uri,
-              postJson: jsonEncode(post.toJson()),
+              postJson: PoptartCacheCodecs.feedViewPost.encode(post),
               sortOrder: sortOrder,
             ),
           );
@@ -418,7 +417,7 @@ class FeedRepository {
           await _database.cacheFeedPage(
             accountDid: _accountDid,
             feedKey: feedKey,
-            payload: jsonEncode({'cursor': result.cursor, 'lastRequestCursor': cursor}),
+            payload: PoptartCacheCodecs.encodeFeedPageMetadata(cursor: result.cursor, lastRequestCursor: cursor),
           );
         });
       });

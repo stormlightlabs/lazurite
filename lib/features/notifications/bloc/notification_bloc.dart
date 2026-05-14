@@ -102,8 +102,8 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
           ),
         );
       }
-    } catch (_) {
-      log.w('Failed to mark notifications as read/seen');
+    } catch (error, stackTrace) {
+      log.w('Failed to mark notifications as read/seen', error: error, stackTrace: stackTrace);
     }
   }
 }

@@ -1,11 +1,12 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:poptart_core/poptart_core.dart';
 import 'package:poptart_lex/app/bsky/bookmark/defs.dart';
+import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
@@ -106,7 +107,9 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
     }
   }
 
-  Future<bool> toggleSave({required String postUri, required String postJson}) async {
+  Future<bool> toggleSave(PostView post) async {
+    final postUri = post.uri.toString();
+    final postJson = PoptartCacheCodecs.postView.encode(post);
     final isCurrentlySaved = state.isSaved(postUri);
 
     try {
@@ -135,14 +138,24 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
     }
   }
 
-  Future<bool> savePost({required String postUri, required String postJson}) async {
+  Future<bool> savePost(PostView post) async {
+    final postUri = post.uri.toString();
     if (state.isSaved(postUri)) return true;
-    return toggleSave(postUri: postUri, postJson: postJson);
+    return toggleSave(post);
   }
 
   Future<bool> unsavePost(String postUri) async {
     if (!state.isSaved(postUri)) return true;
-    return toggleSave(postUri: postUri, postJson: '');
+    try {
+      await _database.unsavePost(_accountDid, postUri);
+      _semanticIndexer?.removePost(postUri);
+      await loadSavedPosts();
+      return true;
+    } catch (error) {
+      log.e('Failed to unsave post', error: error);
+      emit(state.copyWith(error: 'Failed to unsave post'));
+      return false;
+    }
   }
 
   Future<void> unsavePostById(int id) async {
@@ -200,7 +213,9 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
     emit(state.copyWith(error: null));
   }
 
-  Future<bool> cloudSave({required String postUri, required String cid, required String postJson}) async {
+  Future<bool> cloudSave(PostView post) async {
+    final postUri = post.uri.toString();
+    final postJson = PoptartCacheCodecs.postView.encode(post);
     final currentType = state.saveTypeForUri(postUri);
     if (currentType == 'cloud' || currentType == 'both') return true;
 
@@ -220,7 +235,7 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
         );
         _semanticIndexer?.queueIndexPost(postUri, postJson, _accountDid, 'saved');
       }
-      await _postActionRepository.createBookmark(uri: AtUri.parse(postUri), cid: cid);
+      await _postActionRepository.createBookmark(uri: post.uri, cid: post.cid);
       return true;
     } catch (error) {
       log.e('Failed to cloud save post', error: error);
@@ -274,8 +289,14 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
       do {
         final output = await _postActionRepository.getBookmarks(limit: 100, cursor: cursor);
         for (final bookmark in output.bookmarks) {
-          final postUri = bookmark.subject.uri.toString();
-          final postJson = bookmark.item.isPostView ? jsonEncode(bookmark.item.postView!.toJson()) : '{}';
+          if (!bookmark.item.isPostView) {
+            log.d('Skipping cloud bookmark without PostView payload: ${bookmark.subject.uri}');
+            continue;
+          }
+
+          final post = bookmark.item.postView!;
+          final postUri = post.uri.toString();
+          final postJson = PoptartCacheCodecs.postView.encode(post);
           final existing = await _database.getSavedPost(_accountDid, postUri);
           if (existing == null) {
             await _database.savePost(

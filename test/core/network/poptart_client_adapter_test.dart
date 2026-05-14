@@ -6,6 +6,8 @@ import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:poptart_lex/app/bsky/actor.dart' as actor_methods;
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:poptart_lex/app/bsky/feed.dart' as feed_methods;
+import 'package:poptart_lex/app/bsky/feed/post.dart';
+import 'package:poptart_lex/com/atproto/repo/apply_writes.dart';
 import 'package:poptart_lex/com/atproto/repo/strong_ref.dart';
 
 void main() {
@@ -43,6 +45,163 @@ void main() {
         },
         'createdAt': '2026-05-10T15:08:56.000Z',
       });
+    });
+
+    test('feed.like.create canonicalizes local datetimes to UTC milliseconds', () async {
+      Object? capturedBody;
+      final bluesky = Bluesky.fromSession(
+        const Session(did: 'did:plc:test', handle: 'test.bsky.social', accessJwt: 'access', refreshJwt: 'refresh'),
+        service: 'example.com',
+        postClient: (url, {headers, body, encoding}) async {
+          capturedBody = body;
+          return http.Response(
+            '{"uri":"at://did:plc:test/app.bsky.feed.like/like1","cid":"like-cid"}',
+            200,
+            request: http.Request('POST', url),
+          );
+        },
+      );
+
+      await bluesky.feed.like.create(
+        subject: RepoStrongRef(cid: 'post-cid', uri: AtUri.parse('at://did:plc:author/app.bsky.feed.post/post1')),
+        createdAt: DateTime.utc(2026, 5, 12, 10, 11, 50, 52, 513).toLocal(),
+      );
+
+      final body = jsonDecode(capturedBody! as String) as Map<String, dynamic>;
+      final record = body['record'] as Map<String, dynamic>;
+      expect(record['createdAt'], '2026-05-12T10:11:50.052Z');
+    });
+
+    test('repo.createRecord canonicalizes datetime strings in record maps', () async {
+      Object? capturedBody;
+      final bluesky = Bluesky.fromSession(
+        const Session(did: 'did:plc:test', handle: 'test.bsky.social', accessJwt: 'access', refreshJwt: 'refresh'),
+        service: 'example.com',
+        postClient: (url, {headers, body, encoding}) async {
+          capturedBody = body;
+          return http.Response(
+            '{"uri":"at://did:plc:test/app.bsky.feed.like/like1","cid":"like-cid"}',
+            200,
+            request: http.Request('POST', url),
+          );
+        },
+      );
+
+      await bluesky.atproto.repo.createRecord(
+        repo: 'did:plc:test',
+        collection: 'app.bsky.feed.like',
+        record: {
+          r'$type': 'app.bsky.feed.like',
+          'createdAt': '2026-05-12T10:11:50.052513Z',
+          'subject': {
+            r'$type': 'com.atproto.repo.strongRef',
+            'uri': 'at://did:plc:author/app.bsky.feed.post/post1',
+            'cid': 'post-cid',
+          },
+        },
+      );
+
+      final body = jsonDecode(capturedBody! as String) as Map<String, dynamic>;
+      final record = body['record'] as Map<String, dynamic>;
+      expect(record['createdAt'], '2026-05-12T10:11:50.052Z');
+    });
+
+    test('notification.updateSeen canonicalizes generated input datetime values', () async {
+      Object? capturedBody;
+      final bluesky = Bluesky.fromSession(
+        const Session(did: 'did:plc:test', handle: 'test.bsky.social', accessJwt: 'access', refreshJwt: 'refresh'),
+        service: 'example.com',
+        postClient: (url, {headers, body, encoding}) async {
+          capturedBody = body;
+          return http.Response('{}', 200, request: http.Request('POST', url));
+        },
+      );
+
+      await bluesky.notification.updateSeen(seenAt: DateTime.utc(2026, 5, 12, 10, 11, 50, 52, 513).toLocal());
+
+      final body = jsonDecode(capturedBody! as String) as Map<String, dynamic>;
+      expect(body['seenAt'], '2026-05-12T10:11:50.052Z');
+    });
+
+    test('notification.listNotifications canonicalizes seenAt query parameter', () async {
+      Uri? capturedUrl;
+      final bluesky = Bluesky.fromSession(
+        const Session(did: 'did:plc:test', handle: 'test.bsky.social', accessJwt: 'access', refreshJwt: 'refresh'),
+        service: 'example.com',
+        getClient: (url, {headers}) async {
+          capturedUrl = url;
+          return http.Response('{"notifications":[]}', 200, request: http.Request('GET', url));
+        },
+      );
+
+      await bluesky.notification.listNotifications(seenAt: DateTime.utc(2026, 5, 12, 10, 11, 50, 52, 513).toLocal());
+
+      expect(capturedUrl!.queryParameters['seenAt'], '2026-05-12T10:11:50.052Z');
+    });
+
+    test('actor.putPreferences canonicalizes datetime values inside preferences', () async {
+      Object? capturedBody;
+      final bluesky = Bluesky.fromSession(
+        const Session(did: 'did:plc:test', handle: 'test.bsky.social', accessJwt: 'access', refreshJwt: 'refresh'),
+        service: 'example.com',
+        postClient: (url, {headers, body, encoding}) async {
+          capturedBody = body;
+          return http.Response('{}', 200, request: http.Request('POST', url));
+        },
+      );
+
+      await bluesky.actor.putPreferences(
+        preferences: [
+          UPreferences.mutedWordsPref(
+            data: MutedWordsPref(
+              items: [
+                MutedWord(
+                  value: 'spoiler',
+                  targets: const [MutedWordTarget.knownValue(data: KnownMutedWordTarget.content)],
+                  expiresAt: DateTime.utc(2026, 5, 12, 10, 11, 50, 52, 513).toLocal(),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+
+      final body = jsonDecode(capturedBody! as String) as Map<String, dynamic>;
+      final preferences = body['preferences'] as List<dynamic>;
+      final preference = preferences.single as Map<String, dynamic>;
+      final items = preference['items'] as List<dynamic>;
+      final mutedWord = items.single as Map<String, dynamic>;
+      expect(mutedWord['expiresAt'], '2026-05-12T10:11:50.052Z');
+    });
+
+    test('repo.applyWrites canonicalizes datetime fields inside write values', () async {
+      Object? capturedBody;
+      final bluesky = Bluesky.fromSession(
+        const Session(did: 'did:plc:test', handle: 'test.bsky.social', accessJwt: 'access', refreshJwt: 'refresh'),
+        service: 'example.com',
+        postClient: (url, {headers, body, encoding}) async {
+          capturedBody = body;
+          return http.Response('{}', 200, request: http.Request('POST', url));
+        },
+      );
+
+      await bluesky.atproto.repo.applyWrites(
+        repo: 'did:plc:test',
+        writes: [
+          const URepoApplyWritesWrites.create(
+            data: Create(
+              collection: 'app.bsky.feed.post',
+              value: {r'$type': 'app.bsky.feed.post', 'text': 'Hello', 'createdAt': '2026-05-12T10:11:50.052513Z'},
+            ),
+          ),
+        ],
+      );
+
+      final body = jsonDecode(capturedBody! as String) as Map<String, dynamic>;
+      final writes = body['writes'] as List<dynamic>;
+      final write = writes.single as Map<String, dynamic>;
+      final value = write['value'] as Map<String, dynamic>;
+      expect(value['createdAt'], '2026-05-12T10:11:50.052Z');
     });
 
     test('actor.putPreferences encodes procedure values through descriptor type conversion', () async {
@@ -106,7 +265,7 @@ void main() {
 
       await bluesky.feed.post.put(
         rkey: 'post1',
-        record: {r'$type': 'app.bsky.feed.post', 'text': 'Hello', 'createdAt': DateTime.utc(2026, 5, 10, 15, 8, 56)},
+        record: FeedPostRecord(text: 'Hello', createdAt: DateTime.utc(2026, 5, 10, 15, 8, 56)),
       );
       await bluesky.feed.post.delete(rkey: 'post1');
 
@@ -209,8 +368,8 @@ void main() {
         },
       );
 
-      final response = await (bluesky as dynamic).call(
-        feed_methods.appBskyFeedGetFeedGenerators,
+      final response = await bluesky.call(
+        feed_methods.appBskyFeedGetFeedGenerators as XRPCMethod<dynamic, dynamic, dynamic>,
         parameters: {
           'feeds': [AtUri.parse('at://did:plc:feed/app.bsky.feed.generator/news')],
         },
@@ -231,7 +390,10 @@ void main() {
         },
       );
 
-      final response = await (bluesky as dynamic).call(actor_methods.appBskyActorGetPreferences, parameters: {});
+      final response = await bluesky.call(
+        actor_methods.appBskyActorGetPreferences as XRPCMethod<dynamic, dynamic, dynamic>,
+        parameters: {},
+      );
 
       expect(response.data.preferences, isEmpty);
       expect(capturedUrl!.query, isEmpty);
@@ -255,8 +417,8 @@ void main() {
         pinned: true,
       );
 
-      await (bluesky as dynamic).call(
-        actor_methods.appBskyActorPutPreferences,
+      await bluesky.call(
+        actor_methods.appBskyActorPutPreferences as XRPCMethod<dynamic, dynamic, dynamic>,
         input: {
           'preferences': [
             const UPreferences.savedFeedsPrefV2(data: SavedFeedsPrefV2(items: [feed])),

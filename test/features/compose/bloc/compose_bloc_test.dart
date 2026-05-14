@@ -1,11 +1,14 @@
 import 'dart:io';
 
-import 'package:poptart_core/poptart_core.dart' show Blob, BlobRef;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:poptart_core/poptart_core.dart' show Blob, BlobRef;
+import 'package:poptart_lex/app/bsky/embed/external.dart';
+import 'package:poptart_lex/app/bsky/embed/record_with_media.dart';
+import 'package:poptart_lex/app/bsky/feed/post.dart';
 
 class MockAppDatabase extends Mock implements AppDatabase {}
 
@@ -687,14 +690,15 @@ void main() {
         'builds Bluesky external embed from detected link preview metadata',
         build: () {
           when(() => mockRepository.buildExternalEmbedFromLink('https://example.com/article')).thenAnswer(
-            (_) async => {
-              r'$type': 'app.bsky.embed.external',
-              'external': {
-                'uri': 'https://example.com/article',
-                'title': 'Example Article',
-                'description': 'Example description',
-              },
-            },
+            (_) async => const UFeedPostEmbed.embedExternal(
+              data: EmbedExternal(
+                external: EmbedExternalExternal(
+                  uri: 'https://example.com/article',
+                  title: 'Example Article',
+                  description: 'Example description',
+                ),
+              ),
+            ),
           );
           when(
             () => mockRepository.createPost(
@@ -721,14 +725,14 @@ void main() {
                       repo: any(named: 'repo'),
                     ),
                   ).captured.single
-                  as Map<String, dynamic>?;
+                  as UFeedPostEmbed?;
 
           expect(embed, isNotNull);
-          expect(embed![r'$type'], 'app.bsky.embed.external');
-          final external = embed['external'] as Map<String, dynamic>;
-          expect(external['uri'], 'https://example.com/article');
-          expect(external['title'], 'Example Article');
-          expect(external['description'], 'Example description');
+          expect(embed!.isEmbedExternal, isTrue);
+          final external = embed.embedExternal!.external;
+          expect(external.uri, 'https://example.com/article');
+          expect(external.title, 'Example Article');
+          expect(external.description, 'Example description');
         },
       );
 
@@ -815,20 +819,18 @@ void main() {
                       repo: any(named: 'repo'),
                     ),
                   ).captured.single
-                  as Map<String, dynamic>;
+                  as UFeedPostEmbed;
 
-          expect(embed[r'$type'], 'app.bsky.embed.images');
-          final images = embed['images'] as List<dynamic>;
+          expect(embed.isEmbedImages, isTrue);
+          final images = embed.embedImages!.images;
           expect(images, hasLength(1));
-          final image = images.single as Map<String, dynamic>;
-          expect(image['alt'], 'A photo');
-          expect(image['aspectRatio'], {'width': 640, 'height': 480});
-          expect(image['image'], {
-            r'$type': 'blob',
-            'ref': {r'$link': 'bafkreiimageblob'},
-            'mimeType': 'image/jpeg',
-            'size': 12,
-          });
+          final image = images.single;
+          expect(image.alt, 'A photo');
+          expect(image.aspectRatio?.width, 640);
+          expect(image.aspectRatio?.height, 480);
+          expect(image.image.ref.link, 'bafkreiimageblob');
+          expect(image.image.mimeType, 'image/jpeg');
+          expect(image.image.size, 12);
         },
       );
 
@@ -836,14 +838,15 @@ void main() {
         'builds recordWithMedia when quoting and link preview embed both exist',
         build: () {
           when(() => mockRepository.buildExternalEmbedFromLink('https://example.com/article')).thenAnswer(
-            (_) async => {
-              r'$type': 'app.bsky.embed.external',
-              'external': {
-                'uri': 'https://example.com/article',
-                'title': 'Example Article',
-                'description': 'Example description',
-              },
-            },
+            (_) async => const UFeedPostEmbed.embedExternal(
+              data: EmbedExternal(
+                external: EmbedExternalExternal(
+                  uri: 'https://example.com/article',
+                  title: 'Example Article',
+                  description: 'Example description',
+                ),
+              ),
+            ),
           );
           when(
             () => mockRepository.createPost(
@@ -875,14 +878,13 @@ void main() {
                       repo: any(named: 'repo'),
                     ),
                   ).captured.single
-                  as Map<String, dynamic>?;
+                  as UFeedPostEmbed?;
 
           expect(embed, isNotNull);
-          expect(embed![r'$type'], 'app.bsky.embed.recordWithMedia');
-          final record = embed['record'] as Map<String, dynamic>;
-          expect(record[r'$type'], 'app.bsky.embed.record');
-          final media = embed['media'] as Map<String, dynamic>;
-          expect(media[r'$type'], 'app.bsky.embed.external');
+          expect(embed!.isEmbedRecordWithMedia, isTrue);
+          final recordWithMedia = embed.embedRecordWithMedia!;
+          expect(recordWithMedia.record.record.uri.toString(), 'at://did:plc:test/app.bsky.feed.post/quote');
+          expect(recordWithMedia.media.isEmbedExternal, isTrue);
         },
       );
 
@@ -935,14 +937,12 @@ void main() {
                       repo: any(named: 'repo'),
                     ),
                   ).captured.single
-                  as Map<String, dynamic>?;
+                  as ReplyRef?;
 
           expect(reply, isNotNull);
-          final parent = reply!['parent'] as Map<String, dynamic>;
-          final root = reply['root'] as Map<String, dynamic>;
-          expect(parent['cid'], 'cid-parent-latest');
-          expect(root['uri'], 'at://did:plc:test/app.bsky.feed.post/root-latest');
-          expect(root['cid'], 'cid-root-latest');
+          expect(reply!.parent.cid, 'cid-parent-latest');
+          expect(reply.root.uri.toString(), 'at://did:plc:test/app.bsky.feed.post/root-latest');
+          expect(reply.root.cid, 'cid-root-latest');
         },
       );
 
@@ -1179,7 +1179,7 @@ void main() {
                       repo: any(named: 'repo'),
                     ),
                   ).captured.single
-                  as List<Map<String, dynamic>>;
+                  as List;
           expect(facets, isEmpty);
         },
       );

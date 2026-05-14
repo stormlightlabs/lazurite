@@ -1,14 +1,15 @@
-import 'package:poptart_core/poptart_core.dart' show AtUri;
 import 'package:poptart_lex/app/bsky/feed/defs.dart' show GeneratorView;
 import 'package:poptart_lex/app/bsky/graph/defs.dart';
+import 'package:poptart_lex/app/bsky/graph/list.dart';
 import 'package:poptart_lex/app/bsky/graph/starterpack.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class StarterPackRepository {
   StarterPackRepository({
-    required dynamic bluesky,
+    required Bluesky bluesky,
     ModerationService? moderationService,
     String? appViewProvider,
     String Function()? appViewProviderResolver,
@@ -19,7 +20,7 @@ class StarterPackRepository {
          appViewProviderResolver: appViewProviderResolver,
        );
 
-  final dynamic _bluesky;
+  final Bluesky _bluesky;
   final ModerationService? _moderationService;
   final AppViewRequestContext _appViewContext;
 
@@ -57,7 +58,7 @@ class StarterPackRepository {
         await _moderationService?.headersForRequest(),
       ),
     );
-    return response.data.feeds as List<GeneratorView>;
+    return response.data.feeds;
   }
 
   /// Creates a starter pack using the 3-step flow:
@@ -176,7 +177,7 @@ class StarterPackRepository {
         }
       }
 
-      cursor = response.data.cursor as String?;
+      cursor = response.data.cursor;
     } while (cursor != null);
 
     return count;
@@ -186,12 +187,11 @@ class StarterPackRepository {
     final response = await _bluesky.atproto.repo.createRecord(
       repo: userDid,
       collection: 'app.bsky.graph.list',
-      record: <String, dynamic>{
-        r'$type': 'app.bsky.graph.list',
-        'purpose': 'app.bsky.graph.defs#referencelist',
-        'name': 'Starter Pack Members',
-        'createdAt': DateTime.now().toUtc().toIso8601String(),
-      },
+      record: GraphListRecord(
+        purpose: const ListPurpose.knownValue(data: KnownListPurpose.appBskyGraphDefsReferencelist),
+        name: 'Starter Pack Members',
+        createdAt: DateTime.now().toUtc(),
+      ).toJson(),
     );
 
     return response.data.uri;

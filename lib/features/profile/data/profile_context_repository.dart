@@ -1,9 +1,11 @@
-import 'package:poptart_core/poptart_core.dart' show AtUri;
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/graph/block.dart';
 import 'package:poptart_lex/app/bsky/graph/defs.dart';
+import 'package:poptart_lex/com/atproto/repo/list_records.dart';
 import 'package:equatable/equatable.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/constellation_client.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 
 const _blockedByPageSize = 16;
 const _listsPageSize = 16;
@@ -35,15 +37,15 @@ class BlockedByEntry extends Equatable {
 
 class ProfileContextRepository {
   ProfileContextRepository({
-    required dynamic bluesky,
-    dynamic publicBluesky,
+    required Bluesky bluesky,
+    Bluesky? publicBluesky,
     required ConstellationClient constellationClient,
   }) : _bluesky = bluesky,
        _publicBluesky = publicBluesky ?? bluesky,
        _constellation = constellationClient;
 
-  final dynamic _bluesky;
-  final dynamic _publicBluesky;
+  final Bluesky _bluesky;
+  final Bluesky _publicBluesky;
   final ConstellationClient _constellation;
 
   /// Returns the number of accounts that have blocked [did].
@@ -109,8 +111,8 @@ class ProfileContextRepository {
         cursor: cursor,
       );
 
-      total += (response.data.records as List<dynamic>).length;
-      cursor = response.data.cursor as String?;
+      total += response.data.records.length;
+      cursor = response.data.cursor;
     } while (cursor != null);
 
     return total;
@@ -129,12 +131,12 @@ class ProfileContextRepository {
       cursor: cursor,
     );
 
-    final subjectDids = (response.data.records as List<dynamic>).map((r) => r.value['subject'] as String).toList();
+    final subjectDids = response.data.records.map(_blockSubjectDid).whereType<String>().toList(growable: false);
     final hydrated = await _hydrateProfiles(subjectDids);
     return (
       profiles: hydrated.profiles,
       unavailable: hydrated.unavailable,
-      cursor: response.data.cursor as String?,
+      cursor: response.data.cursor,
       total: hydrated.profiles.length,
     );
   }
@@ -164,7 +166,7 @@ class ProfileContextRepository {
       try {
         final uri = AtUri.parse(uriString);
         final response = await _publicBluesky.graph.getList(list: uri, limit: 1);
-        lists.add(response.data.list as ListView);
+        lists.add(response.data.list);
       } catch (error, stackTrace) {
         log.w(
           'skipping invalid or unavailable list in profile context: $uriString',
@@ -196,7 +198,7 @@ class ProfileContextRepository {
       );
       try {
         final response = await _publicBluesky.actor.getProfiles(actors: batch);
-        for (final profile in response.data.profiles as List<dynamic>) {
+        for (final profile in response.data.profiles) {
           final converted = _asProfileView(profile);
           if (converted != null) {
             resolvedProfiles[converted.did] = converted;
@@ -352,19 +354,15 @@ class ProfileContextRepository {
   }
 
   String? _currentSessionDid() {
-    try {
-      final sessionDid = (_bluesky.session?.did as String?)?.trim().toLowerCase();
-      if (sessionDid != null && sessionDid.isNotEmpty) {
-        return sessionDid;
-      }
-    } catch (_) {}
+    final sessionDid = _bluesky.session?.did.trim().toLowerCase();
+    if (sessionDid != null && sessionDid.isNotEmpty) {
+      return sessionDid;
+    }
 
-    try {
-      final oauthDid = (_bluesky.oAuthSession?.sub as String?)?.trim().toLowerCase();
-      if (oauthDid != null && oauthDid.isNotEmpty) {
-        return oauthDid;
-      }
-    } catch (_) {}
+    final oauthDid = _bluesky.oAuthSession?.sub.trim().toLowerCase();
+    if (oauthDid != null && oauthDid.isNotEmpty) {
+      return oauthDid;
+    }
 
     return null;
   }
@@ -381,7 +379,7 @@ class ProfileContextRepository {
     return 'Public profile lookup failed';
   }
 
-  ProfileView? _asProfileView(dynamic profile) {
+  ProfileView? _asProfileView(Object? profile) {
     if (profile is ProfileView) {
       return profile;
     }
@@ -406,6 +404,17 @@ class ProfileContextRepository {
     }
 
     return null;
+  }
+
+  String? _blockSubjectDid(RepoListRecordsRecord record) {
+    final value = record.value;
+    if (!GraphBlockRecord.validate(value)) {
+      return null;
+    }
+
+    final block = const GraphBlockRecordConverter().fromJson(value);
+    final subject = block.subject.trim();
+    return subject.isEmpty ? null : subject;
   }
 
   bool _isNotFound(ConstellationException error) => error.message.startsWith('HTTP 404');

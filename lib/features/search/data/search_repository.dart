@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:poptart_core/poptart_core.dart';
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/search_posts.dart';
@@ -8,13 +7,14 @@ import 'package:poptart_lex/app/bsky/graph/defs.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lazurite/core/network/app_view_fallback_service.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/search/data/post_search_filters.dart';
 
 class SearchRepository {
   SearchRepository({
-    required dynamic bluesky,
+    required Bluesky bluesky,
     ModerationService? moderationService,
     String? appViewProvider,
     String Function()? appViewProviderResolver,
@@ -35,7 +35,7 @@ class SearchRepository {
        _routingEpoch = routingEpoch,
        _routingEpochResolver = routingEpochResolver;
 
-  final dynamic _bluesky;
+  final Bluesky _bluesky;
   final ModerationService? _moderationService;
   final AppViewRequestContext _appViewContext;
   final bool _crossProviderFallbackEnabled;

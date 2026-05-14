@@ -1,10 +1,13 @@
 import 'package:poptart_lex/com/atproto/repo/strong_ref.dart';
 import 'package:poptart_core/poptart_core.dart';
+import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:poptart_lex/app/bsky/bookmark/defs.dart';
 import 'package:poptart_lex/app/bsky/bookmark/get_bookmarks.dart';
+import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
@@ -27,8 +30,10 @@ void main() {
   const testAccountDid = 'did:plc:testuser123';
   const testPostUri1 = 'at://did:plc:author1/app.bsky.feed.post/abc123';
   const testPostUri2 = 'at://did:plc:author2/app.bsky.feed.post/def456';
-  const testPostJson1 = '{"uri": "$testPostUri1", "text": "Post 1"}';
-  const testPostJson2 = '{"uri": "$testPostUri2", "text": "Post 2"}';
+  final testPost1 = _postView(testPostUri1, cid: 'cid1', text: 'Post 1');
+  final testPost2 = _postView(testPostUri2, cid: 'cid2', text: 'Post 2');
+  final testPostJson1 = PoptartCacheCodecs.postView.encode(testPost1);
+  final testPostJson2 = PoptartCacheCodecs.postView.encode(testPost2);
 
   setUp(() async {
     database = AppDatabase(executor: NativeDatabase.memory());
@@ -81,7 +86,7 @@ void main() {
           SavedPostsCompanion(
             accountDid: const Value(testAccountDid),
             postUri: const Value(testPostUri1),
-            postJson: const Value(testPostJson1),
+            postJson: Value(testPostJson1),
             savedAt: Value(DateTime.now()),
           ),
         );
@@ -108,7 +113,7 @@ void main() {
           postActionRepository: mockRepository,
         );
 
-        await cubit.toggleSave(postUri: testPostUri1, postJson: testPostJson1);
+        await cubit.toggleSave(testPost1);
 
         expect(cubit.state.savedPosts.length, 1);
         expect(cubit.state.isSaved(testPostUri1), isTrue);
@@ -119,7 +124,7 @@ void main() {
           SavedPostsCompanion(
             accountDid: const Value(testAccountDid),
             postUri: const Value(testPostUri1),
-            postJson: const Value(testPostJson1),
+            postJson: Value(testPostJson1),
             savedAt: Value(DateTime.now()),
           ),
         );
@@ -133,7 +138,7 @@ void main() {
         await cubit.loadSavedPosts();
         expect(cubit.state.savedPosts.length, 1);
 
-        await cubit.toggleSave(postUri: testPostUri1, postJson: testPostJson1);
+        await cubit.toggleSave(testPost1);
 
         expect(cubit.state.savedPosts.length, 0);
         expect(cubit.state.isSaved(testPostUri1), isFalse);
@@ -148,7 +153,7 @@ void main() {
           postActionRepository: mockRepository,
         );
 
-        final result = await cubit.savePost(postUri: testPostUri1, postJson: testPostJson1);
+        final result = await cubit.savePost(testPost1);
 
         expect(result, isTrue);
         expect(cubit.state.savedPosts.length, 1);
@@ -159,7 +164,7 @@ void main() {
           SavedPostsCompanion(
             accountDid: const Value(testAccountDid),
             postUri: const Value(testPostUri1),
-            postJson: const Value(testPostJson1),
+            postJson: Value(testPostJson1),
             savedAt: Value(DateTime.now()),
           ),
         );
@@ -171,7 +176,7 @@ void main() {
         );
 
         await cubit.loadSavedPosts();
-        final result = await cubit.savePost(postUri: testPostUri1, postJson: testPostJson1);
+        final result = await cubit.savePost(testPost1);
 
         expect(result, isTrue);
       });
@@ -183,7 +188,7 @@ void main() {
           SavedPostsCompanion(
             accountDid: const Value(testAccountDid),
             postUri: const Value(testPostUri1),
-            postJson: const Value(testPostJson1),
+            postJson: Value(testPostJson1),
             savedAt: Value(DateTime.now()),
           ),
         );
@@ -209,7 +214,7 @@ void main() {
           SavedPostsCompanion(
             accountDid: const Value(testAccountDid),
             postUri: const Value(testPostUri1),
-            postJson: const Value(testPostJson1),
+            postJson: Value(testPostJson1),
             savedAt: Value(DateTime.now()),
           ),
         );
@@ -235,7 +240,7 @@ void main() {
           SavedPostsCompanion(
             accountDid: const Value(testAccountDid),
             postUri: const Value(testPostUri1),
-            postJson: const Value(testPostJson1),
+            postJson: Value(testPostJson1),
             savedAt: Value(DateTime.now()),
           ),
         );
@@ -243,7 +248,7 @@ void main() {
           SavedPostsCompanion(
             accountDid: const Value(testAccountDid),
             postUri: const Value(testPostUri2),
-            postJson: const Value(testPostJson2),
+            postJson: Value(testPostJson2),
             savedAt: Value(DateTime.now()),
           ),
         );
@@ -272,7 +277,7 @@ void main() {
           postActionRepository: mockRepository,
         );
 
-        await cubit.savePost(postUri: testPostUri1, postJson: testPostJson1);
+        await cubit.savePost(testPost1);
 
         expect(cubit.state.isSaved(testPostUri1), isTrue);
         expect(cubit.state.isSaved(testPostUri2), isFalse);
@@ -350,7 +355,7 @@ void main() {
           postActionRepository: mockRepository,
         );
 
-        await cubit.toggleSave(postUri: testPostUri1, postJson: testPostJson1);
+        await cubit.toggleSave(testPost1);
 
         final posts = await database.getSavedPosts(testAccountDid);
         expect(posts.length, 1);
@@ -364,7 +369,7 @@ void main() {
           postActionRepository: mockRepository,
         );
 
-        await cubit.toggleSave(postUri: testPostUri1, postJson: testPostJson1);
+        await cubit.toggleSave(testPost1);
         await cubit.loadSavedPosts();
 
         expect(cubit.state.saveTypeForUri(testPostUri1), equals('local'));
@@ -386,7 +391,7 @@ void main() {
           postActionRepository: mockRepository,
         );
 
-        final result = await cubit.cloudSave(postUri: testPostUri1, cid: 'cid1', postJson: testPostJson1);
+        final result = await cubit.cloudSave(testPost1);
 
         expect(result, isTrue);
         final posts = await database.getSavedPosts(testAccountDid);
@@ -406,10 +411,10 @@ void main() {
           accountDid: testAccountDid,
           postActionRepository: mockRepository,
         );
-        await cubit.toggleSave(postUri: testPostUri1, postJson: testPostJson1);
+        await cubit.toggleSave(testPost1);
         await cubit.loadSavedPosts();
 
-        final result = await cubit.cloudSave(postUri: testPostUri1, cid: 'cid1', postJson: testPostJson1);
+        final result = await cubit.cloudSave(testPost1);
 
         expect(result, isTrue);
         final posts = await database.getSavedPosts(testAccountDid);
@@ -426,14 +431,14 @@ void main() {
           SavedPostsCompanion(
             accountDid: const Value(testAccountDid),
             postUri: const Value(testPostUri1),
-            postJson: const Value(testPostJson1),
+            postJson: Value(testPostJson1),
             saveType: const Value('cloud'),
             savedAt: Value(DateTime.now()),
           ),
         );
         await cubit.loadSavedPosts();
 
-        final result = await cubit.cloudSave(postUri: testPostUri1, cid: 'cid1', postJson: testPostJson1);
+        final result = await cubit.cloudSave(testPost1);
 
         expect(result, isTrue);
         verifyNever(
@@ -457,7 +462,7 @@ void main() {
           postActionRepository: mockRepository,
         );
 
-        final result = await cubit.cloudSave(postUri: testPostUri1, cid: 'cid1', postJson: testPostJson1);
+        final result = await cubit.cloudSave(testPost1);
 
         expect(result, isFalse);
         expect(cubit.state.error, isNotNull);
@@ -478,7 +483,7 @@ void main() {
           SavedPostsCompanion(
             accountDid: const Value(testAccountDid),
             postUri: const Value(testPostUri1),
-            postJson: const Value(testPostJson1),
+            postJson: Value(testPostJson1),
             saveType: const Value('cloud'),
             savedAt: Value(DateTime.now()),
           ),
@@ -503,7 +508,7 @@ void main() {
           SavedPostsCompanion(
             accountDid: const Value(testAccountDid),
             postUri: const Value(testPostUri1),
-            postJson: const Value(testPostJson1),
+            postJson: Value(testPostJson1),
             saveType: const Value('both'),
             savedAt: Value(DateTime.now()),
           ),
@@ -528,7 +533,7 @@ void main() {
           SavedPostsCompanion(
             accountDid: const Value(testAccountDid),
             postUri: const Value(testPostUri1),
-            postJson: const Value(testPostJson1),
+            postJson: Value(testPostJson1),
             saveType: const Value('both'),
             savedAt: Value(DateTime.now()),
           ),
@@ -557,7 +562,7 @@ void main() {
             bookmarks: [
               BookmarkView(
                 subject: RepoStrongRef(uri: testUri, cid: 'cid1'),
-                item: const UBookmarkViewItem.unknown(data: {}),
+                item: UBookmarkViewItem.postView(data: testPost1),
               ),
             ],
           ),
@@ -581,7 +586,7 @@ void main() {
           SavedPostsCompanion(
             accountDid: const Value(testAccountDid),
             postUri: const Value(testPostUri1),
-            postJson: const Value(testPostJson1),
+            postJson: Value(testPostJson1),
             saveType: const Value('local'),
             savedAt: Value(DateTime.now()),
           ),
@@ -597,7 +602,7 @@ void main() {
             bookmarks: [
               BookmarkView(
                 subject: RepoStrongRef(uri: testUri, cid: 'cid1'),
-                item: const UBookmarkViewItem.unknown(data: {}),
+                item: UBookmarkViewItem.postView(data: testPost1),
               ),
             ],
           ),
@@ -640,7 +645,7 @@ void main() {
           semanticIndexer: mockIndexer,
         );
 
-        await cubit.savePost(postUri: testPostUri1, postJson: testPostJson1);
+        await cubit.savePost(testPost1);
 
         verify(() => mockIndexer.queueIndexPost(testPostUri1, testPostJson1, testAccountDid, 'saved')).called(1);
       });
@@ -650,7 +655,7 @@ void main() {
           SavedPostsCompanion(
             accountDid: const Value(testAccountDid),
             postUri: const Value(testPostUri1),
-            postJson: const Value(testPostJson1),
+            postJson: Value(testPostJson1),
             savedAt: Value(DateTime.now()),
           ),
         );
@@ -672,7 +677,7 @@ void main() {
           SavedPostsCompanion(
             accountDid: const Value(testAccountDid),
             postUri: const Value(testPostUri1),
-            postJson: const Value(testPostJson1),
+            postJson: Value(testPostJson1),
             savedAt: Value(DateTime.now()),
           ),
         );
@@ -704,7 +709,7 @@ void main() {
           semanticIndexer: mockIndexer,
         );
 
-        await cubit.cloudSave(postUri: testPostUri1, cid: 'cid1', postJson: testPostJson1);
+        await cubit.cloudSave(testPost1);
 
         verify(() => mockIndexer.queueIndexPost(testPostUri1, testPostJson1, testAccountDid, 'saved')).called(1);
       });
@@ -715,7 +720,7 @@ void main() {
           SavedPostsCompanion(
             accountDid: const Value(testAccountDid),
             postUri: const Value(testPostUri1),
-            postJson: const Value(testPostJson1),
+            postJson: Value(testPostJson1),
             saveType: const Value('cloud'),
             savedAt: Value(DateTime.now()),
           ),
@@ -739,7 +744,7 @@ void main() {
           SavedPostsCompanion(
             accountDid: const Value(testAccountDid),
             postUri: const Value(testPostUri1),
-            postJson: const Value(testPostJson1),
+            postJson: Value(testPostJson1),
             saveType: const Value('both'),
             savedAt: Value(DateTime.now()),
           ),
@@ -769,7 +774,7 @@ void main() {
             bookmarks: [
               BookmarkView(
                 subject: RepoStrongRef(uri: testUri, cid: 'cid1'),
-                item: const UBookmarkViewItem.unknown(data: {}),
+                item: UBookmarkViewItem.postView(data: testPost1),
               ),
             ],
           ),
@@ -787,4 +792,14 @@ void main() {
       });
     });
   });
+}
+
+PostView _postView(String uri, {required String cid, required String text}) {
+  return PostView(
+    uri: AtUri.parse(uri),
+    cid: cid,
+    author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social'),
+    record: {r'$type': 'app.bsky.feed.post', 'text': text, 'createdAt': DateTime.utc(2026, 5, 12).toIso8601String()},
+    indexedAt: DateTime.utc(2026, 5, 12),
+  );
 }

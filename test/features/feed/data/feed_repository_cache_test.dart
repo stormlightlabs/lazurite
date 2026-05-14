@@ -4,55 +4,53 @@ import 'dart:convert';
 import 'package:poptart_core/poptart_core.dart';
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:poptart_lex/app/bsky/feed/get_timeline.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 
-class _FakeFeedData {
-  _FakeFeedData({required this.feed, this.cursor});
+import '../../../helpers/test_bluesky_client.dart';
 
-  final List<FeedViewPost> feed;
-  final String? cursor;
-}
+class _QueuedFeedTransport {
+  _QueuedFeedTransport({List<FeedGetTimelineOutput>? timelineResponses})
+    : _timelineResponses = Queue<FeedGetTimelineOutput>.from(timelineResponses ?? const []);
 
-class _FakeFeedResponse {
-  _FakeFeedResponse(this.data);
+  final Queue<FeedGetTimelineOutput> _timelineResponses;
 
-  final _FakeFeedData data;
-}
-
-class _QueuedFeedApi {
-  _QueuedFeedApi({List<_FakeFeedResponse>? timelineResponses})
-    : _timelineResponses = Queue<_FakeFeedResponse>.from(timelineResponses ?? const []);
-
-  final Queue<_FakeFeedResponse> _timelineResponses;
-
-  Future<_FakeFeedResponse> getTimeline({String? cursor, int? limit, Map<String, String>? $headers}) async {
-    if (_timelineResponses.isEmpty) {
-      throw StateError('No timeline response queued for cursor=$cursor');
+  Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
+    if (url.pathSegments.last != 'app.bsky.feed.getTimeline') {
+      return unexpectedGetClient(url, headers: headers);
     }
-    return _timelineResponses.removeFirst();
+
+    if (_timelineResponses.isEmpty) {
+      throw StateError('No timeline response queued for cursor=${url.queryParameters['cursor']}');
+    }
+    return jsonResponse(url, 'GET', _timelineResponses.removeFirst().toJson());
   }
 }
 
-class _HandlerFeedApi {
-  _HandlerFeedApi({required this.getTimelineHandler});
+class _HandlerFeedTransport {
+  _HandlerFeedTransport({required this.getTimelineHandler});
 
-  final Future<_FakeFeedResponse> Function({String? cursor, int? limit, Map<String, String>? headers})
+  final Future<FeedGetTimelineOutput> Function({String? cursor, int? limit, Map<String, String>? headers})
   getTimelineHandler;
 
-  Future<_FakeFeedResponse> getTimeline({String? cursor, int? limit, Map<String, String>? $headers}) {
-    return getTimelineHandler(cursor: cursor, limit: limit, headers: $headers);
+  Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
+    if (url.pathSegments.last != 'app.bsky.feed.getTimeline') {
+      return unexpectedGetClient(url, headers: headers);
+    }
+
+    final output = await getTimelineHandler(
+      cursor: url.queryParameters['cursor'],
+      limit: int.tryParse(url.queryParameters['limit'] ?? ''),
+      headers: headers,
+    );
+    return jsonResponse(url, 'GET', output.toJson());
   }
-}
-
-class _FakeBluesky {
-  _FakeBluesky(this.feed);
-
-  final dynamic feed;
 }
 
 void main() {
@@ -68,13 +66,17 @@ void main() {
 
   group('FeedRepository cache window', () {
     test('pagination deduplicates by URI and appends older posts', () async {
-      final feedApi = _QueuedFeedApi(
+      final feedApi = _QueuedFeedTransport(
         timelineResponses: [
-          _FakeFeedResponse(_FakeFeedData(feed: [_post(100), _post(99), _post(98)], cursor: 'cursor-1')),
-          _FakeFeedResponse(_FakeFeedData(feed: [_post(98), _post(97), _post(96)], cursor: 'cursor-2')),
+          FeedGetTimelineOutput(feed: [_post(100), _post(99), _post(98)], cursor: 'cursor-1'),
+          FeedGetTimelineOutput(feed: [_post(98), _post(97), _post(96)], cursor: 'cursor-2'),
         ],
       );
-      final repository = FeedRepository(bluesky: _FakeBluesky(feedApi), database: database, accountDid: 'did:plc:test');
+      final repository = FeedRepository(
+        bluesky: testBluesky(getClient: feedApi.get),
+        database: database,
+        accountDid: 'did:plc:test',
+      );
 
       await repository.getTimeline();
       await repository.getTimeline(cursor: 'cursor-1');
@@ -86,13 +88,17 @@ void main() {
     });
 
     test('refresh prepends latest page while preserving older cached posts', () async {
-      final feedApi = _QueuedFeedApi(
+      final feedApi = _QueuedFeedTransport(
         timelineResponses: [
-          _FakeFeedResponse(_FakeFeedData(feed: [_post(30), _post(29), _post(28)], cursor: 'cursor-old')),
-          _FakeFeedResponse(_FakeFeedData(feed: [_post(40), _post(29), _post(39)], cursor: 'cursor-new')),
+          FeedGetTimelineOutput(feed: [_post(30), _post(29), _post(28)], cursor: 'cursor-old'),
+          FeedGetTimelineOutput(feed: [_post(40), _post(29), _post(39)], cursor: 'cursor-new'),
         ],
       );
-      final repository = FeedRepository(bluesky: _FakeBluesky(feedApi), database: database, accountDid: 'did:plc:test');
+      final repository = FeedRepository(
+        bluesky: testBluesky(getClient: feedApi.get),
+        database: database,
+        accountDid: 'did:plc:test',
+      );
 
       await repository.getTimeline();
       await repository.getTimeline();
@@ -105,8 +111,12 @@ void main() {
 
     test('refresh enforces OfflineCachePolicy feed post cap', () async {
       final posts = List<FeedViewPost>.generate(OfflineCachePolicy.feedPostLimit + 10, _post);
-      final feedApi = _QueuedFeedApi(timelineResponses: [_FakeFeedResponse(_FakeFeedData(feed: posts, cursor: null))]);
-      final repository = FeedRepository(bluesky: _FakeBluesky(feedApi), database: database, accountDid: 'did:plc:test');
+      final feedApi = _QueuedFeedTransport(timelineResponses: [FeedGetTimelineOutput(feed: posts)]);
+      final repository = FeedRepository(
+        bluesky: testBluesky(getClient: feedApi.get),
+        database: database,
+        accountDid: 'did:plc:test',
+      );
 
       await repository.getTimeline();
 
@@ -121,8 +131,12 @@ void main() {
     });
 
     test('getCachedFeedPage tolerates malformed cached posts and returns valid entries', () async {
-      final feedApi = _QueuedFeedApi();
-      final repository = FeedRepository(bluesky: _FakeBluesky(feedApi), database: database, accountDid: 'did:plc:test');
+      final feedApi = _QueuedFeedTransport();
+      final repository = FeedRepository(
+        bluesky: testBluesky(getClient: feedApi.get),
+        database: database,
+        accountDid: 'did:plc:test',
+      );
       final validPost = _post(2);
 
       await database.upsertCachedFeedPosts(
@@ -157,27 +171,27 @@ void main() {
       var primaryCalls = 0;
       var fallbackCalls = 0;
 
-      final primaryFeedApi = _HandlerFeedApi(
+      final primaryFeedApi = _HandlerFeedTransport(
         getTimelineHandler: ({String? cursor, int? limit, Map<String, String>? headers}) async {
           primaryCalls += 1;
           throw _unauthorizedException('app.bsky.feed.getTimeline');
         },
       );
-      final fallbackFeedApi = _HandlerFeedApi(
+      final fallbackFeedApi = _HandlerFeedTransport(
         getTimelineHandler: ({String? cursor, int? limit, Map<String, String>? headers}) async {
           fallbackCalls += 1;
-          return _FakeFeedResponse(_FakeFeedData(feed: [_post(1)], cursor: null));
+          return FeedGetTimelineOutput(feed: [_post(1)]);
         },
       );
       final repository = FeedRepository(
-        bluesky: _FakeBluesky(primaryFeedApi),
+        bluesky: testBluesky(getClient: primaryFeedApi.get),
         database: database,
         accountDid: 'did:plc:test',
         onUnauthorized: () async {
           refreshCalls += 1;
           return _testTokens();
         },
-        blueskyClientFactory: (_) => _FakeBluesky(fallbackFeedApi),
+        blueskyClientFactory: (_) => testBluesky(getClient: fallbackFeedApi.get),
       );
 
       final result = await repository.getTimeline();
@@ -192,14 +206,14 @@ void main() {
     test('rethrows unauthorized when recovery callback returns null tokens', () async {
       var refreshCalls = 0;
       var primaryCalls = 0;
-      final primaryFeedApi = _HandlerFeedApi(
+      final primaryFeedApi = _HandlerFeedTransport(
         getTimelineHandler: ({String? cursor, int? limit, Map<String, String>? headers}) async {
           primaryCalls += 1;
           throw _unauthorizedException('app.bsky.feed.getTimeline');
         },
       );
       final repository = FeedRepository(
-        bluesky: _FakeBluesky(primaryFeedApi),
+        bluesky: testBluesky(getClient: primaryFeedApi.get),
         database: database,
         accountDid: 'did:plc:test',
         onUnauthorized: () async {
@@ -215,14 +229,14 @@ void main() {
 
     test('rethrows unauthorized when no recovery callback is configured', () async {
       var primaryCalls = 0;
-      final primaryFeedApi = _HandlerFeedApi(
+      final primaryFeedApi = _HandlerFeedTransport(
         getTimelineHandler: ({String? cursor, int? limit, Map<String, String>? headers}) async {
           primaryCalls += 1;
           throw _unauthorizedException('app.bsky.feed.getTimeline');
         },
       );
       final repository = FeedRepository(
-        bluesky: _FakeBluesky(primaryFeedApi),
+        bluesky: testBluesky(getClient: primaryFeedApi.get),
         database: database,
         accountDid: 'did:plc:test',
       );

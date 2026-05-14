@@ -1,12 +1,12 @@
-import 'dart:convert';
-
 import 'package:poptart_core/poptart_core.dart' as atcore;
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/get_post_thread.dart';
+import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
@@ -14,14 +14,14 @@ import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class PostThreadRepository {
   PostThreadRepository({
-    required dynamic bluesky,
+    required Bluesky bluesky,
     required AppDatabase database,
     required String accountDid,
     ModerationService? moderationService,
     String? appViewProvider,
     String Function()? appViewProviderResolver,
     Future<AuthTokens?> Function()? onUnauthorized,
-    dynamic Function(AuthTokens tokens)? blueskyClientFactory,
+    Bluesky? Function(AuthTokens tokens)? blueskyClientFactory,
   }) : _database = database,
        _accountDid = accountDid,
        _moderationService = moderationService,
@@ -29,7 +29,7 @@ class PostThreadRepository {
          appViewProvider: appViewProvider,
          appViewProviderResolver: appViewProviderResolver,
        ) {
-    _authRecovery = UnauthorizedRecoveryRunner<dynamic>(
+    _authRecovery = UnauthorizedRecoveryRunner<Bluesky>(
       initialClient: bluesky,
       onUnauthorized: onUnauthorized,
       clientFactory: blueskyClientFactory ?? createBlueskyClient,
@@ -39,7 +39,7 @@ class PostThreadRepository {
     );
   }
 
-  late final UnauthorizedRecoveryRunner<dynamic> _authRecovery;
+  late final UnauthorizedRecoveryRunner<Bluesky> _authRecovery;
   final AppDatabase _database;
   final String _accountDid;
   final ModerationService? _moderationService;
@@ -54,7 +54,7 @@ class PostThreadRepository {
       final response = await _authRecovery.run(
         (client) => client.feed.getPostThread(uri: atcore.AtUri.parse(uri), $headers: headers),
       );
-      final thread = response.data.thread as UFeedGetPostThreadThread;
+      final thread = response.data.thread;
 
       if (thread.isThreadViewPost) {
         final threadViewPost = thread.threadViewPost!;
@@ -88,7 +88,11 @@ class PostThreadRepository {
 
   Future<void> _cacheThread(ThreadViewPost thread) async {
     final rootUri = _threadRoot(thread).post.uri.toString();
-    await _database.cacheThreadRoot(accountDid: _accountDid, rootUri: rootUri, payload: jsonEncode(thread.toJson()));
+    await _database.cacheThreadRoot(
+      accountDid: _accountDid,
+      rootUri: rootUri,
+      payload: PoptartCacheCodecs.threadViewPost.encode(thread),
+    );
     await _database.pruneCachedThreadRoots(_accountDid, OfflineCachePolicy.threadRootLimit);
   }
 
@@ -96,7 +100,7 @@ class PostThreadRepository {
     final direct = await _database.getCachedThreadRoot(_accountDid, requestedUri);
     if (direct != null) {
       try {
-        return ThreadViewPost.fromJson(jsonDecode(direct.payload) as Map<String, dynamic>);
+        return PoptartCacheCodecs.threadViewPost.decode(direct.payload);
       } catch (error, stackTrace) {
         log.d(
           'thread.cache failed to decode direct snapshot for requestedUri=$requestedUri',
@@ -111,7 +115,7 @@ class PostThreadRepository {
     )..where((row) => row.accountDid.equals(_accountDid))).get();
     for (final candidate in all) {
       try {
-        final decoded = ThreadViewPost.fromJson(jsonDecode(candidate.payload) as Map<String, dynamic>);
+        final decoded = PoptartCacheCodecs.threadViewPost.decode(candidate.payload);
         if (_containsPostUri(decoded, requestedUri)) {
           return decoded;
         }

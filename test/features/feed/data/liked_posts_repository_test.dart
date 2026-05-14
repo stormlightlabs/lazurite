@@ -1,16 +1,19 @@
 import 'dart:convert';
 
-import 'package:poptart_core/poptart_core.dart';
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/get_actor_likes.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/features/feed/data/liked_posts_repository.dart';
 import 'package:lazurite/features/search/data/semantic_indexer.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/test_bluesky_client.dart';
 
 class MockSemanticIndexer extends Mock implements SemanticIndexer {}
 
@@ -34,7 +37,7 @@ void main() {
         final post1 = _makeFeedViewPost('at://did:plc:author/app.bsky.feed.post/post1');
         final post2 = _makeFeedViewPost('at://did:plc:author/app.bsky.feed.post/post2');
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _testBluesky(
             feed: _FakeFeedService(
               pages: [
                 FeedGetActorLikesOutput(feed: [post1, post2]),
@@ -68,7 +71,7 @@ void main() {
         );
 
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _testBluesky(
             feed: _FakeFeedService(
               pages: [
                 FeedGetActorLikesOutput(feed: [post1, post2]),
@@ -97,7 +100,7 @@ void main() {
         );
 
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(feed: _FakeFeedService(pages: pages)),
+          bluesky: _testBluesky(feed: _FakeFeedService(pages: pages)),
           database: database,
         );
 
@@ -120,7 +123,7 @@ void main() {
         }
 
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _testBluesky(
             feed: _FakeFeedService(pages: [const FeedGetActorLikesOutput(feed: [])]),
           ),
           database: database,
@@ -135,7 +138,7 @@ void main() {
       test('does not insert duplicate posts (idempotent)', () async {
         final post = _makeFeedViewPost('at://did:plc:author/app.bsky.feed.post/post1');
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _testBluesky(
             feed: _FakeFeedService(
               pages: [
                 FeedGetActorLikesOutput(feed: [post]),
@@ -163,7 +166,7 @@ void main() {
 
         final fakeService = _FakeFeedService(pages: pages);
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(feed: fakeService),
+          bluesky: _testBluesky(feed: fakeService),
           database: database,
         );
 
@@ -193,7 +196,7 @@ void main() {
           ],
         );
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(feed: feed),
+          bluesky: _testBluesky(feed: feed),
           database: database,
         );
 
@@ -217,7 +220,7 @@ void main() {
         );
 
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _testBluesky(
             feed: _FakeFeedService(
               pages: [
                 FeedGetActorLikesOutput(feed: [_makeFeedViewPost(knownPostUri), _makeFeedViewPost(newPostUri)]),
@@ -236,7 +239,7 @@ void main() {
       test('stores postJson as valid JSON', () async {
         final post = _makeFeedViewPost('at://did:plc:author/app.bsky.feed.post/post1');
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _testBluesky(
             feed: _FakeFeedService(
               pages: [
                 FeedGetActorLikesOutput(feed: [post]),
@@ -256,7 +259,7 @@ void main() {
       test('isolates posts by accountDid', () async {
         final post = _makeFeedViewPost('at://did:plc:author/app.bsky.feed.post/post1');
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _testBluesky(
             feed: _FakeFeedService(
               pages: [
                 FeedGetActorLikesOutput(feed: [post]),
@@ -275,7 +278,7 @@ void main() {
       test('updates existing liked row when incoming likedAt is newer', () async {
         const postUri = 'at://did:plc:author/app.bsky.feed.post/post1';
         final firstRepo = LikedPostsRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _testBluesky(
             feed: _FakeFeedService(
               pages: [
                 FeedGetActorLikesOutput(
@@ -289,7 +292,7 @@ void main() {
         await firstRepo.syncLikes(_accountDid);
 
         final secondRepo = LikedPostsRepository(
-          bluesky: _FakeBluesky(
+          bluesky: _testBluesky(
             feed: _FakeFeedService(
               pages: [
                 FeedGetActorLikesOutput(
@@ -311,7 +314,7 @@ void main() {
     group('getLikedPosts', () {
       test('returns empty list when no posts exist', () async {
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(feed: _FakeFeedService(pages: [])),
+          bluesky: _testBluesky(feed: _FakeFeedService(pages: [])),
           database: database,
         );
 
@@ -332,7 +335,7 @@ void main() {
         }
 
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(feed: _FakeFeedService(pages: [])),
+          bluesky: _testBluesky(feed: _FakeFeedService(pages: [])),
           database: database,
         );
 
@@ -366,7 +369,7 @@ void main() {
         );
 
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(feed: _FakeFeedService(pages: [])),
+          bluesky: _testBluesky(feed: _FakeFeedService(pages: [])),
           database: database,
         );
 
@@ -394,7 +397,7 @@ void main() {
         );
 
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(feed: _FakeFeedService(pages: [])),
+          bluesky: _testBluesky(feed: _FakeFeedService(pages: [])),
           database: database,
         );
 
@@ -417,7 +420,7 @@ void main() {
         );
 
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(feed: _FakeFeedService(pages: [])),
+          bluesky: _testBluesky(feed: _FakeFeedService(pages: [])),
           database: database,
         );
 
@@ -430,7 +433,7 @@ void main() {
 
       test('returns 0 when post does not exist', () async {
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(feed: _FakeFeedService(pages: [])),
+          bluesky: _testBluesky(feed: _FakeFeedService(pages: [])),
           database: database,
         );
 
@@ -450,7 +453,7 @@ void main() {
         );
 
         final repo = LikedPostsRepository(
-          bluesky: _FakeBluesky(feed: _FakeFeedService(pages: [])),
+          bluesky: _testBluesky(feed: _FakeFeedService(pages: [])),
           database: database,
         );
 
@@ -475,7 +478,7 @@ void main() {
       const postUri = 'at://did:plc:author/app.bsky.feed.post/post1';
       final post = _makeFeedViewPost(postUri);
       final repo = LikedPostsRepository(
-        bluesky: _FakeBluesky(
+        bluesky: _testBluesky(
           feed: _FakeFeedService(
             pages: [
               FeedGetActorLikesOutput(feed: [post]),
@@ -504,7 +507,7 @@ void main() {
 
       final post = _makeFeedViewPost(postUri);
       final repo = LikedPostsRepository(
-        bluesky: _FakeBluesky(
+        bluesky: _testBluesky(
           feed: _FakeFeedService(
             pages: [
               FeedGetActorLikesOutput(feed: [post]),
@@ -532,7 +535,7 @@ void main() {
       );
 
       final repo = LikedPostsRepository(
-        bluesky: _FakeBluesky(feed: _FakeFeedService(pages: [])),
+        bluesky: _testBluesky(feed: _FakeFeedService(pages: [])),
         database: database,
         semanticIndexer: mockIndexer,
       );
@@ -660,11 +663,7 @@ FeedViewPost _makeFeedViewPost(String uriStr, {DateTime? indexedAt, DateTime? cr
   );
 }
 
-class _FakeBluesky {
-  _FakeBluesky({required this.feed});
-
-  final _FakeFeedService feed;
-}
+Bluesky _testBluesky({required _FakeFeedService feed}) => testBluesky(getClient: feed.get);
 
 class _FakeFeedService {
   _FakeFeedService({required this.pages});
@@ -673,23 +672,15 @@ class _FakeFeedService {
   int _callIndex = 0;
   int callCount = 0;
 
-  Future<_FakeXRPCResponse<FeedGetActorLikesOutput>> getActorLikes({
-    required String actor,
-    int? limit,
-    String? cursor,
-    String? $service,
-    Map<String, String>? $headers,
-  }) async {
+  Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
+    if (url.pathSegments.last != 'app.bsky.feed.getActorLikes') {
+      return unexpectedGetClient(url, headers: headers);
+    }
+
     callCount++;
     if (_callIndex >= pages.length) {
-      return _FakeXRPCResponse(const FeedGetActorLikesOutput(feed: []));
+      return jsonResponse(url, 'GET', const FeedGetActorLikesOutput(feed: []).toJson());
     }
-    return _FakeXRPCResponse(pages[_callIndex++]);
+    return jsonResponse(url, 'GET', pages[_callIndex++].toJson());
   }
-}
-
-class _FakeXRPCResponse<T> {
-  _FakeXRPCResponse(this.data);
-
-  final T data;
 }

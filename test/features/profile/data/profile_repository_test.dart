@@ -3,11 +3,22 @@ import 'dart:typed_data';
 
 import 'package:poptart_core/poptart_core.dart' as atp_core;
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/actor/get_profiles.dart';
+import 'package:poptart_lex/app/bsky/graph/get_followers.dart';
+import 'package:poptart_lex/app/bsky/graph/get_follows.dart';
+import 'package:poptart_lex/app/bsky/graph/get_suggested_follows_by_actor.dart';
+import 'package:poptart_lex/com/atproto/repo/get_record.dart';
+import 'package:poptart_lex/com/atproto/repo/put_record.dart';
+import 'package:poptart_lex/com/atproto/repo/upload_blob.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart' show Bluesky;
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
+
+import '../../../helpers/test_bluesky_client.dart';
 
 void main() {
   late AppDatabase database;
@@ -29,7 +40,7 @@ void main() {
         ];
         final repository = ProfileRepository(
           database: database,
-          bluesky: _FakeBlueskyClient(
+          bluesky: _testBlueskyClient(
             actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
             graph: _FakeGraphService(suggestions: suggestions),
           ),
@@ -44,7 +55,7 @@ void main() {
       test('returns empty list when no suggestions', () async {
         final repository = ProfileRepository(
           database: database,
-          bluesky: _FakeBlueskyClient(
+          bluesky: _testBlueskyClient(
             actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
             graph: _FakeGraphService(suggestions: []),
           ),
@@ -58,7 +69,7 @@ void main() {
       test('propagates exceptions from graph service', () async {
         final repository = ProfileRepository(
           database: database,
-          bluesky: _FakeBlueskyClient(
+          bluesky: _testBlueskyClient(
             actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
             graph: _FakeGraphService(onGetSuggested: (_) async => throw Exception('network error')),
           ),
@@ -77,7 +88,7 @@ void main() {
         ];
         final repository = ProfileRepository(
           database: database,
-          bluesky: _FakeBlueskyClient(
+          bluesky: _testBlueskyClient(
             actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
             graph: _FakeGraphService(follows: follows, followsSubject: subject, followsCursor: 'next'),
           ),
@@ -95,7 +106,7 @@ void main() {
         const followers = [ProfileView(did: 'did:plc:dana', handle: 'dana.bsky.social')];
         final repository = ProfileRepository(
           database: database,
-          bluesky: _FakeBlueskyClient(
+          bluesky: _testBlueskyClient(
             actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
             graph: _FakeGraphService(followers: followers, followersSubject: subject),
           ),
@@ -113,7 +124,7 @@ void main() {
       final profile = _buildProfile();
       final repository = ProfileRepository(
         database: database,
-        bluesky: _FakeBlueskyClient(actor: _FakeActorService(onGetProfile: (_) async => _FakeResponse(profile))),
+        bluesky: _testBlueskyClient(actor: _FakeActorService(onGetProfile: (_) async => _FakeResponse(profile))),
       );
 
       final result = await repository.getProfile(profile.did);
@@ -128,12 +139,10 @@ void main() {
 
     test('refreshes and retries getProfile after unauthorized response', () async {
       final profile = _buildProfile();
-      final initialClient = _FakeBlueskyClient(
-        actor: _FakeActorService(onGetProfile: (_) async => throw _unauthorizedException()),
-      );
-      final refreshedClient = _FakeBlueskyClient(
-        actor: _FakeActorService(onGetProfile: (_) async => _FakeResponse(profile)),
-      );
+      final initialActor = _FakeActorService(onGetProfile: (_) async => throw _unauthorizedException());
+      final refreshedActor = _FakeActorService(onGetProfile: (_) async => _FakeResponse(profile));
+      final initialClient = _testBlueskyClient(actor: initialActor);
+      final refreshedClient = _testBlueskyClient(actor: refreshedActor);
       var recoveryCalls = 0;
 
       final repository = ProfileRepository(
@@ -155,8 +164,8 @@ void main() {
 
       expect(result.did, profile.did);
       expect(recoveryCalls, 1);
-      expect(initialClient.actor.getProfileCalls, 1);
-      expect(refreshedClient.actor.getProfileCalls, 1);
+      expect(initialActor.getProfileCalls, 1);
+      expect(refreshedActor.getProfileCalls, 1);
     });
 
     test('falls back to the cached profile when the xrpc request fails', () async {
@@ -165,7 +174,7 @@ void main() {
 
       final repository = ProfileRepository(
         database: database,
-        bluesky: _FakeBlueskyClient(
+        bluesky: _testBlueskyClient(
           actor: _FakeActorService(onGetProfile: (_) async => throw Exception('request failed')),
         ),
       );
@@ -181,7 +190,7 @@ void main() {
       final profile = _buildProfile();
       final repository = ProfileRepository(
         database: database,
-        bluesky: _FakeBlueskyClient(actor: _FakeActorService(onGetProfile: (_) async => _FakeResponse(profile))),
+        bluesky: _testBlueskyClient(actor: _FakeActorService(onGetProfile: (_) async => _FakeResponse(profile))),
       );
 
       await database.close();
@@ -196,13 +205,15 @@ void main() {
       final actors = List<String>.generate(26, (index) => 'did:plc:actor$index');
       final repository = ProfileRepository(
         database: database,
-        bluesky: _FakeBlueskyClient(
+        bluesky: _testBlueskyClient(
           actor: _FakeActorService(
             onGetProfile: (_) async => throw UnimplementedError(),
             onGetProfiles: (batch) async {
               requestedBatches.add(List<String>.from(batch));
               final profiles = batch
-                  .map((did) => ProfileView(did: did, handle: '$did.bsky.social', indexedAt: DateTime.utc(2026)))
+                  .map(
+                    (did) => ProfileViewDetailed(did: did, handle: '$did.bsky.social', indexedAt: DateTime.utc(2026)),
+                  )
                   .toList(growable: false);
               return _FakeProfilesResponse(_FakeProfilesData(profiles));
             },
@@ -227,12 +238,13 @@ void main() {
           'description': 'Old description',
           'labels': {r'$type': 'com.atproto.label.defs#selfLabels', 'values': []},
           'createdAt': '2026-01-01T00:00:00.000Z',
+          'futureProfileField': {'enabled': true},
         },
         cid: 'bafy-current',
       );
       final repository = ProfileRepository(
         database: database,
-        bluesky: _FakeBlueskyClient(
+        bluesky: _testBlueskyClient(
           actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
           atproto: _FakeAtprotoService(repo: repo),
         ),
@@ -261,6 +273,8 @@ void main() {
       expect(put.record['website'], 'https://alice.example');
       expect(put.record['labels'], isA<Map>());
       expect(put.record['createdAt'], '2026-01-01T00:00:00.000Z');
+      expect(put.record['futureProfileField'], {'enabled': true});
+      expect(put.record.containsKey(r'$unknown'), isFalse);
     });
 
     test('removes emptied optional text fields and uploads selected profile images', () async {
@@ -282,7 +296,7 @@ void main() {
       );
       final repository = ProfileRepository(
         database: database,
-        bluesky: _FakeBlueskyClient(
+        bluesky: _testBlueskyClient(
           actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
           atproto: _FakeAtprotoService(repo: repo),
         ),
@@ -316,7 +330,7 @@ void main() {
       final repo = _FakeRepoService(record: const {r'$type': 'app.bsky.actor.profile'});
       final repository = ProfileRepository(
         database: database,
-        bluesky: _FakeBlueskyClient(
+        bluesky: _testBlueskyClient(
           actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
           atproto: _FakeAtprotoService(repo: repo),
         ),
@@ -347,14 +361,128 @@ ProfileViewDetailed _buildProfile() {
   );
 }
 
-class _FakeBlueskyClient {
-  _FakeBlueskyClient({required this.actor, _FakeGraphService? graph, _FakeAtprotoService? atproto})
+Bluesky _testBlueskyClient({required _FakeActorService actor, _FakeGraphService? graph, _FakeAtprotoService? atproto}) {
+  final transport = _FakeProfileTransport(
+    actor: actor,
+    graph: graph ?? _FakeGraphService(),
+    atproto: atproto ?? _FakeAtprotoService(repo: _FakeRepoService(record: const {})),
+  );
+  return testBluesky(getClient: transport.get, postClient: transport.post);
+}
+
+class _FakeProfileTransport {
+  _FakeProfileTransport({required this.actor, _FakeGraphService? graph, _FakeAtprotoService? atproto})
     : graph = graph ?? _FakeGraphService(),
       atproto = atproto ?? _FakeAtprotoService(repo: _FakeRepoService(record: const {}));
 
   final _FakeActorService actor;
   final _FakeGraphService graph;
   final _FakeAtprotoService atproto;
+
+  Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
+    final query = url.queryParameters;
+
+    switch (url.pathSegments.last) {
+      case 'app.bsky.actor.getProfile':
+        final response = await actor.getProfile(actor: query['actor']!, $headers: headers);
+        return jsonResponse(url, 'GET', response.data.toJson());
+      case 'app.bsky.actor.getProfiles':
+        final response = await actor.getProfiles(
+          actors: url.queryParametersAll['actors'] ?? const [],
+          $headers: headers,
+        );
+        return jsonResponse(url, 'GET', ActorGetProfilesOutput(profiles: response.data.profiles).toJson());
+      case 'app.bsky.graph.getSuggestedFollowsByActor':
+        final response = await graph.getSuggestedFollowsByActor(actor: query['actor']!, $headers: headers);
+        return jsonResponse(
+          url,
+          'GET',
+          GraphGetSuggestedFollowsByActorOutput(suggestions: response.data.suggestions).toJson(),
+        );
+      case 'app.bsky.graph.getFollows':
+        final response = await graph.getFollows(
+          actor: query['actor']!,
+          cursor: query['cursor'],
+          limit: int.tryParse(query['limit'] ?? ''),
+          $headers: headers,
+        );
+        return jsonResponse(
+          url,
+          'GET',
+          GraphGetFollowsOutput(
+            subject: response.data.subject,
+            follows: response.data.follows,
+            cursor: response.data.cursor,
+          ).toJson(),
+        );
+      case 'app.bsky.graph.getFollowers':
+        final response = await graph.getFollowers(
+          actor: query['actor']!,
+          cursor: query['cursor'],
+          limit: int.tryParse(query['limit'] ?? ''),
+          $headers: headers,
+        );
+        return jsonResponse(
+          url,
+          'GET',
+          GraphGetFollowersOutput(
+            subject: response.data.subject,
+            followers: response.data.followers,
+            cursor: response.data.cursor,
+          ).toJson(),
+        );
+      case 'com.atproto.repo.getRecord':
+        final response = await atproto.repo.getRecord(
+          repo: query['repo']!,
+          collection: query['collection']!,
+          rkey: query['rkey']!,
+          cid: query['cid'],
+          $headers: headers,
+        );
+        return jsonResponse(
+          url,
+          'GET',
+          RepoGetRecordOutput(
+            uri: atp_core.AtUri.parse('at://${query['repo']}/${query['collection']}/${query['rkey']}'),
+            cid: response.data.cid,
+            value: response.data.value,
+          ).toJson(),
+        );
+      default:
+        return unexpectedGetClient(url, headers: headers);
+    }
+  }
+
+  Future<http.Response> post(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
+    switch (url.pathSegments.last) {
+      case 'com.atproto.repo.putRecord':
+        final input = RepoPutRecordInput.fromJson((jsonDecode(body as String) as Map).cast<String, Object?>());
+        await atproto.repo.putRecord(
+          repo: input.repo,
+          collection: input.collection,
+          rkey: input.rkey,
+          validate: input.validate,
+          record: input.record,
+          swapRecord: input.swapRecord,
+          swapCommit: input.swapCommit,
+          $headers: headers,
+        );
+        return jsonResponse(
+          url,
+          'POST',
+          RepoPutRecordOutput(
+            uri: atp_core.AtUri.parse('at://${input.repo}/${input.collection}/${input.rkey}'),
+            cid: 'cid-put',
+          ).toJson(),
+        );
+      case 'com.atproto.repo.uploadBlob':
+        final bytes = Uint8List.fromList((body as List<int>?) ?? const []);
+        final response = await atproto.repo.uploadBlob(bytes: bytes, $headers: headers);
+        return jsonResponse(url, 'POST', RepoUploadBlobOutput(blob: response.data.blob).toJson());
+      default:
+        return unexpectedPostClient(url, headers: headers, body: body, encoding: encoding);
+    }
+  }
 }
 
 class _FakeActorService {
@@ -393,7 +521,7 @@ class _FakeProfilesResponse {
 class _FakeProfilesData {
   const _FakeProfilesData(this.profiles);
 
-  final List<ProfileView> profiles;
+  final List<ProfileViewDetailed> profiles;
 }
 
 class _FakeAtprotoService {

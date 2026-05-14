@@ -1,9 +1,14 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:poptart_core/poptart_core.dart' show Blob;
-import 'package:poptart_lex/app/bsky/video/defs.dart' show KnownJobStatusState;
+import 'package:poptart_core/poptart_core.dart' show AtUri, Blob;
+import 'package:poptart_lex/app/bsky/embed/defs.dart' as embed_defs;
+import 'package:poptart_lex/app/bsky/embed/images.dart';
+import 'package:poptart_lex/app/bsky/embed/video.dart';
+import 'package:poptart_lex/app/bsky/feed/post.dart';
+import 'package:poptart_lex/app/bsky/richtext/facet.dart';
+import 'package:poptart_lex/app/bsky/video/defs.dart';
+import 'package:poptart_lex/com/atproto/repo/strong_ref.dart';
 import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lazurite/core/database/app_database.dart';
@@ -11,6 +16,7 @@ import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
+import 'package:lazurite/features/compose/data/draft_embed_payload.dart';
 import 'package:lazurite/features/notifications/background/notification_background_worker.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -75,41 +81,39 @@ Future<void> _submitScheduledDraft(int draftId) async {
 
     final composeRepo = ComposeRepository(bluesky: bluesky);
 
-    final facets = <Map<String, dynamic>>[];
+    final facets = <RichtextFacet>[];
     for (final entity in BlueskyText(draft.content).entities) {
       try {
-        final facet = await entity.toFacet().timeout(
+        final facetJson = await entity.toFacet().timeout(
           const Duration(seconds: 5),
           onTimeout: () {
             log.w('Scheduled post: timeout resolving facet for "${entity.value}"');
             return {};
           },
         );
-        if (facet.isNotEmpty) facets.add(facet);
+        if (facetJson.isNotEmpty) {
+          facets.add(const RichtextFacetConverter().fromJson(Map<String, dynamic>.from(facetJson)));
+        }
       } catch (e) {
         log.w('Scheduled post: could not resolve facet for "${entity.value}": $e');
       }
     }
 
-    Map<String, dynamic>? embed;
+    UFeedPostEmbed? embed;
 
-    if (draft.embedJson != null) {
-      final decoded = jsonDecode(draft.embedJson!) as Map<String, dynamic>;
-      final type = decoded['type'] as String?;
-
-      if (type == 'images') {
-        embed = await _buildImageEmbed(composeRepo, decoded);
-      } else if (type == 'video') {
-        embed = await _buildVideoEmbed(composeRepo, decoded);
-      }
+    final embedPayload = DraftEmbedPayload.tryDecode(draft.embedJson);
+    if (embedPayload is DraftImagesEmbedPayload) {
+      embed = await _buildImageEmbed(composeRepo, embedPayload);
+    } else if (embedPayload is DraftVideoEmbedPayload) {
+      embed = await _buildVideoEmbed(composeRepo, embedPayload);
     }
 
-    Map<String, dynamic>? reply;
+    ReplyRef? reply;
     if (draft.replyUri != null && draft.replyCid != null) {
-      reply = {
-        'parent': {'uri': draft.replyUri, 'cid': draft.replyCid},
-        'root': {'uri': draft.rootUri ?? draft.replyUri, 'cid': draft.rootCid ?? draft.replyCid},
-      };
+      reply = ReplyRef(
+        parent: RepoStrongRef(uri: AtUri.parse(draft.replyUri!), cid: draft.replyCid!),
+        root: RepoStrongRef(uri: AtUri.parse(draft.rootUri ?? draft.replyUri!), cid: draft.rootCid ?? draft.replyCid!),
+      );
     }
 
     final success = await composeRepo.createPost(
@@ -131,11 +135,11 @@ Future<void> _submitScheduledDraft(int draftId) async {
   }
 }
 
-/// Uploads images from [embedJson] `{ "paths": [...], "altTexts": [...] }`.
-Future<Map<String, dynamic>?> _buildImageEmbed(ComposeRepository repo, Map<String, dynamic> embedJson) async {
-  final paths = (embedJson['paths'] as List<dynamic>? ?? []).cast<String>();
-  final alts = (embedJson['altTexts'] as List<dynamic>? ?? []).cast<String>();
-  final images = <Map<String, dynamic>>[];
+/// Uploads images from a draft embed payload.
+Future<UFeedPostEmbed?> _buildImageEmbed(ComposeRepository repo, DraftImagesEmbedPayload payload) async {
+  final paths = payload.paths;
+  final alts = payload.altTexts;
+  final images = <EmbedImagesImage>[];
 
   for (var i = 0; i < paths.length; i++) {
     final file = File(paths[i]);
@@ -157,30 +161,27 @@ Future<Map<String, dynamic>?> _buildImageEmbed(ComposeRepository repo, Map<Strin
     }
 
     final altText = i < alts.length ? alts[i] : '';
-    final entry = <String, dynamic>{'image': blob.toJson(), 'alt': altText};
-
+    embed_defs.AspectRatio? aspectRatio;
     try {
       final dims = await readImageDimensions(bytes.toList());
       if (dims != null) {
-        entry['aspectRatio'] = {'width': dims.width, 'height': dims.height};
+        aspectRatio = embed_defs.AspectRatio(width: dims.width, height: dims.height);
       }
     } catch (_) {
       log.w('Scheduled post: could not read image dimensions for ${paths[i]}');
     }
 
-    images.add(entry);
+    images.add(EmbedImagesImage(image: blob, alt: altText, aspectRatio: aspectRatio));
   }
 
   if (images.isEmpty) return null;
-  return {'\$type': 'app.bsky.embed.images', 'images': images};
+  return UFeedPostEmbed.embedImages(data: EmbedImages(images: images));
 }
 
 /// Re-uploads a video from its local path and polls the processing job.
-Future<Map<String, dynamic>?> _buildVideoEmbed(ComposeRepository repo, Map<String, dynamic> embedJson) async {
-  final path = embedJson['path'] as String?;
-  final altText = (embedJson['alt'] as String?) ?? '';
-
-  if (path == null) return null;
+Future<UFeedPostEmbed?> _buildVideoEmbed(ComposeRepository repo, DraftVideoEmbedPayload payload) async {
+  final path = payload.path;
+  final altText = payload.alt;
 
   final file = File(path);
   if (!file.existsSync()) {
@@ -199,7 +200,9 @@ Future<Map<String, dynamic>?> _buildVideoEmbed(ComposeRepository repo, Map<Strin
   final blob = await _pollVideoJob(repo, jobId);
   if (blob == null) throw Exception('Video processing failed for scheduled post');
 
-  return {'\$type': 'app.bsky.embed.video', 'video': blob.toJson(), 'alt': altText};
+  return UFeedPostEmbed.embedVideo(
+    data: EmbedVideo(video: blob, alt: altText),
+  );
 }
 
 /// Polls `getJobStatus` until the video is ready or the deadline passes.
@@ -212,13 +215,12 @@ Future<Blob?> _pollVideoJob(ComposeRepository repo, String jobId) async {
       final status = await repo.getJobStatus(jobId);
       if (status == null) continue;
 
-      final knownState = (status as dynamic).state.knownValue;
+      final knownState = status.state.knownValue;
       if (knownState == KnownJobStatusState.jOB_STATE_COMPLETED && status.blob != null) {
-        return status.blob as Blob;
+        return status.blob;
       }
       if (knownState == KnownJobStatusState.jOB_STATE_FAILED) {
-        final error = (status as dynamic).error as String?;
-        log.e('Scheduled post: video processing failed — ${error ?? 'unknown error'}');
+        log.e('Scheduled post: video processing failed — ${status.error ?? 'unknown error'}');
         return null;
       }
     } catch (e) {

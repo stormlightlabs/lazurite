@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:poptart_lex/com/atproto/label/defs.dart';
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:poptart_lex/app/bsky/actor/get_preferences.dart';
@@ -8,18 +6,19 @@ import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:poptart_lex/app/bsky/labeler/defs.dart';
 import 'package:poptart_lex/app/bsky/labeler/get_services.dart';
 import 'package:poptart_lex/app/bsky/notification/list_notifications.dart' as notifications;
-import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
+import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 
 const _officialBlueskyLabelerDid = 'did:plc:ar7c4by46qjdydhdevvrndac';
 const _maxCustomLabelers = 20;
 
 class ModerationService {
   ModerationService({
-    required dynamic bluesky,
+    required Bluesky bluesky,
     AppDatabase? database,
     String? accountDid,
     String? userDid,
@@ -39,7 +38,7 @@ class ModerationService {
     );
   }
 
-  final dynamic _bluesky;
+  final Bluesky _bluesky;
   final AppDatabase? _database;
   final String? _accountDid;
   final String? _userDid;
@@ -452,7 +451,10 @@ class ModerationService {
 
       final detailed = view.labelerViewDetailed!;
       _labelerPoliciesByDid[detailed.creator.did] = detailed.policies;
-      await _database.upsertLabelerCache(detailed.creator.did, jsonEncode(detailed.policies.toJson()));
+      await _database.upsertLabelerCache(
+        detailed.creator.did,
+        PoptartCacheCodecs.labelerPolicies.encode(detailed.policies),
+      );
     }
   }
 
@@ -470,7 +472,7 @@ class ModerationService {
         continue;
       }
 
-      final policies = LabelerPolicies.fromJson(jsonDecode(cached.policiesJson) as Map<String, dynamic>);
+      final policies = PoptartCacheCodecs.labelerPolicies.decode(cached.policiesJson);
       _labelerPoliciesByDid[did] = policies;
       definitions[did] = _interpretedLabelDefinitionsFromPolicies(policies, labelerDid: did);
     }
@@ -485,8 +487,7 @@ class ModerationService {
       return;
     }
 
-    final payload = jsonEncode(preferences.map((preference) => preference.toJson()).toList());
-    await database.setSetting(prefsKey, payload);
+    await database.setSetting(prefsKey, PoptartCacheCodecs.encodeModerationPreferences(preferences));
   }
 
   Future<List<UPreferences>?> _loadCachedPreferences() async {
@@ -501,10 +502,7 @@ class ModerationService {
       return null;
     }
 
-    final decoded = jsonDecode(payload) as List<dynamic>;
-    return decoded
-        .map((json) => const UPreferencesConverter().fromJson(Map<String, dynamic>.from(json as Map)))
-        .toList();
+    return PoptartCacheCodecs.decodeModerationPreferences(payload);
   }
 
   Future<List<String>> _getSubscribedLabelerDids() async {
@@ -629,12 +627,7 @@ class ModerationService {
       return explicitUserDid;
     }
 
-    final bluesky = _bluesky;
-    if (bluesky is Bluesky) {
-      return bluesky.oAuthSession?.sub ?? bluesky.session?.did;
-    }
-
-    return null;
+    return _bluesky.oAuthSession?.sub ?? _bluesky.session?.did;
   }
 
   LabelValueDefinition? _labelValueDefinitionForIdentifier(LabelerPolicies? policies, String identifier) {

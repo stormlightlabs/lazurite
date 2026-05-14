@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
@@ -408,11 +408,7 @@ class _ResultCard extends StatelessWidget {
 
   FeedViewPost? _toFeedViewPost() {
     try {
-      final json = jsonDecode(result.postJson) as Map<String, dynamic>;
-      if (result.source == 'liked') {
-        return FeedViewPost.fromJson(json);
-      }
-      return FeedViewPost(post: PostView.fromJson(json));
+      return PoptartCacheCodecs.decodeSavedOrLikedPost(result.postJson);
     } catch (e) {
       log.e('Failed to deserialize semantic search result', error: e);
       return null;

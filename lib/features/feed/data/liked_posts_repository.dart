@@ -1,14 +1,14 @@
-import 'dart:convert';
-
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/features/search/data/semantic_indexer.dart';
 
 class LikedPostsRepository {
   LikedPostsRepository({
-    required dynamic bluesky,
+    required Bluesky bluesky,
     required AppDatabase database,
     SemanticIndexer? semanticIndexer,
     String? appViewProvider,
@@ -21,7 +21,7 @@ class LikedPostsRepository {
          appViewProviderResolver: appViewProviderResolver,
        );
 
-  final dynamic _bluesky;
+  final Bluesky _bluesky;
   final AppDatabase _database;
   final SemanticIndexer? _semanticIndexer;
   final AppViewRequestContext _appViewContext;
@@ -46,7 +46,7 @@ class LikedPostsRepository {
       );
 
       final data = response.data;
-      final posts = (data.feed as List<dynamic>).whereType<FeedViewPost>().toList(growable: false);
+      final posts = data.feed;
 
       if (posts.isEmpty) break;
       scanned += posts.length;
@@ -54,7 +54,7 @@ class LikedPostsRepository {
       for (final FeedViewPost feedViewPost in posts) {
         final postUri = feedViewPost.post.uri.toString();
         final likedAt = _resolveLikedAt(feedViewPost);
-        final postJson = jsonEncode(feedViewPost.toJson());
+        final postJson = PoptartCacheCodecs.feedViewPost.encode(feedViewPost);
 
         final existing = await _database.getLikedPost(accountDid, postUri);
         if (existing != null) {
@@ -100,33 +100,19 @@ class LikedPostsRepository {
       return fromReason;
     }
 
-    final indexedAt = (feedViewPost.post as dynamic).indexedAt;
-    if (indexedAt is DateTime) {
-      return indexedAt.toUtc();
-    }
-
-    final createdAtRaw = feedViewPost.post.record['createdAt'];
-    if (createdAtRaw is String) {
-      final parsed = DateTime.tryParse(createdAtRaw);
-      if (parsed != null) {
-        return parsed.toUtc();
-      }
-    }
-
-    return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+    return feedViewPost.post.indexedAt.toUtc();
   }
 
-  DateTime? _extractReasonIndexedAt(dynamic reason) {
+  DateTime? _extractReasonIndexedAt(UFeedViewPostReason? reason) {
     if (reason == null) {
       return null;
     }
-    try {
-      final map = reason is Map ? reason : (reason as dynamic).toJson();
-      final indexedAt = map['indexedAt'] as String?;
-      if (indexedAt != null) {
-        return DateTime.parse(indexedAt).toUtc();
-      }
-    } catch (_) {}
-    return null;
+
+    if (reason.isReasonRepost) {
+      return reason.reasonRepost!.indexedAt.toUtc();
+    }
+
+    final indexedAt = reason.unknown?['indexedAt'];
+    return indexedAt is String ? DateTime.tryParse(indexedAt)?.toUtc() : null;
   }
 }

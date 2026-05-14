@@ -1,4 +1,4 @@
-import 'package:poptart_core/poptart_core.dart' show AtUri, BlobRef;
+import 'package:poptart_core/poptart_core.dart' show AtUri, Blob;
 import 'package:poptart_lex/app/bsky/graph/defs.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -81,7 +81,7 @@ class MyListsCubit extends Cubit<MyListsState> {
     String avatarMimeType = 'image/jpeg',
   }) async {
     try {
-      BlobRef? avatarBlob;
+      Blob? avatarBlob;
       if (avatarBytes != null) {
         avatarBlob = await _listRepository.uploadListAvatar(bytes: avatarBytes, mimeType: avatarMimeType);
       }

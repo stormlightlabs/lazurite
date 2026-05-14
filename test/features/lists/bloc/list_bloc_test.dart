@@ -1,4 +1,4 @@
-import 'package:poptart_core/poptart_core.dart' show AtUri, BlobRef;
+import 'package:poptart_core/poptart_core.dart' show AtUri, Blob, BlobRef;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:poptart_lex/app/bsky/graph/defs.dart';
@@ -238,7 +238,9 @@ void main() {
             bytes: any(named: 'bytes'),
             mimeType: any(named: 'mimeType'),
           ),
-        ).thenAnswer((_) async => const BlobRef(link: 'bafkreinewavatarblob'));
+        ).thenAnswer(
+          (_) async => const Blob(ref: BlobRef(link: 'bafkreinewavatarblob'), mimeType: 'image/jpeg', size: 3),
+        );
         when(
           () => mockListRepository.updateList(
             listUri: any(named: 'listUri'),
@@ -272,7 +274,7 @@ void main() {
             name: any(named: 'name'),
             purpose: any(named: 'purpose'),
             description: any(named: 'description'),
-            avatarBlob: const BlobRef(link: 'bafkreinewavatarblob'),
+            avatarBlob: const Blob(ref: BlobRef(link: 'bafkreinewavatarblob'), mimeType: 'image/jpeg', size: 3),
           ),
         ).called(1);
       },

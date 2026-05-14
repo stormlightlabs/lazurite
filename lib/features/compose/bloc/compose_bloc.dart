@@ -1,10 +1,18 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:poptart_core/poptart_core.dart' show AtUri, Blob, BlobRef, XRPCException;
-import 'package:poptart_lex/app/bsky/video/defs.dart' show KnownJobStatusState;
+import 'package:poptart_lex/app/bsky/embed/defs.dart' as embed_defs;
+import 'package:poptart_lex/app/bsky/embed/external.dart';
+import 'package:poptart_lex/app/bsky/embed/images.dart';
+import 'package:poptart_lex/app/bsky/embed/record.dart';
+import 'package:poptart_lex/app/bsky/embed/record_with_media.dart';
+import 'package:poptart_lex/app/bsky/embed/video.dart';
+import 'package:poptart_lex/app/bsky/feed/post.dart';
+import 'package:poptart_lex/app/bsky/richtext/facet.dart';
+import 'package:poptart_lex/app/bsky/video/defs.dart';
+import 'package:poptart_lex/com/atproto/repo/get_record.dart';
+import 'package:poptart_lex/com/atproto/repo/strong_ref.dart';
 import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
 import 'package:characters/characters.dart';
 import 'package:drift/drift.dart';
@@ -13,9 +21,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/actor_repository_service_resolver.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/scheduler/post_scheduler.dart';
+import 'package:lazurite/features/compose/data/draft_embed_payload.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/compose/data/link_preview_service.dart';
 
@@ -237,7 +247,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
   Future<void> _onDraftSaved(DraftSaved event, Emitter<ComposeState> emit) async {
     emit(state.copyWith(isSavingDraft: true));
     try {
-      final embedJson = _buildEmbedJson();
+      final embedPayload = _buildEmbedPayload();
       final draft = DraftsCompanion(
         id: state.draftId != null ? Value(state.draftId!) : const Value.absent(),
         accountDid: Value(_accountDid),
@@ -246,9 +256,9 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         replyCid: state.replyParentCid != null ? Value(state.replyParentCid!) : const Value.absent(),
         rootUri: state.replyRootUri != null ? Value(state.replyRootUri!) : const Value.absent(),
         rootCid: state.replyRootCid != null ? Value(state.replyRootCid!) : const Value.absent(),
-        embedJson: embedJson != null ? Value(jsonEncode(embedJson)) : const Value.absent(),
+        embedJson: embedPayload != null ? Value(embedPayload.encode()) : const Value.absent(),
         mediaPaths: state.mediaAttachments.isNotEmpty
-            ? Value(jsonEncode(state.mediaAttachments.map((m) => m.localPath).toList()))
+            ? Value(DraftEmbedPayload.encodeMediaPaths(state.mediaAttachments.map((m) => m.localPath)))
             : const Value.absent(),
         scheduledAt: state.scheduledAt != null ? Value(state.scheduledAt!) : const Value.absent(),
         updatedAt: Value(DateTime.now()),
@@ -268,20 +278,15 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
 
       List<MediaAttachment> attachments = [];
 
-      if (draft.embedJson != null) {
+      final embedPayload = DraftEmbedPayload.tryDecode(draft.embedJson);
+      if (embedPayload is DraftImagesEmbedPayload) {
         try {
-          final decoded = jsonDecode(draft.embedJson!) as Map<String, dynamic>;
-          final type = decoded['type'] as String?;
-          if (type == 'images') {
-            final paths = decoded['paths'] as List<dynamic>? ?? [];
-            final alts = decoded['altTexts'] as List<dynamic>? ?? [];
-            attachments = paths.asMap().entries.where((e) => File(e.value as String).existsSync()).map((e) {
-              return MediaAttachment(
-                localPath: e.value as String,
-                altText: e.key < alts.length ? (alts[e.key] as String? ?? '') : '',
-              );
-            }).toList();
-          }
+          attachments = embedPayload.paths.asMap().entries.where((e) => File(e.value).existsSync()).map((e) {
+            return MediaAttachment(
+              localPath: e.value,
+              altText: e.key < embedPayload.altTexts.length ? embedPayload.altTexts[e.key] : '',
+            );
+          }).toList();
         } catch (e) {
           log.w('Failed to parse embedJson from draft', error: e);
         }
@@ -289,12 +294,9 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
 
       if (attachments.isEmpty && draft.mediaPaths != null) {
         try {
-          final paths = jsonDecode(draft.mediaPaths!) as List<dynamic>;
-          attachments = paths
-              .whereType<String>()
-              .where((path) => File(path).existsSync())
-              .map((path) => MediaAttachment(localPath: path))
-              .toList();
+          attachments = DraftEmbedPayload.decodeMediaPaths(
+            draft.mediaPaths!,
+          ).where((path) => File(path).existsSync()).map((path) => MediaAttachment(localPath: path)).toList();
         } catch (e) {
           log.w('Failed to parse mediaPaths from draft', error: e);
         }
@@ -440,7 +442,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
       }
 
       if (state.scheduledAt != null && state.scheduledAt!.isAfter(DateTime.now())) {
-        final embedJson = _buildEmbedJson();
+        final embedPayload = _buildEmbedPayload();
         final draft = DraftsCompanion(
           accountDid: Value(_accountDid),
           content: Value(state.text),
@@ -448,9 +450,9 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
           replyCid: state.replyParentCid != null ? Value(state.replyParentCid!) : const Value.absent(),
           rootUri: state.replyRootUri != null ? Value(state.replyRootUri!) : const Value.absent(),
           rootCid: state.replyRootCid != null ? Value(state.replyRootCid!) : const Value.absent(),
-          embedJson: embedJson != null ? Value(jsonEncode(embedJson)) : const Value.absent(),
+          embedJson: embedPayload != null ? Value(embedPayload.encode()) : const Value.absent(),
           mediaPaths: state.mediaAttachments.isNotEmpty
-              ? Value(jsonEncode(state.mediaAttachments.map((m) => m.localPath).toList()))
+              ? Value(DraftEmbedPayload.encodeMediaPaths(state.mediaAttachments.map((m) => m.localPath)))
               : const Value.absent(),
           scheduledAt: Value(state.scheduledAt!),
           updatedAt: Value(DateTime.now()),
@@ -461,7 +463,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         return;
       }
 
-      Map<String, dynamic>? mediaEmbed;
+      UFeedPostEmbed? mediaEmbed;
 
       if (state.mediaAttachments.isNotEmpty) {
         final uploaded = <_UploadedImage>[];
@@ -495,19 +497,26 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
           );
         }
 
-        mediaEmbed = {
-          '\$type': 'app.bsky.embed.images',
-          'images': uploaded.map((img) {
-            final entry = <String, dynamic>{'image': img.blob.toJson(), 'alt': img.altText};
-            if (img.width != null && img.height != null) {
-              entry['aspectRatio'] = {'width': img.width, 'height': img.height};
-            }
-            return entry;
-          }).toList(),
-        };
+        mediaEmbed = UFeedPostEmbed.embedImages(
+          data: EmbedImages(
+            images: uploaded
+                .map(
+                  (img) => EmbedImagesImage(
+                    image: img.blob,
+                    alt: img.altText,
+                    aspectRatio: img.width != null && img.height != null
+                        ? embed_defs.AspectRatio(width: img.width!, height: img.height!)
+                        : null,
+                  ),
+                )
+                .toList(growable: false),
+          ),
+        );
       } else if (state.videoAttachment?.isReady == true) {
         final blob = state.videoAttachment!.blob!;
-        mediaEmbed = {r'$type': 'app.bsky.embed.video', 'video': blob.toJson(), 'alt': state.videoAttachment!.altText};
+        mediaEmbed = UFeedPostEmbed.embedVideo(
+          data: EmbedVideo(video: blob, alt: state.videoAttachment!.altText),
+        );
       } else {
         final firstLink = LinkPreviewService.firstLink(state.text);
         if (firstLink != null && firstLink != event.suppressedLinkUri) {
@@ -515,28 +524,23 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         }
       }
 
-      Map<String, dynamic>? embed;
+      UFeedPostEmbed? embed;
       if (state.quoteUri != null && state.quoteCid != null) {
+        final record = EmbedRecord(
+          record: RepoStrongRef(uri: AtUri.parse(state.quoteUri!), cid: state.quoteCid!),
+        );
         if (mediaEmbed != null) {
-          embed = {
-            r'$type': 'app.bsky.embed.recordWithMedia',
-            'record': {
-              r'$type': 'app.bsky.embed.record',
-              'record': {'uri': state.quoteUri, 'cid': state.quoteCid},
-            },
-            'media': mediaEmbed,
-          };
+          embed = UFeedPostEmbed.embedRecordWithMedia(
+            data: EmbedRecordWithMedia(record: record, media: _recordWithMediaMedia(mediaEmbed)),
+          );
         } else {
-          embed = {
-            r'$type': 'app.bsky.embed.record',
-            'record': {'uri': state.quoteUri, 'cid': state.quoteCid},
-          };
+          embed = UFeedPostEmbed.embedRecord(data: record);
         }
       } else {
         embed = mediaEmbed;
       }
 
-      Map<String, dynamic>? reply;
+      ReplyRef? reply;
       if (state.replyParentUri != null && state.replyParentCid != null) {
         final fallbackRootUri = state.replyRootUri ?? state.replyParentUri!;
         final fallbackRootCid = state.replyRootCid ?? state.replyParentCid!;
@@ -551,10 +555,10 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         final rootUri = resolvedReplyRefs?.rootUri ?? fallbackRootUri;
         final rootCid = resolvedReplyRefs?.rootCid ?? fallbackRootCid;
 
-        reply = {
-          'parent': {'uri': state.replyParentUri, 'cid': parentCid},
-          'root': {'uri': rootUri, 'cid': rootCid},
-        };
+        reply = ReplyRef(
+          parent: RepoStrongRef(uri: AtUri.parse(state.replyParentUri!), cid: parentCid),
+          root: RepoStrongRef(uri: AtUri.parse(rootUri), cid: rootCid),
+        );
       }
 
       final success = await _composeRepository.createPost(
@@ -583,20 +587,22 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _collectFacets() async {
+  Future<List<RichtextFacet>> _collectFacets() async {
     final blueskyText = BlueskyText(state.text);
-    final facets = <Map<String, dynamic>>[];
+    final facets = <RichtextFacet>[];
 
     for (final entity in blueskyText.entities) {
       try {
-        final facet = await entity.toFacet().timeout(
+        final facetJson = await entity.toFacet().timeout(
           const Duration(seconds: 5),
           onTimeout: () {
             log.w('Timeout resolving @${entity.value}; facet dropped.');
             return {};
           },
         );
-        if (facet.isNotEmpty) facets.add(facet);
+        if (facetJson.isNotEmpty) {
+          facets.add(const RichtextFacetConverter().fromJson(Map<String, dynamic>.from(facetJson)));
+        }
       } catch (e) {
         log.w('Could not resolve facet for "${entity.value}": $e');
       }
@@ -607,7 +613,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
 
   Future<void> _saveFailedSubmissionAsDraft(Emitter<ComposeState> emit, Object error) async {
     try {
-      final embedJson = _buildEmbedJson();
+      final embedPayload = _buildEmbedPayload();
       final draft = DraftsCompanion(
         accountDid: Value(_accountDid),
         content: Value(state.text),
@@ -615,9 +621,9 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         replyCid: state.replyParentCid != null ? Value(state.replyParentCid!) : const Value.absent(),
         rootUri: state.replyRootUri != null ? Value(state.replyRootUri!) : const Value.absent(),
         rootCid: state.replyRootCid != null ? Value(state.replyRootCid!) : const Value.absent(),
-        embedJson: embedJson != null ? Value(jsonEncode(embedJson)) : const Value.absent(),
+        embedJson: embedPayload != null ? Value(embedPayload.encode()) : const Value.absent(),
         mediaPaths: state.mediaAttachments.isNotEmpty
-            ? Value(jsonEncode(state.mediaAttachments.map((m) => m.localPath).toList()))
+            ? Value(DraftEmbedPayload.encodeMediaPaths(state.mediaAttachments.map((m) => m.localPath)))
             : const Value.absent(),
         scheduledAt: state.scheduledAt != null ? Value(state.scheduledAt!) : const Value.absent(),
         updatedAt: Value(DateTime.now()),
@@ -643,18 +649,31 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
     );
   }
 
-  Map<String, dynamic>? _buildEmbedJson() {
+  DraftEmbedPayload? _buildEmbedPayload() {
     if (state.mediaAttachments.isNotEmpty) {
-      return {
-        'type': 'images',
-        'paths': state.mediaAttachments.map((m) => m.localPath).toList(),
-        'altTexts': state.mediaAttachments.map((m) => m.altText).toList(),
-      };
+      return DraftEmbedPayload.images(
+        paths: state.mediaAttachments.map((m) => m.localPath).toList(growable: false),
+        altTexts: state.mediaAttachments.map((m) => m.altText).toList(growable: false),
+      );
     }
     if (state.videoAttachment != null) {
-      return {'type': 'video', 'path': state.videoAttachment!.localPath, 'alt': state.videoAttachment!.altText};
+      return DraftEmbedPayload.video(path: state.videoAttachment!.localPath, alt: state.videoAttachment!.altText);
     }
     return null;
+  }
+
+  UEmbedRecordWithMediaMedia _recordWithMediaMedia(UFeedPostEmbed embed) {
+    if (embed.isEmbedImages) {
+      return UEmbedRecordWithMediaMedia.embedImages(data: embed.embedImages!);
+    }
+    if (embed.isEmbedVideo) {
+      return UEmbedRecordWithMediaMedia.embedVideo(data: embed.embedVideo!);
+    }
+    if (embed.isEmbedExternal) {
+      return UEmbedRecordWithMediaMedia.embedExternal(data: embed.embedExternal!);
+    }
+
+    return UEmbedRecordWithMediaMedia.unknown(data: embed.toJson());
   }
 
   /// Returns MIME type from magic bytes, or null if not an accepted image type.
@@ -699,14 +718,14 @@ class EditPostResult {
 
 class ComposeRepository {
   ComposeRepository({
-    required dynamic bluesky,
+    required Bluesky bluesky,
     LinkPreviewService? linkPreviewService,
     ActorRepositoryServiceResolver? actorRepositoryServiceResolver,
     Future<AuthTokens?> Function()? onUnauthorized,
-    dynamic Function(AuthTokens tokens)? blueskyClientFactory,
+    Bluesky? Function(AuthTokens tokens)? blueskyClientFactory,
   }) : _actorRepoResolver = actorRepositoryServiceResolver ?? ActorRepositoryServiceResolver(),
        _linkPreviewService = linkPreviewService ?? LinkPreviewService() {
-    _authRecovery = UnauthorizedRecoveryRunner<dynamic>(
+    _authRecovery = UnauthorizedRecoveryRunner<Bluesky>(
       initialClient: bluesky,
       onUnauthorized: onUnauthorized,
       clientFactory: blueskyClientFactory ?? createBlueskyClient,
@@ -716,8 +735,8 @@ class ComposeRepository {
     );
   }
 
-  late final UnauthorizedRecoveryRunner<dynamic> _authRecovery;
-  dynamic get _bluesky => _authRecovery.client;
+  late final UnauthorizedRecoveryRunner<Bluesky> _authRecovery;
+  Bluesky get _bluesky => _authRecovery.client;
   final LinkPreviewService _linkPreviewService;
   final ActorRepositoryServiceResolver _actorRepoResolver;
 
@@ -750,7 +769,7 @@ class ComposeRepository {
     }
   }
 
-  Future<dynamic> getJobStatus(String jobId) async {
+  Future<JobStatus?> getJobStatus(String jobId) async {
     try {
       final response = await _authRecovery.run((client) => client.video.getJobStatus(jobId: jobId));
       return response.data.jobStatus;
@@ -775,24 +794,27 @@ class ComposeRepository {
 
   Future<bool> createPost({
     required String text,
-    required List<Map<String, dynamic>> facets,
-    Map<String, dynamic>? embed,
-    Map<String, dynamic>? reply,
+    required List<RichtextFacet> facets,
+    UFeedPostEmbed? embed,
+    ReplyRef? reply,
     required String repo,
   }) async {
     try {
-      final record = <String, dynamic>{
-        '\$type': 'app.bsky.feed.post',
-        'text': text,
-        'createdAt': DateTime.now().toUtc().toIso8601String(),
-        'langs': ['en'],
-      };
-      if (facets.isNotEmpty) record['facets'] = facets;
-      if (embed != null) record['embed'] = embed;
-      if (reply != null) record['reply'] = reply;
+      final record = FeedPostRecord(
+        text: text,
+        facets: facets.isEmpty ? null : facets,
+        embed: embed,
+        reply: reply,
+        langs: const ['en'],
+        createdAt: DateTime.now().toUtc(),
+      );
 
       await _authRecovery.run(
-        (client) => client.atproto.repo.createRecord(repo: repo, collection: 'app.bsky.feed.post', record: record),
+        (client) => client.atproto.repo.createRecord(
+          repo: repo,
+          collection: 'app.bsky.feed.post',
+          record: _postRecordJson(record),
+        ),
       );
       return true;
     } catch (e, stackTrace) {
@@ -810,23 +832,31 @@ class ComposeRepository {
     }
   }
 
-  Future<Map<String, dynamic>?> buildExternalEmbedFromLink(String rawUrl) async {
+  Future<UFeedPostEmbed?> buildExternalEmbedFromLink(String rawUrl) async {
     final preview = await fetchLinkPreview(rawUrl);
     if (preview == null) {
       return null;
     }
 
-    final external = <String, dynamic>{'uri': preview.uri, 'title': preview.title, 'description': preview.description};
-
     final thumbUrl = preview.thumbnailUrl;
+    Blob? thumbBlob;
     if (thumbUrl != null && thumbUrl.isNotEmpty) {
       final thumb = await _uploadExternalThumb(thumbUrl);
       if (thumb != null) {
-        external['thumb'] = thumb.toJson();
+        thumbBlob = thumb;
       }
     }
 
-    return {r'$type': 'app.bsky.embed.external', 'external': external};
+    return UFeedPostEmbed.embedExternal(
+      data: EmbedExternal(
+        external: EmbedExternalExternal(
+          uri: preview.uri,
+          title: preview.title,
+          description: preview.description,
+          thumb: thumbBlob,
+        ),
+      ),
+    );
   }
 
   Future<({String parentCid, String rootUri, String rootCid})?> resolveReplyReferences({
@@ -843,28 +873,20 @@ class ComposeRepository {
         rkey: parentAtUri.rkey,
       );
 
-      final latestParentCidRaw = parent.data.cid;
-      final latestParentCid = latestParentCidRaw is String && latestParentCidRaw.isNotEmpty
-          ? latestParentCidRaw
-          : parentCid;
-      final parentValue = parent.data.value;
-      if (parentValue is! Map<String, dynamic>) {
+      final latestParentCid = parent.data.cid?.isNotEmpty == true ? parent.data.cid! : parentCid;
+      final parentRecord = _parsePostRecord(parent.data.value);
+      if (parentRecord == null) {
         return (parentCid: latestParentCid, rootUri: parentUri, rootCid: latestParentCid);
       }
 
-      final parentReply = parentValue['reply'];
-      if (parentReply is! Map) {
+      final parentReply = parentRecord.reply;
+      if (parentReply == null) {
         return (parentCid: latestParentCid, rootUri: parentUri, rootCid: latestParentCid);
       }
 
-      final rootRef = parentReply['root'];
-      if (rootRef is! Map) {
-        return (parentCid: latestParentCid, rootUri: fallbackRootUri, rootCid: fallbackRootCid);
-      }
-
-      final rootUri = rootRef['uri'];
-      final rootCid = rootRef['cid'];
-      if (rootUri is String && rootCid is String && rootUri.isNotEmpty && rootCid.isNotEmpty) {
+      final rootUri = parentReply.root.uri.toString();
+      final rootCid = parentReply.root.cid;
+      if (rootUri.isNotEmpty && rootCid.isNotEmpty) {
         return (parentCid: latestParentCid, rootUri: rootUri, rootCid: rootCid);
       }
 
@@ -893,7 +915,7 @@ class ComposeRepository {
     required String currentCid,
     required Map<String, dynamic> originalRecord,
     required String text,
-    required List<Map<String, dynamic>> facets,
+    required List<RichtextFacet> facets,
     required String repo,
   }) async {
     try {
@@ -904,25 +926,15 @@ class ComposeRepository {
       final latest = await _getRecordFromRepo(repo: targetRepo, collection: collection, rkey: rkey);
 
       final latestValue = latest.data.value;
-      final latestRecord = latestValue is Map ? Map<String, dynamic>.from(latestValue) : <String, dynamic>{};
-      final baseRecord = latestRecord.isNotEmpty ? latestRecord : originalRecord;
+      final latestRecord = _parsePostRecord(latestValue);
+      final originalPostRecord = _parsePostRecord(originalRecord);
+      final baseRecord = latestRecord ?? originalPostRecord;
+      if (baseRecord == null) {
+        return const EditPostResult.failure('This post record is malformed. Reopen it and try editing again.');
+      }
       final latestCid = latest.data.cid;
-      final swapCid = latestCid is String && latestCid.isNotEmpty ? latestCid : currentCid;
-      final updatedRecord = Map<String, dynamic>.from(baseRecord);
-      updatedRecord['text'] = text;
-      if (facets.isNotEmpty) {
-        updatedRecord['facets'] = facets;
-      } else {
-        updatedRecord.remove('facets');
-      }
-
-      final existingCreatedAt = baseRecord['createdAt'];
-      if (existingCreatedAt is String && existingCreatedAt.trim().isNotEmpty) {
-        updatedRecord['createdAt'] = existingCreatedAt;
-      } else {
-        updatedRecord['createdAt'] = DateTime.now().toUtc().toIso8601String();
-      }
-      updatedRecord[r'$type'] = 'app.bsky.feed.post';
+      final swapCid = latestCid != null && latestCid.isNotEmpty ? latestCid : currentCid;
+      final updatedRecord = baseRecord.copyWith(text: text, facets: facets.isEmpty ? null : facets);
 
       await _authRecovery.run(
         (client) =>
@@ -936,7 +948,7 @@ class ComposeRepository {
             repo: targetRepo,
             collection: collection,
             rkey: rkey,
-            record: updatedRecord,
+            record: _postRecordJson(updatedRecord),
           ),
         );
         newCid = created.data.cid;
@@ -968,8 +980,7 @@ class ComposeRepository {
       }
 
       final verified = await _getRecordFromRepo(repo: targetRepo, collection: collection, rkey: rkey);
-      final verifiedValue = verified.data.value;
-      final persistedText = verifiedValue is Map ? verifiedValue['text'] : null;
+      final persistedText = verified.data.value['text'];
       if (persistedText is! String || persistedText != text) {
         return const EditPostResult.failure(
           'Edit was submitted but could not be confirmed yet. Please reopen the post and verify.',
@@ -1006,12 +1017,10 @@ class ComposeRepository {
   }) async {
     try {
       final response = await _getRecordFromRepo(repo: repo, collection: collection, rkey: rkey);
-      final value = response.data.value;
-      if (value is! Map) {
+      if (!FeedPostRecord.validate(response.data.value)) {
         return null;
       }
-      final cid = response.data.cid;
-      return (value: Map<String, dynamic>.from(value), cid: cid is String ? cid : null);
+      return (value: response.data.value, cid: response.data.cid);
     } on XRPCException catch (e, stackTrace) {
       final errorCode = e.response.data.error;
       if (errorCode == 'RecordNotFound' || errorCode == 'NotFound') {
@@ -1029,19 +1038,16 @@ class ComposeRepository {
     required String repo,
     required String collection,
     required String rkey,
-    required Map<String, dynamic> originalRecord,
+    required FeedPostRecord originalRecord,
   }) async {
-    final restoredRecord = Map<String, dynamic>.from(originalRecord);
-    restoredRecord[r'$type'] = 'app.bsky.feed.post';
-    final existingCreatedAt = restoredRecord['createdAt'];
-    if (existingCreatedAt is! String || existingCreatedAt.trim().isEmpty) {
-      restoredRecord['createdAt'] = DateTime.now().toUtc().toIso8601String();
-    }
-
     try {
       await _authRecovery.run(
-        (client) =>
-            client.atproto.repo.createRecord(repo: repo, collection: collection, rkey: rkey, record: restoredRecord),
+        (client) => client.atproto.repo.createRecord(
+          repo: repo,
+          collection: collection,
+          rkey: rkey,
+          record: _postRecordJson(originalRecord),
+        ),
       );
       return true;
     } catch (e, stackTrace) {
@@ -1050,11 +1056,32 @@ class ComposeRepository {
     }
   }
 
-  Future<dynamic> _getRecordFromRepo({required String repo, required String collection, required String rkey}) async {
+  Future<XRPCResponse<RepoGetRecordOutput>> _getRecordFromRepo({
+    required String repo,
+    required String collection,
+    required String rkey,
+  }) async {
     final serviceHost = await _resolveRepoServiceHost(repo);
     return _authRecovery.run(
       (client) => client.atproto.repo.getRecord(repo: repo, collection: collection, rkey: rkey, $service: serviceHost),
     );
+  }
+
+  FeedPostRecord? _parsePostRecord(Map<String, dynamic> value) {
+    if (!FeedPostRecord.validate(value)) {
+      return null;
+    }
+
+    try {
+      return const FeedPostRecordConverter().fromJson(value);
+    } catch (error, stackTrace) {
+      log.w('ComposeRepository: skipped malformed feed post record', error: error, stackTrace: stackTrace);
+      return null;
+    }
+  }
+
+  Map<String, dynamic> _postRecordJson(FeedPostRecord record) {
+    return const FeedPostRecordConverter().toJson(record);
   }
 
   Future<String?> _resolveRepoServiceHost(String repo) async {

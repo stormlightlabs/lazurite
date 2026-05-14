@@ -1,16 +1,17 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' as io;
 
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 
 class TypeaheadRepository {
   TypeaheadRepository({
-    dynamic bluesky,
+    Bluesky? bluesky,
     String? provider,
     String Function()? providerResolver,
     String? appViewProvider,
@@ -42,7 +43,7 @@ class TypeaheadRepository {
   static const String _communityPath = '/xrpc/app.bsky.actor.searchActorsTypeahead';
   static const String _searchActorsTypeaheadEndpoint = 'app.bsky.actor.searchActorsTypeahead';
 
-  final dynamic _bluesky;
+  final Bluesky? _bluesky;
   final String? _provider;
   final String Function()? _providerResolver;
   final ModerationService? _moderationService;
@@ -132,7 +133,7 @@ class TypeaheadRepository {
     });
     final response = await _httpClient.get(uri, headers: headers);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw HttpException('Bluesky typeahead request failed: HTTP ${response.statusCode}', uri: uri);
+      throw io.HttpException('Bluesky typeahead request failed: HTTP ${response.statusCode}', uri: uri);
     }
 
     final decoded = jsonDecode(response.body);
@@ -166,7 +167,7 @@ class TypeaheadRepository {
     final response = await _httpClient.get(uri, headers: const {'X-Client': 'lazurite'});
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw HttpException('Community typeahead request failed: HTTP ${response.statusCode}', uri: uri);
+      throw io.HttpException('Community typeahead request failed: HTTP ${response.statusCode}', uri: uri);
     }
 
     final decoded = jsonDecode(response.body);

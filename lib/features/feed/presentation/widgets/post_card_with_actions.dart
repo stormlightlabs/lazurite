@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:poptart_lex/app/bsky/feed/defs.dart';
 import 'package:poptart_lex/app/bsky/feed/post.dart';
@@ -298,14 +297,14 @@ class _PostCardWithActionsContent extends StatelessWidget {
     final cubit = context.read<SavedPostsCubit>();
     final post = feedViewPost.post;
     await HapticHelper.lightImpact();
-    await cubit.toggleSave(postUri: post.uri.toString(), postJson: jsonEncode(post.toJson()));
+    await cubit.toggleSave(post);
   }
 
   Future<void> _onCloudSave(BuildContext context) async {
     final cubit = context.read<SavedPostsCubit>();
     final post = feedViewPost.post;
     await HapticHelper.lightImpact();
-    await cubit.cloudSave(postUri: post.uri.toString(), cid: post.cid, postJson: jsonEncode(post.toJson()));
+    await cubit.cloudSave(post);
   }
 
   Future<void> _onCloudUnsave(BuildContext context) async {

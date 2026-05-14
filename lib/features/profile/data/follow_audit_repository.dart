@@ -1,11 +1,12 @@
 import 'dart:async';
 
-import 'package:poptart_lex/com/atproto/repo/apply_writes.dart';
-import 'package:poptart_core/poptart_core.dart' show AtUri;
 import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:poptart_lex/app/bsky/graph/follow.dart';
+import 'package:poptart_lex/com/atproto/repo/apply_writes.dart';
 import 'package:equatable/equatable.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 
 enum FollowStatus { deleted, deactivated, suspended, blockedBy, blocking, mutualBlock, hidden, selfFollow }
 
@@ -82,14 +83,14 @@ const _maxRetries = 3;
 const _unfollowBatchSize = 200;
 
 class FollowAuditRepository {
-  FollowAuditRepository({required dynamic bluesky, String? appViewProvider, String Function()? appViewProviderResolver})
+  FollowAuditRepository({required Bluesky bluesky, String? appViewProvider, String Function()? appViewProviderResolver})
     : _bluesky = bluesky,
       _appViewContext = AppViewRequestContext(
         appViewProvider: appViewProvider,
         appViewProviderResolver: appViewProviderResolver,
       );
 
-  final dynamic _bluesky;
+  final Bluesky _bluesky;
   final AppViewRequestContext _appViewContext;
 
   Future<int?> fetchFollowCount(String did) async {
@@ -117,15 +118,20 @@ class FollowAuditRepository {
     );
 
     final records = <FollowRecord>[];
-    final rawRecords = response.data.records as List<dynamic>;
-    for (final raw in rawRecords) {
+    for (final raw in response.data.records) {
+      final value = raw.value;
+      if (!GraphFollowRecord.validate(value)) {
+        log.w('FollowAuditRepository: skipping malformed follow record uri=${raw.uri}');
+        continue;
+      }
+
+      final follow = const GraphFollowRecordConverter().fromJson(value);
       final uri = raw.uri.toString();
       final rkey = AtUri.parse(uri).rkey;
-      final subjectDid = raw.value['subject'] as String;
-      records.add(FollowRecord(uri: uri, rkey: rkey, subjectDid: subjectDid));
+      records.add(FollowRecord(uri: uri, rkey: rkey, subjectDid: follow.subject));
     }
 
-    return FollowRecordPage(records: records, cursor: response.data.cursor as String?);
+    return FollowRecordPage(records: records, cursor: response.data.cursor);
   }
 
   Stream<FollowAuditBatch> scanFollows(String did) async* {
@@ -252,7 +258,7 @@ class FollowAuditRepository {
           $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.actor.getProfiles'),
         );
         final result = <String, ProfileView>{};
-        for (final profile in response.data.profiles as List<dynamic>) {
+        for (final profile in response.data.profiles) {
           final view = _asProfileView(profile);
           if (view != null) {
             result[view.did] = view;
@@ -368,7 +374,7 @@ class FollowAuditRepository {
         message.toLowerCase().contains('network');
   }
 
-  ProfileView? _asProfileView(dynamic profile) {
+  ProfileView? _asProfileView(Object? profile) {
     if (profile is ProfileView) return profile;
     if (profile is ProfileViewDetailed) {
       return ProfileView(
@@ -435,19 +441,15 @@ class FollowAuditRepository {
   }
 
   String? _currentSessionDid() {
-    try {
-      final sessionDid = (_bluesky.session?.did as String?)?.trim().toLowerCase();
-      if (sessionDid != null && sessionDid.isNotEmpty) {
-        return sessionDid;
-      }
-    } catch (_) {}
+    final sessionDid = _bluesky.session?.did.trim().toLowerCase();
+    if (sessionDid != null && sessionDid.isNotEmpty) {
+      return sessionDid;
+    }
 
-    try {
-      final oauthDid = (_bluesky.oAuthSession?.sub as String?)?.trim().toLowerCase();
-      if (oauthDid != null && oauthDid.isNotEmpty) {
-        return oauthDid;
-      }
-    } catch (_) {}
+    final oauthDid = _bluesky.oAuthSession?.sub.trim().toLowerCase();
+    if (oauthDid != null && oauthDid.isNotEmpty) {
+      return oauthDid;
+    }
 
     return null;
   }
