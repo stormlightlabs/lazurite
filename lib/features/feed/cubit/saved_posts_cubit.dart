@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:poptart_core/poptart_core.dart';
-import 'package:poptart_lex/app/bsky/bookmark/defs.dart';
-import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/bookmark/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

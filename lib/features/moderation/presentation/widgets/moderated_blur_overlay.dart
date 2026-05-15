@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
+import 'package:lazurite/features/moderation/domain/moderation_models.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';

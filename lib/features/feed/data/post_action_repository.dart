@@ -1,8 +1,8 @@
 import 'package:poptart_lex/com/atproto/repo/strong_ref.dart';
-import 'package:poptart_lex/app/bsky/bookmark/get_bookmarks.dart';
-import 'package:poptart_lex/app/bsky/feed/get_likes.dart';
-import 'package:poptart_lex/app/bsky/feed/get_quotes.dart';
-import 'package:poptart_lex/app/bsky/feed/get_reposted_by.dart';
+import 'package:bluesky_poptart/app/bsky/bookmark/get_bookmarks.dart';
+import 'package:bluesky_poptart/app/bsky/feed/get_likes.dart';
+import 'package:bluesky_poptart/app/bsky/feed/get_quotes.dart';
+import 'package:bluesky_poptart/app/bsky/feed/get_reposted_by.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 

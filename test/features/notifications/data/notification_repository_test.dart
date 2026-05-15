@@ -4,8 +4,8 @@ import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
-import 'package:poptart_lex/app/bsky/notification/list_notifications.dart' as bsky;
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/notification/list_notifications.dart' as bsky;
 
 class MockNotificationRepository extends Mock implements NotificationRepository {}
 

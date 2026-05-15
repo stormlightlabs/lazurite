@@ -1,4 +1,4 @@
-import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';

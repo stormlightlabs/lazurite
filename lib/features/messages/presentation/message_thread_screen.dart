@@ -1,4 +1,4 @@
-import 'package:poptart_lex/chat/bsky/convo/get_messages.dart';
+import 'package:bluesky_poptart/chat/bsky/convo/get_messages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

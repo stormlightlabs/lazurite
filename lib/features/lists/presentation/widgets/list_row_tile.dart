@@ -1,4 +1,4 @@
-import 'package:poptart_lex/app/bsky/graph/defs.dart' as bsky_graph;
+import 'package:bluesky_poptart/app/bsky/graph/defs.dart' as bsky_graph;
 import 'package:flutter/material.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';

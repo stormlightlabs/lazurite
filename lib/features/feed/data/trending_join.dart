@@ -1,4 +1,4 @@
-import 'package:poptart_lex/app/bsky/unspecced/defs.dart';
+import 'package:bluesky_poptart/app/bsky/unspecced/defs.dart';
 
 class EnrichedTrendingTopic {
   const EnrichedTrendingTopic({required this.topic, this.trend});

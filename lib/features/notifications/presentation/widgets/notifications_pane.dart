@@ -1,4 +1,4 @@
-import 'package:poptart_lex/app/bsky/notification/list_notifications.dart' as bsky;
+import 'package:bluesky_poptart/app/bsky/notification/list_notifications.dart' as bsky;
 import 'dart:async';
 
 import 'package:flutter/material.dart';

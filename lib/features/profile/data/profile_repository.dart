@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:poptart_core/poptart_core.dart' as atp_core;
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
-import 'package:poptart_lex/app/bsky/actor/profile.dart';
-import 'package:poptart_lex/app/bsky/feed/defs.dart';
-import 'package:poptart_lex/app/bsky/feed/like.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/actor/profile.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/like.dart';
 import 'package:poptart_lex/com/atproto/repo/list_records.dart';
 import 'package:characters/characters.dart';
 import 'package:lazurite/core/cache/poptart_cache_codecs.dart';

@@ -2,12 +2,12 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:poptart_core/poptart_core.dart' show AtUri, Blob;
-import 'package:poptart_lex/app/bsky/embed/defs.dart' as embed_defs;
-import 'package:poptart_lex/app/bsky/embed/images.dart';
-import 'package:poptart_lex/app/bsky/embed/video.dart';
-import 'package:poptart_lex/app/bsky/feed/post.dart';
-import 'package:poptart_lex/app/bsky/richtext/facet.dart';
-import 'package:poptart_lex/app/bsky/video/defs.dart';
+import 'package:bluesky_poptart/app/bsky/embed/defs.dart' as embed_defs;
+import 'package:bluesky_poptart/app/bsky/embed/images.dart';
+import 'package:bluesky_poptart/app/bsky/embed/video.dart';
+import 'package:bluesky_poptart/app/bsky/feed/post.dart';
+import 'package:bluesky_poptart/app/bsky/richtext/facet.dart';
+import 'package:bluesky_poptart/app/bsky/video/defs.dart';
 import 'package:poptart_lex/com/atproto/repo/strong_ref.dart';
 import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
 import 'package:flutter/widgets.dart';

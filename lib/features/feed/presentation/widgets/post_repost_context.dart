@@ -1,4 +1,4 @@
-import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:flutter/material.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';

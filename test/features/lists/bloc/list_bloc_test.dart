@@ -1,7 +1,7 @@
 import 'package:poptart_core/poptart_core.dart' show AtUri, Blob, BlobRef;
 import 'package:bloc_test/bloc_test.dart';
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
-import 'package:poptart_lex/app/bsky/graph/defs.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/graph/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/lists/bloc/list_bloc.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
@@ -239,7 +239,11 @@ void main() {
             mimeType: any(named: 'mimeType'),
           ),
         ).thenAnswer(
-          (_) async => const Blob(ref: BlobRef(link: 'bafkreinewavatarblob'), mimeType: 'image/jpeg', size: 3),
+          (_) async => const Blob(
+            ref: BlobRef(link: 'bafkreinewavatarblob'),
+            mimeType: 'image/jpeg',
+            size: 3,
+          ),
         );
         when(
           () => mockListRepository.updateList(
@@ -274,7 +278,11 @@ void main() {
             name: any(named: 'name'),
             purpose: any(named: 'purpose'),
             description: any(named: 'description'),
-            avatarBlob: const Blob(ref: BlobRef(link: 'bafkreinewavatarblob'), mimeType: 'image/jpeg', size: 3),
+            avatarBlob: const Blob(
+              ref: BlobRef(link: 'bafkreinewavatarblob'),
+              mimeType: 'image/jpeg',
+              size: 3,
+            ),
           ),
         ).called(1);
       },

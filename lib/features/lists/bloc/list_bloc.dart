@@ -1,5 +1,5 @@
 import 'package:poptart_core/poptart_core.dart' show AtUri, Blob;
-import 'package:poptart_lex/app/bsky/graph/defs.dart';
+import 'package:bluesky_poptart/app/bsky/graph/defs.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';

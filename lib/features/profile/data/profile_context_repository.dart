@@ -1,6 +1,6 @@
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
-import 'package:poptart_lex/app/bsky/graph/block.dart';
-import 'package:poptart_lex/app/bsky/graph/defs.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/graph/block.dart';
+import 'package:bluesky_poptart/app/bsky/graph/defs.dart';
 import 'package:poptart_lex/com/atproto/repo/list_records.dart';
 import 'package:equatable/equatable.dart';
 import 'package:lazurite/core/logging/app_logger.dart';

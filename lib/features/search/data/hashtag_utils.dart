@@ -1,6 +1,6 @@
-import 'package:poptart_lex/app/bsky/feed/defs.dart';
-import 'package:poptart_lex/app/bsky/feed/post.dart';
-import 'package:poptart_lex/app/bsky/richtext/facet.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/post.dart';
+import 'package:bluesky_poptart/app/bsky/richtext/facet.dart';
 import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
 import 'package:lazurite/shared/utils/parse_utils.dart';
 

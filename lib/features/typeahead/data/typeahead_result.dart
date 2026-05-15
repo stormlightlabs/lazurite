@@ -1,5 +1,5 @@
 import 'package:poptart_lex/com/atproto/label/defs.dart';
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:equatable/equatable.dart';
 
 class TypeaheadResult extends Equatable {

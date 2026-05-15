@@ -1,8 +1,8 @@
 import 'package:poptart_core/poptart_core.dart' as atcore show AtUri;
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
-import 'package:poptart_lex/app/bsky/feed/defs.dart';
-import 'package:poptart_lex/app/bsky/feed/get_author_feed.dart';
-import 'package:poptart_lex/app/bsky/unspecced/defs.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/get_author_feed.dart';
+import 'package:bluesky_poptart/app/bsky/unspecced/defs.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/cache/offline_cache_policy.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:poptart_lex/app/bsky/video/get_upload_limits.dart';
+import 'package:bluesky_poptart/app/bsky/video/get_upload_limits.dart';
 import 'package:lazurite/features/settings/data/video_repository.dart';
 
 class FakeVideoUploadLimitsApi implements VideoUploadLimitsApi {

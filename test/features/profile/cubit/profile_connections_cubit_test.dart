@@ -1,5 +1,5 @@
 import 'package:bloc_test/bloc_test.dart';
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/features/profile/cubit/profile_connections_cubit.dart';

@@ -1,4 +1,4 @@
-import 'package:poptart_lex/app/bsky/graph/get_lists_with_membership.dart';
+import 'package:bluesky_poptart/app/bsky/graph/get_lists_with_membership.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
