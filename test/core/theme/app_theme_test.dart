@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
+import 'package:lazurite/core/theme/typography.dart';
 
 void main() {
   group('AppTheme', () {
@@ -36,6 +37,36 @@ void main() {
 
       test('returns correct name for dark', () {
         expect(AppTheme.getVariantName(AppThemeVariant.dark), 'Dark');
+      });
+    });
+
+    group('getTheme', () {
+      test('attaches configured font theme extension', () {
+        final theme = AppTheme.getTheme(
+          AppThemePalette.lazurite,
+          AppThemeVariant.dark,
+          headingFontFamily: AppHeadingFontFamily.playfairDisplay,
+          contentFontFamily: AppContentFontFamily.openSans,
+          codeFontFamily: AppCodeFontFamily.sourceCodePro,
+        );
+
+        final fontTheme = theme.extension<AppFontTheme>();
+        expect(fontTheme, isNotNull);
+        expect(fontTheme!.headingFontFamily, AppHeadingFontFamily.playfairDisplay);
+        expect(fontTheme.contentFontFamily, AppContentFontFamily.openSans);
+        expect(fontTheme.codeFontFamily, AppCodeFontFamily.sourceCodePro);
+      });
+    });
+
+    group('font parsing', () {
+      test('parses configured font families and falls back to defaults', () {
+        expect(AppTypography.parseHeadingFontFamily('merriweather'), AppHeadingFontFamily.merriweather);
+        expect(AppTypography.parseHeadingFontFamily('averiaSerifLibre'), AppHeadingFontFamily.averiaSerifLibre);
+        expect(AppTypography.parseHeadingFontFamily('unknown'), AppHeadingFontFamily.lora);
+        expect(AppTypography.parseContentFontFamily('dmSans'), AppContentFontFamily.dmSans);
+        expect(AppTypography.parseContentFontFamily('unknown'), AppContentFontFamily.googleSans);
+        expect(AppTypography.parseCodeFontFamily('firaCode'), AppCodeFontFamily.firaCode);
+        expect(AppTypography.parseCodeFontFamily('unknown'), AppCodeFontFamily.googleSansCode);
       });
     });
 

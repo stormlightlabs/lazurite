@@ -506,8 +506,20 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
                     ? ThemeMode.system
                     : (settingsState.themeVariant == AppThemeVariant.light ? ThemeMode.light : ThemeMode.dark);
 
-                final lightTheme = AppTheme.getTheme(settingsState.themePalette, AppThemeVariant.light);
-                final darkTheme = AppTheme.getTheme(settingsState.themePalette, AppThemeVariant.dark);
+                final lightTheme = AppTheme.getTheme(
+                  settingsState.themePalette,
+                  AppThemeVariant.light,
+                  headingFontFamily: settingsState.headingFontFamily,
+                  contentFontFamily: settingsState.contentFontFamily,
+                  codeFontFamily: settingsState.codeFontFamily,
+                );
+                final darkTheme = AppTheme.getTheme(
+                  settingsState.themePalette,
+                  AppThemeVariant.dark,
+                  headingFontFamily: settingsState.headingFontFamily,
+                  contentFontFamily: settingsState.contentFontFamily,
+                  codeFontFamily: settingsState.codeFontFamily,
+                );
 
                 return MaterialApp.router(
                   key: ValueKey('router-$_routerSessionKey-$_routerGeneration'),

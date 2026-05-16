@@ -5,6 +5,7 @@ import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/app_view_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
+import 'package:lazurite/core/theme/typography.dart';
 import 'package:lazurite/features/search/data/search_scope.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 
@@ -14,6 +15,9 @@ class SettingsCubit extends Cubit<SettingsState> {
     AppThemePalette? initialPalette,
     AppThemeVariant? initialVariant,
     bool? initialUseSystemTheme,
+    AppHeadingFontFamily? initialHeadingFontFamily,
+    AppContentFontFamily? initialContentFontFamily,
+    AppCodeFontFamily? initialCodeFontFamily,
     FeedLayout? initialFeedLayout,
     bool? initialAnimationsEnabled,
     bool? initialSimulateOffline,
@@ -26,6 +30,9 @@ class SettingsCubit extends Cubit<SettingsState> {
            themePalette: initialPalette ?? AppThemePalette.lazurite,
            themeVariant: initialVariant ?? AppThemeVariant.dark,
            useSystemTheme: initialUseSystemTheme ?? false,
+           headingFontFamily: initialHeadingFontFamily ?? AppHeadingFontFamily.lora,
+           contentFontFamily: initialContentFontFamily ?? AppContentFontFamily.googleSans,
+           codeFontFamily: initialCodeFontFamily ?? AppCodeFontFamily.googleSansCode,
            feedLayout: initialFeedLayout ?? FeedLayout.card,
            animationsEnabled: initialAnimationsEnabled ?? true,
            simulateOffline: initialSimulateOffline ?? false,
@@ -40,6 +47,9 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const String _keyThemePalette = 'theme_palette';
   static const String _keyThemeVariant = 'theme_variant';
   static const String _keyUseSystemTheme = 'use_system_theme';
+  static const String _keyHeadingFontFamily = 'heading_font_family';
+  static const String _keyContentFontFamily = 'content_font_family';
+  static const String _keyCodeFontFamily = 'code_font_family';
   static const String _keyFeedLayout = 'feed_layout';
   static const String _legacyKeyFeedArchitecture = 'feed_architecture';
   static const String _keyAnimationsEnabled = 'animations_enabled';
@@ -63,6 +73,9 @@ class SettingsCubit extends Cubit<SettingsState> {
     final paletteStr = await database.getSetting(_keyThemePalette);
     final variantStr = await database.getSetting(_keyThemeVariant);
     final useSystemStr = await database.getSetting(_keyUseSystemTheme);
+    final headingFontFamilyStr = await database.getSetting(_keyHeadingFontFamily);
+    final contentFontFamilyStr = await database.getSetting(_keyContentFontFamily);
+    final codeFontFamilyStr = await database.getSetting(_keyCodeFontFamily);
     final feedLayoutStr =
         await database.getSetting(_keyFeedLayout) ?? await database.getSetting(_legacyKeyFeedArchitecture);
     final animationsEnabledStr = await database.getSetting(_keyAnimationsEnabled);
@@ -88,6 +101,9 @@ class SettingsCubit extends Cubit<SettingsState> {
         themePalette: AppTheme.parsePalette(paletteStr),
         themeVariant: AppTheme.parseVariant(variantStr),
         useSystemTheme: useSystemStr == 'true',
+        headingFontFamily: AppTypography.parseHeadingFontFamily(headingFontFamilyStr),
+        contentFontFamily: AppTypography.parseContentFontFamily(contentFontFamilyStr),
+        codeFontFamily: AppTypography.parseCodeFontFamily(codeFontFamilyStr),
         feedLayout: FeedLayout.fromString(feedLayoutStr),
         animationsEnabled: animationsEnabledStr != 'false',
         simulateOffline: simulateOfflineStr == 'true',
@@ -125,6 +141,21 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setUseSystemTheme(bool value) async {
     await database.setSetting(_keyUseSystemTheme, value.toString());
     emit(state.copyWith(useSystemTheme: value));
+  }
+
+  Future<void> setHeadingFontFamily(AppHeadingFontFamily fontFamily) async {
+    await database.setSetting(_keyHeadingFontFamily, fontFamily.key);
+    emit(state.copyWith(headingFontFamily: fontFamily));
+  }
+
+  Future<void> setContentFontFamily(AppContentFontFamily fontFamily) async {
+    await database.setSetting(_keyContentFontFamily, fontFamily.key);
+    emit(state.copyWith(contentFontFamily: fontFamily));
+  }
+
+  Future<void> setCodeFontFamily(AppCodeFontFamily fontFamily) async {
+    await database.setSetting(_keyCodeFontFamily, fontFamily.key);
+    emit(state.copyWith(codeFontFamily: fontFamily));
   }
 
   Future<void> setFeedLayout(FeedLayout layout) async {

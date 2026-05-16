@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
+import 'package:lazurite/core/theme/typography.dart';
 import 'package:lazurite/features/search/data/search_scope.dart';
 
 const Object _threadAutoCollapseDepthUnset = Object();
@@ -10,6 +11,9 @@ class SettingsState extends Equatable {
     required this.themePalette,
     required this.themeVariant,
     required this.useSystemTheme,
+    this.headingFontFamily = AppHeadingFontFamily.lora,
+    this.contentFontFamily = AppContentFontFamily.googleSans,
+    this.codeFontFamily = AppCodeFontFamily.googleSansCode,
     this.feedLayout = FeedLayout.card,
     this.animationsEnabled = true,
     this.simulateOffline = false,
@@ -35,6 +39,9 @@ class SettingsState extends Equatable {
   final AppThemePalette themePalette;
   final AppThemeVariant themeVariant;
   final bool useSystemTheme;
+  final AppHeadingFontFamily headingFontFamily;
+  final AppContentFontFamily contentFontFamily;
+  final AppCodeFontFamily codeFontFamily;
   final FeedLayout feedLayout;
   final bool animationsEnabled;
   final bool simulateOffline;
@@ -90,6 +97,9 @@ class SettingsState extends Equatable {
     AppThemePalette? themePalette,
     AppThemeVariant? themeVariant,
     bool? useSystemTheme,
+    AppHeadingFontFamily? headingFontFamily,
+    AppContentFontFamily? contentFontFamily,
+    AppCodeFontFamily? codeFontFamily,
     FeedLayout? feedLayout,
     bool? animationsEnabled,
     bool? simulateOffline,
@@ -115,6 +125,9 @@ class SettingsState extends Equatable {
       themePalette: themePalette ?? this.themePalette,
       themeVariant: themeVariant ?? this.themeVariant,
       useSystemTheme: useSystemTheme ?? this.useSystemTheme,
+      headingFontFamily: headingFontFamily ?? this.headingFontFamily,
+      contentFontFamily: contentFontFamily ?? this.contentFontFamily,
+      codeFontFamily: codeFontFamily ?? this.codeFontFamily,
       feedLayout: feedLayout ?? this.feedLayout,
       animationsEnabled: animationsEnabled ?? this.animationsEnabled,
       simulateOffline: simulateOffline ?? this.simulateOffline,
@@ -153,6 +166,9 @@ class SettingsState extends Equatable {
     themePalette,
     themeVariant,
     useSystemTheme,
+    headingFontFamily,
+    contentFontFamily,
+    codeFontFamily,
     feedLayout,
     animationsEnabled,
     simulateOffline,

@@ -13,6 +13,7 @@ import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
+import 'package:lazurite/core/theme/typography.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/account/presentation/account_switcher_sheet.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
@@ -266,6 +267,42 @@ class SettingsScreen extends StatelessWidget {
                   isSelected: state.themePalette == palette,
                   onTap: () => settingsCubit.setThemePalette(palette),
                 ),
+              const Divider(height: 1),
+              SettingsDropdownTile<AppHeadingFontFamily>(
+                title: 'Heading Font',
+                value: state.headingFontFamily,
+                options: AppHeadingFontFamily.values,
+                labelBuilder: (fontFamily) => fontFamily.label,
+                onChanged: (value) {
+                  if (value != null) {
+                    settingsCubit.setHeadingFontFamily(value);
+                  }
+                },
+              ),
+              const Divider(height: 1),
+              SettingsDropdownTile<AppContentFontFamily>(
+                title: 'Content Font',
+                value: state.contentFontFamily,
+                options: AppContentFontFamily.values,
+                labelBuilder: (fontFamily) => fontFamily.label,
+                onChanged: (value) {
+                  if (value != null) {
+                    settingsCubit.setContentFontFamily(value);
+                  }
+                },
+              ),
+              const Divider(height: 1),
+              SettingsDropdownTile<AppCodeFontFamily>(
+                title: 'Code Font',
+                value: state.codeFontFamily,
+                options: AppCodeFontFamily.values,
+                labelBuilder: (fontFamily) => fontFamily.label,
+                onChanged: (value) {
+                  if (value != null) {
+                    settingsCubit.setCodeFontFamily(value);
+                  }
+                },
+              ),
               const SizedBox(height: 8),
             ],
           ),

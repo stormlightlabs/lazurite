@@ -277,7 +277,7 @@ class _SearchBar extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           isDense: true,
         ),
-        style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13, color: context.colorScheme.onSurface),
+        style: context.codeTextStyle(fontSize: 13, color: context.colorScheme.onSurface),
         onChanged: (query) => context.read<LogViewerCubit>().setSearchQuery(query),
       ),
     );
@@ -437,7 +437,7 @@ class _LogEntryTileState extends State<_LogEntryTile> {
           children: [
             Text(
               widget.entry.formatTimestamp(),
-              style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 11, color: context.colorScheme.outline),
+              style: context.codeTextStyle(fontSize: 11, color: context.colorScheme.outline),
             ),
             const SizedBox(width: 8),
             Container(
@@ -445,8 +445,7 @@ class _LogEntryTileState extends State<_LogEntryTile> {
               decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(3)),
               child: Text(
                 widget.entry.levelPrefix,
-                style: TextStyle(
-                  fontFamily: 'JetBrains Mono',
+                style: context.codeTextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   color: _isFatalOrError(widget.entry.level) ? Colors.white : levelColor,
@@ -460,7 +459,7 @@ class _LogEntryTileState extends State<_LogEntryTile> {
                 children: [
                   Text(
                     widget.entry.message,
-                    style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 12, color: context.colorScheme.onSurface),
+                    style: context.codeTextStyle(fontSize: 12, color: context.colorScheme.onSurface),
                     maxLines: _expanded ? null : 3,
                     overflow: _expanded ? null : TextOverflow.ellipsis,
                   ),
@@ -478,11 +477,7 @@ class _LogEntryTileState extends State<_LogEntryTile> {
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
                         widget.entry.source!,
-                        style: TextStyle(
-                          fontFamily: 'JetBrains Mono',
-                          fontSize: 11,
-                          color: context.colorScheme.outline,
-                        ),
+                        style: context.codeTextStyle(fontSize: 11, color: context.colorScheme.outline),
                       ),
                     ),
                 ],
@@ -570,7 +565,7 @@ class _StackTracePreview extends StatelessWidget {
             Expanded(
               child: Text(
                 stackTrace,
-                style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 11, color: colorScheme.onSurfaceVariant),
+                style: context.codeTextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
                 maxLines: expanded ? null : 2,
                 overflow: expanded ? null : TextOverflow.ellipsis,
               ),

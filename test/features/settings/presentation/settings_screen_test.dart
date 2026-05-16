@@ -11,6 +11,7 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
+import 'package:lazurite/core/theme/typography.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
@@ -59,6 +60,12 @@ void main() {
   late MockLocalCacheMaintenanceService cacheMaintenanceService;
   late FakeCrashReportingService crashReportingService;
 
+  setUpAll(() {
+    registerFallbackValue(AppHeadingFontFamily.lora);
+    registerFallbackValue(AppContentFontFamily.googleSans);
+    registerFallbackValue(AppCodeFontFamily.googleSansCode);
+  });
+
   setUp(() {
     accountSwitcherCubit = MockAccountSwitcherCubit();
     authBloc = MockAuthBloc();
@@ -101,6 +108,9 @@ void main() {
       ),
     );
     when(() => settingsCubit.setAppViewProvider(any())).thenAnswer((_) async {});
+    when(() => settingsCubit.setHeadingFontFamily(any())).thenAnswer((_) async {});
+    when(() => settingsCubit.setContentFontFamily(any())).thenAnswer((_) async {});
+    when(() => settingsCubit.setCodeFontFamily(any())).thenAnswer((_) async {});
     when(() => settingsCubit.refreshAppViewHealth()).thenAnswer((_) async {});
     when(() => settingsCubit.setCrashReportingEnabled(any())).thenAnswer((_) async {});
     when(() => settingsCubit.setCrashReportingConsentPrompted(any())).thenAnswer((_) async {});
@@ -207,6 +217,12 @@ void main() {
 
     expect(find.text('APPEARANCE', skipOffstage: false), findsOneWidget);
     expect(find.text('System'), findsOneWidget);
+    expect(find.text('Heading Font'), findsOneWidget);
+    expect(find.text('Content Font'), findsOneWidget);
+    expect(find.text('Code Font'), findsOneWidget);
+    expect(find.text('Lora'), findsOneWidget);
+    expect(find.text('Google Sans'), findsWidgets);
+    expect(find.text('Google Sans Code'), findsOneWidget);
 
     await tester.scrollUntilVisible(find.text('Feed Layout'), 300);
     await tester.pumpAndSettle();
@@ -215,6 +231,30 @@ void main() {
     expect(find.text('Feed Layout'), findsOneWidget);
     expect(find.text('Thread Auto-Collapse'), findsOneWidget);
     expect(find.text('Animations'), findsOneWidget);
+  });
+
+  testWidgets('appearance font dropdowns update settings cubit', (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    final headingDropdown = tester.widget<DropdownButton<AppHeadingFontFamily>>(
+      find.byType(DropdownButton<AppHeadingFontFamily>),
+    );
+    headingDropdown.onChanged?.call(AppHeadingFontFamily.merriweather);
+
+    final contentDropdown = tester.widget<DropdownButton<AppContentFontFamily>>(
+      find.byType(DropdownButton<AppContentFontFamily>),
+    );
+    contentDropdown.onChanged?.call(AppContentFontFamily.openSans);
+
+    final codeDropdown = tester.widget<DropdownButton<AppCodeFontFamily>>(
+      find.byType(DropdownButton<AppCodeFontFamily>),
+    );
+    codeDropdown.onChanged?.call(AppCodeFontFamily.sourceCodePro);
+
+    verify(() => settingsCubit.setHeadingFontFamily(AppHeadingFontFamily.merriweather)).called(1);
+    verify(() => settingsCubit.setContentFontFamily(AppContentFontFamily.openSans)).called(1);
+    verify(() => settingsCubit.setCodeFontFamily(AppCodeFontFamily.sourceCodePro)).called(1);
   });
 
   testWidgets('renders native app version and build number', (tester) async {

@@ -5,6 +5,7 @@ import 'package:lazurite/core/theme/nord_theme.dart';
 import 'package:lazurite/core/theme/oxocarbon_theme.dart';
 import 'package:lazurite/core/theme/purple_theme.dart';
 import 'package:lazurite/core/theme/rose_pine_theme.dart';
+import 'package:lazurite/core/theme/typography.dart';
 
 enum AppThemePalette { lazurite, oxocarbon, catppuccin, nord, rosePine, purple }
 
@@ -13,21 +14,28 @@ enum AppThemeVariant { light, dark }
 class AppTheme {
   AppTheme._();
 
-  static ThemeData getTheme(AppThemePalette palette, AppThemeVariant variant) {
-    switch (palette) {
-      case AppThemePalette.lazurite:
-        return variant == AppThemeVariant.light ? LazuriteTheme.light() : LazuriteTheme.dark();
-      case AppThemePalette.oxocarbon:
-        return variant == AppThemeVariant.light ? OxocarbonTheme.light() : OxocarbonTheme.dark();
-      case AppThemePalette.catppuccin:
-        return variant == AppThemeVariant.light ? CatppuccinTheme.light() : CatppuccinTheme.dark();
-      case AppThemePalette.nord:
-        return variant == AppThemeVariant.light ? NordTheme.light() : NordTheme.dark();
-      case AppThemePalette.rosePine:
-        return variant == AppThemeVariant.light ? RosePineTheme.light() : RosePineTheme.dark();
-      case AppThemePalette.purple:
-        return variant == AppThemeVariant.light ? PurpleTheme.light() : PurpleTheme.dark();
-    }
+  static ThemeData getTheme(
+    AppThemePalette palette,
+    AppThemeVariant variant, {
+    AppHeadingFontFamily headingFontFamily = AppHeadingFontFamily.lora,
+    AppContentFontFamily contentFontFamily = AppContentFontFamily.googleSans,
+    AppCodeFontFamily codeFontFamily = AppCodeFontFamily.googleSansCode,
+  }) {
+    final theme = switch (palette) {
+      AppThemePalette.lazurite => variant == AppThemeVariant.light ? LazuriteTheme.light() : LazuriteTheme.dark(),
+      AppThemePalette.oxocarbon => variant == AppThemeVariant.light ? OxocarbonTheme.light() : OxocarbonTheme.dark(),
+      AppThemePalette.catppuccin => variant == AppThemeVariant.light ? CatppuccinTheme.light() : CatppuccinTheme.dark(),
+      AppThemePalette.nord => variant == AppThemeVariant.light ? NordTheme.light() : NordTheme.dark(),
+      AppThemePalette.rosePine => variant == AppThemeVariant.light ? RosePineTheme.light() : RosePineTheme.dark(),
+      AppThemePalette.purple => variant == AppThemeVariant.light ? PurpleTheme.light() : PurpleTheme.dark(),
+    };
+
+    return AppTypography.applyFontTheme(
+      theme,
+      headingFontFamily: headingFontFamily,
+      contentFontFamily: contentFontFamily,
+      codeFontFamily: codeFontFamily,
+    );
   }
 
   static String getPaletteName(AppThemePalette palette) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 
 class ConnectionDetailRow extends StatelessWidget {
   const ConnectionDetailRow({super.key, required this.label, required this.value, this.onTap});
@@ -25,7 +26,7 @@ class ConnectionDetailRow extends StatelessWidget {
                   style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
                 ),
                 const SizedBox(height: 4),
-                Text(value, style: theme.textTheme.bodyMedium?.copyWith(fontFamily: 'JetBrains Mono')),
+                Text(value, style: context.codeTextStyle().merge(theme.textTheme.bodyMedium)),
               ],
             ),
           ),

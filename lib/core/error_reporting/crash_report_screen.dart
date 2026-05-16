@@ -6,6 +6,7 @@ import 'package:lazurite/core/error_reporting/crash_report_bundle.dart';
 import 'package:lazurite/core/l10n/app_localizations.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 typedef CrashReportBuilder = Future<CrashReportBundle> Function(FlutterErrorDetails details);
@@ -229,7 +230,15 @@ class _ReportPreview extends StatelessWidget {
           children: [
             Text(title, style: theme.textTheme.titleSmall),
             const SizedBox(height: 8),
-            SelectableText(text, style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace')),
+            SelectableText(
+              text,
+              style: context.codeTextStyle(
+                fontSize: theme.textTheme.bodySmall?.fontSize ?? 12,
+                color: theme.textTheme.bodySmall?.color,
+                letterSpacing: theme.textTheme.bodySmall?.letterSpacing,
+                height: theme.textTheme.bodySmall?.height,
+              ),
+            ),
           ],
         ),
       ),

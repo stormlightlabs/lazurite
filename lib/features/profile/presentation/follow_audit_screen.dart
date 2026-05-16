@@ -638,9 +638,11 @@ class _ResultRow extends StatelessWidget {
                           _truncateDid(item.record.subjectDid),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: context.textTheme.bodySmall?.copyWith(
-                            fontFamily: 'JetBrains Mono',
+                          style: context.codeTextStyle(
+                            fontSize: context.textTheme.bodySmall?.fontSize ?? 12,
                             color: context.colorScheme.onSurfaceVariant,
+                            letterSpacing: context.textTheme.bodySmall?.letterSpacing,
+                            height: context.textTheme.bodySmall?.height,
                           ),
                         ),
                       ),

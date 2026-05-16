@@ -315,7 +315,12 @@ class _SemanticSettingsSheet extends StatelessWidget {
                     const Spacer(),
                     Text(
                       '${settingsState.semanticSearchMaxResults}',
-                      style: context.textTheme.titleSmall?.copyWith(fontFamily: 'JetBrains Mono'),
+                      style: context.codeTextStyle(
+                        fontSize: context.textTheme.titleSmall?.fontSize ?? 14,
+                        fontWeight: context.textTheme.titleSmall?.fontWeight ?? FontWeight.w500,
+                        letterSpacing: context.textTheme.titleSmall?.letterSpacing,
+                        height: context.textTheme.titleSmall?.height,
+                      ),
                     ),
                   ],
                 ),
@@ -456,10 +461,12 @@ class _RelevanceBadge extends StatelessWidget {
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(99)),
       child: Text(
         '${score.round()}%',
-        style: context.textTheme.labelSmall?.copyWith(
+        style: context.codeTextStyle(
+          fontSize: context.textTheme.labelSmall?.fontSize ?? 12,
           color: color,
           fontWeight: FontWeight.w600,
-          fontFamily: 'JetBrains Mono',
+          letterSpacing: context.textTheme.labelSmall?.letterSpacing,
+          height: context.textTheme.labelSmall?.height,
         ),
       ),
     );

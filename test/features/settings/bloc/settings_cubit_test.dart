@@ -6,6 +6,7 @@ import 'package:lazurite/core/network/app_view_fallback_service.dart';
 import 'package:lazurite/core/network/app_view_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
+import 'package:lazurite/core/theme/typography.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 
@@ -26,6 +27,9 @@ void main() {
       expect(cubit.state.themePalette, AppThemePalette.lazurite);
       expect(cubit.state.themeVariant, AppThemeVariant.dark);
       expect(cubit.state.useSystemTheme, false);
+      expect(cubit.state.headingFontFamily, AppHeadingFontFamily.lora);
+      expect(cubit.state.contentFontFamily, AppContentFontFamily.googleSans);
+      expect(cubit.state.codeFontFamily, AppCodeFontFamily.googleSansCode);
       expect(cubit.state.feedLayout, FeedLayout.card);
       expect(cubit.state.animationsEnabled, true);
       expect(cubit.state.simulateOffline, false);
@@ -44,6 +48,9 @@ void main() {
         initialPalette: AppThemePalette.catppuccin,
         initialVariant: AppThemeVariant.light,
         initialUseSystemTheme: true,
+        initialHeadingFontFamily: AppHeadingFontFamily.merriweather,
+        initialContentFontFamily: AppContentFontFamily.publicSans,
+        initialCodeFontFamily: AppCodeFontFamily.firaCode,
         initialFeedLayout: FeedLayout.compact,
         initialAnimationsEnabled: false,
         initialSimulateOffline: true,
@@ -52,6 +59,9 @@ void main() {
       expect(cubit.state.themePalette, AppThemePalette.catppuccin);
       expect(cubit.state.themeVariant, AppThemeVariant.light);
       expect(cubit.state.useSystemTheme, true);
+      expect(cubit.state.headingFontFamily, AppHeadingFontFamily.merriweather);
+      expect(cubit.state.contentFontFamily, AppContentFontFamily.publicSans);
+      expect(cubit.state.codeFontFamily, AppCodeFontFamily.firaCode);
       expect(cubit.state.feedLayout, FeedLayout.compact);
       expect(cubit.state.animationsEnabled, false);
       expect(cubit.state.simulateOffline, true);
@@ -65,6 +75,9 @@ void main() {
         await database.setSetting('theme_palette', 'nord');
         await database.setSetting('theme_variant', 'light');
         await database.setSetting('use_system_theme', 'true');
+        await database.setSetting('heading_font_family', 'crimsonPro');
+        await database.setSetting('content_font_family', 'dmSans');
+        await database.setSetting('code_font_family', 'sourceCodePro');
         await database.setSetting('feed_architecture', 'linear');
         await database.setSetting('animations_enabled', 'false');
         await database.setSetting('simulate_offline', 'true');
@@ -76,6 +89,9 @@ void main() {
             .having((s) => s.themePalette, 'themePalette', AppThemePalette.nord)
             .having((s) => s.themeVariant, 'themeVariant', AppThemeVariant.light)
             .having((s) => s.useSystemTheme, 'useSystemTheme', true)
+            .having((s) => s.headingFontFamily, 'headingFontFamily', AppHeadingFontFamily.crimsonPro)
+            .having((s) => s.contentFontFamily, 'contentFontFamily', AppContentFontFamily.dmSans)
+            .having((s) => s.codeFontFamily, 'codeFontFamily', AppCodeFontFamily.sourceCodePro)
             .having((s) => s.feedLayout, 'feedLayout', FeedLayout.compact)
             .having((s) => s.animationsEnabled, 'animationsEnabled', false)
             .having((s) => s.simulateOffline, 'simulateOffline', true)
@@ -92,6 +108,9 @@ void main() {
             .having((s) => s.themePalette, 'themePalette', AppThemePalette.lazurite)
             .having((s) => s.themeVariant, 'themeVariant', AppThemeVariant.dark)
             .having((s) => s.useSystemTheme, 'useSystemTheme', false)
+            .having((s) => s.headingFontFamily, 'headingFontFamily', AppHeadingFontFamily.lora)
+            .having((s) => s.contentFontFamily, 'contentFontFamily', AppContentFontFamily.googleSans)
+            .having((s) => s.codeFontFamily, 'codeFontFamily', AppCodeFontFamily.googleSansCode)
             .having((s) => s.feedLayout, 'feedLayout', FeedLayout.card)
             .having((s) => s.animationsEnabled, 'animationsEnabled', true)
             .having((s) => s.simulateOffline, 'simulateOffline', false)
@@ -150,6 +169,49 @@ void main() {
       verify: (cubit) async {
         final value = await database.getSetting('use_system_theme');
         expect(value, 'true');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setHeadingFontFamily updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setHeadingFontFamily(AppHeadingFontFamily.playfairDisplay),
+      expect: () => [
+        isA<SettingsState>().having(
+          (s) => s.headingFontFamily,
+          'headingFontFamily',
+          AppHeadingFontFamily.playfairDisplay,
+        ),
+      ],
+      verify: (cubit) async {
+        final value = await database.getSetting('heading_font_family');
+        expect(value, 'playfairDisplay');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setContentFontFamily updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setContentFontFamily(AppContentFontFamily.openSans),
+      expect: () => [
+        isA<SettingsState>().having((s) => s.contentFontFamily, 'contentFontFamily', AppContentFontFamily.openSans),
+      ],
+      verify: (cubit) async {
+        final value = await database.getSetting('content_font_family');
+        expect(value, 'openSans');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'setCodeFontFamily updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setCodeFontFamily(AppCodeFontFamily.firaCode),
+      expect: () => [
+        isA<SettingsState>().having((s) => s.codeFontFamily, 'codeFontFamily', AppCodeFontFamily.firaCode),
+      ],
+      verify: (cubit) async {
+        final value = await database.getSetting('code_font_family');
+        expect(value, 'firaCode');
       },
     );
 
