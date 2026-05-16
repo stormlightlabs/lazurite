@@ -2,9 +2,25 @@
 
 ## v1.0.0 (Alpha 7)
 
+### Added
+
+- Repost context on feed cards, compact cards, and grid cards.
+- Runtime app version/build labels in Settings, About, Privacy Policy, and Terms screens.
+
 ### Fixed
 
-- Token refresh race condition
+- Token refresh races that could persist stale sessions or invalidate a newer session
+  after a failed refresh.
+- OAuth callback exchanges when the callback issuer differs from the pending auth
+  service.
+- Feed management refresh behavior so stale cached preferences are not shown before
+  refresh, with cached fallback messaging on refresh failure.
+
+### Changed
+
+- Migrated AT Protocol/Bluesky networking to the split Poptart package set.
+- Reworked Bluesky network access around typed Poptart records and service wrappers,
+  with typed moderation domain models.
 
 ## v1.0.0 (Alpha 6)
 
