@@ -1,6 +1,6 @@
 ---
 title: To-Do/Parking Lot
-updated: 2026-05-02
+updated: 2026-05-16
 ---
 
 ## Tests
@@ -16,6 +16,10 @@ updated: 2026-05-02
 - Constellation URL should remain configurable internally but the option to change the
   URL should be removed from the UI.
 - Saved posts should be a tabbed view for local & ATProto/BSky saved posts.
+
+## System
+
+- Persist and retry queued writes when the network is unavailable.
 
 ## UX
 
@@ -43,14 +47,65 @@ updated: 2026-05-02
 
 ## Enhancements
 
-- Allow user to change fonts across the application (headings, body text, code -> for dev
-  tools)
-  - Serifs: Lora (default), Crimson Pro, Playfair Display, Merriweather, Avenir Serif Libre
+- Allow user to change fonts across the application (headings, body text, code ->
+  for dev tools)
+  - Serifs: Lora (default), Crimson Pro, Playfair Display, Merriweather,
+    Avenir Serif Libre
   - Sans: DM Sans (default), Google Sans, Public Sans, Open Sans
   - Monospace: JetBrains Mono (default), Google Sans Code, Fira Code, Source Code Pro
 - Adding `/rss` for public BlueSky profiles shows their profile as an RSS feed.
   It would be cool to display this and allow exporting the feed or a link to it.
-- In dev tools, show Firehose, Jetstream, and [spacedust](https://spacedust.microcosm.blue/#GET/subscribe) as tabs.
+- In dev tools, show Firehose, Jetstream, and
+  [spacedust](https://spacedust.microcosm.blue/#GET/subscribe) as tabs.
+
+### Phanpy/BluePy Inspo
+
+- A dedicated catch-up screen for reviewing posts over a selected
+  time range, with filtering, grouping, summaries, and saved catch-up history.
+- A combined hashtag timeline that supports multiple
+  hashtags in one shortcut, including media-only mode.
+- A dedicated followed-hashtags page and
+  follow/unfollow actions from hashtag timelines.
+- Yearly posting summaries and annual report routes.
+- Translation blocks for posts, media alt text, and bios, with language selection and
+  optional automatic translation for eligible timeline posts.
+- Search and attach GIFs from a picker, including first-frame handling for previews.
+  - Is multi-gif possible?
+- Generate a QR code for profiles display and camera-based QR scanning flows.
+- A filters screen plus filtered-post presentation with hide,
+  warning, hover/peek, and context-specific filtering behavior.
+- Quote-chain viewing/unwrapping and quote visibility/settings UI.
+  - Configurable max depth
+
+- Credit Bluepy <https://github.com/aliceisjustplaying/bluepy> in the about screen
+
+### Atmosphere
+
+- Support ATmosphere app profile sections:
+  - Standard.Site
+    - Documents
+    - Publications
+    - Subscriptions
+      - Subscribe/unsubscribe from Standard publications
+      - View publication subscriptions from settings
+      - Show subscribed-post and document-published notification rows
+  - Rocksky albums, tracks, artists, and scrobbles
+  - Semble Collections & Cards
+- Graze feeds:
+  - Simple filters for images, images/videos, profiles, and hashtags
+  - Advanced filters for attributes, embeds, entities, regex, social graph, lists,
+    starter packs, ML similarity/probability, moderation, language, sentiment, emotion,
+    toxicity, topics, and arbitrary text/image analysis
+
+### Heron Inspo
+
+- Customize profile tabs:
+  - Drag tabs between pinned and unpinned sections
+  - Include specific feed generators as profile tabs
+  - Include a videos-only profile tab separate from media
+- Persist navigation state across app restarts, including adaptive multi-pane
+  navigation state and back-preview panes.
+- Credit Heron <https://github.com/tunjid/heron> in the about screen
 
 ---
 
@@ -105,3 +160,27 @@ feature parity with the official app.
   network.
 - **Labeler Comparison:** Side-by-side view of how different labelers classify the same
   content or account.
+
+## Parity
+
+- Thread and interaction settings:
+  - Default reply gates for following, followers, mentioned users, and selected lists
+  - Default quote/embed permissions for new posts
+  - Edit thread gates from existing posts
+- Muted words and tags management:
+  - Add/remove muted words from post, profile, feed, search, gallery, and notification surfaces
+  - Target content vs tags
+  - Target non-followers
+  - Support expiration times
+- Rich notification preferences:
+  - Separate in-app and push toggles per reason
+  - Filter likes, follows, replies, mentions, quotes, and reposts to everyone or
+    people you follow
+  - Include likes/reposts via reposts, starter-pack joins, subscribed posts, and
+    verification changes
+- Feed display preferences (per feed):
+  - Hide replies
+  - Hide replies from unfollowed accounts
+  - Hide replies below a like threshold
+  - Hide reposts
+  - Hide quote posts
