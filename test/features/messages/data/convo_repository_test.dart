@@ -41,6 +41,28 @@ void main() {
   });
 
   group('ConvoRepository auth recovery', () {
+    test('listConvos sends requests through the Bluesky chat proxy service', () async {
+      final transport = _ScriptedTransport(
+        getReplies: [
+          _okReply({'convos': const []}),
+        ],
+      );
+      final repository = ConvoRepository(chat: transport.createChat());
+
+      await repository.listConvos();
+
+      expect(transport.lastGetHeaders?['atproto-proxy'], 'did:web:api.bsky.chat#bsky_chat');
+    });
+
+    test('sendMessage sends requests through the Bluesky chat proxy service', () async {
+      final transport = _ScriptedTransport(postReplies: [_okReply(_messageJson('msg-1'))]);
+      final repository = ConvoRepository(chat: transport.createChat());
+
+      await repository.sendMessage('c1', 'Hello');
+
+      expect(transport.lastPostHeaders?['atproto-proxy'], 'did:web:api.bsky.chat#bsky_chat');
+    });
+
     test('listConvos retries once after unauthorized and succeeds with refreshed client', () async {
       final primary = _ScriptedTransport(getReplies: [_unauthorizedReply()]);
       final fallback = _ScriptedTransport(
@@ -130,6 +152,8 @@ class _ScriptedTransport {
 
   int getCalls = 0;
   int postCalls = 0;
+  Map<String, String>? lastGetHeaders;
+  Map<String, String>? lastPostHeaders;
 
   BlueskyChat createChat() {
     return BlueskyChat.fromSession(
@@ -141,6 +165,7 @@ class _ScriptedTransport {
       ),
       getClient: (uri, {headers}) async {
         getCalls += 1;
+        lastGetHeaders = headers;
         if (_getReplies.isEmpty) {
           throw StateError('No scripted GET response queued for $uri');
         }
@@ -148,6 +173,7 @@ class _ScriptedTransport {
       },
       postClient: (uri, {headers, body, encoding}) async {
         postCalls += 1;
+        lastPostHeaders = headers;
         if (_postReplies.isEmpty) {
           throw StateError('No scripted POST response queued for $uri');
         }
@@ -159,6 +185,16 @@ class _ScriptedTransport {
 
 Map<String, Object?> _convoJson(String id) {
   return {'id': id, 'rev': 'rev-$id', 'members': const [], 'muted': false, 'unreadCount': 0};
+}
+
+Map<String, Object?> _messageJson(String id) {
+  return {
+    'id': id,
+    'rev': 'rev-$id',
+    'text': 'Hello',
+    'sender': {'did': 'did:plc:test'},
+    'sentAt': DateTime.utc(2026, 1, 1).toIso8601String(),
+  };
 }
 
 class _ScriptedReply {

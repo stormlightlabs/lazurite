@@ -1,5 +1,7 @@
 part of '../poptart_client_adapter.dart';
 
+const _bskyChatProxyHeaders = <String, String>{'atproto-proxy': 'did:web:api.bsky.chat#bsky_chat'};
+
 class Bluesky {
   Bluesky._(this._client);
 
@@ -153,7 +155,7 @@ class BlueskyChat extends Bluesky {
     return BlueskyChat._(
       PoptartClient.fromSession(
         session,
-        headers: headers,
+        headers: {...?headers, ..._bskyChatProxyHeaders},
         protocol: protocol,
         service: service,
         relayService: relayService,
@@ -179,7 +181,7 @@ class BlueskyChat extends Bluesky {
     return BlueskyChat._(
       PoptartClient.fromOAuthSession(
         session,
-        headers: headers,
+        headers: {...?headers, ..._bskyChatProxyHeaders},
         protocol: protocol,
         service: service,
         relayService: relayService,
