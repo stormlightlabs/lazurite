@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:poptart_core/poptart_core.dart' as atp_core;
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
-import 'package:poptart_lex/app/bsky/actor/get_profiles.dart';
-import 'package:poptart_lex/app/bsky/graph/get_followers.dart';
-import 'package:poptart_lex/app/bsky/graph/get_follows.dart';
-import 'package:poptart_lex/app/bsky/graph/get_suggested_follows_by_actor.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/actor/get_profiles.dart';
+import 'package:bluesky_poptart/app/bsky/graph/get_followers.dart';
+import 'package:bluesky_poptart/app/bsky/graph/get_follows.dart';
+import 'package:bluesky_poptart/app/bsky/graph/get_suggested_follows_by_actor.dart';
 import 'package:poptart_lex/com/atproto/repo/get_record.dart';
 import 'package:poptart_lex/com/atproto/repo/put_record.dart';
 import 'package:poptart_lex/com/atproto/repo/upload_blob.dart';

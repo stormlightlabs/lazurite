@@ -1,6 +1,6 @@
 import 'package:poptart_core/poptart_core.dart' as atcore;
-import 'package:poptart_lex/app/bsky/feed/defs.dart';
-import 'package:poptart_lex/app/bsky/feed/get_post_thread.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/get_post_thread.dart';
 import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/database/app_database.dart';

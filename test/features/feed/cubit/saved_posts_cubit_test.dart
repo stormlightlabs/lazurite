@@ -1,9 +1,9 @@
 import 'package:poptart_lex/com/atproto/repo/strong_ref.dart';
 import 'package:poptart_core/poptart_core.dart';
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
-import 'package:poptart_lex/app/bsky/bookmark/defs.dart';
-import 'package:poptart_lex/app/bsky/bookmark/get_bookmarks.dart';
-import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/bookmark/defs.dart';
+import 'package:bluesky_poptart/app/bsky/bookmark/get_bookmarks.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';

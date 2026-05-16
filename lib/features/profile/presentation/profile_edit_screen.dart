@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';

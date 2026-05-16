@@ -1,11 +1,11 @@
 import 'dart:typed_data';
 
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
-import 'package:poptart_lex/app/bsky/feed/defs.dart';
-import 'package:poptart_lex/app/bsky/graph/defs.dart';
-import 'package:poptart_lex/app/bsky/graph/get_lists.dart';
-import 'package:poptart_lex/app/bsky/graph/get_lists_with_membership.dart';
-import 'package:poptart_lex/app/bsky/graph/list.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/graph/defs.dart';
+import 'package:bluesky_poptart/app/bsky/graph/get_lists.dart';
+import 'package:bluesky_poptart/app/bsky/graph/get_lists_with_membership.dart';
+import 'package:bluesky_poptart/app/bsky/graph/list.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';

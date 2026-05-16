@@ -6,9 +6,9 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:poptart_core/poptart_core.dart' show Blob, BlobRef;
-import 'package:poptart_lex/app/bsky/embed/external.dart';
-import 'package:poptart_lex/app/bsky/embed/record_with_media.dart';
-import 'package:poptart_lex/app/bsky/feed/post.dart';
+import 'package:bluesky_poptart/app/bsky/embed/external.dart';
+import 'package:bluesky_poptart/app/bsky/embed/record_with_media.dart';
+import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 
 class MockAppDatabase extends Mock implements AppDatabase {}
 

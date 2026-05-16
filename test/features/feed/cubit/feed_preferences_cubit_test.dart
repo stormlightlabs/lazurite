@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:poptart_core/poptart_core.dart';
 import 'package:bloc_test/bloc_test.dart';
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
-import 'package:poptart_lex/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:drift/drift.dart' hide isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';

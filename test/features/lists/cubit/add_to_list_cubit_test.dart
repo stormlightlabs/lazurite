@@ -1,8 +1,8 @@
 import 'package:poptart_core/poptart_core.dart' show AtUri;
 import 'package:bloc_test/bloc_test.dart';
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
-import 'package:poptart_lex/app/bsky/graph/defs.dart';
-import 'package:poptart_lex/app/bsky/graph/get_lists_with_membership.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/graph/defs.dart';
+import 'package:bluesky_poptart/app/bsky/graph/get_lists_with_membership.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/lists/cubit/add_to_list_cubit.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';

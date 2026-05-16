@@ -1,17 +1,17 @@
 import 'dart:async';
-import 'package:poptart_lex/com/atproto/label/defs.dart';
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
-import 'package:poptart_lex/app/bsky/actor/get_preferences.dart';
-import 'package:poptart_lex/app/bsky/feed/defs.dart';
-import 'package:poptart_lex/app/bsky/labeler/defs.dart';
-import 'package:poptart_lex/app/bsky/labeler/get_services.dart';
-import 'package:poptart_lex/app/bsky/notification/list_notifications.dart' as notifications;
-import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
+
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/labeler/defs.dart';
+import 'package:bluesky_poptart/app/bsky/labeler/get_services.dart';
+import 'package:bluesky_poptart/app/bsky/notification/list_notifications.dart' as notifications;
 import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:lazurite/features/moderation/domain/moderation_models.dart' as moderation;
+import 'package:poptart_lex/com/atproto/label/defs.dart';
 
 const _officialBlueskyLabelerDid = 'did:plc:ar7c4by46qjdydhdevvrndac';
 const _maxCustomLabelers = 20;
@@ -44,17 +44,17 @@ class ModerationService {
   final String? _userDid;
   final AppViewRequestContext _appViewContext;
 
-  bsky_moderation.ModerationOpts? _opts;
+  moderation.ModerationOpts? _opts;
   List<UPreferences> _preferences = const [];
   late Map<String, String> _headers;
   Future<void>? _initializationFuture;
   bool _disposed = false;
-  final _optsController = StreamController<bsky_moderation.ModerationOpts>.broadcast();
+  final _optsController = StreamController<moderation.ModerationOpts>.broadcast();
   final Map<String, LabelerPolicies> _labelerPoliciesByDid = {};
 
-  Stream<bsky_moderation.ModerationOpts> get optsStream => _optsController.stream;
-  bsky_moderation.ModerationOpts? get currentOpts => _opts;
-  bsky_moderation.ModerationPrefs? get currentPrefs => _opts?.prefs;
+  Stream<moderation.ModerationOpts> get optsStream => _optsController.stream;
+  moderation.ModerationOpts? get currentOpts => _opts;
+  moderation.ModerationPrefs? get currentPrefs => _opts?.prefs;
   List<UPreferences> get currentPreferences => List.unmodifiable(_preferences);
   Map<String, String> get currentHeaders => Map.unmodifiable(_headers);
 
@@ -185,81 +185,170 @@ class ModerationService {
     await _putAndRefresh(updated);
   }
 
-  bsky_moderation.ModerationDecision moderateFeedViewPost(FeedViewPost post) => moderatePost(post.post);
+  moderation.ModerationDecision moderateFeedViewPost(FeedViewPost post) => moderatePost(post.post);
 
-  bsky_moderation.ModerationDecision moderatePost(PostView post) {
+  moderation.ModerationDecision moderatePost(PostView post) {
     final opts = _opts;
     if (opts == null) {
-      return bsky_moderation.ModerationDecision.merge(const []);
+      return const moderation.ModerationDecision.empty();
     }
 
-    return bsky_moderation.moderatePost(bsky_moderation.ModerationSubjectPost.postView(data: post), opts);
-  }
-
-  bsky_moderation.ModerationDecision moderateProfile(ProfileView profile) {
-    final opts = _opts;
-    if (opts == null) {
-      return bsky_moderation.ModerationDecision.merge(const []);
-    }
-
-    return bsky_moderation.moderateProfile(bsky_moderation.ModerationSubjectProfile.profileView(data: profile), opts);
-  }
-
-  bsky_moderation.ModerationDecision moderateProfileBasic(ProfileViewBasic profile) {
-    final opts = _opts;
-    if (opts == null) {
-      return bsky_moderation.ModerationDecision.merge(const []);
-    }
-
-    return bsky_moderation.moderateProfile(
-      bsky_moderation.ModerationSubjectProfile.profileViewBasic(data: profile),
-      opts,
+    return moderation.ModerationDecision(
+      me: post.author.did == _resolvedUserDid,
+      causes: [
+        if (opts.prefs.hiddenPosts.contains(post.uri.toString())) _hiddenCause(),
+        ..._viewerCauses(post.author.viewer),
+        ..._labelCauses(post.labels ?? const [], moderation.LabelTarget.content, opts),
+        ..._labelCauses(post.author.labels ?? const [], moderation.LabelTarget.account, opts),
+      ],
     );
   }
 
-  bsky_moderation.ModerationDecision moderateProfileDetailed(ProfileViewDetailed profile) {
+  moderation.ModerationDecision moderateProfile(ProfileView profile) {
     final opts = _opts;
     if (opts == null) {
-      return bsky_moderation.ModerationDecision.merge(const []);
+      return const moderation.ModerationDecision.empty();
     }
 
-    return bsky_moderation.moderateProfile(
-      bsky_moderation.ModerationSubjectProfile.profileViewDetailed(data: profile),
-      opts,
+    return _moderateActor(did: profile.did, viewer: profile.viewer, labels: profile.labels ?? const [], opts: opts);
+  }
+
+  moderation.ModerationDecision moderateProfileBasic(ProfileViewBasic profile) {
+    final opts = _opts;
+    if (opts == null) {
+      return const moderation.ModerationDecision.empty();
+    }
+
+    return _moderateActor(did: profile.did, viewer: profile.viewer, labels: profile.labels ?? const [], opts: opts);
+  }
+
+  moderation.ModerationDecision moderateProfileDetailed(ProfileViewDetailed profile) {
+    final opts = _opts;
+    if (opts == null) {
+      return const moderation.ModerationDecision.empty();
+    }
+
+    return _moderateActor(did: profile.did, viewer: profile.viewer, labels: profile.labels ?? const [], opts: opts);
+  }
+
+  moderation.ModerationDecision moderateNotification(notifications.Notification notification) {
+    final opts = _opts;
+    if (opts == null) {
+      return const moderation.ModerationDecision.empty();
+    }
+
+    return moderation.ModerationDecision.merge([
+      _moderateActor(
+        did: notification.author.did,
+        viewer: notification.author.viewer,
+        labels: notification.author.labels ?? const [],
+        opts: opts,
+      ),
+      moderation.ModerationDecision(
+        me: notification.author.did == _resolvedUserDid,
+        causes: _labelCauses(notification.labels ?? const [], moderation.LabelTarget.content, opts),
+      ),
+    ]);
+  }
+
+  moderation.ModerationDecision _moderateActor({
+    required String did,
+    required dynamic viewer,
+    required List<Label> labels,
+    required moderation.ModerationOpts opts,
+  }) {
+    return moderation.ModerationDecision(
+      me: did == _resolvedUserDid,
+      causes: [
+        ..._viewerCauses(viewer),
+        ..._labelCauses(labels, moderation.LabelTarget.account, opts),
+        ..._labelCauses(labels, moderation.LabelTarget.profile, opts),
+      ],
     );
   }
 
-  bsky_moderation.ModerationDecision moderateNotification(notifications.Notification notification) {
-    final opts = _opts;
-    if (opts == null) {
-      return bsky_moderation.ModerationDecision.merge(const []);
+  List<moderation.ModerationCause> _viewerCauses(dynamic viewer) {
+    if (viewer == null) {
+      return const [];
     }
 
-    return bsky_moderation.moderateNotification(
-      bsky_moderation.ModerationSubjectNotification.notification(data: notification),
-      opts,
+    final causes = <moderation.ModerationCause>[];
+    try {
+      if (viewer.muted == true) {
+        causes.add(_mutedCause());
+      }
+      if (viewer.blockedBy == true) {
+        causes.add(_blockedByCause());
+      }
+      if (viewer.blocking != null) {
+        causes.add(_blockingCause());
+      }
+    } catch (error, stackTrace) {
+      log.d('Unable to read moderation viewer state: $error\n$stackTrace');
+    }
+    return causes;
+  }
+
+  List<moderation.ModerationCause> _labelCauses(
+    List<Label> labels,
+    moderation.LabelTarget target,
+    moderation.ModerationOpts opts,
+  ) {
+    return labels
+        .map((label) => _labelCause(label, target, opts))
+        .whereType<moderation.ModerationCause>()
+        .toList(growable: false);
+  }
+
+  moderation.ModerationCause? _labelCause(Label label, moderation.LabelTarget target, moderation.ModerationOpts opts) {
+    final definition = _definitionForLabel(label, opts);
+    if (definition == null) {
+      return null;
+    }
+
+    final labeler = opts.prefs.labelers.where((item) => item.did == label.src).firstOrNull;
+    final isSelf = label.src == _resolvedUserDid;
+    if (!isSelf && labeler == null && !moderation.knownLabelDefinitions.containsKey(label.val)) {
+      return null;
+    }
+
+    final setting = _preferenceForLabel(definition, labeler, opts.prefs);
+    if (setting == moderation.LabelPreference.ignore) {
+      return null;
+    }
+
+    return moderation.ModerationCause.label(
+      data: moderation.ModerationCauseLabel(
+        source: isSelf || labeler == null
+            ? const moderation.ModerationCauseSource.user(data: moderation.ModerationCauseSourceUser())
+            : moderation.ModerationCauseSource.labeler(data: moderation.ModerationCauseSourceLabeler(did: labeler.did)),
+        label: label,
+        labelDef: definition,
+        target: target,
+        setting: setting,
+        behavior: definition.behaviorForTarget(target),
+        noOverride: definition.noOverride || (definition.adultOnly && !opts.prefs.adultContentEnabled),
+      ),
     );
   }
 
-  bsky_moderation.ModerationUI postUi(PostView post, bsky_moderation.ModerationBehaviorContext context) =>
+  moderation.ModerationUI postUi(PostView post, moderation.ModerationBehaviorContext context) =>
       moderatePost(post).getUI(context);
 
-  bsky_moderation.ModerationUI profileUi(ProfileView profile, bsky_moderation.ModerationBehaviorContext context) =>
+  moderation.ModerationUI profileUi(ProfileView profile, moderation.ModerationBehaviorContext context) =>
       moderateProfile(profile).getUI(context);
 
-  bsky_moderation.ModerationUI profileBasicUi(
-    ProfileViewBasic profile,
-    bsky_moderation.ModerationBehaviorContext context,
-  ) => moderateProfileBasic(profile).getUI(context);
+  moderation.ModerationUI profileBasicUi(ProfileViewBasic profile, moderation.ModerationBehaviorContext context) =>
+      moderateProfileBasic(profile).getUI(context);
 
-  bsky_moderation.ModerationUI profileDetailedUi(
+  moderation.ModerationUI profileDetailedUi(
     ProfileViewDetailed profile,
-    bsky_moderation.ModerationBehaviorContext context,
+    moderation.ModerationBehaviorContext context,
   ) => moderateProfileDetailed(profile).getUI(context);
 
-  bsky_moderation.ModerationUI notificationUi(
+  moderation.ModerationUI notificationUi(
     notifications.Notification notification,
-    bsky_moderation.ModerationBehaviorContext context,
+    moderation.ModerationBehaviorContext context,
   ) => moderateNotification(notification).getUI(context);
 
   String? resolveLabelDisplayName({
@@ -309,25 +398,23 @@ class ModerationService {
 
   bool shouldFilterFeedViewPostInList(FeedViewPost post) => shouldFilterPostInList(post.post);
 
-  bool shouldFilterPostInList(PostView post) =>
-      postUi(post, bsky_moderation.ModerationBehaviorContext.contentList).filter;
+  bool shouldFilterPostInList(PostView post) => postUi(post, moderation.ModerationBehaviorContext.contentList).filter;
 
-  bool shouldFilterPostInView(PostView post) =>
-      postUi(post, bsky_moderation.ModerationBehaviorContext.contentView).filter;
+  bool shouldFilterPostInView(PostView post) => postUi(post, moderation.ModerationBehaviorContext.contentView).filter;
 
   bool shouldFilterProfileInList(ProfileView profile) =>
-      profileUi(profile, bsky_moderation.ModerationBehaviorContext.profileList).filter;
+      profileUi(profile, moderation.ModerationBehaviorContext.profileList).filter;
 
   bool shouldFilterProfileBasicInList(ProfileViewBasic profile) =>
-      profileBasicUi(profile, bsky_moderation.ModerationBehaviorContext.profileList).filter;
+      profileBasicUi(profile, moderation.ModerationBehaviorContext.profileList).filter;
 
   bool shouldFilterProfileDetailedInView(ProfileViewDetailed profile) =>
-      profileDetailedUi(profile, bsky_moderation.ModerationBehaviorContext.profileView).filter;
+      profileDetailedUi(profile, moderation.ModerationBehaviorContext.profileView).filter;
 
   bool shouldFilterNotificationInList(notifications.Notification notification) {
     final decision = moderateNotification(notification);
-    return decision.getUI(bsky_moderation.ModerationBehaviorContext.contentList).filter ||
-        decision.getUI(bsky_moderation.ModerationBehaviorContext.profileList).filter;
+    return decision.getUI(moderation.ModerationBehaviorContext.contentList).filter ||
+        decision.getUI(moderation.ModerationBehaviorContext.profileList).filter;
   }
 
   void dispose() {
@@ -345,11 +432,7 @@ class ModerationService {
 
       final moderationPrefs = _toModerationPrefs(resolvedPreferences);
       final labelDefs = await _loadLabelDefinitions(moderationPrefs);
-      final opts = bsky_moderation.ModerationOpts(
-        userDid: _resolvedUserDid,
-        prefs: moderationPrefs,
-        labelDefs: labelDefs,
-      );
+      final opts = moderation.ModerationOpts(userDid: _resolvedUserDid, prefs: moderationPrefs, labelDefs: labelDefs);
 
       _preferences = resolvedPreferences;
       _headers = _buildHeadersForPrefs(moderationPrefs);
@@ -403,8 +486,8 @@ class ModerationService {
     await updatePreferences(preferences: preferences);
   }
 
-  Future<Map<String, List<bsky_moderation.InterpretedLabelValueDefinition>>> _loadLabelDefinitions(
-    bsky_moderation.ModerationPrefs prefs,
+  Future<Map<String, List<moderation.InterpretedLabelValueDefinition>>> _loadLabelDefinitions(
+    moderation.ModerationPrefs prefs,
   ) async {
     final labelerDids = {
       _officialBlueskyLabelerDid,
@@ -458,14 +541,14 @@ class ModerationService {
     }
   }
 
-  Future<Map<String, List<bsky_moderation.InterpretedLabelValueDefinition>>> _loadCachedLabelDefinitions(
+  Future<Map<String, List<moderation.InterpretedLabelValueDefinition>>> _loadCachedLabelDefinitions(
     List<String> labelerDids,
   ) async {
     if (_database == null) {
       return const {};
     }
 
-    final definitions = <String, List<bsky_moderation.InterpretedLabelValueDefinition>>{};
+    final definitions = <String, List<moderation.InterpretedLabelValueDefinition>>{};
     for (final did in labelerDids) {
       final cached = await _database.getLabelerCache(did);
       if (cached == null) {
@@ -558,16 +641,55 @@ class ModerationService {
     return updated;
   }
 
-  bsky_moderation.ModerationPrefs _toModerationPrefs(List<UPreferences> preferences) {
-    return ActorGetPreferencesOutput(
-      preferences: preferences,
-    ).getModerationPrefs(appLabelers: const [_officialBlueskyLabelerDid]);
+  moderation.ModerationPrefs _toModerationPrefs(List<UPreferences> preferences) {
+    var adultContentEnabled = false;
+    final globalLabels = <String, moderation.LabelPreference>{};
+    final labelsByLabeler = <String, Map<String, moderation.LabelPreference>>{};
+    final labelerDids = <String>{_officialBlueskyLabelerDid};
+    final mutedWords = <MutedWord>[];
+    final hiddenPosts = <String>[];
+
+    for (final preference in preferences) {
+      if (preference.isAdultContentPref) {
+        adultContentEnabled = preference.adultContentPref!.enabled;
+      } else if (preference.isContentLabelPref) {
+        final contentLabel = preference.contentLabelPref!;
+        final value = _labelPreferenceFromVisibility(contentLabel.visibility);
+        if (value == null) {
+          continue;
+        }
+        final labelerDid = contentLabel.labelerDid;
+        if (labelerDid == null || labelerDid.isEmpty) {
+          globalLabels[contentLabel.label] = value;
+        } else {
+          labelsByLabeler.putIfAbsent(labelerDid, () => {})[contentLabel.label] = value;
+        }
+      } else if (preference.isLabelersPref) {
+        labelerDids.addAll(
+          preference.labelersPref!.labelers.map((labeler) => labeler.did).where((did) => did.startsWith('did:')),
+        );
+      } else if (preference.isMutedWordsPref) {
+        mutedWords.addAll(preference.mutedWordsPref!.items);
+      } else if (preference.isHiddenPostsPref) {
+        hiddenPosts.addAll(preference.hiddenPostsPref!.items.map((uri) => uri.toString()));
+      }
+    }
+
+    return moderation.ModerationPrefs(
+      adultContentEnabled: adultContentEnabled,
+      labels: globalLabels,
+      labelers: labelerDids
+          .map((did) => moderation.ModerationPrefsLabeler(did: did, labels: labelsByLabeler[did] ?? const {}))
+          .toList(growable: false),
+      mutedWords: mutedWords,
+      hiddenPosts: hiddenPosts,
+    );
   }
 
-  Map<String, List<bsky_moderation.InterpretedLabelValueDefinition>> _mapLabelDefinitions(
+  Map<String, List<moderation.InterpretedLabelValueDefinition>> _mapLabelDefinitions(
     List<ULabelerGetServicesViews> views,
   ) {
-    final definitions = <String, List<bsky_moderation.InterpretedLabelValueDefinition>>{};
+    final definitions = <String, List<moderation.InterpretedLabelValueDefinition>>{};
 
     for (final view in views) {
       if (!view.isLabelerViewDetailed) {
@@ -584,17 +706,17 @@ class ModerationService {
     return definitions;
   }
 
-  List<bsky_moderation.InterpretedLabelValueDefinition> _interpretedLabelDefinitionsFromPolicies(
+  List<moderation.InterpretedLabelValueDefinition> _interpretedLabelDefinitionsFromPolicies(
     LabelerPolicies policies, {
     required String labelerDid,
   }) {
     return policies.labelValueDefinitions
             ?.map(
-              (definition) => bsky_moderation.getInterpretedLabelValueDefinition(
+              (definition) => moderation.getInterpretedLabelValueDefinition(
                 identifier: definition.identifier,
                 defaultSetting:
-                    bsky_moderation.LabelPreference.valueOf(definition.defaultSetting?.toJson()) ??
-                    bsky_moderation.LabelPreference.warn,
+                    moderation.LabelPreference.valueOf(definition.defaultSetting?.toJson()) ??
+                    moderation.LabelPreference.warn,
                 severity: definition.severity.toJson(),
                 blurs: definition.blurs.toJson(),
                 adultOnly: definition.adultOnly ?? true,
@@ -605,7 +727,70 @@ class ModerationService {
         const [];
   }
 
-  Map<String, String> _buildHeadersForPrefs(bsky_moderation.ModerationPrefs prefs) {
+  moderation.InterpretedLabelValueDefinition? _definitionForLabel(Label label, moderation.ModerationOpts opts) {
+    final custom = opts.labelDefs[label.src]?.where((definition) => definition.identifier == label.val).firstOrNull;
+    if (custom != null) {
+      return custom.withDefinedBy(label.src);
+    }
+    return moderation.knownLabelDefinitions[label.val]?.withDefinedBy(label.src);
+  }
+
+  moderation.LabelPreference _preferenceForLabel(
+    moderation.InterpretedLabelValueDefinition definition,
+    moderation.ModerationPrefsLabeler? labeler,
+    moderation.ModerationPrefs prefs,
+  ) {
+    if (!definition.configurable) {
+      return definition.defaultSetting;
+    }
+    if (definition.adultOnly && !prefs.adultContentEnabled) {
+      return moderation.LabelPreference.hide;
+    }
+    return labeler?.labels[definition.identifier] ?? prefs.labels[definition.identifier] ?? definition.defaultSetting;
+  }
+
+  moderation.LabelPreference? _labelPreferenceFromVisibility(ContentLabelPrefVisibility visibility) {
+    return switch (visibility.toJson()) {
+      'ignore' || 'show' => moderation.LabelPreference.ignore,
+      'warn' => moderation.LabelPreference.warn,
+      'hide' => moderation.LabelPreference.hide,
+      _ => null,
+    };
+  }
+
+  moderation.ModerationCause _hiddenCause() {
+    return const moderation.ModerationCause.hidden(
+      data: moderation.ModerationCauseHidden(
+        source: moderation.ModerationCauseSource.user(data: moderation.ModerationCauseSourceUser()),
+      ),
+    );
+  }
+
+  moderation.ModerationCause _mutedCause() {
+    return const moderation.ModerationCause.muted(
+      data: moderation.ModerationCauseMuted(
+        source: moderation.ModerationCauseSource.user(data: moderation.ModerationCauseSourceUser()),
+      ),
+    );
+  }
+
+  moderation.ModerationCause _blockingCause() {
+    return const moderation.ModerationCause.blocking(
+      data: moderation.ModerationCauseBlocking(
+        source: moderation.ModerationCauseSource.user(data: moderation.ModerationCauseSourceUser()),
+      ),
+    );
+  }
+
+  moderation.ModerationCause _blockedByCause() {
+    return const moderation.ModerationCause.blockedBy(
+      data: moderation.ModerationCauseBlockedBy(
+        source: moderation.ModerationCauseSource.user(data: moderation.ModerationCauseSourceUser()),
+      ),
+    );
+  }
+
+  Map<String, String> _buildHeadersForPrefs(moderation.ModerationPrefs prefs) {
     return _appViewContext.appBskyHeadersForEndpoint(
       'app.bsky.labeler.getServices',
       _buildLabelerHeaders(prefs.labelers.map((labeler) => labeler.did)),

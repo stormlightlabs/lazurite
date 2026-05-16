@@ -65,6 +65,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "10.0.0"
+  bluesky_poptart:
+    dependency: "direct main"
+    description:
+      name: bluesky_poptart
+      sha256: c55e2ac06fcf8f90aac18c90ef280216c48da1bbf4bac9d84b01bb69079b6b5c
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
   boolean_selector:
     dependency: transitive
     description:
@@ -1021,6 +1029,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  ozone_poptart:
+    dependency: "direct main"
+    description:
+      name: ozone_poptart
+      sha256: "2764e4a75d9e2119b00717e30975b3b2f3983c4c7f1079e6ee24bba40608a38b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
   package_config:
     dependency: transitive
     description:
@@ -1210,14 +1226,6 @@ packages:
     description:
       name: poptart
       sha256: "5631a6e4a1ffa25101db2aa76b82e2410941fa5fec4d4c18ea2c2c7d95b70f0b"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.0"
-  poptart_bluesky_moderation:
-    dependency: "direct main"
-    description:
-      name: poptart_bluesky_moderation
-      sha256: d9d4cdcd04e5874edc8eadf0cd39f5e6e0e23a7d362a67876430ddb39c8ccf79
       url: "https://pub.dev"
     source: hosted
     version: "0.1.0"

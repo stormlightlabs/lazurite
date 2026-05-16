@@ -1,6 +1,6 @@
 import 'package:poptart_core/poptart_core.dart' show AtUri;
-import 'package:poptart_lex/app/bsky/feed/defs.dart' show GeneratorView;
-import 'package:poptart_lex/app/bsky/graph/defs.dart' as bsky_graph;
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart' show GeneratorView;
+import 'package:bluesky_poptart/app/bsky/graph/defs.dart' as bsky_graph;
 import 'package:flutter/material.dart' hide ListView;
 import 'package:flutter/material.dart' as material show ListView;
 import 'package:flutter_bloc/flutter_bloc.dart';

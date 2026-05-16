@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:poptart_core/poptart_core.dart' as atcore;
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
-import 'package:poptart_lex/chat/bsky/convo/defs.dart';
+import 'package:bluesky_poptart/chat/bsky/convo/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/features/auth/data/models/auth_models.dart';

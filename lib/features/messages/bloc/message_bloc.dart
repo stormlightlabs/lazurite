@@ -1,4 +1,4 @@
-import 'package:poptart_lex/chat/bsky/convo/get_messages.dart';
+import 'package:bluesky_poptart/chat/bsky/convo/get_messages.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/logging/app_logger.dart';

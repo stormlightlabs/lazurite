@@ -1,5 +1,5 @@
 import 'package:poptart_core/poptart_core.dart';
-import 'package:poptart_lex/app/bsky/notification/list_notifications.dart' as bsky;
+import 'package:bluesky_poptart/app/bsky/notification/list_notifications.dart' as bsky;
 import 'dart:ui';
 
 import 'package:lazurite/core/l10n/app_localizations.dart';

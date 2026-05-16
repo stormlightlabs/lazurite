@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io' as io;
 
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';

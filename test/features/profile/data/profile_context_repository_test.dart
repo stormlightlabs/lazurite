@@ -1,10 +1,10 @@
 import 'dart:convert';
 
 import 'package:poptart_core/poptart_core.dart' show AtUri;
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
-import 'package:poptart_lex/app/bsky/actor/get_profiles.dart';
-import 'package:poptart_lex/app/bsky/graph/defs.dart';
-import 'package:poptart_lex/app/bsky/graph/get_list.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/actor/get_profiles.dart';
+import 'package:bluesky_poptart/app/bsky/graph/defs.dart';
+import 'package:bluesky_poptart/app/bsky/graph/get_list.dart';
 import 'package:poptart_lex/com/atproto/repo/list_records.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;

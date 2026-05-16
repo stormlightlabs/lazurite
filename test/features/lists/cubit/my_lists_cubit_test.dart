@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:poptart_core/poptart_core.dart' show AtUri, Blob, BlobRef;
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
-import 'package:poptart_lex/app/bsky/graph/defs.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/graph/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/lists/cubit/my_lists_cubit.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
@@ -144,7 +144,11 @@ void main() {
 
     test('createList uploads avatar when bytes provided', () async {
       final cubit = MyListsCubit(listRepository: mockListRepository);
-      const avatar = Blob(ref: BlobRef(link: 'bafkreiavatarblob'), mimeType: 'image/jpeg', size: 3);
+      const avatar = Blob(
+        ref: BlobRef(link: 'bafkreiavatarblob'),
+        mimeType: 'image/jpeg',
+        size: 3,
+      );
 
       when(
         () => mockListRepository.uploadListAvatar(

@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
-import 'package:poptart_lex/app/bsky/feed/defs.dart';
-import 'package:poptart_lex/app/bsky/labeler/defs.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/labeler/defs.dart';
 
 class JsonStringCacheCodec<T> {
   const JsonStringCacheCodec({required this.encode, required this.decode});

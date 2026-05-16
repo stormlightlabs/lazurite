@@ -1,4 +1,4 @@
-import 'package:poptart_lex/app/bsky/feed/post.dart';
+import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 
 FeedPostRecord? tryParseRecord(Map<String, dynamic> record) {
   try {

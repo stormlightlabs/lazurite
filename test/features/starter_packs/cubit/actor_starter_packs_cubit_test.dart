@@ -1,7 +1,7 @@
 import 'package:poptart_core/poptart_core.dart' show AtUri;
 import 'package:bloc_test/bloc_test.dart';
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
-import 'package:poptart_lex/app/bsky/graph/defs.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/graph/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/starter_packs/cubit/actor_starter_packs_cubit.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';

@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 
-import 'package:poptart_lex/app/bsky/graph/defs.dart' show KnownListPurpose;
+import 'package:bluesky_poptart/app/bsky/graph/defs.dart' show KnownListPurpose;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 

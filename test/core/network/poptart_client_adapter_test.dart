@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
-import 'package:poptart_lex/app/bsky/actor.dart' as actor_methods;
-import 'package:poptart_lex/app/bsky/actor/defs.dart';
-import 'package:poptart_lex/app/bsky/feed.dart' as feed_methods;
-import 'package:poptart_lex/app/bsky/feed/post.dart';
+import 'package:bluesky_poptart/app/bsky/actor.dart' as actor_methods;
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed.dart' as feed_methods;
+import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 import 'package:poptart_lex/com/atproto/repo/apply_writes.dart';
 import 'package:poptart_lex/com/atproto/repo/strong_ref.dart';
 

@@ -1,7 +1,7 @@
-import 'package:poptart_lex/app/bsky/feed/defs.dart' show GeneratorView;
-import 'package:poptart_lex/app/bsky/graph/defs.dart';
-import 'package:poptart_lex/app/bsky/graph/list.dart';
-import 'package:poptart_lex/app/bsky/graph/starterpack.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart' show GeneratorView;
+import 'package:bluesky_poptart/app/bsky/graph/defs.dart';
+import 'package:bluesky_poptart/app/bsky/graph/list.dart';
+import 'package:bluesky_poptart/app/bsky/graph/starterpack.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
