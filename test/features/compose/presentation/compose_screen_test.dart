@@ -390,6 +390,94 @@ void main() {
 
         verify(() => mockBloc.add(const AltTextUpdated(index: 0, altText: 'A clearer image description'))).called(1);
       });
+
+      testWidgets('close button preserves typed image alt text', (tester) async {
+        final image = _writeTempImage();
+        seedState(
+          ComposeState.ready(
+            isEmpty: false,
+            mediaAttachments: [MediaAttachment(localPath: image.path, altText: 'Existing description')],
+          ),
+        );
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        await tester.tap(find.text('ALT'));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(find.byKey(const ValueKey('alt-text-field')), 'Text kept from close');
+        await tester.tap(find.descendant(of: find.byType(Dialog), matching: find.byTooltip('Close')));
+        await tester.pumpAndSettle();
+
+        verify(() => mockBloc.add(const AltTextUpdated(index: 0, altText: 'Text kept from close'))).called(1);
+      });
+
+      testWidgets('Android back preserves typed image alt text', (tester) async {
+        final image = _writeTempImage();
+        seedState(
+          ComposeState.ready(
+            isEmpty: false,
+            mediaAttachments: [MediaAttachment(localPath: image.path, altText: 'Existing description')],
+          ),
+        );
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        await tester.tap(find.text('ALT'));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(find.byKey(const ValueKey('alt-text-field')), 'Text kept from back');
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+
+        verify(() => mockBloc.add(const AltTextUpdated(index: 0, altText: 'Text kept from back'))).called(1);
+      });
+
+      testWidgets('Android back preserves cleared image alt text', (tester) async {
+        final image = _writeTempImage();
+        seedState(
+          ComposeState.ready(
+            isEmpty: false,
+            mediaAttachments: [MediaAttachment(localPath: image.path, altText: 'Existing description')],
+          ),
+        );
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        await tester.tap(find.text('ALT'));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(find.byKey(const ValueKey('alt-text-field')), '');
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+
+        verify(() => mockBloc.add(const AltTextUpdated(index: 0, altText: ''))).called(1);
+      });
+
+      testWidgets('cancel discards typed image alt text changes', (tester) async {
+        final image = _writeTempImage();
+        seedState(
+          ComposeState.ready(
+            isEmpty: false,
+            mediaAttachments: [MediaAttachment(localPath: image.path, altText: 'Existing description')],
+          ),
+        );
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        await tester.tap(find.text('ALT'));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(find.byKey(const ValueKey('alt-text-field')), 'Discard this text');
+        await tester.tap(find.descendant(of: find.byType(Dialog), matching: find.widgetWithText(TextButton, 'Cancel')));
+        await tester.pumpAndSettle();
+
+        verifyNever(() => mockBloc.add(const AltTextUpdated(index: 0, altText: 'Discard this text')));
+      });
     });
 
     group('video alt text', () {
@@ -421,6 +509,56 @@ void main() {
         await tester.pumpAndSettle();
 
         verify(() => mockBloc.add(const VideoAltTextUpdated('A clearer video description'))).called(1);
+      });
+
+      testWidgets('close button preserves typed video alt text', (tester) async {
+        seedState(
+          const ComposeState.ready(
+            isEmpty: false,
+            videoAttachment: VideoAttachment(
+              localPath: '/tmp/composer-video.mp4',
+              status: VideoUploadStatus.ready,
+              altText: 'Existing video description',
+            ),
+          ),
+        );
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        await tester.tap(find.byIcon(Icons.subtitles_outlined));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(find.byKey(const ValueKey('video-alt-text-field')), 'Video text kept from close');
+        await tester.tap(find.descendant(of: find.byType(Dialog), matching: find.byTooltip('Close')));
+        await tester.pumpAndSettle();
+
+        verify(() => mockBloc.add(const VideoAltTextUpdated('Video text kept from close'))).called(1);
+      });
+
+      testWidgets('Android back preserves typed video alt text', (tester) async {
+        seedState(
+          const ComposeState.ready(
+            isEmpty: false,
+            videoAttachment: VideoAttachment(
+              localPath: '/tmp/composer-video.mp4',
+              status: VideoUploadStatus.ready,
+              altText: 'Existing video description',
+            ),
+          ),
+        );
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        await tester.tap(find.byIcon(Icons.subtitles_outlined));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(find.byKey(const ValueKey('video-alt-text-field')), 'Video text kept from back');
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+
+        verify(() => mockBloc.add(const VideoAltTextUpdated('Video text kept from back'))).called(1);
       });
     });
 
