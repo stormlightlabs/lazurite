@@ -1,6 +1,6 @@
 ---
 title: Notification Milestones
-updated: 2026-05-01
+updated: 2026-05-17
 ---
 
 ## M1 - Foundation Hardening (Polling Baseline)
@@ -53,12 +53,11 @@ updated: 2026-05-01
 - [ ] Add structured logs + debug counters for notification flows
 - [ ] Add smoke checklist for Android/iOS permission and delivery scenarios
 - [ ] Validate multi-account behavior and token cleanup
-- [ ] Run full `flutter analyze` and full test suite
 
 ## M8 - Firebase/APNs Production Push Setup
 
-- [ ] Create/configure Firebase project apps for iOS + Android
-- [ ] Add `GoogleService-Info.plist` to iOS target and `google-services.json` to `android/app`
-- [ ] Configure Apple Push Notifications capability/provisioning in Apple Developer
-- [ ] Upload APNs auth key/certificate to Firebase Cloud Messaging settings
-- [ ] Validate end-to-end remote push delivery (foreground, background, terminated) on iOS + Android
+- [x] Create/configure Firebase project apps for iOS + Android
+- [x] Add `GoogleService-Info.plist` to iOS target and `google-services.json` to `android/app`
+- [x] Configure Apple Push Notifications capability/provisioning in Apple Developer
+- [x] Upload APNs auth key/certificate to Firebase Cloud Messaging settings
+- [x] Validate end-to-end remote push delivery (foreground, background, terminated) on iOS + Android

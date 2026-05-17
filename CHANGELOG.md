@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## v1.0.0 (Alpha 8)
+
+### Added
+
+- Pull to refresh threads
+- Customizable/configurable fonts
+
+### Changed
+
+- Changed profile routing policy to keep "me" in the stateful shell route and route to
+  the profile stack for `:actor` paths (basically going back from profiles takes you
+  back to the previous screen instead of the feed)
+
+### Fixed
+
+- Removed global moderation blur for users requiring authenticated viewers
+- Save actions from post in threads (save to "cloud"/BlueSky)
+
 ## v1.0.0 (Alpha 7)
 
 ### Added

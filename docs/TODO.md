@@ -47,12 +47,6 @@ updated: 2026-05-16
 
 ## Enhancements
 
-- Allow user to change fonts across the application (headings, body text, code ->
-  for dev tools)
-  - Serifs: Lora (default), Crimson Pro, Playfair Display, Merriweather,
-    Avenir Serif Libre
-  - Sans: DM Sans (default), Google Sans, Public Sans, Open Sans
-  - Monospace: JetBrains Mono (default), Google Sans Code, Fira Code, Source Code Pro
 - Adding `/rss` for public BlueSky profiles shows their profile as an RSS feed.
   It would be cool to display this and allow exporting the feed or a link to it.
 - In dev tools, show Firehose, Jetstream, and
