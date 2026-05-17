@@ -593,7 +593,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                                   ),
                                 IconButton(
                                   icon: const Icon(Icons.settings_outlined),
-                                  onPressed: () => context.go('/settings'),
+                                  onPressed: () => navigateToSettings(context),
                                 ),
                               ],
                             ),

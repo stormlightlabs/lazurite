@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,10 +17,12 @@ import 'package:lazurite/features/auth/presentation/oauth_callback_screen.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
+import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
+import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
@@ -35,6 +38,8 @@ class MockProfileBloc extends MockBloc<ProfileEvent, ProfileState> implements Pr
 
 class MockFeedBloc extends MockBloc<FeedEvent, FeedState> implements FeedBloc {}
 
+class MockFeedRepository extends Mock implements FeedRepository {}
+
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
 class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
@@ -49,6 +54,8 @@ class MockNotificationRepository extends Mock implements NotificationRepository 
 
 class MockProfileRepository extends Mock implements ProfileRepository {}
 
+class MockProfileActionRepository extends Mock implements ProfileActionRepository {}
+
 class MockSearchRepository extends Mock implements SearchRepository {}
 
 class MockTypeaheadRepository extends Mock implements TypeaheadRepository {}
@@ -60,6 +67,7 @@ void main() {
   late MockFeedPreferencesCubit feedPreferencesCubit;
   late MockProfileBloc profileBloc;
   late MockFeedBloc feedBloc;
+  late MockFeedRepository feedRepository;
   late MockSettingsCubit settingsCubit;
   late MockConnectivityCubit connectivityCubit;
   late MockAccountSwitcherCubit accountSwitcherCubit;
@@ -67,6 +75,7 @@ void main() {
   late MockConvoListBloc convoListBloc;
   late MockNotificationRepository notificationRepository;
   late MockProfileRepository profileRepository;
+  late MockProfileActionRepository profileActionRepository;
   late MockSearchRepository searchRepository;
   late MockTypeaheadRepository typeaheadRepository;
   late MockAppDatabase database;
@@ -93,6 +102,7 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(Uri.parse('https://example.com/oauth/callback'));
+    registerFallbackValue(FeedFilter.postsNoReplies);
   });
 
   setUp(() {
@@ -100,6 +110,7 @@ void main() {
     feedPreferencesCubit = MockFeedPreferencesCubit();
     profileBloc = MockProfileBloc();
     feedBloc = MockFeedBloc();
+    feedRepository = MockFeedRepository();
     settingsCubit = MockSettingsCubit();
     connectivityCubit = MockConnectivityCubit();
     accountSwitcherCubit = MockAccountSwitcherCubit();
@@ -107,6 +118,7 @@ void main() {
     convoListBloc = MockConvoListBloc();
     notificationRepository = MockNotificationRepository();
     profileRepository = MockProfileRepository();
+    profileActionRepository = MockProfileActionRepository();
     searchRepository = MockSearchRepository();
     typeaheadRepository = MockTypeaheadRepository();
     database = MockAppDatabase();
@@ -134,6 +146,29 @@ void main() {
     when(() => unreadCountCubit.state).thenReturn(const UnreadCountState(0));
     when(() => convoListBloc.state).thenReturn(const ConvoListState.loaded(convos: [], cursor: null, hasMore: false));
     when(() => notificationRepository.getUnreadCount()).thenAnswer((_) async => 0);
+    when(() => profileRepository.getProfile(any())).thenAnswer((invocation) async {
+      final actor = invocation.positionalArguments.first as String;
+      if (actor == tokens.did || actor == tokens.handle || actor == 'me') {
+        return profile;
+      }
+
+      return ProfileViewDetailed(
+        did: actor.startsWith('did:') ? actor : 'did:plc:$actor',
+        handle: actor.startsWith('did:') ? 'alice.bsky.social' : actor,
+        displayName: 'Alice',
+        followersCount: 2,
+        followsCount: 3,
+        postsCount: 5,
+      );
+    });
+    when(
+      () => feedRepository.getAuthorFeed(
+        actor: any(named: 'actor'),
+        filter: any(named: 'filter'),
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => FeedResult(posts: []));
 
     whenListen(authBloc, authController.stream, initialState: currentAuthState);
     whenListen(
@@ -183,7 +218,7 @@ void main() {
     await authController.close();
   });
 
-  Widget buildSubjectWithRouter(GoRouter router) => MultiBlocProvider(
+  Widget buildSubjectWithRouter(GoRouter router, {ThemeData? theme}) => MultiBlocProvider(
     providers: [
       BlocProvider<AuthBloc>.value(value: authBloc),
       BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
@@ -203,9 +238,11 @@ void main() {
           RepositoryProvider<TypeaheadRepository>.value(value: typeaheadRepository),
           RepositoryProvider<AppDatabase>.value(value: database),
           RepositoryProvider<ProfileRepository>.value(value: profileRepository),
+          RepositoryProvider<ProfileActionRepository>.value(value: profileActionRepository),
+          RepositoryProvider<FeedRepository>.value(value: feedRepository),
           RepositoryProvider<String>.value(value: tokens.did),
         ],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(theme: theme, routerConfig: router),
       ),
     ),
   );
@@ -599,6 +636,76 @@ void main() {
 
     expect(find.text('HOME'), findsAtLeastNWidgets(1));
     expect(find.text('APPEARANCE'), findsNothing);
+
+    router.dispose();
+  });
+
+  testWidgets('authenticated settings back button returns to profile when opened from profile', (tester) async {
+    currentAuthState = const AuthState.authenticated(tokens);
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('PROFILE'));
+    await tester.pumpAndSettle();
+    expect(find.text('RIVER TAM'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('APPEARANCE'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('RIVER TAM'), findsOneWidget);
+    expect(find.text('APPEARANCE'), findsNothing);
+
+    router.dispose();
+  });
+
+  testWidgets('contextual profile route pops back to the originating shell route', (tester) async {
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    await tester.pumpAndSettle();
+
+    expect(find.text('No feeds pinned'), findsOneWidget);
+    clearInteractions(profileBloc);
+    clearInteractions(feedBloc);
+
+    unawaited(router.push('/profile/${Uri.encodeComponent('did:plc:alice')}'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(router.canPop(), isTrue);
+    verifyNever(() => profileBloc.add(const ProfileLoadRequested(actor: 'did:plc:alice')));
+    verifyNever(() => feedBloc.add(const FeedLoadRequested(actor: 'did:plc:alice', filter: FeedFilter.postsNoReplies)));
+
+    router.pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('No feeds pinned'), findsOneWidget);
+
+    router.dispose();
+  });
+
+  testWidgets('contextual profile route uses Cupertino pages on iOS for edge-swipe back', (tester) async {
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router, theme: ThemeData(platform: TargetPlatform.iOS)));
+    await tester.pumpAndSettle();
+
+    unawaited(router.push('/profile/${Uri.encodeComponent('did:plc:alice')}'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byType(CupertinoPageTransition), findsWidgets);
+    expect(router.canPop(), isTrue);
 
     router.dispose();
   });

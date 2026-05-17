@@ -22,6 +22,8 @@ import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/compose/presentation/compose_screen.dart';
 import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
 import 'package:lazurite/features/devtools/presentation/dev_tools_screen.dart';
+import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
+import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/features/feed/presentation/feed_detail_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_management_screen.dart';
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
@@ -48,6 +50,7 @@ import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/notifications/domain/notification_domain_service.dart';
+import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/cubit/follow_audit_cubit.dart';
 import 'package:lazurite/features/profile/cubit/profile_connections_cubit.dart';
 import 'package:lazurite/features/profile/cubit/profile_context_cubit.dart';
@@ -403,6 +406,58 @@ class AppRouter {
           );
         },
       ),
+      GoRoute(
+        path: r'/profile/:actor(m|[^m][^/]*|m[^e][^/]*|me[^/]+)',
+        parentNavigatorKey: _rootNavigatorKey,
+        redirect: (_, state) {
+          final actor = (state.pathParameters['actor'] ?? '').trim().toLowerCase();
+          if (actor == 'me') {
+            return '/profile/me';
+          }
+          return null;
+        },
+        pageBuilder: (context, state) => _page(
+          context,
+          state,
+          _buildContextualProfileRoute(context, Uri.decodeComponent(state.pathParameters['actor'] ?? '')),
+        ),
+        routes: [
+          GoRoute(
+            path: 'connections',
+            pageBuilder: (context, state) => _page(
+              context,
+              state,
+              _buildProfileConnectionsRoute(context, state, Uri.decodeComponent(state.pathParameters['actor'] ?? '')),
+            ),
+          ),
+          GoRoute(
+            path: 'search-posts',
+            pageBuilder: (context, state) {
+              final actor = Uri.decodeComponent(state.pathParameters['actor'] ?? '');
+              return _page(
+                context,
+                state,
+                BlocProvider(
+                  create: (_) => SearchBloc(
+                    searchRepository: context.read<SearchRepository>(),
+                    typeaheadRepository: context.read<TypeaheadRepository>(),
+                    database: context.read<AppDatabase>(),
+                    accountDid: context.read<String>(),
+                    config: SearchBlocConfig.profileScoped(fixedPostAuthor: actor),
+                  ),
+                  child: SearchScreen(
+                    postsOnlyMode: true,
+                    fixedPostAuthor: actor,
+                    showBackButton: true,
+                    title: 'Search @${actor.startsWith('did:') ? actor : actor}',
+                    showJumpToProfileAction: false,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           if (!context.read<AuthBloc>().state.isAuthenticated) {
@@ -541,39 +596,10 @@ class AppRouter {
                     path: 'edit',
                     pageBuilder: (context, state) => _page(context, state, const ProfileEditScreen()),
                   ),
-                ],
-              ),
-              GoRoute(
-                path: '/profile/:actor',
-                redirect: (_, state) {
-                  final actor = (state.pathParameters['actor'] ?? '').trim().toLowerCase();
-                  if (actor == 'me') {
-                    return '/profile/me';
-                  }
-                  return null;
-                },
-                pageBuilder: (context, state) => _page(
-                  context,
-                  state,
-                  ProfileScreen(actor: Uri.decodeComponent(state.pathParameters['actor'] ?? ''), showBackButton: true),
-                ),
-                routes: [
-                  GoRoute(
-                    path: 'connections',
-                    pageBuilder: (context, state) => _page(
-                      context,
-                      state,
-                      _buildProfileConnectionsRoute(
-                        context,
-                        state,
-                        Uri.decodeComponent(state.pathParameters['actor'] ?? ''),
-                      ),
-                    ),
-                  ),
                   GoRoute(
                     path: 'search-posts',
                     pageBuilder: (context, state) {
-                      final actor = Uri.decodeComponent(state.pathParameters['actor'] ?? '');
+                      final actor = context.read<String>();
                       return _page(
                         context,
                         state,
@@ -623,6 +649,16 @@ class AppRouter {
         notificationRepository: context.read<NotificationRepository>(),
       ),
       child: child,
+    );
+  }
+
+  Widget _buildContextualProfileRoute(BuildContext context, String actor) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => ProfileBloc(profileRepository: context.read<ProfileRepository>())),
+        BlocProvider(create: (_) => FeedBloc(feedRepository: context.read<FeedRepository>())),
+      ],
+      child: ProfileScreen(actor: actor, showBackButton: true),
     );
   }
 

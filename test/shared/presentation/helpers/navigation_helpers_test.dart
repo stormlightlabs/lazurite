@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
@@ -37,9 +38,10 @@ void main() {
 
       expect(pushedRoute, isNotNull);
       expect(Uri.parse(pushedRoute!).path, '/profile/${Uri.encodeComponent(actorDid)}');
+      expect(router.canPop(), isTrue);
     });
 
-    testWidgets('navigateToProfile uses go from non-shell routes like /post', (tester) async {
+    testWidgets('navigateToProfile pushes from non-shell routes like /post', (tester) async {
       const actorDid = 'did:plc:alice.test';
       String? activePath;
 
@@ -71,6 +73,47 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(activePath, '/profile/${Uri.encodeComponent(actorDid)}');
+      expect(router.canPop(), isTrue);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('navigateToProfile routes the current user to the profile tab root', (tester) async {
+      const actorDid = 'did:plc:me.test';
+      String? activePath;
+
+      final router = GoRouter(
+        initialLocation: '/post',
+        routes: [
+          GoRoute(
+            path: '/post',
+            builder: (context, state) => Scaffold(
+              body: Center(
+                child: FilledButton(onPressed: () => navigateToProfile(context, actorDid), child: const Text('go')),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/profile/me',
+            builder: (context, state) {
+              activePath = state.uri.path;
+              return const Scaffold(body: Text('me'));
+            },
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        RepositoryProvider<String>.value(
+          value: actorDid,
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('go'));
+      await tester.pumpAndSettle();
+
+      expect(activePath, '/profile/me');
       expect(router.canPop(), isFalse);
       expect(tester.takeException(), isNull);
     });
@@ -128,6 +171,39 @@ void main() {
 
       expect(result, isNull);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('navigateToSettings pushes settings when a router is available', (tester) async {
+      String? activePath;
+
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => Scaffold(
+              body: Center(
+                child: FilledButton(onPressed: () => navigateToSettings(context), child: const Text('settings')),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/settings',
+            builder: (context, state) {
+              activePath = state.uri.path;
+              return const Scaffold(body: Text('settings screen'));
+            },
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('settings'));
+      await tester.pumpAndSettle();
+
+      expect(activePath, '/settings');
+      expect(router.canPop(), isTrue);
     });
   });
 }
