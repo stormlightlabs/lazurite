@@ -237,18 +237,30 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    final headingDropdown = tester.widget<DropdownButton<AppHeadingFontFamily>>(
-      find.byType(DropdownButton<AppHeadingFontFamily>),
+    final headingFinder = find.byType(DropdownButton<AppHeadingFontFamily>);
+    final contentFinder = find.byType(DropdownButton<AppContentFontFamily>);
+    final codeFinder = find.byType(DropdownButton<AppCodeFontFamily>);
+    final headingDropdown = tester.widget<DropdownButton<AppHeadingFontFamily>>(headingFinder);
+    expect(headingDropdown.alignment, AlignmentDirectional.centerEnd);
+    _expectRightAlignedSelectedFontLabel(
+      headingDropdown.selectedItemBuilder!(tester.element(headingFinder)).first,
+      'Lora',
     );
     headingDropdown.onChanged?.call(AppHeadingFontFamily.merriweather);
 
-    final contentDropdown = tester.widget<DropdownButton<AppContentFontFamily>>(
-      find.byType(DropdownButton<AppContentFontFamily>),
+    final contentDropdown = tester.widget<DropdownButton<AppContentFontFamily>>(contentFinder);
+    expect(contentDropdown.alignment, AlignmentDirectional.centerEnd);
+    _expectRightAlignedSelectedFontLabel(
+      contentDropdown.selectedItemBuilder!(tester.element(contentFinder)).first,
+      'Google Sans',
     );
     contentDropdown.onChanged?.call(AppContentFontFamily.openSans);
 
-    final codeDropdown = tester.widget<DropdownButton<AppCodeFontFamily>>(
-      find.byType(DropdownButton<AppCodeFontFamily>),
+    final codeDropdown = tester.widget<DropdownButton<AppCodeFontFamily>>(codeFinder);
+    expect(codeDropdown.alignment, AlignmentDirectional.centerEnd);
+    _expectRightAlignedSelectedFontLabel(
+      codeDropdown.selectedItemBuilder!(tester.element(codeFinder)).first,
+      'Google Sans Code',
     );
     codeDropdown.onChanged?.call(AppCodeFontFamily.sourceCodePro);
 
@@ -800,6 +812,17 @@ String _buildJwt({required String aud, required String sub, required String clie
   });
 
   return '$header.$payload.signature';
+}
+
+void _expectRightAlignedSelectedFontLabel(Widget widget, String label) {
+  expect(widget, isA<Align>());
+  final align = widget as Align;
+  expect(align.alignment, AlignmentDirectional.centerEnd);
+  expect(align.child, isA<Text>());
+  final text = align.child! as Text;
+  expect(text.data, label);
+  expect(text.textAlign, TextAlign.right);
+  expect(text.style, isNotNull);
 }
 
 String _base64UrlEncode(Map<String, Object> value) {

@@ -55,6 +55,7 @@ class SettingsDropdownTile<T> extends StatelessWidget {
     required this.labelBuilder,
     required this.onChanged,
     this.subtitle,
+    this.optionBuilder,
   });
 
   final String title;
@@ -63,6 +64,7 @@ class SettingsDropdownTile<T> extends StatelessWidget {
   final List<T> options;
   final String Function(T value) labelBuilder;
   final ValueChanged<T?> onChanged;
+  final Widget Function(BuildContext context, T value)? optionBuilder;
 
   @override
   Widget build(BuildContext context) => ListTile(
@@ -70,10 +72,25 @@ class SettingsDropdownTile<T> extends StatelessWidget {
     subtitle: subtitle != null ? Text(subtitle!) : null,
     trailing: DropdownButtonHideUnderline(
       child: DropdownButton<T>(
+        alignment: AlignmentDirectional.centerEnd,
         value: value,
         onChanged: onChanged,
-        items: [for (final option in options) DropdownMenuItem<T>(value: option, child: Text(labelBuilder(option)))],
+        selectedItemBuilder: (context) => [
+          for (final option in options)
+            Align(alignment: AlignmentDirectional.centerEnd, child: _buildOption(context, option)),
+        ],
+        items: [
+          for (final option in options)
+            DropdownMenuItem<T>(
+              value: option,
+              alignment: AlignmentDirectional.centerEnd,
+              child: Align(alignment: AlignmentDirectional.centerEnd, child: _buildOption(context, option)),
+            ),
+        ],
       ),
     ),
   );
+
+  Widget _buildOption(BuildContext context, T option) =>
+      optionBuilder?.call(context, option) ?? Text(labelBuilder(option), textAlign: TextAlign.right);
 }

@@ -273,6 +273,7 @@ class SettingsScreen extends StatelessWidget {
                 value: state.headingFontFamily,
                 options: AppHeadingFontFamily.values,
                 labelBuilder: (fontFamily) => fontFamily.label,
+                optionBuilder: _headingFontOption,
                 onChanged: (value) {
                   if (value != null) {
                     settingsCubit.setHeadingFontFamily(value);
@@ -285,6 +286,7 @@ class SettingsScreen extends StatelessWidget {
                 value: state.contentFontFamily,
                 options: AppContentFontFamily.values,
                 labelBuilder: (fontFamily) => fontFamily.label,
+                optionBuilder: _contentFontOption,
                 onChanged: (value) {
                   if (value != null) {
                     settingsCubit.setContentFontFamily(value);
@@ -297,6 +299,7 @@ class SettingsScreen extends StatelessWidget {
                 value: state.codeFontFamily,
                 options: AppCodeFontFamily.values,
                 labelBuilder: (fontFamily) => fontFamily.label,
+                optionBuilder: _codeFontOption,
                 onChanged: (value) {
                   if (value != null) {
                     settingsCubit.setCodeFontFamily(value);
@@ -310,6 +313,24 @@ class SettingsScreen extends StatelessWidget {
       },
     );
   }
+
+  Widget _headingFontOption(BuildContext context, AppHeadingFontFamily fontFamily) => Text(
+    fontFamily.label,
+    textAlign: TextAlign.right,
+    style: AppTypography.heading(fontFamily, color: context.colorScheme.onSurface),
+  );
+
+  Widget _contentFontOption(BuildContext context, AppContentFontFamily fontFamily) => Text(
+    fontFamily.label,
+    textAlign: TextAlign.right,
+    style: AppTypography.content(fontFamily, color: context.colorScheme.onSurface),
+  );
+
+  Widget _codeFontOption(BuildContext context, AppCodeFontFamily fontFamily) => Text(
+    fontFamily.label,
+    textAlign: TextAlign.right,
+    style: AppTypography.code(fontFamily, color: context.colorScheme.onSurface),
+  );
 
   Widget _buildLayoutSettings(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
