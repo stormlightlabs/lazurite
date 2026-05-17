@@ -1,6 +1,6 @@
 ---
 title: Release and Distribution Guide
-updated: 2026-05-12
+updated: 2026-05-17
 ---
 
 ## Shared Release Baseline
@@ -154,36 +154,6 @@ AltStore distribution has two distinct paths.
 - AltStore determines latest release by `versions` ordering, not dates.
 - AltStore checks declared app permissions/entitlements against downloaded app package.
 
-## F-Droid
-
-### Build Strategy
-
-1. Decide target:
-   - Main F-Droid repo, or
-   - Your own F-Droid-compatible repo.
-2. For main F-Droid repo, create an `fdroid` flavor without proprietary SDKs (Firebase/Crashlytics/Play Services tracking dependencies are not allowed in main repo).
-3. Build signed deterministic APK for that flavor.
-
-Recommended flavor command pattern:
-
-```bash
-flutter build apk --release \
-  --flavor fdroid \
-  --target lib/main_fdroid.dart \
-  --build-name "$FLUTTER_BUILD_NAME" \
-  --build-number "$FLUTTER_BUILD_NUMBER"
-```
-
-### Deploy
-
-1. Prepare fdroiddata metadata and submit inclusion proposal (prefer metadata merge request path).
-2. Keep upstream releases tagged.
-3. Aim for reproducible builds from day one (strongly recommended by F-Droid, harder to retrofit later).
-
-### Notes
-
-- If Firebase push is required in Play/App Store builds, maintain a clean non-proprietary F-Droid flavor where push is disabled or replaced.
-
 ## Obtainium (Android direct update channel)
 
 ### Build
@@ -201,7 +171,6 @@ flutter build apk --release \
 ### Notes
 
 - Obtainium supports GitHub, GitLab, F-Droid repos, direct APK links, and HTML fallback.
-- Cross-store signing matters: updating from F-Droid-signed to non-F-Droid-signed builds may fail due to signature mismatch.
 
 ## GitHub Releases
 
@@ -282,11 +251,6 @@ gh release create "v${FLUTTER_BUILD_NAME}" \
 2. Request user notification permission (iOS) before expecting token delivery.
 3. Register and sync FCM token with backend; rotate on refresh.
 
-### 6) Channel-Specific Caveat
-
-- F-Droid mainline build should not include proprietary Firebase dependencies.
-Keep push-enabled binaries for Play/App Store/AltStore/Obtainium, and maintain a non-Firebase F-Droid flavor.
-
 ## Primary References
 
 - Flutter Android release: <https://docs.flutter.dev/deployment/android>
@@ -301,9 +265,6 @@ Keep push-enabled binaries for Play/App Store/AltStore/Obtainium, and maintain a
 - AltStore PAL distribution: <https://faq.altstore.io/developers/distribute-with-altstore-pal>
 - AltStore source format: <https://faq.altstore.io/developers/make-a-source>
 - AltStore updates/version ordering: <https://faq.altstore.io/developers/updating-apps>
-- F-Droid inclusion policy: <https://f-droid.org/en/docs/Inclusion_Policy/>
-- F-Droid inclusion workflow: <https://f-droid.org/en/docs/Inclusion_How-To/>
-- F-Droid reproducible builds: <https://f-droid.org/docs/Reproducible_Builds/>
 - Obtainium tracking/source behavior: <https://wiki.obtainium.imranr.dev/app_tracking/> and <https://wiki.obtainium.imranr.dev/sources/>
 - GitHub releases: <https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository>
 - GitHub release notes automation: <https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes>

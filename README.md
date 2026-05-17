@@ -67,57 +67,10 @@ Download it on our [releases page](https://github.com/stormlightlabs/lazurite/re
 
 ### Protocol And Maintenance
 
-- Social graph visualization.
 - Firehose and Jetstream viewers inside Dev Tools.
 - Expanded notification settings, permission flows, and remote push validation.
 
-## Architecture
-
-### Stack
-
-- **Framework:** Flutter (M3)
-- **State Management:** `flutter_bloc`
-- **Database:** Drift (SQLite)
-- **Networking:** Dio + `atproto`/`bluesky` packages
-- **Navigation:** `go_router`
-- **Data Serialization:** `freezed` + `json_serializable`
-
-### Directory Structure
-
-The project follows a feature-first architecture layered with a core module:
-
-- `lib/core/`: Shared infrastructure, database, router, and themes.
-- `lib/features/`: Feature-specific logic (Auth, Feed, Search, Profile, etc.).
-  - `<feature>/bloc/`: Business logic components.
-  - `<feature>/presentation/`: UI screens and widgets.
-  - `<feature>/data/`: (Optional) Feature-specific repositories or models.
-
-### Data Flow
-
-```mermaid
-flowchart LR
-  router["App Navigator/Router (go_router)"] <--> ui["Feature UI"]
-  ui <--> bloc["BLoC"]
-  bloc <--> repo["Repository Classes (Data Layer)"]
-  repo <--> pds["Authenticated API (User PDS)"]
-  repo <--> appview["Public API (AppView)"]
-  repo <--> local["On-device Database (SQLite/Drift)"]
-
-  classDef primary fill:#0b63d1,stroke:#0953af,color:#ffffff,stroke-width:1px;
-  classDef surface fill:#f4f6f9,stroke:#45505e,color:#101418,stroke-width:1px;
-  class router,ui,bloc,repo primary;
-  class pds,appview,local surface;
-```
-
 For development setup, tooling, database schema, and contribution notes, see [DEVELOPMENT.md](DEVELOPMENT.md).
-If you run tests locally on macOS or Linux, run `just objectbox-setup` once
-to install the pinned ObjectBox native runtime.
-
-## References
-
-- [Bluesky API Documentation](https://docs.bsky.app/)
-- [AT Protocol Specification](https://atproto.com/)
-- [Flutter Documentation](https://flutter.dev/docs)
 
 ## Credits
 

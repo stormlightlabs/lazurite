@@ -1,5 +1,62 @@
 # Development Guide
 
+- [Overview](#overview)
+  - [Directory Structure](#directory-structure)
+  - [Data Flow](#data-flow)
+- [Quick Start](#quick-start)
+- [Common Tasks](#common-tasks)
+- [Website](#website)
+- [Architecture](#architecture)
+  - [Stack](#stack)
+  - [Feature Module Layout](#feature-module-layout)
+- [Database](#database)
+  - [Drift (primary store)](#drift-primary-store)
+    - [Adding a migration](#adding-a-migration)
+  - [ObjectBox (vector store)](#objectbox-vector-store)
+    - [Running unit tests (ObjectBox native library)](#running-unit-tests-objectbox-native-library)
+- [Semantic Search](#semantic-search)
+- [Liked Posts](#liked-posts)
+- [Testing](#testing)
+- [Code Generation](#code-generation)
+- [Routes](#routes)
+- [References](#references)
+
+## Overview
+
+- **Framework:** Flutter (M3)
+- **State Management:** `flutter_bloc`
+- **Database:** Drift (SQLite)
+- **Networking:** Dio + `atproto`/`bluesky` packages
+- **Navigation:** `go_router`
+- **Data Serialization:** `freezed` + `json_serializable`
+
+### Directory Structure
+
+The project follows a feature-first architecture layered with a core module:
+
+- `lib/core/`: Shared infrastructure, database, router, and themes.
+- `lib/features/`: Feature-specific logic (Auth, Feed, Search, Profile, etc.).
+  - `<feature>/bloc/`: Business logic components.
+  - `<feature>/presentation/`: UI screens and widgets.
+  - `<feature>/data/`: (Optional) Feature-specific repositories or models.
+
+### Data Flow
+
+```mermaid
+flowchart LR
+  router["App Navigator/Router (go_router)"] <--> ui["Feature UI"]
+  ui <--> bloc["BLoC"]
+  bloc <--> repo["Repository Classes (Data Layer)"]
+  repo <--> pds["Authenticated API (User PDS)"]
+  repo <--> appview["Public API (AppView)"]
+  repo <--> local["On-device Database (SQLite/Drift)"]
+
+  classDef primary fill:#0b63d1,stroke:#0953af,color:#ffffff,stroke-width:1px;
+  classDef surface fill:#f4f6f9,stroke:#45505e,color:#101418,stroke-width:1px;
+  class router,ui,bloc,repo primary;
+  class pds,appview,local surface;
+```
+
 ## Quick Start
 
 ```sh
@@ -113,7 +170,8 @@ Current schema version: **15**
 
 ### ObjectBox (vector store)
 
-ObjectBox runs as a secondary store alongside Drift. It holds only embedding vectors and the metadata needed to join back to Drift.
+ObjectBox runs as a secondary store alongside Drift. It holds only embedding vectors and
+the metadata needed to join back to Drift.
 
 The `EmbeddedPost` entity stores:
 
@@ -124,7 +182,8 @@ The `EmbeddedPost` entity stores:
 - `embedding` — 384-dimensional float32 vector (HNSW cosine index)
 - `embeddedAt`
 
-After modifying `EmbeddedPost`, run `just gen` to regenerate `objectbox.g.dart` and `objectbox-model.json`.
+After modifying `EmbeddedPost`, run `just gen` to regenerate `objectbox.g.dart` and
+`objectbox-model.json`.
 
 #### Running unit tests (ObjectBox native library)
 
@@ -152,11 +211,13 @@ On-device vector search over saved and liked posts using:
 - **Inference:** Long-lived background `Isolate` via `EmbeddingService`
 - **Storage:** ObjectBox with HNSW cosine index on the embedding vector
 
-The `EmbeddingService.isAvailable` flag gates all semantic search UI entry points. On initialization failure the feature degrades gracefully to unavailable.
+The `EmbeddingService.isAvailable` flag gates all semantic search UI entry points. On
+initialization failure the feature degrades gracefully to unavailable.
 
 ## Liked Posts
 
-Liked posts are synced from the Bluesky API and persisted locally in the `liked_posts` Drift table. This feeds the semantic search pipeline.
+Liked posts are synced from the Bluesky API and persisted locally in the `liked_posts`
+Drift table. This feeds the semantic search pipeline.
 
 **`LikedPostsRepository`** (`lib/features/feed/data/liked_posts_repository.dart`):
 
@@ -177,7 +238,8 @@ just test
 just test-quiet
 ```
 
-Coverage target: **>99%** (±5% acceptable). All new code must have tests. Widget tests use `NativeDatabase.memory()` for Drift and mocktail for API mocks.
+Coverage target: **>99%** (±5% acceptable). All new code must have tests. Widget tests
+use `NativeDatabase.memory()` for Drift and mocktail for API mocks.
 
 ## Code Generation
 
