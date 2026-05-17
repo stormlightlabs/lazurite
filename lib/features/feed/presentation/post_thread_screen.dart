@@ -31,6 +31,7 @@ import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
+import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 
 class PostThreadScreen extends StatelessWidget {
@@ -218,44 +219,48 @@ class _PostThreadContentState extends State<_PostThreadContent> {
     final replies = _threadRepliesOf(thread);
     final opDid = (parents.isNotEmpty ? parents.first : thread).post.author.did;
 
-    return ListView(
-      children: [
-        for (int i = 0; i < parents.length; i++) ...[
-          PostCardWithActions(
-            feedViewPost: FeedViewPost(post: parents[i].post),
-            accountDid: accountDid,
-            onReplySubmitted: _reloadThreadAfterReply,
-            moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
-          ),
-          _buildThreadConnector(context),
-        ],
-        _FocusedPostWithActions(thread: thread, accountDid: accountDid, onReplySubmitted: _reloadThreadAfterReply),
-        if (replies.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Text(
-              'Replies',
-              style: context.textTheme.labelSmall?.copyWith(
-                color: context.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
+    return AnimatedRefreshIndicator(
+      onRefresh: () => context.read<PostThreadCubit>().load(widget.postUri),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          for (int i = 0; i < parents.length; i++) ...[
+            PostCardWithActions(
+              feedViewPost: FeedViewPost(post: parents[i].post),
+              accountDid: accountDid,
+              onReplySubmitted: _reloadThreadAfterReply,
+              moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
+            ),
+            _buildThreadConnector(context),
+          ],
+          _FocusedPostWithActions(thread: thread, accountDid: accountDid, onReplySubmitted: _reloadThreadAfterReply),
+          if (replies.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Text(
+                'Replies',
+                style: context.textTheme.labelSmall?.copyWith(
+                  color: context.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
-          ),
-          const Divider(height: 1),
-          for (final reply in replies)
-            ThreadReplyNode(
-              key: ValueKey('thread-reply-node-${reply.post.uri}'),
-              thread: reply,
-              depth: 1,
-              accountDid: accountDid,
-              opDid: opDid,
-              collapsedUris: _collapsedUris,
-              onToggleCollapse: _toggleCollapsed,
-              onReplySubmitted: _reloadThreadAfterReply,
-            ),
+            const Divider(height: 1),
+            for (final reply in replies)
+              ThreadReplyNode(
+                key: ValueKey('thread-reply-node-${reply.post.uri}'),
+                thread: reply,
+                depth: 1,
+                accountDid: accountDid,
+                opDid: opDid,
+                collapsedUris: _collapsedUris,
+                onToggleCollapse: _toggleCollapsed,
+                onReplySubmitted: _reloadThreadAfterReply,
+              ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -848,6 +853,7 @@ class _FocusedPostContent extends StatelessWidget {
               isLiked: postActionState.isLiked,
               isReposted: postActionState.isReposted,
               isSaved: savedState.isSaved(post.uri.toString()),
+              saveType: savedState.saveTypeForUri(post.uri.toString()),
               postUri: post.uri.toString(),
               postCid: post.cid,
               isLoadingLike: postActionState.isLoadingLike,
@@ -861,6 +867,12 @@ class _FocusedPostContent extends StatelessWidget {
               },
               onLongPressSave: () {
                 unawaited(_onToggleSave(context));
+              },
+              onCloudSave: () {
+                unawaited(_onCloudSave(context));
+              },
+              onCloudUnsave: () {
+                unawaited(_onCloudUnsave(context));
               },
               onMore: () => _showMoreOptions(context),
               isOffline: isOffline,
@@ -921,8 +933,24 @@ class _FocusedPostContent extends StatelessWidget {
     final cubit = context.read<SavedPostsCubit>();
     final post = thread.post;
 
-    await HapticHelper.lightImpact();
+    unawaited(HapticHelper.lightImpact());
     await cubit.toggleSave(post);
+  }
+
+  Future<void> _onCloudSave(BuildContext context) async {
+    final cubit = context.read<SavedPostsCubit>();
+    final post = thread.post;
+
+    unawaited(HapticHelper.lightImpact());
+    await cubit.cloudSave(post);
+  }
+
+  Future<void> _onCloudUnsave(BuildContext context) async {
+    final cubit = context.read<SavedPostsCubit>();
+    final post = thread.post;
+
+    unawaited(HapticHelper.lightImpact());
+    await cubit.cloudUnsave(post.uri.toString());
   }
 
   void _showMoreOptions(BuildContext context) {

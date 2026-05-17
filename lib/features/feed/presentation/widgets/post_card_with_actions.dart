@@ -296,21 +296,21 @@ class _PostCardWithActionsContent extends StatelessWidget {
   Future<void> _onToggleSave(BuildContext context) async {
     final cubit = context.read<SavedPostsCubit>();
     final post = feedViewPost.post;
-    await HapticHelper.lightImpact();
+    unawaited(HapticHelper.lightImpact());
     await cubit.toggleSave(post);
   }
 
   Future<void> _onCloudSave(BuildContext context) async {
     final cubit = context.read<SavedPostsCubit>();
     final post = feedViewPost.post;
-    await HapticHelper.lightImpact();
+    unawaited(HapticHelper.lightImpact());
     await cubit.cloudSave(post);
   }
 
   Future<void> _onCloudUnsave(BuildContext context) async {
     final cubit = context.read<SavedPostsCubit>();
     final post = feedViewPost.post;
-    await HapticHelper.lightImpact();
+    unawaited(HapticHelper.lightImpact());
     await cubit.cloudUnsave(post.uri.toString());
   }
 

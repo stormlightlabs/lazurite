@@ -18,6 +18,7 @@ import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
 import 'package:lazurite/features/feed/presentation/post_thread_screen.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_action_bar.dart';
 import 'package:lazurite/features/search/data/search_scope.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
@@ -117,6 +118,12 @@ void main() {
   final postActionRepository = _FakePostActionRepository();
 
   const postUri = 'at://did:plc:owner/app.bsky.feed.post/root';
+
+  setUpAll(() {
+    registerFallbackValue(
+      _makePost(did: 'did:plc:fallback', handle: 'fallback.bsky.social', rkey: 'fallback', text: ''),
+    );
+  });
 
   setUp(() {
     postThreadRepository = MockPostThreadRepository();
@@ -312,5 +319,55 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(loadCount, greaterThanOrEqualTo(2));
+  });
+
+  testWidgets('pull to refresh reloads the thread', (tester) async {
+    final thread = _makeThread(
+      did: 'did:plc:owner',
+      handle: 'owner.bsky.social',
+      rkey: 'root',
+      text: 'Refreshable post body',
+    );
+
+    await tester.pumpWidget(createSubjectWidget(accountDid: 'did:plc:owner', thread: thread, onComposeArgs: (_) {}));
+    await tester.pumpAndSettle();
+
+    verify(() => postThreadRepository.getPostThread(postUri)).called(1);
+
+    await tester.fling(find.byType(ListView), const Offset(0, 300), 1000);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    verify(() => postThreadRepository.getPostThread(postUri)).called(1);
+  });
+
+  testWidgets('focused post save sheet can save to Bluesky', (tester) async {
+    final thread = _makeThread(
+      did: 'did:plc:owner',
+      handle: 'owner.bsky.social',
+      rkey: 'root',
+      text: 'Cloud-saveable post body',
+    );
+    when(() => savedPostsCubit.cloudSave(any())).thenAnswer((_) async => true);
+
+    await tester.pumpWidget(createSubjectWidget(accountDid: 'did:plc:owner', thread: thread, onComposeArgs: (_) {}));
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<PostActionBar>(find.byType(PostActionBar)).onCloudSave, isNotNull);
+
+    await tester.tap(
+      find.descendant(of: find.byType(PostActionBar), matching: find.byIcon(Icons.bookmark_outline)).first,
+    );
+    await tester.pumpAndSettle();
+
+    final cloudTile = find.widgetWithText(ListTile, 'Save to Bluesky');
+    expect(tester.widget<ListTile>(cloudTile).onTap, isNotNull);
+
+    await tester.tap(cloudTile);
+    await tester.pumpAndSettle();
+
+    verify(
+      () => savedPostsCubit.cloudSave(any(that: isA<PostView>().having((post) => post.uri.toString(), 'uri', postUri))),
+    ).called(1);
   });
 }
