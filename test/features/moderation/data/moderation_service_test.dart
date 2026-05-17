@@ -13,6 +13,7 @@ import 'package:http/http.dart' as http;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
+import 'package:lazurite/features/moderation/domain/moderation_models.dart' as moderation;
 
 import '../../../helpers/test_bluesky_client.dart';
 
@@ -95,6 +96,52 @@ void main() {
       );
 
       expect(service.shouldFilterPostInList(labeledPost), isTrue);
+
+      service.dispose();
+    });
+
+    test('ignores unauthenticated-only labels when the viewer is authenticated', () async {
+      final service = ModerationService(
+        bluesky: _testBlueskyClient(),
+        database: database,
+        accountDid: _accountDid,
+        userDid: _accountDid,
+      );
+
+      await service.ensureInitialized();
+
+      final profileUi = service.profileDetailedUi(
+        _authGatedProfile(),
+        moderation.ModerationBehaviorContext.profileView,
+      );
+      final avatarUi = service.profileDetailedUi(_authGatedProfile(), moderation.ModerationBehaviorContext.avatar);
+
+      expect(profileUi.blur, isFalse);
+      expect(profileUi.noOverride, isFalse);
+      expect(avatarUi.blur, isFalse);
+
+      service.dispose();
+    });
+
+    test('applies unauthenticated-only labels when no viewer is authenticated', () async {
+      final service = ModerationService(
+        bluesky: _testBlueskyClient(anonymous: true),
+        database: database,
+        accountDid: 'anonymous',
+      );
+
+      await service.updatePreferences(preferences: const []);
+
+      final profileUi = service.profileDetailedUi(
+        _authGatedProfile(),
+        moderation.ModerationBehaviorContext.profileView,
+      );
+      final avatarUi = service.profileDetailedUi(_authGatedProfile(), moderation.ModerationBehaviorContext.avatar);
+
+      expect(profileUi.blur, isTrue);
+      expect(profileUi.noOverride, isTrue);
+      expect(avatarUi.blur, isTrue);
+      expect(avatarUi.noOverride, isTrue);
 
       service.dispose();
     });
@@ -322,12 +369,31 @@ void main() {
   });
 }
 
-Bluesky _testBlueskyClient({_FakeActorService? actor, _FakeLabelerService? labeler}) {
+Bluesky _testBlueskyClient({_FakeActorService? actor, _FakeLabelerService? labeler, bool anonymous = false}) {
   final transport = _FakeModerationTransport(
     actor: actor ?? _FakeActorService(),
     labeler: labeler ?? const _FakeLabelerService(),
   );
+  if (anonymous) {
+    return Bluesky.anonymous(getClient: transport.get, postClient: transport.post);
+  }
   return testBluesky(getClient: transport.get, postClient: transport.post);
+}
+
+ProfileViewDetailed _authGatedProfile() {
+  return ProfileViewDetailed(
+    did: _accountDid,
+    handle: 'test.bsky.social',
+    indexedAt: DateTime.utc(2026, 5, 16),
+    labels: [
+      Label(
+        src: 'did:plc:ar7c4by46qjdydhdevvrndac',
+        uri: 'at://$_accountDid/app.bsky.actor.profile/self',
+        val: '!no-unauthenticated',
+        cts: DateTime.utc(2026, 5, 16),
+      ),
+    ],
+  );
 }
 
 class _FakeModerationTransport {

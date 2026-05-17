@@ -15,6 +15,7 @@ import 'package:poptart_lex/com/atproto/label/defs.dart';
 
 const _officialBlueskyLabelerDid = 'did:plc:ar7c4by46qjdydhdevvrndac';
 const _maxCustomLabelers = 20;
+const _noUnauthenticatedLabel = '!no-unauthenticated';
 
 class ModerationService {
   ModerationService({
@@ -301,6 +302,10 @@ class ModerationService {
   }
 
   moderation.ModerationCause? _labelCause(Label label, moderation.LabelTarget target, moderation.ModerationOpts opts) {
+    if (label.val == _noUnauthenticatedLabel && _hasAuthenticatedViewer(opts)) {
+      return null;
+    }
+
     final definition = _definitionForLabel(label, opts);
     if (definition == null) {
       return null;
@@ -331,6 +336,8 @@ class ModerationService {
       ),
     );
   }
+
+  bool _hasAuthenticatedViewer(moderation.ModerationOpts opts) => opts.userDid != null && opts.userDid!.isNotEmpty;
 
   moderation.ModerationUI postUi(PostView post, moderation.ModerationBehaviorContext context) =>
       moderatePost(post).getUI(context);
