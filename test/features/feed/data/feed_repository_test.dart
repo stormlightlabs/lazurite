@@ -1,5 +1,7 @@
 import 'package:poptart_core/poptart_core.dart';
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart' hide ViewerState;
+import 'package:bluesky_poptart/app/bsky/actor/defs/viewer_state.dart' as actor_defs;
+import 'package:bluesky_poptart/app/bsky/embed/record.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
@@ -222,6 +224,111 @@ void main() {
       final result = PreferencesResult(preferences: []);
 
       expect(result.preferences, isEmpty);
+    });
+  });
+
+  group('filterFeedViewPostsByPreference', () {
+    FeedViewPost post({
+      required String id,
+      String authorDid = 'did:plc:author',
+      bool followed = false,
+      bool reply = false,
+      bool repost = false,
+      bool quote = false,
+      int likeCount = 0,
+    }) {
+      final author = ProfileViewBasic(
+        did: authorDid,
+        handle: '$id.bsky.social',
+        viewer: followed
+            ? const actor_defs.ViewerState(following: AtUri('at://did:plc:self/app.bsky.graph.follow/follow'))
+            : null,
+      );
+      final postView = PostView(
+        uri: AtUri.parse('at://$authorDid/app.bsky.feed.post/$id'),
+        cid: 'cid-$id',
+        author: author,
+        record: {r'$type': 'app.bsky.feed.post', 'text': id, if (reply) 'reply': <String, Object?>{}},
+        embed: quote
+            ? UPostViewEmbed.embedRecordView(
+                data: EmbedRecordView(
+                  record: UEmbedRecordViewRecord.embedRecordViewRecord(
+                    data: EmbedRecordViewRecord(
+                      uri: const AtUri('at://did:plc:quoted/app.bsky.feed.post/quoted'),
+                      cid: 'quoted-cid',
+                      author: const ProfileViewBasic(did: 'did:plc:quoted', handle: 'quoted.bsky.social'),
+                      value: const {r'$type': 'app.bsky.feed.post', 'text': 'quoted'},
+                      indexedAt: DateTime.utc(2026),
+                    ),
+                  ),
+                ),
+              )
+            : null,
+        likeCount: likeCount,
+        indexedAt: DateTime.utc(2026),
+      );
+      return FeedViewPost(
+        post: postView,
+        reason: repost
+            ? UFeedViewPostReason.reasonRepost(
+                data: ReasonRepost(by: author, indexedAt: DateTime.utc(2026)),
+              )
+            : null,
+      );
+    }
+
+    test('hides replies when hideReplies is enabled', () {
+      final topLevel = post(id: 'top-level');
+      final reply = post(id: 'reply', reply: true, followed: true);
+
+      final filtered = filterFeedViewPostsByPreference(
+        [topLevel, reply],
+        const FeedViewPref(feed: 'home', hideReplies: true),
+        currentAccountDid: 'did:plc:self',
+      );
+
+      expect(filtered, [topLevel]);
+    });
+
+    test('hides replies from unfollowed accounts while keeping self and followed replies', () {
+      final selfReply = post(id: 'self-reply', authorDid: 'did:plc:self', reply: true);
+      final followedReply = post(id: 'followed-reply', reply: true, followed: true);
+      final unfollowedReply = post(id: 'unfollowed-reply', reply: true);
+
+      final filtered = filterFeedViewPostsByPreference(
+        [selfReply, followedReply, unfollowedReply],
+        const FeedViewPref(feed: 'home', hideRepliesByUnfollowed: true),
+        currentAccountDid: 'did:plc:self',
+      );
+
+      expect(filtered, [selfReply, followedReply]);
+    });
+
+    test('hides replies below the configured like threshold', () {
+      final lowLikeReply = post(id: 'low-like-reply', reply: true, followed: true, likeCount: 4);
+      final highLikeReply = post(id: 'high-like-reply', reply: true, followed: true, likeCount: 5);
+
+      final filtered = filterFeedViewPostsByPreference(
+        [lowLikeReply, highLikeReply],
+        const FeedViewPref(feed: 'home', hideRepliesByUnfollowed: false, hideRepliesByLikeCount: 5),
+        currentAccountDid: 'did:plc:self',
+      );
+
+      expect(filtered, [highLikeReply]);
+    });
+
+    test('hides reposts and quote posts independently', () {
+      final topLevel = post(id: 'top-level');
+      final repost = post(id: 'repost', repost: true);
+      final quote = post(id: 'quote', quote: true);
+
+      final filtered = filterFeedViewPostsByPreference(
+        [topLevel, repost, quote],
+        const FeedViewPref(feed: 'home', hideReposts: true, hideQuotePosts: true),
+        currentAccountDid: 'did:plc:self',
+      );
+
+      expect(filtered, [topLevel]);
     });
   });
 

@@ -63,7 +63,7 @@ class SettingsDropdownTile<T> extends StatelessWidget {
   final T value;
   final List<T> options;
   final String Function(T value) labelBuilder;
-  final ValueChanged<T?> onChanged;
+  final ValueChanged<T?>? onChanged;
   final Widget Function(BuildContext context, T value)? optionBuilder;
 
   @override

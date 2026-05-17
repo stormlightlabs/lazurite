@@ -1,5 +1,6 @@
 import 'package:poptart_core/poptart_core.dart' as atcore show AtUri;
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/embed/record.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/get_author_feed.dart';
 import 'package:bluesky_poptart/app/bsky/unspecced/defs.dart';
@@ -64,8 +65,10 @@ class FeedRepository {
   final AppViewFallbackService _appViewFallbackService;
   final int _routingEpoch;
   final int Function()? _routingEpochResolver;
+  List<UPreferences>? _preferencesCache;
 
   static const String timelineCacheKey = 'timeline';
+  static const String homeFeedPreferenceId = 'home';
   static const int _minTrendingLimit = 1;
   static const int _maxTrendingLimit = 25;
 
@@ -95,7 +98,7 @@ class FeedRepository {
           client.feed.getAuthorFeed(actor: actor, cursor: cursor, limit: limit, filter: bskyFilter, $headers: headers),
     );
 
-    return FeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
+    return FeedResult(posts: _filterModeratedFeedPosts(response.data.feed), cursor: response.data.cursor);
   }
 
   Future<FeedResult> getTimeline({String? cursor, int limit = 50}) async {
@@ -107,9 +110,17 @@ class FeedRepository {
       (client) => client.feed.getTimeline(cursor: cursor, limit: limit, $headers: headers),
     );
 
-    final result = FeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
-    await _cacheFeedWindow(feedKey: timelineCacheKey, result: result, cursor: cursor);
-    return result;
+    final moderatedPosts = _filterModeratedFeedPosts(response.data.feed);
+    final rawResult = FeedResult(posts: moderatedPosts, cursor: response.data.cursor);
+    await _cacheFeedWindow(feedKey: timelineCacheKey, result: rawResult, cursor: cursor);
+    return FeedResult(
+      posts: filterFeedViewPostsByPreference(
+        moderatedPosts,
+        await _feedViewPreferenceFor(homeFeedPreferenceId),
+        currentAccountDid: _accountDid,
+      ),
+      cursor: response.data.cursor,
+    );
   }
 
   Future<FeedResult> getFeed({required atcore.AtUri feedUri, String? cursor, int limit = 50}) async {
@@ -121,9 +132,11 @@ class FeedRepository {
       (client) => client.feed.getFeed(feed: feedUri, cursor: cursor, limit: limit, $headers: headers),
     );
 
-    final result = FeedResult(posts: _filterFeedPosts(response.data.feed), cursor: response.data.cursor);
-    await _cacheFeedWindow(feedKey: 'feed:${feedUri.toString()}', result: result, cursor: cursor);
-    return result;
+    final feedPreferenceId = feedUri.toString();
+    final moderatedPosts = _filterModeratedFeedPosts(response.data.feed);
+    final rawResult = FeedResult(posts: moderatedPosts, cursor: response.data.cursor);
+    await _cacheFeedWindow(feedKey: 'feed:$feedPreferenceId', result: rawResult, cursor: cursor);
+    return rawResult;
   }
 
   Future<FeedResult?> getCachedFeedPage(String feedKey) async {
@@ -162,18 +175,31 @@ class FeedRepository {
       }
     }
 
-    return FeedResult(posts: posts, cursor: cursor);
+    if (feedKey != timelineCacheKey) {
+      return FeedResult(posts: posts, cursor: cursor);
+    }
+
+    return FeedResult(
+      posts: filterFeedViewPostsByPreference(
+        posts,
+        await _feedViewPreferenceFor(homeFeedPreferenceId),
+        currentAccountDid: _accountDid,
+      ),
+      cursor: cursor,
+    );
   }
 
   Future<PreferencesResult> getPreferences() async {
     final headers = _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest());
     final response = await _authRecovery.run((client) => client.actor.getPreferences($headers: headers));
+    _preferencesCache = response.data.preferences;
     return PreferencesResult(preferences: response.data.preferences);
   }
 
   Future<void> putPreferences({required List<UPreferences> preferences}) async {
     final headers = _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest());
     await _authRecovery.run((client) => client.actor.putPreferences(preferences: preferences, $headers: headers));
+    _preferencesCache = preferences;
   }
 
   Future<List<GeneratorView>> getSuggestedFeeds({String? cursor, int limit = 50}) async {
@@ -332,13 +358,49 @@ class FeedRepository {
     return response.data.feeds;
   }
 
-  List<FeedViewPost> _filterFeedPosts(List<FeedViewPost> posts) {
+  List<FeedViewPost> _filterModeratedFeedPosts(List<FeedViewPost> posts) {
     final moderationService = _moderationService;
     if (moderationService == null) {
       return posts;
     }
 
     return posts.where((post) => !moderationService.shouldFilterFeedViewPostInList(post)).toList();
+  }
+
+  Future<FeedViewPref?> _feedViewPreferenceFor(String feed) async {
+    if (_preferencesCache != null) {
+      return _cachedFeedViewPreferenceFor(feed);
+    }
+
+    try {
+      final result = await getPreferences();
+      return _feedViewPreferenceFrom(result.preferences, feed);
+    } catch (error, stackTrace) {
+      log.w(
+        'feed.feedViewPreference unavailable account=$_accountDid feed=$feed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  FeedViewPref? _cachedFeedViewPreferenceFor(String feed) {
+    final preferences = _preferencesCache;
+    if (preferences == null) {
+      return null;
+    }
+    return _feedViewPreferenceFrom(preferences, feed);
+  }
+
+  FeedViewPref? _feedViewPreferenceFrom(List<UPreferences> preferences, String feed) {
+    for (final preference in preferences) {
+      final feedViewPref = preference.feedViewPref;
+      if (feedViewPref != null && feedViewPref.feed == feed) {
+        return feedViewPref;
+      }
+    }
+    return null;
   }
 
   /// When refreshing, the newest page goes first
@@ -429,6 +491,70 @@ class FeedRepository {
       );
     }
   }
+}
+
+@visibleForTesting
+List<FeedViewPost> filterFeedViewPostsByPreference(
+  List<FeedViewPost> posts,
+  FeedViewPref? preference, {
+  String? currentAccountDid,
+}) {
+  if (preference == null) {
+    return posts;
+  }
+
+  return posts
+      .where((feedViewPost) {
+        if (preference.hideReposts == true && feedViewPost.reason?.isReasonRepost == true) {
+          return false;
+        }
+
+        final isReply = _isReply(feedViewPost);
+        if (isReply) {
+          if (preference.hideReplies == true) {
+            return false;
+          }
+          if (preference.hideRepliesByUnfollowed && !_isSelfOrFollowed(feedViewPost.post.author, currentAccountDid)) {
+            return false;
+          }
+
+          final likeThreshold = preference.hideRepliesByLikeCount;
+          if (likeThreshold != null && (feedViewPost.post.likeCount ?? 0) < likeThreshold) {
+            return false;
+          }
+        }
+
+        if (preference.hideQuotePosts == true && _isQuotePost(feedViewPost.post.embed)) {
+          return false;
+        }
+
+        return true;
+      })
+      .toList(growable: false);
+}
+
+bool _isReply(FeedViewPost feedViewPost) => feedViewPost.reply != null || feedViewPost.post.record['reply'] != null;
+
+bool _isSelfOrFollowed(ProfileViewBasic author, String? currentAccountDid) {
+  if (author.did == currentAccountDid) {
+    return true;
+  }
+  return author.viewer?.following != null;
+}
+
+bool _isQuotePost(UPostViewEmbed? embed) {
+  if (embed == null) {
+    return false;
+  }
+  if (embed.isEmbedRecordWithMediaView) {
+    return true;
+  }
+  final record = embed.embedRecordView?.record;
+  return record != null &&
+      (record.isEmbedRecordViewRecord ||
+          record.isEmbedRecordViewNotFound ||
+          record.isEmbedRecordViewBlocked ||
+          record.isEmbedRecordViewDetached);
 }
 
 class FeedResult {

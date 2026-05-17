@@ -1,0 +1,124 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
+import 'package:lazurite/features/settings/bloc/account_settings_cubit.dart';
+import 'package:lazurite/features/settings/presentation/widgets/settings_section.dart';
+import 'package:lazurite/features/settings/presentation/widgets/settings_tiles.dart';
+
+class AccountFeedDisplayPreferences extends StatelessWidget {
+  const AccountFeedDisplayPreferences({
+    super.key,
+    this.padding = const EdgeInsets.only(bottom: 24),
+    this.scrollController,
+  });
+
+  final EdgeInsetsGeometry padding;
+  final ScrollController? scrollController;
+
+  @override
+  Widget build(BuildContext context) => BlocBuilder<AccountSettingsCubit, AccountSettingsState>(
+    builder: (context, state) {
+      final cubit = context.read<AccountSettingsCubit>();
+      final preference = state.feedViewPref;
+      final hideReplies = preference?.hideReplies ?? false;
+      final hideRepliesByUnfollowed = preference?.hideRepliesByUnfollowed ?? true;
+      final likeThreshold = preference?.hideRepliesByLikeCount;
+      final hideReposts = preference?.hideReposts ?? false;
+      final hideQuotePosts = preference?.hideQuotePosts ?? false;
+
+      return ListView(
+        controller: scrollController,
+        padding: padding,
+        shrinkWrap: true,
+        children: [
+          if (state.status == AccountSettingsStatus.loading) const LinearProgressIndicator(minHeight: 2),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Text(
+              state.feedDisplayName,
+              style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+          const SettingsSectionHeader('Feed display'),
+          SettingsGroup(
+            children: [
+              SettingsTile(
+                icon: Icons.reply_outlined,
+                title: 'Hide replies',
+                subtitle: 'Only show top-level posts in this feed.',
+                trailing: Switch.adaptive(value: hideReplies, onChanged: state.isBusy ? null : cubit.setHideReplies),
+              ),
+              const Divider(height: 1),
+              SettingsTile(
+                icon: Icons.people_outline,
+                title: 'Hide replies from unfollowed accounts',
+                subtitle: 'Keep replies from people you follow or yourself.',
+                trailing: Switch.adaptive(
+                  value: hideRepliesByUnfollowed,
+                  onChanged: state.isBusy ? null : cubit.setHideRepliesByUnfollowed,
+                ),
+              ),
+              const Divider(height: 1),
+              _ReplyLikeThresholdTile(
+                value: likeThreshold,
+                enabled: !state.isBusy,
+                onChanged: cubit.setHideRepliesByLikeCount,
+              ),
+              const Divider(height: 1),
+              SettingsTile(
+                icon: Icons.repeat_outlined,
+                title: 'Hide reposts',
+                subtitle: 'Hide posts shown because someone reposted them.',
+                trailing: Switch.adaptive(value: hideReposts, onChanged: state.isBusy ? null : cubit.setHideReposts),
+              ),
+              const Divider(height: 1),
+              SettingsTile(
+                icon: Icons.format_quote_outlined,
+                title: 'Hide quote posts',
+                subtitle: 'Hide posts that quote another post.',
+                trailing: Switch.adaptive(
+                  value: hideQuotePosts,
+                  onChanged: state.isBusy ? null : cubit.setHideQuotePosts,
+                ),
+              ),
+            ],
+          ),
+          if (state.status == AccountSettingsStatus.saving)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Text('Saving...', style: context.textTheme.bodySmall),
+            ),
+          if (state.status == AccountSettingsStatus.error || state.status == AccountSettingsStatus.saveError)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Text(
+                'Could not sync feed display preferences: ${state.message}',
+                style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.error),
+              ),
+            ),
+        ],
+      );
+    },
+  );
+}
+
+class _ReplyLikeThresholdTile extends StatelessWidget {
+  const _ReplyLikeThresholdTile({required this.value, required this.enabled, required this.onChanged});
+
+  static const int _off = -1;
+  static const List<int> _options = [_off, 1, 2, 5, 10, 25, 50];
+
+  final int? value;
+  final bool enabled;
+  final ValueChanged<int?> onChanged;
+
+  @override
+  Widget build(BuildContext context) => SettingsDropdownTile<int>(
+    title: 'Hide replies below likes',
+    subtitle: 'Replies with fewer likes are hidden.',
+    value: _options.contains(value) ? value! : _off,
+    options: _options,
+    labelBuilder: (threshold) => threshold == _off ? 'Off' : threshold.toString(),
+    onChanged: enabled ? (threshold) => onChanged(threshold == _off ? null : threshold) : null,
+  );
+}

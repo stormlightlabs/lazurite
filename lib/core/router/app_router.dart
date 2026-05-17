@@ -75,6 +75,7 @@ import 'package:lazurite/features/settings/cubit/video_upload_limits_cubit.dart'
 import 'package:lazurite/features/settings/data/video_repository.dart';
 import 'package:lazurite/features/settings/presentation/about_screen.dart';
 import 'package:lazurite/features/settings/presentation/privacy_policy_screen.dart';
+import 'package:lazurite/features/settings/presentation/settings_account_screen.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
 import 'package:lazurite/features/settings/presentation/terms_of_service_screen.dart';
 import 'package:lazurite/features/settings/presentation/video_upload_limits_screen.dart';
@@ -165,6 +166,10 @@ class AppRouter {
                     _page(context, state, LabelerDetailScreen(did: state.uri.queryParameters['did'] ?? '')),
               ),
             ],
+          ),
+          GoRoute(
+            path: 'account',
+            pageBuilder: (context, state) => _page(context, state, const SettingsAccountScreen()),
           ),
           GoRoute(path: 'about', pageBuilder: (context, state) => _page(context, state, const AboutScreen())),
           GoRoute(path: 'logs', pageBuilder: (context, state) => _page(context, state, const LogsScreen())),

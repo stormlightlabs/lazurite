@@ -7,6 +7,8 @@ import 'package:lazurite/core/cache/lazurite_image_cache.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
+import 'package:lazurite/features/settings/bloc/account_settings_cubit.dart';
+import 'package:lazurite/features/settings/presentation/widgets/account_feed_display_preferences.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
@@ -170,10 +172,22 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
           : (generator != null ? _buildGeneratorIcon(context, generator) : _buildFeedIcon(context, feed.value)),
       title: Text(state.displayNameFor(feed)),
       subtitle: Text(state.subtitleFor(feed)),
-      trailing: IconButton(
-        icon: const Icon(Icons.check_circle),
-        color: context.colorScheme.primary,
-        onPressed: () => context.read<FeedPreferencesCubit>().unpinFeed(feed.id),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isTimeline)
+            IconButton(
+              tooltip: 'Feed display',
+              icon: const Icon(Icons.tune_outlined),
+              onPressed: () => _showFeedDisplaySettings(context, feed, state),
+            ),
+          IconButton(
+            tooltip: 'Unpin feed',
+            icon: const Icon(Icons.check_circle),
+            color: context.colorScheme.primary,
+            onPressed: () => context.read<FeedPreferencesCubit>().unpinFeed(feed.id),
+          ),
+        ],
       ),
     );
   }
@@ -191,14 +205,65 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
+            tooltip: 'Pin feed',
             icon: const Icon(Icons.pin_end_outlined),
             onPressed: () => context.read<FeedPreferencesCubit>().pinFeed(feed.id),
           ),
           IconButton(
+            tooltip: 'Remove feed',
             icon: Icon(Icons.close, color: context.colorScheme.error),
             onPressed: () => _confirmRemoveFeed(context, feed.id),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _showFeedDisplaySettings(BuildContext context, SavedFeed feed, FeedPreferencesState state) {
+    final feedRepository = context.read<FeedRepository>();
+    final feedPreferenceId = state.isTimeline(feed) ? homeFeedPreferenceId : feed.value;
+    final feedDisplayName = state.displayNameFor(feed);
+
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => BlocProvider(
+        create: (_) => AccountSettingsCubit(
+          feedRepository: feedRepository,
+          feed: feedPreferenceId,
+          feedDisplayName: feedDisplayName,
+        )..loadPreferences(),
+        child: DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.82,
+          minChildSize: 0.45,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) => Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+                child: Row(
+                  children: [
+                    Text('Feed display', style: context.textTheme.titleLarge),
+                    const Spacer(),
+                    IconButton(
+                      tooltip: 'Close',
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: AccountFeedDisplayPreferences(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  scrollController: scrollController,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

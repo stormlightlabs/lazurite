@@ -24,6 +24,7 @@ import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/settings/presentation/screens/recoverable_crash_test_screen.dart';
 import 'package:lazurite/features/settings/presentation/widgets/atproto_connection.dart';
 import 'package:lazurite/features/settings/presentation/widgets/connection_detail.dart';
+import 'package:lazurite/features/settings/presentation/widgets/settings_section.dart';
 import 'package:lazurite/features/settings/presentation/widgets/settings_tiles.dart';
 import 'package:lazurite/features/settings/presentation/widgets/theme_palette_row.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
@@ -91,24 +92,30 @@ class SettingsScreen extends StatelessWidget {
               },
             ),
           const SizedBox(height: 24),
-          _buildSectionHeader(context, l10n.labelAppearance),
+          SettingsSectionHeader(l10n.labelAppearance),
           _buildThemeSelector(context),
           const SizedBox(height: 24),
-          _buildSectionHeader(context, l10n.labelLayout),
+          SettingsSectionHeader(l10n.labelLayout),
           _buildLayoutSettings(context),
           if (showAccountSettings) ...[
             const SizedBox(height: 24),
-            _buildSectionHeader(context, l10n.labelModeration),
+            SettingsSectionHeader(l10n.labelModeration),
             const _ModerationSettingsPreview(),
           ],
           const SizedBox(height: 24),
-          _buildSectionHeader(context, l10n.labelSearch),
+          SettingsSectionHeader(l10n.labelSearch),
           _buildSearchSettings(context, showTypeaheadSettings: showAccountSettings),
           if (showAccountSettings) ...[
             const SizedBox(height: 24),
-            _buildSectionHeader(context, l10n.labelAccount),
+            SettingsSectionHeader(l10n.labelAccount),
             const AtProtoConnectionCard(),
             const SizedBox(height: 12),
+            SettingsTile(
+              icon: Icons.manage_accounts_outlined,
+              title: 'Account settings',
+              subtitle: 'Feed display preferences and account defaults',
+              onTap: () => context.push('/settings/account'),
+            ),
             SettingsTile(
               icon: Icons.dynamic_feed_outlined,
               title: l10n.labelFeeds,
@@ -128,7 +135,7 @@ class SettingsScreen extends StatelessWidget {
               onTap: () => context.push('/settings/video-limits'),
             ),
             const SizedBox(height: 24),
-            _buildSectionHeader(context, l10n.labelAccountMaintenance),
+            SettingsSectionHeader(l10n.labelAccountMaintenance),
             SettingsTile(
               icon: Icons.cleaning_services_outlined,
               title: l10n.labelCleanFollows,
@@ -137,18 +144,18 @@ class SettingsScreen extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 24),
-          _buildSectionHeader(context, l10n.labelAdvanced),
+          SettingsSectionHeader(l10n.labelAdvanced),
           _buildAdvancedSettings(context),
           const SizedBox(height: 24),
-          _buildSectionHeader(context, l10n.labelTroubleshooting),
+          SettingsSectionHeader(l10n.labelTroubleshooting),
           _buildTroubleshootingSettings(context),
           const SizedBox(height: 24),
           if (!kReleaseMode) ...[
-            _buildSectionHeader(context, l10n.labelDeveloper),
+            SettingsSectionHeader(l10n.labelDeveloper),
             _buildDeveloperSettings(context),
             const SizedBox(height: 24),
           ],
-          _buildSectionHeader(context, l10n.labelAbout),
+          SettingsSectionHeader(l10n.labelAbout),
           SettingsTile(
             icon: Icons.explore_outlined,
             title: l10n.labelAtExplorer,
@@ -175,7 +182,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           if (showAccountSettings) ...[
             const SizedBox(height: 24),
-            _buildSectionHeader(context, l10n.labelDangerZone),
+            SettingsSectionHeader(l10n.labelDangerZone),
             SettingsTile(
               icon: Icons.logout,
               title: l10n.labelLogOut,
@@ -193,14 +200,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-    child: Text(
-      title.toUpperCase(),
-      style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
-    ),
-  );
-
   Widget _title(BuildContext context) => Text(context.l10n.labelSettings, style: context.textTheme.titleLarge);
 
   Widget _buildThemeSelector(BuildContext context) {
@@ -210,105 +209,95 @@ class SettingsScreen extends StatelessWidget {
 
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
-        return Container(
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: theme.dividerColor),
-              bottom: BorderSide(color: theme.dividerColor),
+        return SettingsGroup(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Center(
+                child: SegmentedButton<AppearanceMode>(
+                  style: SegmentedButton.styleFrom(
+                    selectedBackgroundColor: theme.colorScheme.primary,
+                    selectedForegroundColor: theme.colorScheme.onPrimary,
+                  ),
+                  segments: [
+                    ButtonSegment(value: AppearanceMode.system, label: Text(l10n.labelSystem)),
+                    ButtonSegment(value: AppearanceMode.light, label: Text(l10n.labelLight)),
+                    ButtonSegment(value: AppearanceMode.dark, label: Text(l10n.labelDark)),
+                  ],
+                  selected: {AppearanceMode.fromState(state)},
+                  onSelectionChanged: (selected) {
+                    switch (selected.first) {
+                      case AppearanceMode.system:
+                        settingsCubit.setUseSystemTheme(true);
+                      case AppearanceMode.light:
+                        settingsCubit.setUseSystemTheme(false);
+                        settingsCubit.setThemeVariant(AppThemeVariant.light);
+                      case AppearanceMode.dark:
+                        settingsCubit.setUseSystemTheme(false);
+                        settingsCubit.setThemeVariant(AppThemeVariant.dark);
+                    }
+                  },
+                ),
+              ),
             ),
-            color: theme.cardColor,
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Center(
-                  child: SegmentedButton<AppearanceMode>(
-                    style: SegmentedButton.styleFrom(
-                      selectedBackgroundColor: theme.colorScheme.primary,
-                      selectedForegroundColor: theme.colorScheme.onPrimary,
-                    ),
-                    segments: [
-                      ButtonSegment(value: AppearanceMode.system, label: Text(l10n.labelSystem)),
-                      ButtonSegment(value: AppearanceMode.light, label: Text(l10n.labelLight)),
-                      ButtonSegment(value: AppearanceMode.dark, label: Text(l10n.labelDark)),
-                    ],
-                    selected: {AppearanceMode.fromState(state)},
-                    onSelectionChanged: (selected) {
-                      final mode = selected.first;
-                      switch (mode) {
-                        case AppearanceMode.system:
-                          settingsCubit.setUseSystemTheme(true);
-                        case AppearanceMode.light:
-                          settingsCubit.setUseSystemTheme(false);
-                          settingsCubit.setThemeVariant(AppThemeVariant.light);
-                        case AppearanceMode.dark:
-                          settingsCubit.setUseSystemTheme(false);
-                          settingsCubit.setThemeVariant(AppThemeVariant.dark);
-                      }
-                    },
-                  ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  l10n.labelTheme,
+                  style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
                 ),
               ),
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    l10n.labelTheme,
-                    style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
-                  ),
-                ),
+            ),
+            for (final palette in AppThemePalette.values)
+              ThemePaletteRow(
+                palette: palette,
+                isSelected: state.themePalette == palette,
+                onTap: () => settingsCubit.setThemePalette(palette),
               ),
-              for (final palette in AppThemePalette.values)
-                ThemePaletteRow(
-                  palette: palette,
-                  isSelected: state.themePalette == palette,
-                  onTap: () => settingsCubit.setThemePalette(palette),
-                ),
-              const Divider(height: 1),
-              SettingsDropdownTile<AppHeadingFontFamily>(
-                title: 'Heading Font',
-                value: state.headingFontFamily,
-                options: AppHeadingFontFamily.values,
-                labelBuilder: (fontFamily) => fontFamily.label,
-                optionBuilder: _headingFontOption,
-                onChanged: (value) {
-                  if (value != null) {
-                    settingsCubit.setHeadingFontFamily(value);
-                  }
-                },
-              ),
-              const Divider(height: 1),
-              SettingsDropdownTile<AppContentFontFamily>(
-                title: 'Content Font',
-                value: state.contentFontFamily,
-                options: AppContentFontFamily.values,
-                labelBuilder: (fontFamily) => fontFamily.label,
-                optionBuilder: _contentFontOption,
-                onChanged: (value) {
-                  if (value != null) {
-                    settingsCubit.setContentFontFamily(value);
-                  }
-                },
-              ),
-              const Divider(height: 1),
-              SettingsDropdownTile<AppCodeFontFamily>(
-                title: 'Code Font',
-                value: state.codeFontFamily,
-                options: AppCodeFontFamily.values,
-                labelBuilder: (fontFamily) => fontFamily.label,
-                optionBuilder: _codeFontOption,
-                onChanged: (value) {
-                  if (value != null) {
-                    settingsCubit.setCodeFontFamily(value);
-                  }
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
+            const Divider(height: 1),
+            SettingsDropdownTile<AppHeadingFontFamily>(
+              title: 'Heading Font',
+              value: state.headingFontFamily,
+              options: AppHeadingFontFamily.values,
+              labelBuilder: (fontFamily) => fontFamily.label,
+              optionBuilder: _headingFontOption,
+              onChanged: (value) {
+                if (value != null) {
+                  settingsCubit.setHeadingFontFamily(value);
+                }
+              },
+            ),
+            const Divider(height: 1),
+            SettingsDropdownTile<AppContentFontFamily>(
+              title: 'Content Font',
+              value: state.contentFontFamily,
+              options: AppContentFontFamily.values,
+              labelBuilder: (fontFamily) => fontFamily.label,
+              optionBuilder: _contentFontOption,
+              onChanged: (value) {
+                if (value != null) {
+                  settingsCubit.setContentFontFamily(value);
+                }
+              },
+            ),
+            const Divider(height: 1),
+            SettingsDropdownTile<AppCodeFontFamily>(
+              title: 'Code Font',
+              value: state.codeFontFamily,
+              options: AppCodeFontFamily.values,
+              labelBuilder: (fontFamily) => fontFamily.label,
+              optionBuilder: _codeFontOption,
+              onChanged: (value) {
+                if (value != null) {
+                  settingsCubit.setCodeFontFamily(value);
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
         );
       },
     );
