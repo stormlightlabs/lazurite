@@ -91,7 +91,11 @@ void main() {
     authBloc.close();
   });
 
-  Widget buildSubject({ComposeScreen screen = const ComposeScreen(), ProfileRepository? profileRepositoryOverride}) {
+  Widget buildSubject({
+    ComposeScreen screen = const ComposeScreen(),
+    ProfileRepository? profileRepositoryOverride,
+    ThemeData? theme,
+  }) {
     Widget home = MultiBlocProvider(
       providers: [
         BlocProvider<ComposeBloc>.value(value: mockBloc),
@@ -106,7 +110,7 @@ void main() {
       home = RepositoryProvider<ProfileRepository>.value(value: repository, child: home);
     }
 
-    return MaterialApp(home: home);
+    return MaterialApp(theme: theme, home: home);
   }
 
   void seedState(ComposeState state) {
@@ -160,6 +164,75 @@ void main() {
 
         final textField = tester.widget<TextField>(find.byType(TextField));
         expect(textField.autofocus, isTrue);
+      });
+
+      testWidgets('composer text area keeps a usable height with an Android keyboard', (tester) async {
+        tester.view.physicalSize = const Size(390, 720);
+        tester.view.devicePixelRatio = 1;
+        tester.view.viewInsets = const FakeViewPadding(bottom: 320);
+        addTearDown(tester.view.reset);
+
+        seedState(const ComposeState.ready(replyParentUri: 'at://parent', replyParentCid: 'cid-parent'));
+
+        await tester.pumpWidget(
+          buildSubject(
+            theme: ThemeData(platform: TargetPlatform.android),
+            screen: const ComposeScreen(replyParentUri: 'at://parent', replyParentCid: 'cid-parent'),
+          ),
+        );
+        await tester.pump();
+
+        expect(tester.takeException(), isNull);
+        final textField = tester.widget<TextField>(find.byType(TextField));
+        expect(textField.minLines, 2);
+        expect(tester.getSize(find.byType(TextField)).height, greaterThanOrEqualTo(60));
+      });
+
+      testWidgets('reply context truncates long handles on narrow screens', (tester) async {
+        tester.view.physicalSize = const Size(320, 720);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+
+        seedState(const ComposeState.ready(replyParentUri: 'at://parent', replyParentCid: 'cid-parent'));
+
+        await tester.pumpWidget(
+          buildSubject(
+            screen: const ComposeScreen(
+              replyParentUri: 'at://parent',
+              replyParentCid: 'cid-parent',
+              replyAuthorHandle: 'replying-user-with-a-very-long-handle.bsky.social',
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(tester.takeException(), isNull);
+        final replyContext = tester.widget<Text>(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Text &&
+                (widget.textSpan?.toPlainText().contains('@replying-user-with-a-very-long-handle.bsky.social') ??
+                    false),
+          ),
+        );
+        expect(replyContext.overflow, TextOverflow.ellipsis);
+        expect(replyContext.maxLines, 1);
+      });
+
+      testWidgets('composer text field behaves like a multiline text area', (tester) async {
+        seedState(const ComposeState.ready());
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        final textField = tester.widget<TextField>(find.byType(TextField));
+        expect(textField.expands, isFalse);
+        expect(textField.minLines, 2);
+        expect(textField.maxLines, isNull);
+        expect(textField.keyboardType, TextInputType.multiline);
+        expect(textField.textInputAction, TextInputAction.newline);
+        expect(textField.cursorHeight, 20);
+        expect(textField.decoration?.contentPadding, const EdgeInsets.fromLTRB(4, 4, 4, 10));
       });
     });
 
