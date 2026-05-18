@@ -364,6 +364,32 @@ void main() {
       expect(find.byType(FloatingActionButton), findsNWidgets(2));
     });
 
+    testWidgets('keeps floating buttons equally inset from horizontal edges', (tester) async {
+      final feedPreferencesCubit = MockFeedPreferencesCubit();
+      final feedRepository = MockFeedRepository();
+
+      when(() => feedPreferencesCubit.state).thenReturn(_homeFeedState);
+      whenListen(feedPreferencesCubit, const Stream<FeedPreferencesState>.empty(), initialState: _homeFeedState);
+      when(() => feedRepository.getCachedFeedPage(any())).thenAnswer((_) async => null);
+      when(
+        () => feedRepository.getTimeline(
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => FeedResult(posts: const []));
+
+      await tester.pumpWidget(
+        buildHomeSubject(feedPreferencesCubit: feedPreferencesCubit, feedRepository: feedRepository),
+      );
+      await tester.pumpAndSettle();
+
+      final jumpRect = tester.getRect(find.byTooltip('Jump to top'));
+      final composeRect = tester.getRect(find.byTooltip('Compose'));
+      final screenWidth = tester.view.physicalSize.width / tester.view.devicePixelRatio;
+
+      expect(jumpRect.left, moreOrLessEquals(screenWidth - composeRect.right, epsilon: 0.1));
+    });
+
     testWidgets('re-tapping selected feed tab reloads the feed', (tester) async {
       final feedPreferencesCubit = MockFeedPreferencesCubit();
       final feedRepository = MockFeedRepository();

@@ -2,14 +2,12 @@ import 'package:poptart_core/poptart_core.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
-import 'package:lazurite/core/theme/animation_tokens.dart';
-import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
+import 'package:lazurite/features/compose/presentation/widgets/compose_fab.dart';
 import 'package:lazurite/features/connectivity/connectivity_helpers.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
@@ -173,24 +171,16 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
       child: const Icon(Icons.arrow_upward, size: 18),
     );
 
-    final composeButton =
-        FloatingActionButton(
-          heroTag: 'home-compose-fab',
-          tooltip: isOffline ? offlineActionMessage('compose a post') : 'Compose',
-          onPressed: isOffline ? null : () => context.push('/compose'),
-          shape: const CircleBorder(),
-          child: const Icon(Icons.add),
-        ).animateIfAllowed(
-          context,
-          effects: const [
-            FadeEffect(duration: Anim.feedItem, curve: Anim.enter),
-            ScaleEffect(begin: Offset(0, 0), end: Offset(1, 1), duration: Anim.feedItem, curve: Anim.emphasis),
-          ],
-        );
+    final composeButton = ComposeFab(
+      heroTag: 'home-compose-fab',
+      tooltip: isOffline ? offlineActionMessage('compose a post') : 'Compose',
+      onPressed: isOffline ? null : () => context.push('/compose'),
+      shape: const CircleBorder(),
+    );
 
     return Row(
       mainAxisSize: MainAxisSize.max,
-      children: [const SizedBox(width: 24), jumpToTopButton, const Spacer(), composeButton],
+      children: [const SizedBox(width: 24), jumpToTopButton, const Spacer(), composeButton, const SizedBox(width: 24)],
     );
   }
 

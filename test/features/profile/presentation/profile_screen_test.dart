@@ -467,6 +467,10 @@ void main() {
       tester.widget<FloatingActionButton>(find.byKey(const ValueKey('profile-compose-fab'))).heroTag,
       'profile-compose-fab',
     );
+    final jumpRect = tester.getRect(find.byKey(const ValueKey('profile-jump-top-fab')));
+    final composeRect = tester.getRect(find.byKey(const ValueKey('profile-compose-fab')));
+    final screenWidth = tester.view.physicalSize.width / tester.view.devicePixelRatio;
+    expect(jumpRect.left, moreOrLessEquals(screenWidth - composeRect.right, epsilon: 0.1));
 
     await tester.tap(find.byKey(const ValueKey('profile-compose-fab')));
     await tester.pumpAndSettle();

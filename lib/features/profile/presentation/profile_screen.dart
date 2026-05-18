@@ -4,7 +4,6 @@ import 'package:bluesky_poptart/app/bsky/graph/defs.dart' as bsky_graph;
 import 'package:lazurite/features/moderation/domain/moderation_models.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -13,8 +12,6 @@ import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/app_view_web_links.dart';
 import 'package:lazurite/core/router/app_shell.dart';
-import 'package:lazurite/core/theme/animation_tokens.dart';
-import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/core/theme/color_filters.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/core/theme/spacing.dart';
@@ -22,6 +19,7 @@ import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/core/widgets/sliver_tab_bar_delegate.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
+import 'package:lazurite/features/compose/presentation/widgets/compose_fab.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
@@ -673,7 +671,13 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
     return Row(
       mainAxisSize: MainAxisSize.max,
-      children: [const SizedBox(width: 24), jumpToTopButton, const Spacer(), _buildComposeFab(context)],
+      children: [
+        const SizedBox(width: 24),
+        jumpToTopButton,
+        const Spacer(),
+        _buildComposeFab(context),
+        const SizedBox(width: 24),
+      ],
     );
   }
 
@@ -1203,20 +1207,13 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         final initialText = isOwnProfile ? null : '@${profile.handle} ';
         final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
 
-        return FloatingActionButton(
+        return ComposeFab(
           key: const ValueKey('profile-compose-fab'),
           heroTag: 'profile-compose-fab',
           tooltip: isOffline ? context.l10n.formatOfflineReconnectAction('compose a post') : context.l10n.buttonCompose,
           onPressed: isOffline
               ? null
               : () => context.push('/compose', extra: ComposeRouteArgs(initialText: initialText)),
-          child: const Icon(Icons.add),
-        ).animateIfAllowed(
-          context,
-          effects: const [
-            FadeEffect(duration: Anim.feedItem, curve: Anim.enter),
-            ScaleEffect(begin: Offset(0, 0), end: Offset(1, 1), duration: Anim.feedItem, curve: Anim.emphasis),
-          ],
         );
       },
     );
