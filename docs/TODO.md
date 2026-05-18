@@ -56,18 +56,17 @@ updated: 2026-05-16
 
 - A dedicated catch-up screen for reviewing posts over a selected
   time range, with filtering, grouping, summaries, and saved catch-up history.
-- A combined hashtag timeline that supports multiple
-  hashtags in one shortcut, including media-only mode.
-- A dedicated followed-hashtags page and
-  follow/unfollow actions from hashtag timelines.
+- A combined hashtag timeline that supports multiple hashtags in one shortcut, including
+  media-only mode.
+- A dedicated followed-hashtags page and follow/unfollow actions from hashtag timelines.
 - Yearly posting summaries and annual report routes.
 - Translation blocks for posts, media alt text, and bios, with language selection and
   optional automatic translation for eligible timeline posts.
 - Search and attach GIFs from a picker, including first-frame handling for previews.
   - Is multi-gif possible?
 - Generate a QR code for profiles display and camera-based QR scanning flows.
-- A filters screen plus filtered-post presentation with hide,
-  warning, hover/peek, and context-specific filtering behavior.
+- A filters screen plus filtered-post presentation with hide, warning, hover/peek, and
+  context-specific filtering behavior.
 - Quote-chain viewing/unwrapping and quote visibility/settings UI.
   - Configurable max depth
 
@@ -85,11 +84,6 @@ updated: 2026-05-16
       - Show subscribed-post and document-published notification rows
   - Rocksky albums, tracks, artists, and scrobbles
   - Semble Collections & Cards
-- Graze feeds:
-  - Simple filters for images, images/videos, profiles, and hashtags
-  - Advanced filters for attributes, embeds, entities, regex, social graph, lists,
-    starter packs, ML similarity/probability, moderation, language, sentiment, emotion,
-    toxicity, topics, and arbitrary text/image analysis
 
 ### Heron Inspo
 
@@ -104,26 +98,10 @@ updated: 2026-05-16
 ---
 
 - Markdown support (toggleable)
-- ✅ Collapsible threads
 
 ---
 
 - Render feed from cache if it goes down (> 500 error)
-
----
-
-- Sidebar profile link should open account switcher, not go to profile. Long press to go to profile.
-
-## Feature Completeness
-
-In this section, we outline what's necessary for Lazurite to be a complete Bluesky client, i.e.
-feature parity with the official app.
-
-1. Settings map 1:1 with account level settings in the official app
-2. Mutuals/Known Followers
-3. Lists
-4. Starter Packs
-5. Download images & videos
 
 ---
 
@@ -178,3 +156,5 @@ feature parity with the official app.
   - Hide replies below a like threshold
   - Hide reposts
   - Hide quote posts
+- Settings map 1:1 with account level settings in the official app
+- Known followers
