@@ -657,6 +657,22 @@ void main() {
       await tester.pump();
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('cancelling a drag on an empty feed tab keeps nested scroll metrics valid', (tester) async {
+      useLargeScreen(tester);
+      await tester.pumpWidget(buildSubject());
+      await tester.pump();
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(const PageStorageKey<String>('profile-feed-empty-posts'))),
+      );
+      await gesture.moveBy(const Offset(0, -80));
+      await tester.pump();
+      await gesture.cancel();
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
   });
 
   group('Feed layout switching', () {

@@ -86,10 +86,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   static const _coverRefreshTriggerDistance = 72.0;
 
   late TabController _tabController;
+  final GlobalKey<NestedScrollViewState> _nestedScrollKey = GlobalKey<NestedScrollViewState>();
   final ScrollController _profileScrollController = ScrollController();
-  final Map<_ProfileFeedSlice, ScrollController> _feedScrollControllers = {
-    for (final tab in _feedTabs) tab.slice: ScrollController(),
-  };
   final GlobalKey<RefreshIndicatorState> _profileRefreshKey = GlobalKey<RefreshIndicatorState>();
   late bool _showSuggestedTab;
   double _coverScrollOffset = 0;
@@ -127,9 +125,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   void dispose() {
     _tabController.dispose();
     _profileScrollController.dispose();
-    for (final controller in _feedScrollControllers.values) {
-      controller.dispose();
-    }
     super.dispose();
   }
 
@@ -379,10 +374,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   Future<void> _jumpToTop() async {
     final futures = <Future<void>>[];
-    final currentSlice = _tabController.index < _feedTabs.length ? _feedTabs[_tabController.index].slice : null;
-    final feedController = currentSlice == null ? null : _feedScrollControllers[currentSlice];
-    if (feedController != null && feedController.hasClients && feedController.offset > 0) {
-      futures.add(feedController.animateTo(0, duration: const Duration(milliseconds: 220), curve: Curves.easeOutCubic));
+    final innerController = _nestedScrollKey.currentState?.innerController;
+    if (innerController != null && innerController.hasClients && innerController.offset > 0) {
+      futures.add(
+        innerController.animateTo(0, duration: const Duration(milliseconds: 220), curve: Curves.easeOutCubic),
+      );
     }
 
     if (_profileScrollController.hasClients && _profileScrollController.offset > 0) {
@@ -553,6 +549,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                       notificationPredicate: (notification) =>
                           notification.depth == 0 && notification.metrics.axis == Axis.vertical,
                       child: NestedScrollView(
+                        key: _nestedScrollKey,
                         controller: _profileScrollController,
                         physics: const AlwaysScrollableScrollPhysics(),
                         headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -1235,19 +1232,29 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     final visibleFeedState = sourceState.copyWith(posts: visiblePosts);
 
     if (expectedActor != null && isActiveTab && !feedMatchesExpectedActor) {
-      return const Center(child: CircularProgressIndicator());
+      return _buildScrollableTabStatus(
+        storageKey: 'profile-feed-loading-${slice.name}',
+        child: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     if (isActiveTab && sourceState.status == FeedStatus.initial) {
-      return const Center(child: CircularProgressIndicator());
+      return _buildScrollableTabStatus(
+        storageKey: 'profile-feed-initial-${slice.name}',
+        child: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     if (sourceState.isLoading && visiblePosts.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return _buildScrollableTabStatus(
+        storageKey: 'profile-feed-refreshing-${slice.name}',
+        child: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     if (sourceState.hasError && feedMatchesExpectedActor) {
-      return Center(
+      return _buildScrollableTabStatus(
+        storageKey: 'profile-feed-error-${slice.name}',
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1263,7 +1270,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     }
 
     if (visiblePosts.isEmpty) {
-      return Center(child: Text(emptyLabel));
+      return _buildScrollableTabStatus(
+        storageKey: 'profile-feed-empty-${slice.name}',
+        child: Center(child: Text(emptyLabel)),
+      );
     }
 
     if (slice == _ProfileFeedSlice.replies) {
@@ -1278,6 +1288,13 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         }
         return _buildCardFeed(context, visibleFeedState, requestFilter: requestFilter, slice: slice);
       },
+    );
+  }
+
+  Widget _buildScrollableTabStatus({required String storageKey, required Widget child}) {
+    return CustomScrollView(
+      key: PageStorageKey<String>(storageKey),
+      slivers: [SliverFillRemaining(hasScrollBody: false, child: child)],
     );
   }
 
@@ -1296,7 +1313,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           return false;
         },
         child: ListView.builder(
-          controller: _feedScrollControllers[_ProfileFeedSlice.replies],
           key: const PageStorageKey<String>('profile_replies_thread_list'),
           padding: EdgeInsets.zero,
           itemCount: feedState.posts.length + (feedState.isLoadingMore ? 1 : 0),
@@ -1362,7 +1378,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           return false;
         },
         child: ListView.builder(
-          controller: _feedScrollControllers[slice],
           key: scrollKey,
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           itemCount: feedState.posts.length + (feedState.isLoadingMore ? 1 : 0),
@@ -1411,7 +1426,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           return false;
         },
         child: ListView.builder(
-          controller: _feedScrollControllers[slice],
           key: PageStorageKey<String>('profile_linear_feed_${slice.name}'),
           padding: EdgeInsets.zero,
           itemCount: feedState.posts.length + (feedState.isLoadingMore ? 1 : 0),
@@ -1593,7 +1607,15 @@ class _SuggestedFollowsTabState extends State<_SuggestedFollowsTab> {
   Widget build(BuildContext context) {
     final cubit = _cubit;
     if (cubit == null) {
-      return Center(child: Text(context.l10n.messageSuggestedFollowsUnavailable));
+      return CustomScrollView(
+        key: const PageStorageKey<String>('profile-suggested-unavailable'),
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(child: Text(context.l10n.messageSuggestedFollowsUnavailable)),
+          ),
+        ],
+      );
     }
 
     return BlocProvider.value(
@@ -1648,17 +1670,28 @@ class _ProfileListsPaneState extends State<_ProfileListsPane> {
       builder: (context, state) {
         switch (state.status) {
           case MyListsStatus.loading:
-            return const Center(child: CircularProgressIndicator());
+            return const CustomScrollView(
+              key: PageStorageKey<String>('profile-lists-loading'),
+              slivers: [SliverFillRemaining(hasScrollBody: false, child: Center(child: CircularProgressIndicator()))],
+            );
           case MyListsStatus.error:
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(state.errorMessage ?? context.l10n.errorFailedToLoadLists),
-                  const SizedBox(height: 12),
-                  FilledButton(onPressed: () => _cubit.refresh(), child: Text(context.l10n.buttonRetry)),
-                ],
-              ),
+            return CustomScrollView(
+              key: const PageStorageKey<String>('profile-lists-error'),
+              slivers: [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(state.errorMessage ?? context.l10n.errorFailedToLoadLists),
+                        const SizedBox(height: 12),
+                        FilledButton(onPressed: () => _cubit.refresh(), child: Text(context.l10n.buttonRetry)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             );
           default:
             final lists = state.lists
@@ -1670,7 +1703,12 @@ class _ProfileListsPaneState extends State<_ProfileListsPane> {
                 .toList(growable: false);
 
             if (lists.isEmpty) {
-              return Center(child: Text(context.l10n.messageNoListsYet));
+              return CustomScrollView(
+                key: const PageStorageKey<String>('profile-lists-empty'),
+                slivers: [
+                  SliverFillRemaining(hasScrollBody: false, child: Center(child: Text(context.l10n.messageNoListsYet))),
+                ],
+              );
             }
 
             return RefreshIndicator(

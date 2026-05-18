@@ -46,27 +46,46 @@ class _ProfileStarterPacksPaneState extends State<ProfileStarterPacksPane> {
       bloc: _cubit,
       builder: (context, state) {
         if (state.status == ActorStarterPacksStatus.loading) {
-          return const Center(child: CircularProgressIndicator());
+          return const CustomScrollView(
+            key: PageStorageKey<String>('profile-starter-packs-loading'),
+            slivers: [SliverFillRemaining(hasScrollBody: false, child: Center(child: CircularProgressIndicator()))],
+          );
         }
 
         if (state.status == ActorStarterPacksStatus.error) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(state.errorMessage ?? context.l10n.errorFailedToLoadStarterPacks),
-                const SizedBox(height: 12),
-                FilledButton(
-                  onPressed: () => _cubit.load(actor: widget.actor),
-                  child: Text(context.l10n.buttonRetry),
+          return CustomScrollView(
+            key: const PageStorageKey<String>('profile-starter-packs-error'),
+            slivers: [
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(state.errorMessage ?? context.l10n.errorFailedToLoadStarterPacks),
+                      const SizedBox(height: 12),
+                      FilledButton(
+                        onPressed: () => _cubit.load(actor: widget.actor),
+                        child: Text(context.l10n.buttonRetry),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           );
         }
 
         if (state.starterPacks.isEmpty) {
-          return Center(child: Text(context.l10n.messageNoStarterPacksYet));
+          return CustomScrollView(
+            key: const PageStorageKey<String>('profile-starter-packs-empty'),
+            slivers: [
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(child: Text(context.l10n.messageNoStarterPacksYet)),
+              ),
+            ],
+          );
         }
 
         return RefreshIndicator(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
@@ -57,10 +58,10 @@ class _ProfileLikedPostsPaneState extends State<ProfileLikedPostsPane> {
         _hasMore = page.cursor != null;
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (error) {
       if (!mounted) return;
       setState(() {
-        _error = 'Failed to load liked posts: $e';
+        _error = 'Failed to load liked posts: $error';
         _isLoading = false;
       });
     }
@@ -85,7 +86,8 @@ class _ProfileLikedPostsPaneState extends State<ProfileLikedPostsPane> {
         _hasMore = page.cursor != null;
         _isLoadingMore = false;
       });
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d('ProfileLikedPostsPane: ignored load-more failure', error: error, stackTrace: stackTrace);
       if (!mounted) return;
       setState(() => _isLoadingMore = false);
     }
@@ -94,24 +96,40 @@ class _ProfileLikedPostsPaneState extends State<ProfileLikedPostsPane> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const CustomScrollView(
+        key: PageStorageKey<String>('profile-liked-posts-loading'),
+        slivers: [SliverFillRemaining(hasScrollBody: false, child: Center(child: CircularProgressIndicator()))],
+      );
     }
 
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_error!),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: _loadInitial, child: Text(context.l10n.buttonRetry)),
-          ],
-        ),
+      return CustomScrollView(
+        key: const PageStorageKey<String>('profile-liked-posts-error'),
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_error!),
+                  const SizedBox(height: 12),
+                  FilledButton(onPressed: _loadInitial, child: Text(context.l10n.buttonRetry)),
+                ],
+              ),
+            ),
+          ),
+        ],
       );
     }
 
     if (_entries.isEmpty) {
-      return Center(child: Text(context.l10n.messageNoLikedPostsYet));
+      return CustomScrollView(
+        key: const PageStorageKey<String>('profile-liked-posts-empty'),
+        slivers: [
+          SliverFillRemaining(hasScrollBody: false, child: Center(child: Text(context.l10n.messageNoLikedPostsYet))),
+        ],
+      );
     }
 
     final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
