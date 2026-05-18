@@ -249,6 +249,11 @@ void main() {
 
   Widget buildSubject() => buildSubjectWithRouter(AppRouter(authBloc: authBloc).router);
 
+  Future<void> tapProfileBottomTab(WidgetTester tester) async {
+    await tester.tap(find.byIcon(Icons.person_outline).last);
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('opens the side menu and switches authenticated branches', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 932));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -281,7 +286,7 @@ void main() {
     expect(find.text('APPEARANCE'), findsOneWidget);
   });
 
-  testWidgets('bottom navigation bar shows 4 tabs with uppercase labels', (tester) async {
+  testWidgets('bottom navigation bar shows 4 tabs with hidden labels', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 932));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -290,6 +295,7 @@ void main() {
 
     final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
     expect(navBar.destinations.length, 4);
+    expect(navBar.labelBehavior, NavigationDestinationLabelBehavior.alwaysHide);
 
     final destinations = navBar.destinations.cast<NavigationDestination>();
     expect(destinations.map((d) => d.label), containsAll(['HOME', 'SEARCH', 'ALERTS', 'PROFILE']));
@@ -338,8 +344,7 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('PROFILE').last);
-    await tester.pumpAndSettle();
+    await tapProfileBottomTab(tester);
 
     await tester.tap(find.byKey(const Key('profile_search_posts_button')));
     await tester.pumpAndSettle();
@@ -390,8 +395,7 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('PROFILE'));
-    await tester.pumpAndSettle();
+    await tapProfileBottomTab(tester);
 
     expect(find.text('RIVER TAM'), findsOneWidget);
 
@@ -462,8 +466,7 @@ void main() {
     final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
     expect(navBar.selectedIndex, 0);
 
-    await tester.tap(find.text('PROFILE'));
-    await tester.pumpAndSettle();
+    await tapProfileBottomTab(tester);
 
     final navBarAfter = tester.widget<NavigationBar>(find.byType(NavigationBar));
     expect(navBarAfter.selectedIndex, 3);
@@ -650,8 +653,7 @@ void main() {
     await tester.pumpWidget(buildSubjectWithRouter(router));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('PROFILE'));
-    await tester.pumpAndSettle();
+    await tapProfileBottomTab(tester);
     expect(find.text('RIVER TAM'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.settings_outlined));

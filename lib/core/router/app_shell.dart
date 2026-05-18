@@ -9,6 +9,7 @@ import 'package:lazurite/core/crash_reporting/crash_reporting_consent_gate.dart'
 import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/l10n/app_localizations.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -100,7 +101,8 @@ class _AppShellState extends State<AppShell> {
     CrashReportingService? crashReportingService;
     try {
       crashReportingService = context.read<CrashReportingService>();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d('showing app shell without crash reporting consent gate', error: error, stackTrace: stackTrace);
       crashReportingService = null;
     }
     return AppShellScope(
@@ -133,7 +135,7 @@ class _AppShellState extends State<AppShell> {
               onDestinationSelected: (index) {
                 widget.navigationShell.goBranch(index, initialLocation: index == widget.navigationShell.currentIndex);
               },
-              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
               destinations: _destinations(l10n),
             ),
           ),
