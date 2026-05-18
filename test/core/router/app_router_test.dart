@@ -503,6 +503,191 @@ void main() {
     expect(find.byTooltip('Open menu'), findsOneWidget);
   });
 
+  testWidgets('logged-out root opens public Bluesky discover', (tester) async {
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    await tester.pumpAndSettle();
+
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/public/bluesky/discover');
+    expect(find.text('BlueSky Discover'), findsOneWidget);
+
+    router.dispose();
+  });
+
+  testWidgets('authenticated root remains on the home feed', (tester) async {
+    currentAuthState = const AuthState.authenticated(tokens);
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    await tester.pumpAndSettle();
+
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/');
+    expect(find.text('No feeds pinned'), findsOneWidget);
+
+    router.dispose();
+  });
+
+  testWidgets('public provider routes normalize invalid values', (tester) async {
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('/public/mastodon/feeds');
+    await tester.pumpAndSettle();
+
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/public/bluesky/feeds');
+    expect(find.text('BlueSky Feeds'), findsOneWidget);
+
+    router.dispose();
+  });
+
+  testWidgets('unauthenticated bottom navigation maps destinations and login action', (tester) async {
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('/public/blacksky/discover');
+    await tester.pumpAndSettle();
+
+    var navBar = tester.widget<NavigationBar>(find.byKey(const ValueKey<String>('unauthenticated-navigation-bar')));
+    expect(navBar.selectedIndex, 0);
+    expect(navBar.labelBehavior, NavigationDestinationLabelBehavior.alwaysShow);
+    expect(navBar.destinations.map((destination) => (destination as NavigationDestination).label), [
+      'HOME',
+      'AT Explorer',
+      'Settings',
+    ]);
+
+    await tester.tap(find.text('AT Explorer').last);
+    await tester.pumpAndSettle();
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/settings/devtools');
+    navBar = tester.widget<NavigationBar>(find.byKey(const ValueKey<String>('unauthenticated-navigation-bar')));
+    expect(navBar.selectedIndex, 1);
+
+    await tester.tap(find.text('Settings').last);
+    await tester.pumpAndSettle();
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/settings');
+    navBar = tester.widget<NavigationBar>(find.byKey(const ValueKey<String>('unauthenticated-navigation-bar')));
+    expect(navBar.selectedIndex, 2);
+
+    await tester.tap(find.text('HOME').last);
+    await tester.pumpAndSettle();
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/public/bluesky/discover');
+
+    router.go('/public/blacksky/feeds');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey<String>('unauthenticated-login-button')));
+    await tester.pumpAndSettle();
+
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/login');
+    expect(router.routerDelegate.currentConfiguration.uri.queryParameters['provider'], 'blacksky');
+
+    router.dispose();
+  });
+
+  testWidgets('unauthenticated settings and AT Explorer login use persisted provider', (tester) async {
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+    const blackskySettings = SettingsState(
+      themePalette: AppThemePalette.oxocarbon,
+      themeVariant: AppThemeVariant.dark,
+      useSystemTheme: false,
+      appViewProvider: 'blacksky',
+    );
+    when(() => settingsCubit.state).thenReturn(blackskySettings);
+    whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: blackskySettings);
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('/settings');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey<String>('unauthenticated-login-button')));
+    await tester.pumpAndSettle();
+
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/login');
+    expect(router.routerDelegate.currentConfiguration.uri.queryParameters['provider'], 'blacksky');
+
+    router.go('/settings/devtools');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey<String>('unauthenticated-login-button')));
+    await tester.pumpAndSettle();
+
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/login');
+    expect(router.routerDelegate.currentConfiguration.uri.queryParameters['provider'], 'blacksky');
+
+    router.dispose();
+  });
+
+  testWidgets('unauthenticated settings login falls back to BlueSky for invalid persisted provider', (tester) async {
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+    const invalidSettings = SettingsState(
+      themePalette: AppThemePalette.oxocarbon,
+      themeVariant: AppThemeVariant.dark,
+      useSystemTheme: false,
+      appViewProvider: 'unknown',
+    );
+    when(() => settingsCubit.state).thenReturn(invalidSettings);
+    whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: invalidSettings);
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('/settings');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey<String>('unauthenticated-login-button')));
+    await tester.pumpAndSettle();
+
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/login');
+    expect(router.routerDelegate.currentConfiguration.uri.queryParameters['provider'], 'bluesky');
+
+    router.dispose();
+  });
+
+  testWidgets('public tab switch preserves discover scroll position', (tester) async {
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -700));
+    await tester.pumpAndSettle();
+    final scrolledOffset = tester.state<ScrollableState>(find.byType(Scrollable).first).position.pixels;
+    expect(scrolledOffset, greaterThan(0));
+
+    await tester.tap(find.text('Feeds').last);
+    await tester.pumpAndSettle();
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/public/bluesky/feeds');
+
+    await tester.tap(find.text('Discover').last);
+    await tester.pumpAndSettle();
+
+    final restoredOffset = tester.state<ScrollableState>(find.byType(Scrollable).first).position.pixels;
+    expect(restoredOffset, scrolledOffset);
+
+    router.dispose();
+  });
+
   testWidgets('stays on public settings after logout without crashing', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 932));
     addTearDown(() => tester.binding.setSurfaceSize(null));

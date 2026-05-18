@@ -56,6 +56,7 @@ void main() {
     ThemeMode themeMode = ThemeMode.system,
     MockAccountSwitcherCubit? accountCubit,
     String? initialHandle,
+    String? initialProviderKey,
     bool autoStartOAuth = false,
   }) {
     final typeaheadRepository = _FakeTypeaheadRepository(
@@ -74,6 +75,7 @@ void main() {
             ],
             child: LoginScreen(
               initialHandle: initialHandle,
+              initialProviderKey: initialProviderKey,
               autoStartOAuth: autoStartOAuth,
               typeaheadRepository: typeaheadRepository,
             ),
@@ -212,6 +214,64 @@ void main() {
       () => settingsCubit.setAppViewProvider('bluesky'),
       () => authBloc.add(const OAuthLoginRequested(handle: 'river.bsky.social')),
     ]);
+  });
+
+  testWidgets('preselects BlueSky from provider query value', (tester) async {
+    const blackskySettings = SettingsState(
+      themePalette: AppThemePalette.oxocarbon,
+      themeVariant: AppThemeVariant.dark,
+      useSystemTheme: false,
+      appViewProvider: 'blacksky',
+    );
+    when(() => settingsCubit.state).thenReturn(blackskySettings);
+    whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: blackskySettings);
+
+    await tester.pumpWidget(buildSubject(initialProviderKey: 'bluesky'));
+    await tester.pumpAndSettle();
+
+    final providerSwitch = tester.widget<SegmentedButton<String>>(
+      find.byKey(const ValueKey<String>('login-provider-switch')),
+    );
+    expect(providerSwitch.selected, {'bluesky'});
+    verifyNever(() => settingsCubit.setAppViewProvider(any()));
+  });
+
+  testWidgets('preselects BlackSky from provider query value', (tester) async {
+    await tester.pumpWidget(buildSubject(initialProviderKey: 'blacksky'));
+    await tester.pumpAndSettle();
+
+    final providerSwitch = tester.widget<SegmentedButton<String>>(
+      find.byKey(const ValueKey<String>('login-provider-switch')),
+    );
+    expect(providerSwitch.selected, {'blacksky'});
+    verifyNever(() => settingsCubit.setAppViewProvider(any()));
+  });
+
+  testWidgets('manual provider switching persists selected login provider on submit', (tester) async {
+    await tester.pumpWidget(buildSubject(initialProviderKey: 'bluesky'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('BlackSky'));
+    await tester.pumpAndSettle();
+
+    var providerSwitch = tester.widget<SegmentedButton<String>>(
+      find.byKey(const ValueKey<String>('login-provider-switch')),
+    );
+    expect(providerSwitch.selected, {'blacksky'});
+    verifyNever(() => settingsCubit.setAppViewProvider(any()));
+
+    await tester.enterText(find.byType(TextFormField).first, 'river.bsky.social');
+    await tester.tap(find.byKey(const ValueKey<String>('login-continue-button')));
+    await tester.pumpAndSettle();
+
+    verifyInOrder([
+      () => settingsCubit.setAppViewProvider('blacksky'),
+      () => authBloc.add(const OAuthLoginRequested(handle: 'river.bsky.social')),
+    ]);
+    providerSwitch = tester.widget<SegmentedButton<String>>(
+      find.byKey(const ValueKey<String>('login-provider-switch')),
+    );
+    expect(providerSwitch.selected, {'blacksky'});
   });
 
   testWidgets('handle field exposes persistent label and continue tooltip', (tester) async {

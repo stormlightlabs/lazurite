@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,16 +14,22 @@ import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/atproto_identifier.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
-import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:lazurite/features/typeahead/presentation/typeahead_text_field.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({this.initialHandle, this.autoStartOAuth = false, this.typeaheadRepository, super.key});
+  const LoginScreen({
+    this.initialHandle,
+    this.initialProviderKey,
+    this.autoStartOAuth = false,
+    this.typeaheadRepository,
+    super.key,
+  });
 
   final String? initialHandle;
+  final String? initialProviderKey;
   final bool autoStartOAuth;
   final TypeaheadRepository? typeaheadRepository;
 
@@ -42,6 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _didLogMissingAccountSwitcherProvider = false;
   bool _didLogAvatarLookupFailure = false;
   late final TypeaheadRepository _typeaheadRepository;
+  String? _selectedProviderKey;
 
   AccountSwitcherCubit? _maybeAccountSwitcherCubit(BuildContext context) {
     try {
@@ -70,8 +78,20 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _initializeSelectedProvider();
     _requestAccountsLoadIfAvailable();
     _requestAutoOAuthIfNeeded();
+  }
+
+  void _initializeSelectedProvider() {
+    if (_selectedProviderKey != null) {
+      return;
+    }
+
+    final routeProvider = widget.initialProviderKey;
+    _selectedProviderKey = routeProvider == null
+        ? AppViewProviders.normalizeSettingKey(context.read<SettingsCubit>().state.appViewProvider)
+        : AppViewProviders.normalizeSettingKey(routeProvider);
   }
 
   void _requestAccountsLoadIfAvailable() {
@@ -189,6 +209,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<bool> _persistSelectedProvider() async {
     final settingsCubit = context.read<SettingsCubit>();
+    final selectedProvider =
+        _selectedProviderKey ?? AppViewProviders.normalizeSettingKey(settingsCubit.state.appViewProvider);
     if (_isPersistingProvider) {
       return false;
     }
@@ -197,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _isPersistingProvider = true;
     });
     try {
-      await settingsCubit.setAppViewProvider(settingsCubit.state.appViewProvider);
+      await settingsCubit.setAppViewProvider(selectedProvider);
       return true;
     } catch (error) {
       if (mounted) {
@@ -354,40 +376,38 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                         const SizedBox(height: 32),
-                        BlocBuilder<SettingsCubit, SettingsState>(
-                          builder: (context, settingsState) {
-                            final selectedProvider = settingsState.appViewProvider;
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  l10n.labelChooseYourPortal,
-                                  textAlign: TextAlign.center,
-                                  style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-                                ),
-                                const SizedBox(height: 8),
-                                Center(
-                                  child: SegmentedButton<String>(
-                                    segments: const [
-                                      ButtonSegment<String>(
-                                        value: AppViewProviders.blueskyKey,
-                                        label: _ProviderTabLabel(assetPath: 'assets/bluesky.svg', name: 'BlueSky'),
-                                      ),
-                                      ButtonSegment<String>(
-                                        value: AppViewProviders.blackskyKey,
-                                        label: _ProviderTabLabel(assetPath: 'assets/blacksky.svg', name: 'BlackSky'),
-                                      ),
-                                    ],
-                                    selected: {selectedProvider},
-                                    onSelectionChanged: (selection) {
-                                      unawaited(context.read<SettingsCubit>().setAppViewProvider(selection.first));
-                                    },
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              l10n.labelChooseYourPortal,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: 8),
+                            Center(
+                              child: SegmentedButton<String>(
+                                key: const ValueKey<String>('login-provider-switch'),
+                                segments: const [
+                                  ButtonSegment<String>(
+                                    value: AppViewProviders.blueskyKey,
+                                    label: _ProviderTabLabel(assetPath: 'assets/bluesky.svg', name: 'BlueSky'),
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                              ],
-                            );
-                          },
+                                  ButtonSegment<String>(
+                                    value: AppViewProviders.blackskyKey,
+                                    label: _ProviderTabLabel(assetPath: 'assets/blacksky.svg', name: 'BlackSky'),
+                                  ),
+                                ],
+                                selected: {_selectedProviderKey ?? AppViewProviders.blueskyKey},
+                                onSelectionChanged: (selection) {
+                                  setState(() {
+                                    _selectedProviderKey = AppViewProviders.normalizeSettingKey(selection.first);
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
                         ),
                         BlocBuilder<AuthBloc, AuthState>(
                           builder: (context, state) {

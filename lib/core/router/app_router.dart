@@ -62,6 +62,9 @@ import 'package:lazurite/features/profile/presentation/profile_connections_scree
 import 'package:lazurite/features/profile/presentation/profile_context_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_edit_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
+import 'package:lazurite/features/public/presentation/public_home_screen.dart';
+import 'package:lazurite/features/public/presentation/public_route_state.dart';
+import 'package:lazurite/features/public/presentation/unauthenticated_shell.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/search/cubit/hashtag_cubit.dart';
 import 'package:lazurite/features/search/cubit/topic_cubit.dart';
@@ -128,7 +131,15 @@ class AppRouter {
       };
       final isLoggingIn = path == '/login';
       final isReauthLogin = state.uri.queryParameters['reauth'] == '1';
-      final isPublicPath = publicPaths.contains(path);
+      final isPublicBrowsingPath = path == '/public' || path.startsWith('/public/');
+      final isPublicPath = publicPaths.contains(path) || isPublicBrowsingPath;
+
+      if (!isAuthenticated && path == '/') {
+        return const PublicRouteState(
+          providerKey: AppViewProviders.blueskyKey,
+          contentTab: PublicContentTab.discover,
+        ).location;
+      }
 
       if (!isAuthenticated && !isPublicPath) {
         return '/login';
@@ -150,13 +161,48 @@ class AppRouter {
           return _page(
             context,
             state,
-            LoginScreen(initialHandle: hasInitialHandle ? initialHandle : null, autoStartOAuth: autoStartOAuth),
+            LoginScreen(
+              initialHandle: hasInitialHandle ? initialHandle : null,
+              initialProviderKey: state.uri.queryParameters['provider'],
+              autoStartOAuth: autoStartOAuth,
+            ),
+          );
+        },
+      ),
+      GoRoute(path: '/public', redirect: (_, _) => '/public/bluesky/discover'),
+      GoRoute(
+        path: '/public/:provider/:tab',
+        redirect: (_, state) {
+          final routeState = PublicRouteState.parse(
+            provider: state.pathParameters['provider'],
+            tab: state.pathParameters['tab'],
+          );
+          if (state.uri.path != routeState.location) {
+            return routeState.location;
+          }
+          return null;
+        },
+        pageBuilder: (context, state) {
+          final routeState = PublicRouteState.parse(
+            provider: state.pathParameters['provider'],
+            tab: state.pathParameters['tab'],
+          );
+          return MaterialPage<dynamic>(
+            key: const ValueKey<String>('public-home-route'),
+            child: _buildUnauthenticatedRouteShell(
+              context,
+              state,
+              PublicHomeScreen(providerKey: routeState.providerKey, contentTab: routeState.contentTab),
+              publicProviderKey: routeState.providerKey,
+              publicHomeLocation: routeState.location,
+            ),
           );
         },
       ),
       GoRoute(
         path: '/settings',
-        pageBuilder: (context, state) => _page(context, state, const SettingsScreen()),
+        pageBuilder: (context, state) =>
+            _page(context, state, _buildUnauthenticatedRouteShell(context, state, const SettingsScreen())),
         routes: [
           GoRoute(
             path: 'moderation',
@@ -194,7 +240,11 @@ class AppRouter {
           ),
           GoRoute(
             path: 'devtools',
-            pageBuilder: (context, state) => _page(context, state, _buildDevToolsRoute(context, state)),
+            pageBuilder: (context, state) => _page(
+              context,
+              state,
+              _buildUnauthenticatedRouteShell(context, state, _buildDevToolsRoute(context, state)),
+            ),
           ),
           GoRoute(
             path: 'video-limits',
@@ -646,6 +696,25 @@ class AppRouter {
       ),
     ],
   );
+
+  Widget _buildUnauthenticatedRouteShell(
+    BuildContext context,
+    GoRouterState state,
+    Widget child, {
+    String? publicProviderKey,
+    String? publicHomeLocation,
+  }) {
+    if (authBloc.state.isAuthenticated) {
+      return child;
+    }
+
+    return UnauthenticatedShell(
+      location: state.uri.path,
+      publicProviderKey: publicProviderKey,
+      publicHomeLocation: publicHomeLocation,
+      child: child,
+    );
+  }
 
   Widget _buildAlertsRoute(BuildContext context, Widget child) {
     NotificationBloc? existingNotificationBloc;
