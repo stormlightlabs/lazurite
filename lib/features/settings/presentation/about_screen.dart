@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lazurite/core/app/app_version_label.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:lazurite/shared/utils/url_utils.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -10,10 +10,6 @@ class AboutScreen extends StatelessWidget {
   static const _githubUrl = 'https://github.com/stormlightlabs/lazurite';
   static const _tangledUrl = 'https://tangled.org/desertthunder.dev/lazurite';
   static const _emailUrl = 'mailto:info@stormlightlabs.org';
-
-  Future<void> _launch(String url) async {
-    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +38,7 @@ class AboutScreen extends StatelessWidget {
           Text('Lazurite is made at Stormlight Labs, which is just me:', style: theme.textTheme.bodyLarge),
           const SizedBox(height: 8),
           GestureDetector(
-            onTap: () => _launch(_linkedInUrl),
+            onTap: () => openExternalUrl(_linkedInUrl),
             child: Text(
               'Owais',
               style: theme.textTheme.bodyLarge?.copyWith(
@@ -69,7 +65,7 @@ class AboutScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _LinkIcon(
-                onTap: () => _launch(_githubUrl),
+                onTap: () => openExternalUrl(_githubUrl),
                 child: SvgPicture.asset(
                   'assets/gh.svg',
                   width: 28,
@@ -79,7 +75,7 @@ class AboutScreen extends StatelessWidget {
               ),
               const SizedBox(width: 24),
               _LinkIcon(
-                onTap: () => _launch(_tangledUrl),
+                onTap: () => openExternalUrl(_tangledUrl),
                 child: SvgPicture.asset(
                   'assets/tangled.svg',
                   width: 28,
@@ -89,7 +85,7 @@ class AboutScreen extends StatelessWidget {
               ),
               const SizedBox(width: 24),
               _LinkIcon(
-                onTap: () => _launch(_emailUrl),
+                onTap: () => openExternalUrl(_emailUrl),
                 child: Icon(Icons.email_outlined, size: 28, color: theme.colorScheme.onSurface),
               ),
             ],

@@ -1,15 +1,15 @@
 import 'dart:convert';
-import 'package:lazurite/core/theme/theme_extensions.dart';
 
 import 'package:bluesky_poptart/app/bsky/richtext/facet.dart';
-import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/router/in_app_link_resolver.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/search/data/hashtag_utils.dart';
 import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:lazurite/shared/utils/url_utils.dart';
+import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
 
 class FacetText extends StatelessWidget {
   const FacetText({super.key, required this.text, this.facets, this.style, this.maxLines, this.overflow});
@@ -210,12 +210,7 @@ void _openLink(BuildContext context, String rawLink) {
     return;
   }
 
-  final uri = Uri.tryParse(rawLink);
-  if (uri == null) {
-    return;
-  }
-
-  _launchExternal(uri);
+  openExternalUrl(rawLink, addHttpsSchemeWhenMissing: true);
 }
 
 void _openHashtag(BuildContext context, String tag) {
@@ -230,8 +225,4 @@ void _openHashtag(BuildContext context, String tag) {
   }
 
   router.push('/hashtag?tag=${Uri.encodeQueryComponent(normalizedTag)}');
-}
-
-Future<void> _launchExternal(Uri url) async {
-  await launchUrl(url, mode: LaunchMode.externalApplication);
 }

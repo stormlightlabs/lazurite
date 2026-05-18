@@ -11,7 +11,7 @@ import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:lazurite/shared/utils/url_utils.dart';
 
 class TrendingScreen extends StatefulWidget {
   const TrendingScreen({super.key});
@@ -74,7 +74,7 @@ class _TrendingScreenState extends State<TrendingScreen> {
       return;
     }
 
-    await launchUrl(resolution.externalUri, mode: LaunchMode.externalApplication);
+    await openExternalUri(resolution.externalUri);
   }
 
   @override

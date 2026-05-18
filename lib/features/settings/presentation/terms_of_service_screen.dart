@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lazurite/core/app/app_version_label.dart';
 import 'package:lazurite/features/settings/presentation/widgets/contact_section.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:lazurite/shared/utils/url_utils.dart';
 
 class TermsOfServiceScreen extends StatelessWidget {
   const TermsOfServiceScreen({super.key});
@@ -12,10 +12,6 @@ class TermsOfServiceScreen extends StatelessWidget {
   static const _emailUrl = 'mailto:info@stormlightlabs.org';
   static const _blueskyPrivacyUrl = 'https://bsky.social/about/support/privacy-policy';
   static const _blueskyTermsUrl = 'https://bsky.social/about/support/tos';
-
-  Future<void> _launch(String url) async {
-    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +77,10 @@ class TermsOfServiceScreen extends StatelessWidget {
               'Lazurite depends on Bluesky services, and your use of Bluesky is governed by Bluesky\'s own legal terms.',
             ],
           ),
-          _PolicyLinks(onPrivacyTap: () => _launch(_blueskyPrivacyUrl), onTermsTap: () => _launch(_blueskyTermsUrl)),
+          _PolicyLinks(
+            onPrivacyTap: () => openExternalUrl(_blueskyPrivacyUrl),
+            onTermsTap: () => openExternalUrl(_blueskyTermsUrl),
+          ),
           const _TermsSection(
             title: 'Your account and activity',
             paragraphs: [
@@ -122,7 +121,10 @@ class TermsOfServiceScreen extends StatelessWidget {
               'We may update these Terms. Continued use after updates means you accept the revised Terms.',
             ],
           ),
-          ContactSection(onStormlightLabsTap: () => _launch(_websiteUrl), onEmailTap: () => _launch(_emailUrl)),
+          ContactSection(
+            onStormlightLabsTap: () => openExternalUrl(_websiteUrl),
+            onEmailTap: () => openExternalUrl(_emailUrl),
+          ),
           const SizedBox(height: 12),
           const Center(child: AppVersionLabel()),
         ],

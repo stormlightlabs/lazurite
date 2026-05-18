@@ -51,7 +51,7 @@ import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:lazurite/shared/utils/url_utils.dart';
 
 enum _ProfileFeedSlice { posts, replies, quotes, reposts, media }
 
@@ -792,7 +792,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           Icons.link_outlined,
           profile.website!,
           trailingIcon: Icons.open_in_new,
-          onTap: () => _launchWebsite(profile.website!),
+          onTap: () => openExternalUrl(profile.website!, addHttpsSchemeWhenMissing: true),
         ),
       if (profile.createdAt != null)
         _buildMetaChip(
@@ -1504,12 +1504,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     }
 
     return ProfileStarterPacksPane(actor: actor, starterPackRepository: starterPackRepository);
-  }
-
-  Future<void> _launchWebsite(String website) async {
-    final uri = Uri.tryParse(website.startsWith('http') ? website : 'https://$website');
-    if (uri == null) return;
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }
 

@@ -1,6 +1,5 @@
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
-import 'package:lazurite/features/moderation/domain/moderation_models.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,6 +12,7 @@ import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/presentation/widgets/compact_post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
+import 'package:lazurite/features/moderation/domain/moderation_models.dart' as bsky_moderation;
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
@@ -29,7 +29,7 @@ import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:lazurite/shared/utils/url_utils.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({
@@ -52,7 +52,7 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  static final Uri _starterPackSearchIssueUri = Uri.parse('https://github.com/bluesky-social/bsky-docs/issues/306');
+  static const String _starterPackSearchIssueUrl = 'https://github.com/bluesky-social/bsky-docs/issues/306';
 
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
@@ -1048,7 +1048,7 @@ class _SearchScreenState extends State<SearchScreen> {
   );
 
   Future<void> _openStarterPackIssue() async {
-    final launched = await launchUrl(_starterPackSearchIssueUri, mode: LaunchMode.externalApplication);
+    final launched = await openExternalUrl(_starterPackSearchIssueUrl);
     if (!launched && mounted) {
       showAppSnackBar(context, context.l10n.messageCouldNotOpenIssueLink);
     }

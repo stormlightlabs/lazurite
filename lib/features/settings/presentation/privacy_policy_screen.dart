@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lazurite/core/app/app_version_label.dart';
 import 'package:lazurite/features/settings/presentation/widgets/contact_section.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:lazurite/shared/utils/url_utils.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
@@ -10,10 +10,6 @@ class PrivacyPolicyScreen extends StatelessWidget {
   static const _effectiveDate = 'April 15, 2026';
   static const _websiteUrl = 'https://stormlightlabs.org';
   static const _emailUrl = 'mailto:info@stormlightlabs.org';
-
-  Future<void> _launch(String url) async {
-    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +102,10 @@ class PrivacyPolicyScreen extends StatelessWidget {
               'We may revise this policy from time to time. Material updates will be reflected by a new effective date and app release notes when appropriate.',
             ],
           ),
-          ContactSection(onStormlightLabsTap: () => _launch(_websiteUrl), onEmailTap: () => _launch(_emailUrl)),
+          ContactSection(
+            onStormlightLabsTap: () => openExternalUrl(_websiteUrl),
+            onEmailTap: () => openExternalUrl(_emailUrl),
+          ),
           const SizedBox(height: 12),
           const Center(child: AppVersionLabel()),
         ],

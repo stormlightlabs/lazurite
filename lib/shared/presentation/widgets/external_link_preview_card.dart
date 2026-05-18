@@ -4,7 +4,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/router/in_app_link_resolver.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:lazurite/shared/utils/url_utils.dart';
 
 class ExternalLinkPreviewCard extends StatelessWidget {
   const ExternalLinkPreviewCard({
@@ -132,9 +132,5 @@ void _openUri(BuildContext context, String rawUri) {
     return;
   }
 
-  _launchExternal(uri);
-}
-
-Future<void> _launchExternal(Uri url) async {
-  await launchUrl(url, mode: LaunchMode.externalApplication);
+  openExternalUrl(rawUri);
 }

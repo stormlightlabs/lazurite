@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:poptart_lex/com/atproto/repo/list_records.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,7 +9,8 @@ import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/core/widgets/app_breadcrumbs.dart';
 import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:lazurite/shared/utils/url_utils.dart';
+import 'package:poptart_lex/com/atproto/repo/list_records.dart';
 
 class DevToolsScreen extends StatelessWidget {
   const DevToolsScreen({super.key, this.initialQuery});
@@ -28,7 +28,7 @@ class DevToolsScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.open_in_new),
             tooltip: l10n.tooltipGoToPdsLs,
-            onPressed: () => _openExternalUrl('https://pds.ls'),
+            onPressed: () => openExternalUrl('https://pds.ls'),
           ),
         ],
       ),
@@ -356,7 +356,7 @@ class _EmptyState extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   TextButton.icon(
-                    onPressed: () => _openExternalUrl('https://pds.ls'),
+                    onPressed: () => openExternalUrl('https://pds.ls'),
                     icon: const Icon(Icons.open_in_new, size: 16),
                     label: Text(context.l10n.buttonInspiredByPdsLs),
                   ),
@@ -688,7 +688,7 @@ class _RecordInspector extends StatelessWidget {
                   TextButton.icon(
                     icon: const Icon(Icons.open_in_new, size: 16),
                     label: const Text('aturi.to'),
-                    onPressed: () => _openExternalUrl(record.atUriToLink),
+                    onPressed: () => openExternalUrl(record.atUriToLink),
                   ),
                 ],
               ),
@@ -747,11 +747,4 @@ String _initialFor(String? value) {
   }
 
   return value.substring(0, 1).toUpperCase();
-}
-
-Future<void> _openExternalUrl(String value) async {
-  final uri = Uri.parse(value);
-  if (await canLaunchUrl(uri)) {
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
 }
