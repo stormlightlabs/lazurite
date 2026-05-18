@@ -82,6 +82,28 @@ void main() {
     );
 
     blocTest<ProfileConnectionsCubit, ProfileConnectionsState>(
+      'loads known followers through the repository',
+      build: () {
+        when(
+          () => repository.getKnownFollowers(actor: 'did:plc:alice', cursor: null, limit: 100),
+        ).thenAnswer((_) async => const ProfileConnectionsPage(subject: subject, profiles: [gardener], cursor: 'next'));
+        return ProfileConnectionsCubit(repository: repository, actor: 'did:plc:alice');
+      },
+      act: (cubit) => cubit.loadTab(ProfileConnectionsTab.knownFollowers),
+      expect: () => [
+        isA<ProfileConnectionsState>().having(
+          (state) => state.knownFollowers.status,
+          'knownFollowers.status',
+          ProfileConnectionsStatus.loading,
+        ),
+        isA<ProfileConnectionsState>()
+            .having((state) => state.knownFollowers.status, 'knownFollowers.status', ProfileConnectionsStatus.loaded)
+            .having((state) => state.knownFollowers.profiles, 'knownFollowers.profiles', [gardener])
+            .having((state) => state.knownFollowers.cursor, 'knownFollowers.cursor', 'next'),
+      ],
+    );
+
+    blocTest<ProfileConnectionsCubit, ProfileConnectionsState>(
       'stores load-more failures separately while keeping loaded profiles',
       build: () {
         when(
@@ -123,6 +145,11 @@ void main() {
       ).copyWith(searchQuery: 'space engineer');
 
       expect(state.visibleProfilesFor(ProfileConnectionsTab.following), [astronaut]);
+    });
+
+    test('route value parses known followers tab', () {
+      expect(ProfileConnectionsTabX.fromRouteValue('known-followers'), ProfileConnectionsTab.knownFollowers);
+      expect(ProfileConnectionsTab.knownFollowers.routeValue, 'known-followers');
     });
 
     blocTest<ProfileConnectionsCubit, ProfileConnectionsState>(

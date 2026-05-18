@@ -1,9 +1,8 @@
 import 'dart:async';
 
-import 'package:poptart_core/poptart_core.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
-import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart' hide ViewerState;
 import 'package:bluesky_poptart/app/bsky/feed/post.dart' hide ReplyRef;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,6 +27,7 @@ import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:poptart_core/poptart_core.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
@@ -219,7 +219,8 @@ void main() {
     );
 
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
 
     await tester.tap(find.byKey(const Key('profile_edit_header_button')));
     await tester.pumpAndSettle();
@@ -255,7 +256,8 @@ void main() {
     );
 
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     await tester.tap(find.byKey(const ValueKey('profile_following_stat')));
     await tester.pumpAndSettle();
@@ -263,6 +265,94 @@ void main() {
     expect(find.text('following me.bsky.social'), findsOneWidget);
 
     router.dispose();
+  });
+
+  testWidgets('known followers link opens known followers connections tab', (tester) async {
+    useLargeScreen(tester);
+    const otherProfile = ProfileViewDetailed(
+      did: 'did:plc:other',
+      handle: 'other.bsky.social',
+      displayName: 'Other User',
+      viewer: ViewerState(knownFollowers: KnownFollowers(count: 2, followers: [])),
+    );
+    when(() => profileBloc.state).thenReturn(const ProfileState.loaded(profile: otherProfile));
+    whenListen(
+      profileBloc,
+      const Stream<ProfileState>.empty(),
+      initialState: const ProfileState.loaded(profile: otherProfile),
+    );
+    when(() => feedBloc.state).thenReturn(
+      const FeedState.loaded(actor: 'did:plc:other', posts: [], filter: FeedFilter.postsNoReplies, hasMore: false),
+    );
+    whenListen(
+      feedBloc,
+      const Stream<FeedState>.empty(),
+      initialState: const FeedState.loaded(
+        actor: 'did:plc:other',
+        posts: [],
+        filter: FeedFilter.postsNoReplies,
+        hasMore: false,
+      ),
+    );
+    final mockProfileActionRepository = MockProfileActionRepository();
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => RepositoryProvider<ProfileActionRepository>.value(
+            value: mockProfileActionRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthBloc>.value(value: authBloc),
+                BlocProvider<ProfileBloc>.value(value: profileBloc),
+                BlocProvider<FeedBloc>.value(value: feedBloc),
+                BlocProvider<SettingsCubit>.value(value: settingsCubit),
+                BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+              ],
+              child: const ProfileScreen(actor: 'did:plc:other', showBackButton: true),
+            ),
+          ),
+        ),
+        GoRoute(
+          path: '/profile/:actor/connections',
+          builder: (context, state) =>
+              Scaffold(body: Text([state.uri.queryParameters['tab'], state.pathParameters['actor']].join(' '))),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('You know 2 followers'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('profile_known_followers_link')));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('known-followers other.bsky.social'), findsOneWidget);
+
+    router.dispose();
+  });
+
+  testWidgets('known followers link is hidden on own profile', (tester) async {
+    useLargeScreen(tester);
+    final ownProfileWithKnownFollowers = profile.copyWith(
+      viewer: const ViewerState(knownFollowers: KnownFollowers(count: 2, followers: [])),
+    );
+    when(() => profileBloc.state).thenReturn(ProfileState.loaded(profile: ownProfileWithKnownFollowers));
+    whenListen(
+      profileBloc,
+      const Stream<ProfileState>.empty(),
+      initialState: ProfileState.loaded(profile: ownProfileWithKnownFollowers),
+    );
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    expect(find.text('You know 2 followers'), findsNothing);
+    expect(find.byKey(const ValueKey('profile_known_followers_link')), findsNothing);
   });
 
   testWidgets('does not show Bookmarks/Liked buttons on other profiles', (tester) async {

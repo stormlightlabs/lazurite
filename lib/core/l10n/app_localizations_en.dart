@@ -1400,6 +1400,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String formatKnownFollowersLink(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count followers', one: '1 follower');
+    return 'You know $_temp0';
+  }
+
+  @override
   String formatClassifyingProgress(int progress, int total) {
     return 'Classifying: $progress/$total';
   }
@@ -1582,6 +1588,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get labelFollowers => 'Followers';
+
+  @override
+  String get labelKnownFollowers => 'Known';
 
   @override
   String get labelJoinedThisWeek => 'joined this week';

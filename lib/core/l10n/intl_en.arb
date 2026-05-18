@@ -1941,6 +1941,16 @@
       }
     }
   },
+  "formatKnownFollowersLink": "You know {count, plural, =1{1 follower} other{{count} followers}}",
+  "@formatKnownFollowersLink": {
+    "description": "Connections link text for a profile viewer's known followers count",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
   "formatClassifyingProgress": "Classifying: {progress}/{total}",
   "@formatClassifyingProgress": {
     "description": "Follow audit classifying progress label",
@@ -2252,6 +2262,10 @@
   "labelFollowers": "Followers",
   "@labelFollowers": {
     "description": "Followers label"
+  },
+  "labelKnownFollowers": "Known",
+  "@labelKnownFollowers": {
+    "description": "Short connections tab label for followers that are also followed by the viewer"
   },
   "labelJoinedThisWeek": "joined this week",
   "@labelJoinedThisWeek": {

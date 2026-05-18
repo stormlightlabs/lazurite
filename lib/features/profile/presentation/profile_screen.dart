@@ -1,7 +1,6 @@
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bluesky_poptart/app/bsky/graph/defs.dart' as bsky_graph;
-import 'package:lazurite/features/moderation/domain/moderation_models.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,6 +27,7 @@ import 'package:lazurite/features/lists/cubit/add_to_list_cubit.dart';
 import 'package:lazurite/features/lists/cubit/my_lists_cubit.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/widgets/list_row_tile.dart';
+import 'package:lazurite/features/moderation/domain/moderation_models.dart' as bsky_moderation;
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
@@ -842,6 +842,15 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           if (metaChildren.isNotEmpty) ...[
             const SizedBox(height: 16),
             Wrap(spacing: 8, runSpacing: 8, children: metaChildren),
+          ],
+          if (!isOwnProfile && (profile.viewer?.knownFollowers?.count ?? 0) > 0) ...[
+            const SizedBox(height: 12),
+            TextButton.icon(
+              key: const ValueKey('profile_known_followers_link'),
+              onPressed: () => _openConnections(context, profile, ProfileConnectionsTab.knownFollowers),
+              icon: const Icon(Icons.group_outlined, size: 18),
+              label: Text(context.l10n.formatKnownFollowersLink(profile.viewer!.knownFollowers!.count)),
+            ),
           ],
           const SizedBox(height: 16),
           Container(

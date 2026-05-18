@@ -36,6 +36,7 @@ import 'package:bluesky_poptart/app/bsky/graph/follow.dart';
 import 'package:bluesky_poptart/app/bsky/graph/get_actor_starter_packs.dart';
 import 'package:bluesky_poptart/app/bsky/graph/get_followers.dart';
 import 'package:bluesky_poptart/app/bsky/graph/get_follows.dart';
+import 'package:bluesky_poptart/app/bsky/graph/get_known_followers.dart';
 import 'package:bluesky_poptart/app/bsky/graph/get_list.dart';
 import 'package:bluesky_poptart/app/bsky/graph/get_lists.dart';
 import 'package:bluesky_poptart/app/bsky/graph/get_lists_with_membership.dart';

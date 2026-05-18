@@ -71,6 +71,8 @@ class _ProfileConnectionsScreenState extends State<ProfileConnectionsScreen> wit
         title: Text(subtitle == null || subtitle.isEmpty ? context.l10n.labelConnections : '@$subtitle'),
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           onTap: (index) {
             final tab = ProfileConnectionsTab.values[index];
             final cubit = context.read<ProfileConnectionsCubit>();
@@ -80,6 +82,7 @@ class _ProfileConnectionsScreenState extends State<ProfileConnectionsScreen> wit
           tabs: [
             Tab(text: context.l10n.labelFollowing),
             Tab(text: context.l10n.labelFollowers),
+            Tab(text: context.l10n.labelKnownFollowers),
             Tab(text: context.l10n.labelMutuals),
           ],
         ),
@@ -93,6 +96,7 @@ class _ProfileConnectionsScreenState extends State<ProfileConnectionsScreen> wit
               children: const [
                 _ConnectionsTabView(tab: ProfileConnectionsTab.following),
                 _ConnectionsTabView(tab: ProfileConnectionsTab.followers),
+                _ConnectionsTabView(tab: ProfileConnectionsTab.knownFollowers),
                 _ConnectionsTabView(tab: ProfileConnectionsTab.mutuals),
               ],
             ),
@@ -504,6 +508,7 @@ String _localizedTabTitle(BuildContext context, ProfileConnectionsTab tab, {bool
   final title = switch (tab) {
     ProfileConnectionsTab.following => context.l10n.labelFollowing,
     ProfileConnectionsTab.followers => context.l10n.labelFollowers,
+    ProfileConnectionsTab.knownFollowers => context.l10n.labelKnownFollowers,
     ProfileConnectionsTab.mutuals => context.l10n.labelMutuals,
   };
   return lowercase ? title.toLowerCase() : title;

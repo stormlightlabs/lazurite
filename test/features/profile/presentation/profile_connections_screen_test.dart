@@ -1,4 +1,3 @@
-import 'package:poptart_core/poptart_core.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +9,7 @@ import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/profile/presentation/profile_connections_screen.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:poptart_core/poptart_core.dart';
 
 class MockProfileRepository extends Mock implements ProfileRepository {}
 
@@ -83,7 +83,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('@alice.bsky.social'), findsOneWidget);
+    expect(find.text('Known'), findsOneWidget);
     expect(find.text('Mutuals'), findsOneWidget);
+    final tabBar = tester.widget<TabBar>(find.byType(TabBar));
+    expect(tabBar.isScrollable, isTrue);
+    expect(tabBar.tabAlignment, TabAlignment.start);
     expect(find.text('Lina Orbit'), findsWidgets);
     expect(find.text('Space systems engineer'), findsWidgets);
     expect(find.textContaining('Joined'), findsWidgets);
@@ -159,6 +163,18 @@ void main() {
     await tester.pumpAndSettle();
 
     verify(() => profileRepository.getFollowers(actor: subject.did, cursor: null, limit: 100)).called(1);
+    expect(find.text('Moss Vale'), findsOneWidget);
+  });
+
+  testWidgets('loads the requested initial known followers tab', (tester) async {
+    when(
+      () => profileRepository.getKnownFollowers(actor: subject.did, cursor: null, limit: 100),
+    ).thenAnswer((_) async => const ProfileConnectionsPage(subject: subject, profiles: [gardener]));
+
+    await tester.pumpWidget(buildSubject(initialTab: ProfileConnectionsTab.knownFollowers));
+    await tester.pumpAndSettle();
+
+    verify(() => profileRepository.getKnownFollowers(actor: subject.did, cursor: null, limit: 100)).called(1);
     expect(find.text('Moss Vale'), findsOneWidget);
   });
 }

@@ -2,24 +2,24 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:poptart_core/poptart_core.dart' as atp_core;
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/actor/profile.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/like.dart';
-import 'package:poptart_lex/com/atproto/repo/list_records.dart';
 import 'package:characters/characters.dart';
 import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
-import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/actor_repository_service_resolver.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
+import 'package:poptart_core/poptart_core.dart' as atp_core;
+import 'package:poptart_lex/com/atproto/repo/list_records.dart';
 
 class ProfileRepository {
   ProfileRepository({
@@ -170,6 +170,18 @@ class ProfileRepository {
     );
     final response = await _authRecovery.run(
       (client) => client.graph.getFollowers(actor: actor, cursor: cursor, limit: limit, $headers: headers),
+    );
+    final profiles = _filterProfileList(response.data.followers);
+    return ProfileConnectionsPage(subject: response.data.subject, profiles: profiles, cursor: response.data.cursor);
+  }
+
+  Future<ProfileConnectionsPage> getKnownFollowers({required String actor, String? cursor, int limit = 50}) async {
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.graph.getKnownFollowers',
+      await _moderationService?.headersForRequest(),
+    );
+    final response = await _authRecovery.run(
+      (client) => client.graph.getKnownFollowers(actor: actor, cursor: cursor, limit: limit, $headers: headers),
     );
     final profiles = _filterProfileList(response.data.followers);
     return ProfileConnectionsPage(subject: response.data.subject, profiles: profiles, cursor: response.data.cursor);

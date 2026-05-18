@@ -1,15 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:poptart_core/poptart_core.dart' as atp_core;
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/actor/get_profiles.dart';
 import 'package:bluesky_poptart/app/bsky/graph/get_followers.dart';
 import 'package:bluesky_poptart/app/bsky/graph/get_follows.dart';
+import 'package:bluesky_poptart/app/bsky/graph/get_known_followers.dart';
 import 'package:bluesky_poptart/app/bsky/graph/get_suggested_follows_by_actor.dart';
-import 'package:poptart_lex/com/atproto/repo/get_record.dart';
-import 'package:poptart_lex/com/atproto/repo/put_record.dart';
-import 'package:poptart_lex/com/atproto/repo/upload_blob.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -17,6 +14,10 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart' show Bluesky;
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
+import 'package:poptart_core/poptart_core.dart' as atp_core;
+import 'package:poptart_lex/com/atproto/repo/get_record.dart';
+import 'package:poptart_lex/com/atproto/repo/put_record.dart';
+import 'package:poptart_lex/com/atproto/repo/upload_blob.dart';
 
 import '../../../helpers/test_bluesky_client.dart';
 
@@ -117,6 +118,28 @@ void main() {
         expect(result.subject, subject);
         expect(result.profiles, followers);
         expect(result.cursor, isNull);
+      });
+
+      test('returns known followers page from graph service', () async {
+        const subject = ProfileView(did: 'did:plc:alice', handle: 'alice.bsky.social');
+        const followers = [ProfileView(did: 'did:plc:erin', handle: 'erin.bsky.social')];
+        final repository = ProfileRepository(
+          database: database,
+          bluesky: _testBlueskyClient(
+            actor: _FakeActorService(onGetProfile: (_) async => throw UnimplementedError()),
+            graph: _FakeGraphService(
+              knownFollowers: followers,
+              knownFollowersSubject: subject,
+              knownFollowersCursor: 'more',
+            ),
+          ),
+        );
+
+        final result = await repository.getKnownFollowers(actor: subject.did, cursor: 'cursor');
+
+        expect(result.subject, subject);
+        expect(result.profiles, followers);
+        expect(result.cursor, 'more');
       });
     });
 
@@ -431,6 +454,22 @@ class _FakeProfileTransport {
             cursor: response.data.cursor,
           ).toJson(),
         );
+      case 'app.bsky.graph.getKnownFollowers':
+        final response = await graph.getKnownFollowers(
+          actor: query['actor']!,
+          cursor: query['cursor'],
+          limit: int.tryParse(query['limit'] ?? ''),
+          $headers: headers,
+        );
+        return jsonResponse(
+          url,
+          'GET',
+          GraphGetKnownFollowersOutput(
+            subject: response.data.subject,
+            followers: response.data.followers,
+            cursor: response.data.cursor,
+          ).toJson(),
+        );
       case 'com.atproto.repo.getRecord':
         final response = await atproto.repo.getRecord(
           repo: query['repo']!,
@@ -640,6 +679,9 @@ class _FakeGraphService {
     List<ProfileView>? followers,
     ProfileView? followersSubject,
     String? followersCursor,
+    List<ProfileView>? knownFollowers,
+    ProfileView? knownFollowersSubject,
+    String? knownFollowersCursor,
   }) : _suggestions = suggestions ?? [],
        _onGetSuggested = onGetSuggested,
        _follows = follows ?? [],
@@ -647,7 +689,10 @@ class _FakeGraphService {
        _followsCursor = followsCursor,
        _followers = followers ?? [],
        _followersSubject = followersSubject,
-       _followersCursor = followersCursor;
+       _followersCursor = followersCursor,
+       _knownFollowers = knownFollowers ?? [],
+       _knownFollowersSubject = knownFollowersSubject,
+       _knownFollowersCursor = knownFollowersCursor;
 
   final List<ProfileView> _suggestions;
   final Future<_FakeSuggestedResponse> Function(String actor)? _onGetSuggested;
@@ -657,6 +702,9 @@ class _FakeGraphService {
   final List<ProfileView> _followers;
   final ProfileView? _followersSubject;
   final String? _followersCursor;
+  final List<ProfileView> _knownFollowers;
+  final ProfileView? _knownFollowersSubject;
+  final String? _knownFollowersCursor;
 
   Future<_FakeSuggestedResponse> getSuggestedFollowsByActor({required String actor, Map<String, String>? $headers}) {
     final handler = _onGetSuggested;
@@ -686,6 +734,23 @@ class _FakeGraphService {
     return Future.value(
       _FakeFollowersResponse(
         _FakeFollowersData(_followersSubject ?? ProfileView(did: actor, handle: actor), _followers, _followersCursor),
+      ),
+    );
+  }
+
+  Future<_FakeFollowersResponse> getKnownFollowers({
+    required String actor,
+    String? cursor,
+    int? limit,
+    Map<String, String>? $headers,
+  }) {
+    return Future.value(
+      _FakeFollowersResponse(
+        _FakeFollowersData(
+          _knownFollowersSubject ?? ProfileView(did: actor, handle: actor),
+          _knownFollowers,
+          _knownFollowersCursor,
+        ),
       ),
     );
   }

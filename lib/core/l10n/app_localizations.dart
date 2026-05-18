@@ -2623,6 +2623,12 @@ abstract class AppLocalizations {
   /// **'Search stopped after {count} accounts'**
   String formatConnectionsSearchStopped(int count);
 
+  /// Connections link text for a profile viewer's known followers count
+  ///
+  /// In en, this message translates to:
+  /// **'You know {count, plural, =1{1 follower} other{{count} followers}}'**
+  String formatKnownFollowersLink(int count);
+
   /// Follow audit classifying progress label
   ///
   /// In en, this message translates to:
@@ -2880,6 +2886,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Followers'**
   String get labelFollowers;
+
+  /// Short connections tab label for followers that are also followed by the viewer
+  ///
+  /// In en, this message translates to:
+  /// **'Known'**
+  String get labelKnownFollowers;
 
   /// Starter pack statistic label for joins this week
   ///

@@ -42,6 +42,21 @@ class BlueskyGraphService {
     );
   }
 
+  Future<XRPCResponse<GraphGetKnownFollowersOutput>> getKnownFollowers({
+    required String actor,
+    int limit = 50,
+    String? cursor,
+    Map<String, String>? $headers,
+    String? $service,
+  }) {
+    return _client.call(
+      appBskyGraphGetKnownFollowers,
+      headers: $headers,
+      service: $service,
+      parameters: GraphGetKnownFollowersInput(actor: actor, limit: limit, cursor: cursor),
+    );
+  }
+
   Future<XRPCResponse<GraphGetListsOutput>> getLists({
     required String actor,
     int limit = 50,

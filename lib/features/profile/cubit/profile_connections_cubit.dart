@@ -7,24 +7,27 @@ import 'package:fuzzywuzzy/fuzzywuzzy.dart' as fuzzywuzzy;
 import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 
-enum ProfileConnectionsTab { following, followers, mutuals }
+enum ProfileConnectionsTab { following, followers, knownFollowers, mutuals }
 
 extension ProfileConnectionsTabX on ProfileConnectionsTab {
   String get routeValue => switch (this) {
     ProfileConnectionsTab.following => 'following',
     ProfileConnectionsTab.followers => 'followers',
+    ProfileConnectionsTab.knownFollowers => 'known-followers',
     ProfileConnectionsTab.mutuals => 'mutuals',
   };
 
   String get title => switch (this) {
     ProfileConnectionsTab.following => 'Following',
     ProfileConnectionsTab.followers => 'Followers',
+    ProfileConnectionsTab.knownFollowers => 'Known',
     ProfileConnectionsTab.mutuals => 'Mutuals',
   };
 
   static ProfileConnectionsTab fromRouteValue(String? value) {
     return switch (value) {
       'followers' => ProfileConnectionsTab.followers,
+      'known-followers' => ProfileConnectionsTab.knownFollowers,
       'mutuals' => ProfileConnectionsTab.mutuals,
       _ => ProfileConnectionsTab.following,
     };
@@ -53,6 +56,7 @@ class ProfileConnectionsCubit extends Cubit<ProfileConnectionsState> {
   final Map<ProfileConnectionsTab, int> _searchGenerations = {
     ProfileConnectionsTab.following: 0,
     ProfileConnectionsTab.followers: 0,
+    ProfileConnectionsTab.knownFollowers: 0,
     ProfileConnectionsTab.mutuals: 0,
   };
   Timer? _searchDebounce;
@@ -162,6 +166,7 @@ class ProfileConnectionsCubit extends Cubit<ProfileConnectionsState> {
           searchQuery: normalizedQuery,
           following: state.following.clearSearch(),
           followers: state.followers.clearSearch(),
+          knownFollowers: state.knownFollowers.clearSearch(),
           mutuals: state.mutuals.clearSearch(),
         ),
       );
@@ -197,6 +202,11 @@ class ProfileConnectionsCubit extends Cubit<ProfileConnectionsState> {
     return switch (tab) {
       ProfileConnectionsTab.following => _repository.getFollowing(actor: _actor, cursor: cursor, limit: _pageLimit),
       ProfileConnectionsTab.followers => _repository.getFollowers(actor: _actor, cursor: cursor, limit: _pageLimit),
+      ProfileConnectionsTab.knownFollowers => _repository.getKnownFollowers(
+        actor: _actor,
+        cursor: cursor,
+        limit: _pageLimit,
+      ),
       ProfileConnectionsTab.mutuals => _getMutuals(cursor: cursor),
     };
   }
@@ -420,18 +430,21 @@ class ProfileConnectionsState extends Equatable {
   const ProfileConnectionsState({
     this.following = const ProfileConnectionsTabData(),
     this.followers = const ProfileConnectionsTabData(),
+    this.knownFollowers = const ProfileConnectionsTabData(),
     this.mutuals = const ProfileConnectionsTabData(),
     this.searchQuery = '',
   });
 
   final ProfileConnectionsTabData following;
   final ProfileConnectionsTabData followers;
+  final ProfileConnectionsTabData knownFollowers;
   final ProfileConnectionsTabData mutuals;
   final String searchQuery;
 
   ProfileConnectionsTabData dataFor(ProfileConnectionsTab tab) => switch (tab) {
     ProfileConnectionsTab.following => following,
     ProfileConnectionsTab.followers => followers,
+    ProfileConnectionsTab.knownFollowers => knownFollowers,
     ProfileConnectionsTab.mutuals => mutuals,
   };
 
@@ -450,12 +463,14 @@ class ProfileConnectionsState extends Equatable {
   ProfileConnectionsState copyWith({
     ProfileConnectionsTabData? following,
     ProfileConnectionsTabData? followers,
+    ProfileConnectionsTabData? knownFollowers,
     ProfileConnectionsTabData? mutuals,
     String? searchQuery,
   }) {
     return ProfileConnectionsState(
       following: following ?? this.following,
       followers: followers ?? this.followers,
+      knownFollowers: knownFollowers ?? this.knownFollowers,
       mutuals: mutuals ?? this.mutuals,
       searchQuery: searchQuery ?? this.searchQuery,
     );
@@ -465,6 +480,7 @@ class ProfileConnectionsState extends Equatable {
     return switch (tab) {
       ProfileConnectionsTab.following => copyWith(following: data),
       ProfileConnectionsTab.followers => copyWith(followers: data),
+      ProfileConnectionsTab.knownFollowers => copyWith(knownFollowers: data),
       ProfileConnectionsTab.mutuals => copyWith(mutuals: data),
     };
   }
@@ -478,7 +494,7 @@ class ProfileConnectionsState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [following, followers, mutuals, searchQuery];
+  List<Object?> get props => [following, followers, knownFollowers, mutuals, searchQuery];
 }
 
 class ProfileConnectionsTabData extends Equatable {
