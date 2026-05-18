@@ -11,6 +11,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
+import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
@@ -18,6 +19,8 @@ import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
 import 'package:lazurite/features/feed/presentation/post_thread_screen.dart';
+import 'package:lazurite/features/feed/presentation/widgets/compact_post_card.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_action_bar.dart';
 import 'package:lazurite/features/search/data/search_scope.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
@@ -110,6 +113,16 @@ ThreadViewPost _makeThread({
   );
 }
 
+SettingsState _settingsState({FeedLayout feedLayout = FeedLayout.card}) {
+  return SettingsState(
+    themePalette: AppThemePalette.lazurite,
+    themeVariant: AppThemeVariant.dark,
+    useSystemTheme: false,
+    searchScope: SearchScope.both,
+    feedLayout: feedLayout,
+  );
+}
+
 void main() {
   late MockPostThreadRepository postThreadRepository;
   late MockSavedPostsCubit savedPostsCubit;
@@ -142,12 +155,7 @@ void main() {
       initialState: const ConnectivityState.online(),
     );
 
-    const settingsState = SettingsState(
-      themePalette: AppThemePalette.lazurite,
-      themeVariant: AppThemeVariant.dark,
-      useSystemTheme: false,
-      searchScope: SearchScope.both,
-    );
+    final settingsState = _settingsState();
     when(() => settingsCubit.state).thenReturn(settingsState);
     whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: settingsState);
   });
@@ -234,6 +242,26 @@ void main() {
     expect(capturedArgs!.editPostCid, 'cid-root');
     expect(capturedArgs!.initialText, 'Original post body');
     expect(capturedArgs!.editRecord?['text'], 'Original post body');
+  });
+
+  testWidgets('focused thread post uses compact card when compact feed layout is selected', (tester) async {
+    final compactSettingsState = _settingsState(feedLayout: FeedLayout.compact);
+    when(() => settingsCubit.state).thenReturn(compactSettingsState);
+    whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: compactSettingsState);
+
+    final thread = _makeThread(
+      did: 'did:plc:owner',
+      handle: 'owner.bsky.social',
+      rkey: 'root',
+      text: 'Compact focused thread post',
+    );
+
+    await tester.pumpWidget(createSubjectWidget(accountDid: 'did:plc:owner', thread: thread, onComposeArgs: (_) {}));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Compact focused thread post', findRichText: true), findsOneWidget);
+    expect(find.byType(CompactPostCard), findsOneWidget);
+    expect(find.byType(PostCard), findsNothing);
   });
 
   testWidgets('does not show Edit Post when viewing someone else\'s post', (tester) async {

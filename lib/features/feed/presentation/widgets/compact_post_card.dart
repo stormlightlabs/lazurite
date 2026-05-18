@@ -1,12 +1,13 @@
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
-import 'package:lazurite/features/moderation/domain/moderation_models.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_embed_view.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_repost_context.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dart';
+import 'package:lazurite/features/moderation/domain/moderation_models.dart' as bsky_moderation;
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
@@ -39,7 +40,7 @@ class CompactPostCard extends StatelessWidget {
     final postUi = moderationService?.postUi(post, moderationContext) ?? const bsky_moderation.ModerationUI();
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 1),
+      margin: EdgeInsets.zero,
       elevation: 0,
       shape: const RoundedRectangleBorder(),
       child: ModeratedBlurOverlay(
@@ -50,22 +51,26 @@ class CompactPostCard extends StatelessWidget {
             InkWell(
               onTap: onTap,
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (feedViewPost.reason?.isReasonRepost == true) ...[
                       PostRepostContext(reason: feedViewPost.reason),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                     ],
                     _buildHeader(context, post.author, createdAt),
-                    if (postUi.alert || postUi.inform) ...[const SizedBox(height: 10), ModerationBadgeRow(ui: postUi)],
+                    if (postUi.alert || postUi.inform) ...[const SizedBox(height: 8), ModerationBadgeRow(ui: postUi)],
                     if (record != null && record.text.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      FacetText(text: record.text, facets: record.facets, style: context.textTheme.bodyLarge),
+                      const SizedBox(height: 8),
+                      FacetText(
+                        text: record.text,
+                        facets: record.facets,
+                        style: feedPostBodyTextStyle(context, compact: true),
+                      ),
                     ],
                     if (post.embed != null) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                       PostEmbedView(feedViewPost: feedViewPost, embed: post.embed!, compact: true),
                     ],
                   ],
@@ -91,20 +96,20 @@ class CompactPostCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ProfileAvatar(
-            size: 44,
+            size: 36,
             moderationUi: avatarUi,
             imageUrl: author.avatar,
             fallbackText: author.displayName ?? author.handle,
             shape: BoxShape.circle,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   author.displayName ?? author.handle,
-                  style: context.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
+                  style: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

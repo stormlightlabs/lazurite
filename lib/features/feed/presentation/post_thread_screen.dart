@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
@@ -17,6 +18,7 @@ import 'package:lazurite/features/feed/cubit/post_thread_cubit.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
+import 'package:lazurite/features/feed/presentation/widgets/compact_post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_action_bar.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
@@ -742,36 +744,48 @@ class _FocusedPostContent extends StatelessWidget {
     final post = thread.post;
     final record = _parsePostRecord(post.record);
     final timestamp = record?.createdAt ?? post.indexedAt;
+    final feedLayout = context.select<SettingsCubit, FeedLayout>((cubit) => cubit.state.feedLayout);
+    final isCompact = feedLayout == FeedLayout.compact;
 
     final hasStats = (post.replyCount ?? 0) > 0 || (post.repostCount ?? 0) > 0 || (post.likeCount ?? 0) > 0;
+
+    final actionBar = Padding(
+      padding: EdgeInsets.symmetric(horizontal: isCompact ? 12 : 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 10),
+          Text(
+            _formatTimestamp(timestamp),
+            style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 10),
+          const Divider(height: 1),
+          if (hasStats) ...[
+            const SizedBox(height: 10),
+            _buildStats(context, post),
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+          ],
+          const SizedBox(height: 6),
+          _buildActionBar(context, post),
+          const SizedBox(height: 6),
+        ],
+      ),
+    );
+
+    if (isCompact) {
+      return CompactPostCard(
+        feedViewPost: FeedViewPost(post: post),
+        moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
+        footer: actionBar,
+      );
+    }
 
     return PostCard(
       feedViewPost: FeedViewPost(post: post),
       moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
-      actionBar: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 10),
-            Text(
-              _formatTimestamp(timestamp),
-              style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 10),
-            const Divider(height: 1),
-            if (hasStats) ...[
-              const SizedBox(height: 10),
-              _buildStats(context, post),
-              const SizedBox(height: 10),
-              const Divider(height: 1),
-            ],
-            const SizedBox(height: 6),
-            _buildActionBar(context, post),
-            const SizedBox(height: 6),
-          ],
-        ),
-      ),
+      actionBar: actionBar,
     );
   }
 

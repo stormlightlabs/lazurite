@@ -1,10 +1,10 @@
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/embed/external.dart';
 import 'package:bluesky_poptart/app/bsky/embed/images.dart';
 import 'package:bluesky_poptart/app/bsky/embed/record.dart';
 import 'package:bluesky_poptart/app/bsky/embed/record_with_media.dart';
 import 'package:bluesky_poptart/app/bsky/embed/video.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
-import 'package:lazurite/features/moderation/domain/moderation_models.dart' as bsky_moderation;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -17,6 +17,7 @@ import 'package:lazurite/features/feed/presentation/media/video_layout.dart';
 import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dart';
+import 'package:lazurite/features/moderation/domain/moderation_models.dart' as bsky_moderation;
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/shared/presentation/widgets/actor_name_widget.dart';
@@ -31,6 +32,8 @@ import 'package:lazurite/shared/utils/parse_utils.dart';
 class PostEmbedView extends StatelessWidget {
   const PostEmbedView({super.key, required this.feedViewPost, required this.embed, this.compact = false});
 
+  static const int maxQuoteDepth = 2;
+
   final FeedViewPost feedViewPost;
   final UPostViewEmbed embed;
   final bool compact;
@@ -38,10 +41,15 @@ class PostEmbedView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rootHeroNamespace = '${feedViewPost.post.uri}#${identityHashCode(this)}';
-    return _buildEmbed(context, embed, heroNamespace: rootHeroNamespace) ?? const SizedBox.shrink();
+    return _buildEmbed(context, embed, heroNamespace: rootHeroNamespace, quoteDepth: 0) ?? const SizedBox.shrink();
   }
 
-  Widget? _buildEmbed(BuildContext context, UPostViewEmbed embed, {required String heroNamespace}) {
+  Widget? _buildEmbed(
+    BuildContext context,
+    UPostViewEmbed embed, {
+    required String heroNamespace,
+    required int quoteDepth,
+  }) {
     if (embed.isEmbedImagesView) {
       return _buildImagesEmbed(context, embed.embedImagesView!.images, heroNamespace: '$heroNamespace/images');
     }
@@ -51,7 +59,12 @@ class PostEmbedView extends StatelessWidget {
     }
 
     if (embed.isEmbedRecordView) {
-      return _buildQuotedRecord(context, embed.embedRecordView!, heroNamespace: '$heroNamespace/record');
+      return _buildQuotedRecord(
+        context,
+        embed.embedRecordView!,
+        heroNamespace: '$heroNamespace/record',
+        quoteDepth: quoteDepth,
+      );
     }
 
     if (embed.isEmbedVideoView) {
@@ -65,7 +78,12 @@ class PostEmbedView extends StatelessWidget {
         children: [
           _buildRecordWithMediaMedia(context, recordWithMedia.media, heroNamespace: '$heroNamespace/rwm-media'),
           const SizedBox(height: 8),
-          _buildQuotedRecord(context, recordWithMedia.record, heroNamespace: '$heroNamespace/rwm-record'),
+          _buildQuotedRecord(
+            context,
+            recordWithMedia.record,
+            heroNamespace: '$heroNamespace/rwm-record',
+            quoteDepth: quoteDepth,
+          ),
         ],
       );
     }
@@ -91,6 +109,10 @@ class PostEmbedView extends StatelessWidget {
   }
 
   Widget _buildImagesEmbed(BuildContext context, List<EmbedImagesViewImage> images, {required String heroNamespace}) {
+    if (compact) {
+      return _buildCompactImagesEmbed(context, images, heroNamespace: heroNamespace);
+    }
+
     final crossAxisCount = images.length == 1 ? 1 : 2;
     final childAspectRatio = images.length == 1 ? 16 / 9 : 1.0;
     final moderationService = maybeModerationService(context);
@@ -138,6 +160,57 @@ class PostEmbedView extends StatelessWidget {
     );
   }
 
+  Widget _buildCompactImagesEmbed(
+    BuildContext context,
+    List<EmbedImagesViewImage> images, {
+    required String heroNamespace,
+  }) {
+    final moderationService = maybeModerationService(context);
+    final mediaUi =
+        moderationService?.postUi(feedViewPost.post, bsky_moderation.ModerationBehaviorContext.contentMedia) ??
+        const bsky_moderation.ModerationUI();
+    final visibleImages = images.take(4).toList();
+
+    return ModeratedBlurOverlay(
+      ui: mediaUi,
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        height: 88,
+        child: Row(
+          children: [
+            for (var index = 0; index < visibleImages.length; index++) ...[
+              if (index > 0) const SizedBox(width: 4),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: GestureDetector(
+                    onLongPressStart: (details) =>
+                        _showImageContextMenu(context, details.globalPosition, image: visibleImages[index]),
+                    child: InkWell(
+                      onTap: () => _openImageViewer(context, images, initialIndex: index, heroNamespace: heroNamespace),
+                      child: Hero(
+                        tag: _imageHeroTag(heroNamespace, index),
+                        child: CachedNetworkImage(
+                          imageUrl: visibleImages[index].thumb,
+                          cacheManager: LazuriteImageCacheManager.instance,
+                          fit: BoxFit.cover,
+                          errorWidget: (_, _, _) => ColoredBox(
+                            color: context.colorScheme.surfaceContainerHighest,
+                            child: const Center(child: Icon(Icons.image_not_supported_outlined, size: 18)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildExternalEmbed(BuildContext context, EmbedExternalViewExternal external) => ExternalLinkPreviewCard(
     uri: external.uri,
     title: external.title,
@@ -155,7 +228,7 @@ class PostEmbedView extends StatelessWidget {
 
     final aspectRatio = normalizeVideoAspectRatio(_rawAspectRatio(video));
 
-    return ModeratedBlurOverlay(
+    final preview = ModeratedBlurOverlay(
       ui: mediaUi,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
@@ -199,9 +272,20 @@ class PostEmbedView extends StatelessWidget {
         ),
       ),
     );
+
+    if (!compact) {
+      return preview;
+    }
+
+    return SizedBox(height: 96, child: ClipRect(child: preview));
   }
 
-  Widget _buildQuotedRecord(BuildContext context, EmbedRecordView recordView, {required String heroNamespace}) {
+  Widget _buildQuotedRecord(
+    BuildContext context,
+    EmbedRecordView recordView, {
+    required String heroNamespace,
+    required int quoteDepth,
+  }) {
     final record = recordView.record;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -210,7 +294,14 @@ class PostEmbedView extends StatelessWidget {
       final quoted = record.embedRecordViewRecord!;
       final quotedRecord = tryParseRecord(quoted.value);
       final nestedHeroNamespace = '$heroNamespace/quote:${quoted.uri}';
-      final nestedEmbed = _buildQuotedEmbeds(context, quoted.embeds, heroNamespace: '$nestedHeroNamespace/embeds');
+      final nestedEmbed = quoteDepth >= maxQuoteDepth
+          ? null
+          : _buildQuotedEmbeds(
+              context,
+              quoted.embeds,
+              heroNamespace: '$nestedHeroNamespace/embeds',
+              quoteDepth: quoteDepth + 1,
+            );
 
       return Container(
         decoration: BoxDecoration(
@@ -264,6 +355,10 @@ class PostEmbedView extends StatelessWidget {
                   ),
                 ],
                 if (nestedEmbed != null) ...[const SizedBox(height: 8), nestedEmbed],
+                if (quoteDepth == maxQuoteDepth && _hasQuotedRecordEmbed(quoted.embeds)) ...[
+                  const SizedBox(height: 8),
+                  _buildShallowQuote(context, _nestedQuotedAuthor(quoted.embeds) ?? quoted.author),
+                ],
               ],
             ),
           ),
@@ -284,6 +379,39 @@ class PostEmbedView extends StatelessWidget {
     return const SizedBox.shrink();
   }
 
+  Widget _buildShallowQuote(BuildContext context, ProfileViewBasic author) {
+    final colorScheme = context.colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(compact ? 8 : 10),
+      decoration: BoxDecoration(
+        border: Border.all(color: colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(10),
+        color: colorScheme.surfaceContainerLow,
+      ),
+      child: Row(
+        children: [
+          ProfileAvatar(
+            size: compact ? 20 : 24,
+            imageUrl: author.avatar,
+            fallbackText: author.displayName ?? author.handle,
+            shape: BoxShape.rectangle,
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          SizedBox(width: compact ? 6 : 8),
+          Expanded(
+            child: Text(
+              '${author.displayName ?? author.handle} @${author.handle} ...',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildUnavailableQuote(BuildContext context, String label) {
     return Container(
       width: double.infinity,
@@ -300,6 +428,7 @@ class PostEmbedView extends StatelessWidget {
     BuildContext context,
     List<UEmbedRecordViewRecordEmbeds>? embeds, {
     required String heroNamespace,
+    required int quoteDepth,
   }) {
     if (embeds == null || embeds.isEmpty) return null;
 
@@ -314,6 +443,14 @@ class PostEmbedView extends StatelessWidget {
     if (embed.isEmbedVideoView) {
       return _buildVideoEmbed(context, embed.embedVideoView!);
     }
+    if (embed.isEmbedRecordView) {
+      return _buildQuotedRecord(
+        context,
+        embed.embedRecordView!,
+        heroNamespace: '$heroNamespace/record',
+        quoteDepth: quoteDepth,
+      );
+    }
     if (embed.isEmbedRecordWithMediaView) {
       final recordWithMedia = embed.embedRecordWithMediaView!;
       return Column(
@@ -321,12 +458,35 @@ class PostEmbedView extends StatelessWidget {
         children: [
           _buildRecordWithMediaMedia(context, recordWithMedia.media, heroNamespace: '$heroNamespace/rwm-media'),
           const SizedBox(height: 8),
-          _buildQuotedRecord(context, recordWithMedia.record, heroNamespace: '$heroNamespace/rwm-record'),
+          _buildQuotedRecord(
+            context,
+            recordWithMedia.record,
+            heroNamespace: '$heroNamespace/rwm-record',
+            quoteDepth: quoteDepth,
+          ),
         ],
       );
     }
 
     return null;
+  }
+
+  bool _hasQuotedRecordEmbed(List<UEmbedRecordViewRecordEmbeds>? embeds) {
+    if (embeds == null || embeds.isEmpty) return false;
+    final embed = embeds.first;
+    return embed.isEmbedRecordView || embed.isEmbedRecordWithMediaView;
+  }
+
+  ProfileViewBasic? _nestedQuotedAuthor(List<UEmbedRecordViewRecordEmbeds>? embeds) {
+    if (embeds == null || embeds.isEmpty) return null;
+    final embed = embeds.first;
+    final recordView = embed.isEmbedRecordView
+        ? embed.embedRecordView
+        : embed.isEmbedRecordWithMediaView
+        ? embed.embedRecordWithMediaView?.record
+        : null;
+    final record = recordView?.record;
+    return record?.isEmbedRecordViewRecord == true ? record!.embedRecordViewRecord!.author : null;
   }
 
   void _openImageViewer(

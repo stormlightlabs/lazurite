@@ -5,7 +5,13 @@ TextStyle? feedPostBodyTextStyle(BuildContext context, {bool compact = false, bo
   final color = theme.colorScheme.onSurface;
 
   if (compact) {
-    return theme.textTheme.bodySmall?.copyWith(color: color, height: 1.45);
+    final compactMetrics = theme.textTheme.bodySmall;
+    return theme.textTheme.titleSmall?.copyWith(
+      color: color,
+      fontSize: compactMetrics?.fontSize,
+      height: 1.45,
+      letterSpacing: 0,
+    );
   }
 
   final baseStyle = nested ? theme.textTheme.titleSmall : theme.textTheme.titleMedium;

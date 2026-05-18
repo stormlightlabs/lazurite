@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:poptart_core/poptart_core.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/embed/external.dart';
 import 'package:bluesky_poptart/app/bsky/embed/images.dart';
@@ -16,6 +15,7 @@ import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'package:poptart_core/poptart_core.dart';
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
@@ -57,6 +57,29 @@ UFeedViewPostReason _makeRepostReason() {
     data: ReasonRepost(
       by: const ProfileViewBasic(did: 'did:plc:reposter', handle: 'reposter.bsky.social', displayName: 'Reposter'),
       indexedAt: DateTime.utc(2026, 3, 17),
+    ),
+  );
+}
+
+UEmbedRecordViewRecordEmbeds _nestedQuoteEmbed({
+  required String did,
+  required String rkey,
+  required String handle,
+  required String text,
+  List<UEmbedRecordViewRecordEmbeds>? embeds,
+}) {
+  return UEmbedRecordViewRecordEmbeds.embedRecordView(
+    data: EmbedRecordView(
+      record: UEmbedRecordViewRecord.embedRecordViewRecord(
+        data: EmbedRecordViewRecord(
+          uri: AtUri.parse('at://$did/app.bsky.feed.post/$rkey'),
+          cid: 'cid-$rkey',
+          author: ProfileViewBasic(did: did, handle: handle, displayName: handle.split('.').first),
+          value: FeedPostRecord(text: text, createdAt: DateTime.utc(2026, 3, 15)).toJson(),
+          embeds: embeds,
+          indexedAt: DateTime.utc(2026, 3, 15),
+        ),
+      ),
     ),
   );
 }
@@ -453,6 +476,61 @@ void main() {
 
     expect(style?.fontFamily, theme.textTheme.titleSmall?.fontFamily);
     expect(richText.maxLines, isNull);
+  });
+
+  testWidgets('renders nested quoted post context up to capped depth', (tester) async {
+    final beyondCap = _nestedQuoteEmbed(
+      did: 'did:plc:beyond',
+      rkey: 'beyond',
+      handle: 'beyond.bsky.social',
+      text: 'Beyond capped quote',
+    );
+    final deepest = _nestedQuoteEmbed(
+      did: 'did:plc:deepest',
+      rkey: 'deepest',
+      handle: 'deepest.bsky.social',
+      text: 'Deepest visible quote',
+      embeds: [beyondCap],
+    );
+    final second = _nestedQuoteEmbed(
+      did: 'did:plc:second',
+      rkey: 'second',
+      handle: 'second.bsky.social',
+      text: 'Second level quote',
+      embeds: [deepest],
+    );
+    final firstRecord = FeedPostRecord(text: 'First level quote', createdAt: DateTime.utc(2026, 3, 15));
+    final post = FeedViewPost(
+      post: PostView(
+        uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
+        cid: 'cid-xyz',
+        author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+        record: FeedPostRecord(text: 'Main post', createdAt: DateTime.utc(2026, 3, 16)).toJson(),
+        indexedAt: DateTime.utc(2026, 3, 16),
+        embed: UPostViewEmbed.embedRecordView(
+          data: EmbedRecordView(
+            record: UEmbedRecordViewRecord.embedRecordViewRecord(
+              data: EmbedRecordViewRecord(
+                uri: AtUri.parse('at://did:plc:first/app.bsky.feed.post/first'),
+                cid: 'cid-first',
+                author: const ProfileViewBasic(did: 'did:plc:first', handle: 'first.bsky.social', displayName: 'first'),
+                value: firstRecord.toJson(),
+                embeds: [second],
+                indexedAt: DateTime.utc(2026, 3, 15),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(buildSubject(post));
+
+    expect(find.text('First level quote', findRichText: true), findsOneWidget);
+    expect(find.text('Second level quote', findRichText: true), findsOneWidget);
+    expect(find.text('Deepest visible quote', findRichText: true), findsOneWidget);
+    expect(find.text('Beyond capped quote', findRichText: true), findsNothing);
+    expect(find.text('beyond @beyond.bsky.social ...'), findsOneWidget);
   });
 
   testWidgets('tapping avatar navigates to author profile', (tester) async {
