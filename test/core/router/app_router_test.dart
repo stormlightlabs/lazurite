@@ -254,6 +254,11 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> tapAtExplorerBottomTab(WidgetTester tester) async {
+    await tester.tap(find.byIcon(Icons.explore_outlined).last);
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('opens the side menu and switches authenticated branches', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 932));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -286,7 +291,7 @@ void main() {
     expect(find.text('APPEARANCE'), findsOneWidget);
   });
 
-  testWidgets('bottom navigation bar shows 4 tabs with hidden labels', (tester) async {
+  testWidgets('bottom navigation bar shows 5 tabs with hidden labels', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 932));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -294,11 +299,11 @@ void main() {
     await tester.pumpAndSettle();
 
     final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-    expect(navBar.destinations.length, 4);
+    expect(navBar.destinations.length, 5);
     expect(navBar.labelBehavior, NavigationDestinationLabelBehavior.alwaysHide);
 
     final destinations = navBar.destinations.cast<NavigationDestination>();
-    expect(destinations.map((d) => d.label), containsAll(['HOME', 'SEARCH', 'ALERTS', 'PROFILE']));
+    expect(destinations.map((d) => d.label), ['HOME', 'SEARCH', 'AT Explorer', 'ALERTS', 'PROFILE']);
     expect(destinations.any((d) => d.label == 'MESSAGES'), isFalse);
     expect(destinations.any((d) => d.label == 'SETTINGS'), isFalse);
   });
@@ -469,8 +474,22 @@ void main() {
     await tapProfileBottomTab(tester);
 
     final navBarAfter = tester.widget<NavigationBar>(find.byType(NavigationBar));
-    expect(navBarAfter.selectedIndex, 3);
+    expect(navBarAfter.selectedIndex, 4);
     expect(find.text('RIVER TAM'), findsOneWidget);
+  });
+
+  testWidgets('tapping AT Explorer bottom tab opens the explorer branch', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tapAtExplorerBottomTab(tester);
+
+    final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(navBar.selectedIndex, 2);
+    expect(find.text('PDS Explorer'), findsWidgets);
   });
 
   testWidgets('LazuriteAppBar shows section label and hamburger on home screen', (tester) async {

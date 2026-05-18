@@ -94,11 +94,13 @@ class AppRouter {
   final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
   final GlobalKey<NavigatorState> _homeNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'home');
   final GlobalKey<NavigatorState> _searchNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'search');
+  final GlobalKey<NavigatorState> _atExplorerNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'at-explorer');
   final GlobalKey<NavigatorState> _notificationsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'notifications');
   final GlobalKey<NavigatorState> _profileNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
   List<GlobalKey<NavigatorState>> get _branchNavigatorKeys => [
     _homeNavigatorKey,
     _searchNavigatorKey,
+    _atExplorerNavigatorKey,
     _notificationsNavigatorKey,
     _profileNavigatorKey,
   ];
@@ -538,6 +540,15 @@ class AppRouter {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: _atExplorerNavigatorKey,
+            routes: [
+              GoRoute(
+                path: '/at-explorer',
+                pageBuilder: (context, state) => _page(context, state, _buildDevToolsRoute(context, state)),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
             navigatorKey: _notificationsNavigatorKey,
             routes: [
               GoRoute(
@@ -687,7 +698,8 @@ class AppRouter {
   NotificationDomainService? _readNotificationDomainService(BuildContext context) {
     try {
       return context.read<NotificationDomainService>();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d('NotificationDomainService not found for route provider setup', error: error, stackTrace: stackTrace);
       return null;
     }
   }

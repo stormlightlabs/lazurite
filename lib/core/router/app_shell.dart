@@ -156,6 +156,11 @@ class _AppShellState extends State<AppShell> {
       label: l10n.labelSearchNav,
     ),
     NavigationDestination(
+      icon: const _AnimatedNavIcon(selected: false, outlined: Icons.explore_outlined, filled: Icons.explore),
+      selectedIcon: const _AnimatedNavIcon(selected: true, outlined: Icons.explore_outlined, filled: Icons.explore),
+      label: l10n.labelAtExplorer,
+    ),
+    NavigationDestination(
       icon: const _AnimatedNotificationNavIcon(selected: false),
       selectedIcon: const _AnimatedNotificationNavIcon(selected: true),
       label: l10n.labelAlerts,
@@ -265,7 +270,7 @@ class _AppMenu extends StatelessWidget {
     final isFeedsRoute = currentPath == '/feeds';
     final isProfileRoute = currentPath.startsWith('/profile/');
     final isSettingsRoute = currentPath == '/settings' || currentPath.startsWith('/settings/');
-    final isDevToolsRoute = currentPath == '/settings/devtools';
+    final isDevToolsRoute = currentPath == '/at-explorer' || currentPath == '/settings/devtools';
     final isCleanFollowsRoute = currentPath == '/settings/clean-follows';
     final isMessagesRoute = currentPath.startsWith('/alerts/messages') || currentPath.startsWith('/alerts/requests');
     final isNotificationsRoute = currentPath.startsWith('/alerts') && !isMessagesRoute;
@@ -367,7 +372,7 @@ class _AppMenu extends StatelessWidget {
                         selectedIcon: Icons.person,
                         label: l10n.labelProfile,
                         isSelected: isProfileRoute,
-                        onTap: () => _selectBranch(context, 3),
+                        onTap: () => _selectBranch(context, 4),
                       ),
                       const Divider(height: 24),
                       _MenuSectionLabel(label: l10n.labelAdvanced),
@@ -376,7 +381,7 @@ class _AppMenu extends StatelessWidget {
                         selectedIcon: Icons.explore,
                         label: l10n.labelAtExplorer,
                         isSelected: isDevToolsRoute,
-                        onTap: () => _pushRoute(context, '/settings/devtools'),
+                        onTap: () => _selectBranch(context, 2),
                       ),
                       _MenuTile(
                         icon: Icons.cleaning_services_outlined,
@@ -607,11 +612,7 @@ class _MenuTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = isDestructive
-        ? theme.colorScheme.error
-        : isSelected
-        ? theme.colorScheme.primary
-        : theme.colorScheme.onSurface;
+    final color = _color(theme);
 
     Widget tile = ListTile(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -631,5 +632,14 @@ class _MenuTile extends StatelessWidget {
     }
 
     return tile;
+  }
+
+  Color _color(ThemeData theme) {
+    if (isDestructive) {
+      return theme.colorScheme.error;
+    } else if (isSelected) {
+      return theme.colorScheme.primary;
+    }
+    return theme.colorScheme.onSurface;
   }
 }
