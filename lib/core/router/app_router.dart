@@ -24,6 +24,7 @@ import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
 import 'package:lazurite/features/devtools/presentation/dev_tools_screen.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
+import 'package:lazurite/features/feed/data/post_thread_repository.dart';
 import 'package:lazurite/features/feed/presentation/feed_detail_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_management_screen.dart';
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
@@ -62,6 +63,9 @@ import 'package:lazurite/features/profile/presentation/profile_connections_scree
 import 'package:lazurite/features/profile/presentation/profile_context_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_edit_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
+import 'package:lazurite/features/public/data/public_content_repository.dart';
+import 'package:lazurite/features/public/data/public_provider_context.dart';
+import 'package:lazurite/features/public/data/public_repository_factory.dart';
 import 'package:lazurite/features/public/presentation/public_home_screen.dart';
 import 'package:lazurite/features/public/presentation/public_route_state.dart';
 import 'package:lazurite/features/public/presentation/unauthenticated_shell.dart';
@@ -126,13 +130,16 @@ class AppRouter {
         '/settings/devtools',
         '/terms',
         '/privacy',
+        '/feed',
+        '/post',
         OAuthCallbackScreen.routePath,
         OAuthCallbackScreen.compatibilityRoutePath,
       };
       final isLoggingIn = path == '/login';
       final isReauthLogin = state.uri.queryParameters['reauth'] == '1';
       final isPublicBrowsingPath = path == '/public' || path.startsWith('/public/');
-      final isPublicPath = publicPaths.contains(path) || isPublicBrowsingPath;
+      final isPublicProfilePath = path.startsWith('/profile/') && path != '/profile/me';
+      final isPublicPath = publicPaths.contains(path) || isPublicBrowsingPath || isPublicProfilePath;
 
       if (!isAuthenticated && path == '/') {
         return const PublicRouteState(
@@ -192,7 +199,7 @@ class AppRouter {
             child: _buildUnauthenticatedRouteShell(
               context,
               state,
-              PublicHomeScreen(providerKey: routeState.providerKey, contentTab: routeState.contentTab),
+              _buildPublicHomeRoute(context, routeState),
               publicProviderKey: routeState.providerKey,
               publicHomeLocation: routeState.location,
             ),
@@ -312,7 +319,12 @@ class AppRouter {
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: (context, state) {
           final uri = state.uri.queryParameters['uri'] ?? '';
-          return _page(context, state, PostThreadScreen(postUri: Uri.decodeComponent(uri)));
+          final provider = state.uri.queryParameters['provider'];
+          return _page(
+            context,
+            state,
+            _buildPostThreadRoute(context, postUri: Uri.decodeComponent(uri), provider: provider),
+          );
         },
       ),
       GoRoute(
@@ -476,7 +488,11 @@ class AppRouter {
         pageBuilder: (context, state) => _page(
           context,
           state,
-          _buildContextualProfileRoute(context, Uri.decodeComponent(state.pathParameters['actor'] ?? '')),
+          _buildContextualProfileRoute(
+            context,
+            Uri.decodeComponent(state.pathParameters['actor'] ?? ''),
+            provider: state.uri.queryParameters['provider'],
+          ),
         ),
         routes: [
           GoRoute(
@@ -563,6 +579,7 @@ class AppRouter {
                       final encodedUri = state.uri.queryParameters['uri'];
                       final encodedActor = state.uri.queryParameters['actor'];
                       final encodedRkey = state.uri.queryParameters['rkey'];
+                      final encodedProvider = state.uri.queryParameters['provider'];
 
                       AtUri? feedUri;
                       if (encodedUri != null && encodedUri.trim().isNotEmpty) {
@@ -572,7 +589,12 @@ class AppRouter {
 
                       final actor = encodedActor == null ? null : Uri.decodeComponent(encodedActor);
                       final rkey = encodedRkey == null ? null : Uri.decodeComponent(encodedRkey);
-                      return _page(context, state, FeedDetailScreen(feedUri: feedUri, actor: actor, rkey: rkey));
+                      final provider = encodedProvider == null ? null : Uri.decodeComponent(encodedProvider);
+                      return _page(
+                        context,
+                        state,
+                        _buildFeedDetailRoute(context, feedUri: feedUri, actor: actor, rkey: rkey, provider: provider),
+                      );
                     },
                   ),
                   GoRoute(
@@ -716,6 +738,84 @@ class AppRouter {
     );
   }
 
+  Widget _buildPublicHomeRoute(BuildContext context, PublicRouteState routeState) {
+    try {
+      context.read<PublicContentRepository>();
+      return PublicHomeScreen(providerKey: routeState.providerKey, contentTab: routeState.contentTab);
+    } catch (_) {
+      log.d('PublicContentRepository not found, creating public repository for route');
+    }
+
+    AppDatabase database;
+    try {
+      database = context.read<AppDatabase>();
+    } catch (error, stackTrace) {
+      log.d('AppDatabase not found for public route provider setup', error: error, stackTrace: stackTrace);
+      return RepositoryProvider<PublicContentRepository>.value(
+        value: const EmptyPublicContentRepository(),
+        child: PublicHomeScreen(providerKey: routeState.providerKey, contentTab: routeState.contentTab),
+      );
+    }
+
+    final factory = PublicRepositoryFactory(database: database);
+    return RepositoryProvider(
+      key: ValueKey<String>('public-content-repository-${routeState.providerKey}'),
+      create: (_) => factory.contentRepository(routeState.providerKey),
+      child: PublicHomeScreen(providerKey: routeState.providerKey, contentTab: routeState.contentTab),
+    );
+  }
+
+  Widget _buildFeedDetailRoute(
+    BuildContext context, {
+    required AtUri? feedUri,
+    required String? actor,
+    required String? rkey,
+    required String? provider,
+  }) {
+    if (authBloc.state.isAuthenticated) {
+      return FeedDetailScreen(feedUri: feedUri, actor: actor, rkey: rkey);
+    }
+
+    String? fallbackProvider;
+    try {
+      fallbackProvider = context.read<SettingsCubit>().state.appViewProvider;
+    } catch (_) {
+      log.d('SettingsCubit not found for public feed detail provider fallback');
+    }
+
+    final providerContext = PublicProviderContext.fromRoute(
+      queryProvider: provider,
+      fallbackProvider: fallbackProvider,
+    );
+    final screen = FeedDetailScreen(
+      feedUri: feedUri,
+      actor: actor,
+      rkey: rkey,
+      publicProviderKey: providerContext.providerKey,
+    );
+
+    try {
+      final database = context.read<AppDatabase>();
+      final factory = PublicRepositoryFactory(database: database);
+      return RepositoryProvider(
+        key: ValueKey<String>('public-feed-repository-${providerContext.providerKey}'),
+        create: (_) => factory.feedRepository(providerContext.providerKey),
+        child: screen,
+      );
+    } catch (error, stackTrace) {
+      log.d('AppDatabase not found for public feed detail provider setup', error: error, stackTrace: stackTrace);
+    }
+
+    try {
+      context.read<FeedRepository>();
+      return screen;
+    } catch (_) {
+      log.d('FeedRepository not found for public feed detail route');
+    }
+
+    return screen;
+  }
+
   Widget _buildAlertsRoute(BuildContext context, Widget child) {
     NotificationBloc? existingNotificationBloc;
     try {
@@ -737,7 +837,78 @@ class AppRouter {
     );
   }
 
-  Widget _buildContextualProfileRoute(BuildContext context, String actor) {
+  Widget _buildPostThreadRoute(BuildContext context, {required String postUri, required String? provider}) {
+    if (authBloc.state.isAuthenticated) {
+      return PostThreadScreen(postUri: postUri);
+    }
+
+    final providerContext = PublicProviderContext.fromRoute(
+      queryProvider: provider,
+      fallbackProvider: _settingsProviderOrNull(context),
+    );
+    final screen = PostThreadScreen(postUri: postUri, publicProviderKey: providerContext.providerKey);
+
+    try {
+      final database = context.read<AppDatabase>();
+      final factory = PublicRepositoryFactory(database: database);
+      return RepositoryProvider(
+        key: ValueKey<String>('public-post-thread-repository-${providerContext.providerKey}'),
+        create: (_) => factory.postThreadRepository(providerContext.providerKey),
+        child: screen,
+      );
+    } catch (error, stackTrace) {
+      log.d('AppDatabase not found for public post thread provider setup', error: error, stackTrace: stackTrace);
+    }
+
+    try {
+      context.read<PostThreadRepository>();
+      return screen;
+    } catch (_) {
+      log.d('PostThreadRepository not found for public post thread route');
+    }
+
+    return screen;
+  }
+
+  Widget _buildContextualProfileRoute(BuildContext context, String actor, {String? provider}) {
+    if (!authBloc.state.isAuthenticated) {
+      final providerContext = PublicProviderContext.fromRoute(
+        queryProvider: provider,
+        fallbackProvider: _settingsProviderOrNull(context),
+      );
+      final screen = ProfileScreen(actor: actor, showBackButton: true, publicProviderKey: providerContext.providerKey);
+
+      try {
+        final database = context.read<AppDatabase>();
+        final factory = PublicRepositoryFactory(database: database);
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (_) => ProfileBloc(profileRepository: factory.profileRepository(providerContext.providerKey)),
+            ),
+            BlocProvider(create: (_) => FeedBloc(feedRepository: factory.feedRepository(providerContext.providerKey))),
+          ],
+          child: screen,
+        );
+      } catch (error, stackTrace) {
+        log.d('AppDatabase not found for public profile provider setup', error: error, stackTrace: stackTrace);
+      }
+
+      try {
+        context.read<ProfileRepository>();
+        context.read<FeedRepository>();
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => ProfileBloc(profileRepository: context.read<ProfileRepository>())),
+            BlocProvider(create: (_) => FeedBloc(feedRepository: context.read<FeedRepository>())),
+          ],
+          child: screen,
+        );
+      } catch (_) {
+        log.d('ProfileRepository or FeedRepository not found for public profile route');
+      }
+    }
+
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => ProfileBloc(profileRepository: context.read<ProfileRepository>())),
@@ -745,6 +916,15 @@ class AppRouter {
       ],
       child: ProfileScreen(actor: actor, showBackButton: true),
     );
+  }
+
+  String? _settingsProviderOrNull(BuildContext context) {
+    try {
+      return context.read<SettingsCubit>().state.appViewProvider;
+    } catch (_) {
+      log.d('SettingsCubit not found for public provider fallback');
+      return null;
+    }
   }
 
   Widget _buildProfileConnectionsRoute(BuildContext context, GoRouterState state, String actor) {

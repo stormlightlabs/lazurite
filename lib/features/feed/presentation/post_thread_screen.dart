@@ -24,6 +24,7 @@ import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_interactions_sheet.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_menu_actions.dart';
+import 'package:lazurite/features/feed/presentation/widgets/public_post_card.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
@@ -37,15 +38,16 @@ import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 
 class PostThreadScreen extends StatelessWidget {
-  const PostThreadScreen({super.key, required this.postUri});
+  const PostThreadScreen({super.key, required this.postUri, this.publicProviderKey});
 
   final String postUri;
+  final String? publicProviderKey;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => PostThreadCubit(postThreadRepository: context.read<PostThreadRepository>())..load(postUri),
-      child: _PostThreadContent(postUri: postUri),
+      child: _PostThreadContent(postUri: postUri, publicProviderKey: publicProviderKey),
     );
   }
 }
@@ -79,9 +81,10 @@ Set<String> computeInitialCollapsedThreadUris(ThreadViewPost thread, {required i
 }
 
 class _PostThreadContent extends StatefulWidget {
-  const _PostThreadContent({required this.postUri});
+  const _PostThreadContent({required this.postUri, this.publicProviderKey});
 
   final String postUri;
+  final String? publicProviderKey;
 
   @override
   State<_PostThreadContent> createState() => _PostThreadContentState();
@@ -172,7 +175,7 @@ class _PostThreadContentState extends State<_PostThreadContent> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<PostThreadCubit, PostThreadState>(
+    final content = BlocListener<PostThreadCubit, PostThreadState>(
       listenWhen: (previous, current) {
         if (current.status != PostThreadStatus.loaded || current.thread == null) {
           return false;
@@ -195,6 +198,11 @@ class _PostThreadContentState extends State<_PostThreadContent> {
         ),
       ),
     );
+    final providerKey = widget.publicProviderKey;
+    if (providerKey == null) {
+      return content;
+    }
+    return _PostThreadPublicProviderScope(providerKey: providerKey, child: content);
   }
 
   Widget _buildError(BuildContext context, String message) {
@@ -216,7 +224,8 @@ class _PostThreadContentState extends State<_PostThreadContent> {
   }
 
   Widget _buildThread(BuildContext context, ThreadViewPost thread) {
-    final accountDid = context.read<String>();
+    final publicProviderKey = widget.publicProviderKey;
+    final accountDid = publicProviderKey == null ? context.read<String>() : '';
     final parents = _getParentChain(thread);
     final replies = _threadRepliesOf(thread);
     final opDid = (parents.isNotEmpty ? parents.first : thread).post.author.did;
@@ -227,15 +236,27 @@ class _PostThreadContentState extends State<_PostThreadContent> {
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           for (int i = 0; i < parents.length; i++) ...[
-            PostCardWithActions(
-              feedViewPost: FeedViewPost(post: parents[i].post),
-              accountDid: accountDid,
-              onReplySubmitted: _reloadThreadAfterReply,
-              moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
-            ),
+            if (publicProviderKey == null)
+              PostCardWithActions(
+                feedViewPost: FeedViewPost(post: parents[i].post),
+                accountDid: accountDid,
+                onReplySubmitted: _reloadThreadAfterReply,
+                moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
+              )
+            else
+              PublicPostCard(
+                feedViewPost: FeedViewPost(post: parents[i].post),
+                providerKey: publicProviderKey,
+              ),
             _buildThreadConnector(context),
           ],
-          _FocusedPostWithActions(thread: thread, accountDid: accountDid, onReplySubmitted: _reloadThreadAfterReply),
+          if (publicProviderKey == null)
+            _FocusedPostWithActions(thread: thread, accountDid: accountDid, onReplySubmitted: _reloadThreadAfterReply)
+          else
+            PublicPostCard(
+              feedViewPost: FeedViewPost(post: thread.post),
+              providerKey: publicProviderKey,
+            ),
           if (replies.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -256,6 +277,7 @@ class _PostThreadContentState extends State<_PostThreadContent> {
                 depth: 1,
                 accountDid: accountDid,
                 opDid: opDid,
+                publicProviderKey: publicProviderKey,
                 collapsedUris: _collapsedUris,
                 onToggleCollapse: _toggleCollapsed,
                 onReplySubmitted: _reloadThreadAfterReply,
@@ -299,6 +321,7 @@ class ThreadReplyNode extends StatelessWidget {
     required this.opDid,
     required this.collapsedUris,
     required this.onToggleCollapse,
+    this.publicProviderKey,
     this.onReplySubmitted,
     this.onContinueThread,
   });
@@ -307,6 +330,7 @@ class ThreadReplyNode extends StatelessWidget {
   final int depth;
   final String accountDid;
   final String opDid;
+  final String? publicProviderKey;
   final Set<String> collapsedUris;
   final ValueChanged<String> onToggleCollapse;
   final Future<void> Function(String replyParentUri)? onReplySubmitted;
@@ -345,6 +369,7 @@ class ThreadReplyNode extends StatelessWidget {
                       depth: depth,
                       accountDid: accountDid,
                       opDid: opDid,
+                      publicProviderKey: publicProviderKey,
                       collapsedUris: collapsedUris,
                       onToggleCollapse: onToggleCollapse,
                       onReplySubmitted: onReplySubmitted,
@@ -380,6 +405,7 @@ class _ExpandedThreadReply extends StatelessWidget {
     required this.opDid,
     required this.collapsedUris,
     required this.onToggleCollapse,
+    this.publicProviderKey,
     this.onReplySubmitted,
     this.onContinueThread,
   });
@@ -388,6 +414,7 @@ class _ExpandedThreadReply extends StatelessWidget {
   final int depth;
   final String accountDid;
   final String opDid;
+  final String? publicProviderKey;
   final Set<String> collapsedUris;
   final ValueChanged<String> onToggleCollapse;
   final Future<void> Function(String replyParentUri)? onReplySubmitted;
@@ -405,12 +432,18 @@ class _ExpandedThreadReply extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 8),
-          PostCardWithActions(
-            feedViewPost: FeedViewPost(post: thread.post),
-            accountDid: accountDid,
-            onReplySubmitted: onReplySubmitted,
-            moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
-          ),
+          if (publicProviderKey == null)
+            PostCardWithActions(
+              feedViewPost: FeedViewPost(post: thread.post),
+              accountDid: accountDid,
+              onReplySubmitted: onReplySubmitted,
+              moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
+            )
+          else
+            PublicPostCard(
+              feedViewPost: FeedViewPost(post: thread.post),
+              providerKey: publicProviderKey!,
+            ),
           for (final reply in replies)
             ThreadReplyNode(
               key: ValueKey('thread-reply-node-${reply.post.uri}'),
@@ -418,6 +451,7 @@ class _ExpandedThreadReply extends StatelessWidget {
               depth: depth + 1,
               accountDid: accountDid,
               opDid: opDid,
+              publicProviderKey: publicProviderKey,
               collapsedUris: collapsedUris,
               onToggleCollapse: onToggleCollapse,
               onReplySubmitted: onReplySubmitted,
@@ -559,13 +593,29 @@ class _ThreadOverflowLink extends StatelessWidget {
               onContinueThread!(thread);
               return;
             }
-            context.push('/post?uri=${Uri.encodeQueryComponent(thread.post.uri.toString())}');
+            final providerKey = _publicProviderKeyOrNull(context);
+            final providerQuery = providerKey == null ? '' : '&provider=$providerKey';
+            context.push('/post?uri=${Uri.encodeQueryComponent(thread.post.uri.toString())}$providerQuery');
           },
           child: const Text('Continue this thread →'),
         ),
       ),
     );
   }
+}
+
+String? _publicProviderKeyOrNull(BuildContext context) {
+  final content = context.findAncestorWidgetOfExactType<_PostThreadPublicProviderScope>();
+  return content?.providerKey;
+}
+
+class _PostThreadPublicProviderScope extends InheritedWidget {
+  const _PostThreadPublicProviderScope({required this.providerKey, required super.child});
+
+  final String providerKey;
+
+  @override
+  bool updateShouldNotify(covariant _PostThreadPublicProviderScope oldWidget) => oldWidget.providerKey != providerKey;
 }
 
 class _ThreadLineButton extends StatelessWidget {

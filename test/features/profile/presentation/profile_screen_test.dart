@@ -129,7 +129,7 @@ void main() {
     );
   });
 
-  Widget buildSubject() {
+  Widget buildSubject({String? publicProviderKey, String? actor}) {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthBloc>.value(value: authBloc),
@@ -138,7 +138,9 @@ void main() {
         BlocProvider<SettingsCubit>.value(value: settingsCubit),
         BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
       ],
-      child: const MaterialApp(home: ProfileScreen()),
+      child: MaterialApp(
+        home: ProfileScreen(actor: actor, publicProviderKey: publicProviderKey),
+      ),
     );
   }
 
@@ -192,6 +194,57 @@ void main() {
     expect(find.text('Edit Profile'), findsNothing);
     expect(find.text('Bookmarks'), findsOneWidget);
     expect(find.text('Liked'), findsOneWidget);
+  });
+
+  testWidgets('logged-out public profile shows only public tabs and read-only cards', (tester) async {
+    useLargeScreen(tester);
+    const publicProfile = ProfileViewDetailed(
+      did: 'did:plc:public',
+      handle: 'public.bsky.social',
+      displayName: 'Public User',
+      followersCount: 12,
+      followsCount: 8,
+      postsCount: 3,
+    );
+    final post = _publicProfilePost();
+    when(() => authBloc.state).thenReturn(const AuthState.unauthenticated());
+    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.unauthenticated());
+    when(() => profileBloc.state).thenReturn(const ProfileState.loaded(profile: publicProfile));
+    whenListen(
+      profileBloc,
+      const Stream<ProfileState>.empty(),
+      initialState: const ProfileState.loaded(profile: publicProfile),
+    );
+    when(() => feedBloc.state).thenReturn(
+      FeedState.loaded(actor: publicProfile.did, posts: [post], filter: FeedFilter.postsNoReplies, hasMore: false),
+    );
+    whenListen(
+      feedBloc,
+      Stream<FeedState>.value(
+        FeedState.loaded(actor: publicProfile.did, posts: [post], filter: FeedFilter.postsNoReplies, hasMore: false),
+      ),
+      initialState: FeedState.loaded(
+        actor: publicProfile.did,
+        posts: [post],
+        filter: FeedFilter.postsNoReplies,
+        hasMore: false,
+      ),
+    );
+
+    await tester.pumpWidget(buildSubject(actor: publicProfile.did, publicProviderKey: 'blacksky'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('POSTS'), findsWidgets);
+    expect(find.text('REPLIES'), findsOneWidget);
+    expect(find.text('MEDIA'), findsOneWidget);
+    expect(find.text('QUOTES'), findsNothing);
+    expect(find.text('REPOSTS'), findsNothing);
+    expect(find.text('LISTS'), findsNothing);
+    expect(find.text('STARTER PACKS'), findsNothing);
+    expect(find.byKey(const ValueKey('profile-compose-fab')), findsNothing);
+    expect(find.byKey(const Key('profile_search_posts_button')), findsNothing);
+    expect(find.byKey(const ValueKey('public_post_card_footer')), findsOneWidget);
+    expect(find.byIcon(Icons.bookmark_outline), findsNothing);
   });
 
   testWidgets('header edit profile action opens the profile edit route', (tester) async {
@@ -1234,4 +1287,20 @@ void main() {
       router.dispose();
     });
   });
+}
+
+FeedViewPost _publicProfilePost() {
+  final record = FeedPostRecord(text: 'Public profile post', createdAt: DateTime.utc(2026, 5, 18));
+  return FeedViewPost(
+    post: PostView(
+      uri: const AtUri('at://did:plc:public/app.bsky.feed.post/public'),
+      cid: 'cid-public',
+      author: const ProfileViewBasic(did: 'did:plc:public', handle: 'public.bsky.social', displayName: 'Public User'),
+      record: record.toJson(),
+      indexedAt: DateTime.utc(2026, 5, 18),
+      replyCount: 1,
+      repostCount: 2,
+      likeCount: 3,
+    ),
+  );
 }

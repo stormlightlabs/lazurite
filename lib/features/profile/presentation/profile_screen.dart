@@ -23,6 +23,7 @@ import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
+import 'package:lazurite/features/feed/presentation/widgets/public_post_card.dart';
 import 'package:lazurite/features/lists/cubit/add_to_list_cubit.dart';
 import 'package:lazurite/features/lists/cubit/my_lists_cubit.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
@@ -63,10 +64,11 @@ class _ProfileFeedTabConfig {
 }
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key, this.actor, this.showBackButton = false});
+  const ProfileScreen({super.key, this.actor, this.showBackButton = false, this.publicProviderKey});
 
   final String? actor;
   final bool showBackButton;
+  final String? publicProviderKey;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -78,6 +80,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     _ProfileFeedTabConfig(requestFilter: FeedFilter.postsWithReplies, slice: _ProfileFeedSlice.replies),
     _ProfileFeedTabConfig(requestFilter: FeedFilter.postsWithReplies, slice: _ProfileFeedSlice.quotes),
     _ProfileFeedTabConfig(requestFilter: FeedFilter.postsWithReplies, slice: _ProfileFeedSlice.reposts),
+    _ProfileFeedTabConfig(requestFilter: FeedFilter.postsWithMedia, slice: _ProfileFeedSlice.media),
+  ];
+  static const _publicFeedTabs = [
+    _ProfileFeedTabConfig(requestFilter: FeedFilter.postsNoReplies, slice: _ProfileFeedSlice.posts),
+    _ProfileFeedTabConfig(requestFilter: FeedFilter.postsWithReplies, slice: _ProfileFeedSlice.replies),
     _ProfileFeedTabConfig(requestFilter: FeedFilter.postsWithMedia, slice: _ProfileFeedSlice.media),
   ];
 
@@ -100,6 +107,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   final Map<FeedFilter, FeedState> _cachedFeedStates = {};
 
   bool get _isCurrentRoute => ModalRoute.of(context)?.isCurrent ?? true;
+  bool get _isPublic => widget.publicProviderKey != null;
+  List<_ProfileFeedTabConfig> get _visibleFeedTabs => _isPublic ? _publicFeedTabs : _feedTabs;
 
   @override
   void initState() {
@@ -151,7 +160,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   String? get _resolvedActor {
     final authState = context.read<AuthBloc>().state;
-    if (!authState.isAuthenticated) return null;
     final authDid = authState.tokens?.did;
     final rawActor = widget.actor ?? authState.tokens?.did;
     if (rawActor == null) {
@@ -265,10 +273,13 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   int get _baseTabCount => _showSuggestedTab ? _baseTabCountOther : _baseTabCountOwn;
 
-  int get _tabCount => _baseTabCount + (_showSuggestedTab ? 1 : 0);
+  int get _tabCount => _isPublic ? _publicFeedTabs.length : _baseTabCount + (_showSuggestedTab ? 1 : 0);
 
   List<String> _localizedTabLabels(BuildContext context) {
     final l10n = context.l10n;
+    if (_isPublic) {
+      return [l10n.labelPosts.toUpperCase(), l10n.labelReplies.toUpperCase(), l10n.labelMedia.toUpperCase()];
+    }
     final labels = [
       l10n.labelPosts.toUpperCase(),
       l10n.labelReplies.toUpperCase(),
@@ -295,7 +306,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   _ProfileFeedTabConfig get _currentFeedTab =>
-      _feedTabs[_tabController.index < _feedTabs.length ? _tabController.index : 0];
+      _visibleFeedTabs[_tabController.index < _visibleFeedTabs.length ? _tabController.index : 0];
 
   FeedFilter get _currentRequestFilter => _currentFeedTab.requestFilter;
 
@@ -326,6 +337,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   bool _shouldShowSuggestedTab(ProfileViewDetailed? profile) {
+    if (_isPublic) return false;
     if (profile == null) return false;
     return profile.did != context.read<AuthBloc>().state.tokens?.did;
   }
@@ -491,8 +503,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                   }
 
                   final currentUserDid = context.read<AuthBloc>().state.tokens?.did;
-                  final isOwnProfile = actorScopedProfile?.did == currentUserDid;
-                  final feedTabChildren = _feedTabs.map((tab) {
+                  final isOwnProfile = !_isPublic && actorScopedProfile?.did == currentUserDid;
+                  final feedTabChildren = _visibleFeedTabs.map((tab) {
                     final stateForTab = _cachedStateForFilter(
                       tab.requestFilter,
                       expectedActor: expectedActor,
@@ -512,20 +524,22 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                   });
                   final tabChildren = <Widget>[
                     ...feedTabChildren,
-                    if (_showSuggestedTab)
+                    if (!_isPublic && _showSuggestedTab)
                       KeyedSubtree(
                         key: const PageStorageKey<String>('profile-liked-tab'),
                         child: _buildLikedPostsTab(context, actorScopedProfile),
                       ),
-                    KeyedSubtree(
-                      key: const PageStorageKey<String>('profile-lists-tab'),
-                      child: _buildListsTab(context, actorScopedProfile),
-                    ),
-                    KeyedSubtree(
-                      key: const PageStorageKey<String>('profile-starter-packs-tab'),
-                      child: _buildStarterPacksTab(context, actorScopedProfile),
-                    ),
-                    if (_showSuggestedTab)
+                    if (!_isPublic)
+                      KeyedSubtree(
+                        key: const PageStorageKey<String>('profile-lists-tab'),
+                        child: _buildListsTab(context, actorScopedProfile),
+                      ),
+                    if (!_isPublic)
+                      KeyedSubtree(
+                        key: const PageStorageKey<String>('profile-starter-packs-tab'),
+                        child: _buildStarterPacksTab(context, actorScopedProfile),
+                      ),
+                    if (!_isPublic && _showSuggestedTab)
                       KeyedSubtree(
                         key: const PageStorageKey<String>('profile-suggested-tab'),
                         child: _buildSuggestedFollowsTab(actorScopedProfile),
@@ -566,20 +580,20 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                                     )
                                   : const AppShellMenuButton(),
                               actions: [
-                                if (actorScopedProfile != null && isOwnProfile)
+                                if (!_isPublic && actorScopedProfile != null && isOwnProfile)
                                   IconButton(
                                     key: const Key('profile_edit_header_button'),
                                     icon: const Icon(Icons.edit_outlined),
                                     tooltip: context.l10n.labelEditProfile,
                                     onPressed: () => context.push('/profile/me/edit'),
                                   ),
-                                if (actorScopedProfile != null && isOwnProfile)
+                                if (!_isPublic && actorScopedProfile != null && isOwnProfile)
                                   IconButton(
                                     key: const Key('profile_more_button'),
                                     icon: const Icon(Icons.more_vert),
                                     onPressed: () => _showOwnProfileMoreOptions(context, actorScopedProfile),
                                   ),
-                                if (actorScopedProfile != null)
+                                if (!_isPublic && actorScopedProfile != null)
                                   IconButton(
                                     key: const Key('profile_search_posts_button'),
                                     icon: const Icon(Icons.search),
@@ -617,8 +631,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                                   controller: _tabController,
                                   tabs: [for (final label in _localizedTabLabels(context)) Tab(text: label)],
                                   onTap: (index) {
-                                    if (index < _feedTabs.length) {
-                                      _loadFeedOnly(filter: _feedTabs[index].requestFilter);
+                                    if (index < _visibleFeedTabs.length) {
+                                      _loadFeedOnly(filter: _visibleFeedTabs[index].requestFilter);
                                     }
                                   },
                                   isScrollable: true,
@@ -843,7 +857,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             const SizedBox(height: 16),
             Wrap(spacing: 8, runSpacing: 8, children: metaChildren),
           ],
-          if (!isOwnProfile && (profile.viewer?.knownFollowers?.count ?? 0) > 0) ...[
+          if (!_isPublic && !isOwnProfile && (profile.viewer?.knownFollowers?.count ?? 0) > 0) ...[
             const SizedBox(height: 12),
             TextButton.icon(
               key: const ValueKey('profile_known_followers_link'),
@@ -866,7 +880,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                   profile.followsCount ?? 0,
                   context.l10n.labelFollowing,
                   key: const ValueKey('profile_following_stat'),
-                  onTap: () => _openConnections(context, profile, ProfileConnectionsTab.following),
+                  onTap: _isPublic ? null : () => _openConnections(context, profile, ProfileConnectionsTab.following),
                 ),
                 const SizedBox(width: 24),
                 _buildStat(
@@ -874,7 +888,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                   profile.followersCount ?? 0,
                   context.l10n.labelFollowers,
                   key: const ValueKey('profile_followers_stat'),
-                  onTap: () => _openConnections(context, profile, ProfileConnectionsTab.followers),
+                  onTap: _isPublic ? null : () => _openConnections(context, profile, ProfileConnectionsTab.followers),
                 ),
                 const SizedBox(width: 24),
                 _buildStat(context, profile.postsCount ?? 0, context.l10n.labelPosts),
@@ -882,7 +896,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             ),
           ),
           const SizedBox(height: 16),
-          if (isOwnProfile)
+          if (!_isPublic && isOwnProfile)
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -899,7 +913,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 ),
               ],
             ),
-          if (!isOwnProfile) _buildProfileActions(context, profile),
+          if (!_isPublic && !isOwnProfile) _buildProfileActions(context, profile),
           const SizedBox(height: 16),
         ],
       ),
@@ -1203,6 +1217,9 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   Widget _buildComposeFab(BuildContext context) {
+    if (_isPublic) {
+      return const SizedBox.shrink(key: ValueKey('profile-compose-fab-empty'));
+    }
     return BlocBuilder<ProfileBloc, ProfileState>(
       builder: (context, state) {
         final profile = state.profile;
@@ -1308,7 +1325,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   Widget _buildRepliesFeed(BuildContext context, FeedState feedState, {required FeedFilter requestFilter}) {
-    final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
+    final publicProviderKey = widget.publicProviderKey;
+    final accountDid = publicProviderKey == null ? context.read<AuthBloc>().state.tokens?.did ?? '' : '';
     return RefreshIndicator(
       onRefresh: _refresh,
       child: NotificationListener<ScrollNotification>(
@@ -1332,7 +1350,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 child: Center(child: CircularProgressIndicator()),
               );
             }
-            return _ProfileReplyThreadItem(feedViewPost: feedState.posts[index], accountDid: accountDid);
+            return _ProfileReplyThreadItem(
+              feedViewPost: feedState.posts[index],
+              accountDid: accountDid,
+              publicProviderKey: publicProviderKey,
+            );
           },
         ),
       ),
@@ -1369,7 +1391,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     required FeedFilter requestFilter,
     required _ProfileFeedSlice slice,
   }) {
-    final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
+    final publicProviderKey = widget.publicProviderKey;
+    final accountDid = publicProviderKey == null ? context.read<AuthBloc>().state.tokens?.did ?? '' : '';
     final scrollKey = slice == _ProfileFeedSlice.posts
         ? const ValueKey('profile_compact_feed')
         : PageStorageKey<String>('profile_compact_feed_${slice.name}');
@@ -1402,12 +1425,18 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             return Padding(
               key: ValueKey('profile_compact_card_$index'),
               padding: EdgeInsets.only(bottom: index == feedState.posts.length - 1 ? 0 : 2),
-              child: PostCardWithActions(
-                feedViewPost: post,
-                accountDid: accountDid,
-                variant: PostCardVariant.compact,
-                moderationContext: bsky_moderation.ModerationBehaviorContext.contentList,
-              ),
+              child: publicProviderKey == null
+                  ? PostCardWithActions(
+                      feedViewPost: post,
+                      accountDid: accountDid,
+                      variant: PostCardVariant.compact,
+                      moderationContext: bsky_moderation.ModerationBehaviorContext.contentList,
+                    )
+                  : PublicPostCard(
+                      feedViewPost: post,
+                      providerKey: publicProviderKey,
+                      variant: PostCardVariant.compact,
+                    ),
             );
           },
         ),
@@ -1421,7 +1450,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     required FeedFilter requestFilter,
     required _ProfileFeedSlice slice,
   }) {
-    final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
+    final publicProviderKey = widget.publicProviderKey;
+    final accountDid = publicProviderKey == null ? context.read<AuthBloc>().state.tokens?.did ?? '' : '';
     return RefreshIndicator(
       onRefresh: _refresh,
       child: NotificationListener<ScrollNotification>(
@@ -1445,8 +1475,12 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 child: Center(child: CircularProgressIndicator()),
               );
             }
+            final post = feedState.posts[index];
+            if (publicProviderKey != null) {
+              return PublicPostCard(feedViewPost: post, providerKey: publicProviderKey, variant: PostCardVariant.card);
+            }
             return PostCardWithActions(
-              feedViewPost: feedState.posts[index],
+              feedViewPost: post,
               accountDid: accountDid,
               variant: PostCardVariant.card,
               moderationContext: bsky_moderation.ModerationBehaviorContext.contentList,
@@ -1508,10 +1542,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 }
 
 class _ProfileReplyThreadItem extends StatelessWidget {
-  const _ProfileReplyThreadItem({required this.feedViewPost, required this.accountDid});
+  const _ProfileReplyThreadItem({required this.feedViewPost, required this.accountDid, this.publicProviderKey});
 
   final FeedViewPost feedViewPost;
   final String accountDid;
+  final String? publicProviderKey;
 
   @override
   Widget build(BuildContext context) {
@@ -1519,6 +1554,13 @@ class _ProfileReplyThreadItem extends StatelessWidget {
     final hasParentPost = parent?.isPostView == true;
 
     if (!hasParentPost) {
+      if (publicProviderKey != null) {
+        return PublicPostCard(
+          feedViewPost: feedViewPost,
+          providerKey: publicProviderKey!,
+          variant: PostCardVariant.card,
+        );
+      }
       return PostCardWithActions(
         feedViewPost: feedViewPost,
         accountDid: accountDid,
@@ -1530,19 +1572,35 @@ class _ProfileReplyThreadItem extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        PostCardWithActions(
-          key: ValueKey('profile_reply_parent_${parentFeedViewPost.post.uri}'),
-          feedViewPost: parentFeedViewPost,
-          accountDid: accountDid,
-          moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
-        ),
+        if (publicProviderKey == null)
+          PostCardWithActions(
+            key: ValueKey('profile_reply_parent_${parentFeedViewPost.post.uri}'),
+            feedViewPost: parentFeedViewPost,
+            accountDid: accountDid,
+            moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
+          )
+        else
+          PublicPostCard(
+            key: ValueKey('profile_reply_parent_${parentFeedViewPost.post.uri}'),
+            feedViewPost: parentFeedViewPost,
+            providerKey: publicProviderKey!,
+            variant: PostCardVariant.card,
+          ),
         _buildThreadConnector(context),
-        PostCardWithActions(
-          key: ValueKey('profile_reply_child_${feedViewPost.post.uri}'),
-          feedViewPost: feedViewPost,
-          accountDid: accountDid,
-          moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
-        ),
+        if (publicProviderKey == null)
+          PostCardWithActions(
+            key: ValueKey('profile_reply_child_${feedViewPost.post.uri}'),
+            feedViewPost: feedViewPost,
+            accountDid: accountDid,
+            moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
+          )
+        else
+          PublicPostCard(
+            key: ValueKey('profile_reply_child_${feedViewPost.post.uri}'),
+            feedViewPost: feedViewPost,
+            providerKey: publicProviderKey!,
+            variant: PostCardVariant.card,
+          ),
       ],
     );
   }

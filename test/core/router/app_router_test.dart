@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,17 +20,20 @@ import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
+import 'package:lazurite/features/feed/data/post_thread_repository.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
+import 'package:lazurite/features/public/data/public_content_repository.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:poptart_core/poptart_core.dart' as atcore;
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
@@ -39,6 +44,8 @@ class MockProfileBloc extends MockBloc<ProfileEvent, ProfileState> implements Pr
 class MockFeedBloc extends MockBloc<FeedEvent, FeedState> implements FeedBloc {}
 
 class MockFeedRepository extends Mock implements FeedRepository {}
+
+class MockPostThreadRepository extends Mock implements PostThreadRepository {}
 
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
@@ -62,12 +69,49 @@ class MockTypeaheadRepository extends Mock implements TypeaheadRepository {}
 
 class MockAppDatabase extends Mock implements AppDatabase {}
 
+class FakePublicContentRepository implements PublicContentRepository {
+  const FakePublicContentRepository();
+
+  @override
+  Future<PublicDiscoverResult> loadDiscover({String? cursor, int limit = 25}) async {
+    return PublicDiscoverResult(
+      feeds: [for (var index = 0; index < 36; index += 1) _feed('discover-$index')],
+      cursor: cursor == null ? 'next' : null,
+    );
+  }
+
+  @override
+  Future<PublicFeedsResult> loadFeeds({String? cursor, int limit = 25}) async {
+    return PublicFeedsResult(
+      feeds: [for (var index = 0; index < 36; index += 1) _feed('suggested-$index')],
+      cursor: cursor == null ? 'next' : null,
+    );
+  }
+
+  @override
+  Future<PublicFeedsResult> searchFeeds({required String query, String? cursor, int limit = 25}) async {
+    return PublicFeedsResult(feeds: [_feed(query)], cursor: null);
+  }
+
+  static GeneratorView _feed(String rkey) {
+    return GeneratorView(
+      uri: atcore.AtUri.parse('at://did:plc:feed/app.bsky.feed.generator/$rkey'),
+      cid: 'cid-$rkey',
+      did: 'did:web:feeds.example',
+      creator: const ProfileView(did: 'did:plc:feed', handle: 'feeds.example', displayName: 'Feeds'),
+      displayName: 'Feed $rkey',
+      indexedAt: DateTime.utc(2026, 5, 18),
+    );
+  }
+}
+
 void main() {
   late MockAuthBloc authBloc;
   late MockFeedPreferencesCubit feedPreferencesCubit;
   late MockProfileBloc profileBloc;
   late MockFeedBloc feedBloc;
   late MockFeedRepository feedRepository;
+  late MockPostThreadRepository postThreadRepository;
   late MockSettingsCubit settingsCubit;
   late MockConnectivityCubit connectivityCubit;
   late MockAccountSwitcherCubit accountSwitcherCubit;
@@ -111,6 +155,7 @@ void main() {
     profileBloc = MockProfileBloc();
     feedBloc = MockFeedBloc();
     feedRepository = MockFeedRepository();
+    postThreadRepository = MockPostThreadRepository();
     settingsCubit = MockSettingsCubit();
     connectivityCubit = MockConnectivityCubit();
     accountSwitcherCubit = MockAccountSwitcherCubit();
@@ -240,6 +285,7 @@ void main() {
           RepositoryProvider<ProfileRepository>.value(value: profileRepository),
           RepositoryProvider<ProfileActionRepository>.value(value: profileActionRepository),
           RepositoryProvider<FeedRepository>.value(value: feedRepository),
+          RepositoryProvider<PublicContentRepository>.value(value: const FakePublicContentRepository()),
           RepositoryProvider<String>.value(value: tokens.did),
         ],
         child: MaterialApp.router(theme: theme, routerConfig: router),
@@ -552,6 +598,25 @@ void main() {
     router.dispose();
   });
 
+  testWidgets('public provider switching does not persist app view settings', (tester) async {
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('BlackSky'));
+    await tester.pumpAndSettle();
+
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/public/blacksky/discover');
+    verifyNever(() => settingsCubit.setAppViewProvider(any()));
+
+    router.dispose();
+  });
+
   testWidgets('unauthenticated bottom navigation maps destinations and login action', (tester) async {
     currentAuthState = const AuthState.unauthenticated();
     when(() => authBloc.state).thenReturn(currentAuthState);
@@ -630,6 +695,152 @@ void main() {
 
     expect(router.routerDelegate.currentConfiguration.uri.path, '/login');
     expect(router.routerDelegate.currentConfiguration.uri.queryParameters['provider'], 'blacksky');
+
+    router.dispose();
+  });
+
+  testWidgets('logged-out feed detail route uses provider query for public read-only rendering', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    final feedUri = atcore.AtUri.parse('at://did:plc:feed/app.bsky.feed.generator/blacksky');
+    when(
+      () => feedRepository.getFeedGenerator(feedUri),
+    ).thenAnswer((_) async => FakePublicContentRepository._feed('blacksky'));
+    when(
+      () => feedRepository.getFeed(
+        feedUri: feedUri,
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => FeedResult(posts: [_publicFeedPost()]));
+
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>.value(value: authBloc),
+          BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
+          BlocProvider<FeedBloc>.value(value: feedBloc),
+          BlocProvider<SettingsCubit>.value(value: settingsCubit),
+          BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+          BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
+        ],
+        child: MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<FeedRepository>.value(value: feedRepository),
+            RepositoryProvider<PublicContentRepository>.value(value: const FakePublicContentRepository()),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    router.go('/feed?uri=${Uri.encodeQueryComponent(feedUri.toString())}&provider=blacksky');
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('public_post_card_footer')), findsOneWidget);
+    expect(find.byTooltip('Share post'), findsOneWidget);
+    expect(find.byIcon(Icons.bookmark_outline), findsNothing);
+
+    router.dispose();
+  });
+
+  testWidgets('logged-out post route uses provider query for public read-only rendering', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    final thread = _publicThread();
+    when(() => postThreadRepository.getPostThread(thread.post.uri.toString())).thenAnswer((_) async => thread);
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>.value(value: authBloc),
+          BlocProvider<SettingsCubit>.value(value: settingsCubit),
+        ],
+        child: RepositoryProvider<PostThreadRepository>.value(
+          value: postThreadRepository,
+          child: RepositoryProvider<PublicContentRepository>.value(
+            value: const FakePublicContentRepository(),
+            child: MaterialApp.router(routerConfig: router),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    router.go('/post?uri=${Uri.encodeQueryComponent(thread.post.uri.toString())}&provider=blacksky');
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('public_post_card_footer')), findsOneWidget);
+    expect(find.byTooltip('Share post'), findsOneWidget);
+    expect(find.byIcon(Icons.bookmark_outline), findsNothing);
+
+    router.dispose();
+  });
+
+  testWidgets('logged-out profile route resolves actor and hides authenticated controls', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    final post = _publicFeedPost();
+    when(() => profileRepository.getProfile('alice.bsky.social')).thenAnswer(
+      (_) async => const ProfileViewDetailed(
+        did: 'did:plc:alice',
+        handle: 'alice.bsky.social',
+        displayName: 'Alice',
+        postsCount: 1,
+      ),
+    );
+    when(
+      () => feedRepository.getAuthorFeed(
+        actor: any(named: 'actor'),
+        filter: any(named: 'filter'),
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => FeedResult(posts: [post]));
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>.value(value: authBloc),
+          BlocProvider<SettingsCubit>.value(value: settingsCubit),
+          BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+        ],
+        child: MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<ProfileRepository>.value(value: profileRepository),
+            RepositoryProvider<FeedRepository>.value(value: feedRepository),
+            RepositoryProvider<PublicContentRepository>.value(value: const FakePublicContentRepository()),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    router.go('/profile/alice.bsky.social?provider=blacksky');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Alice'), findsWidgets);
+    expect(find.text('POSTS'), findsWidgets);
+    expect(find.text('REPLIES'), findsOneWidget);
+    expect(find.text('MEDIA'), findsOneWidget);
+    expect(find.text('QUOTES'), findsNothing);
+    expect(find.byKey(const ValueKey('public_post_card_footer')), findsOneWidget);
+    expect(find.byKey(const Key('profile_search_posts_button')), findsNothing);
 
     router.dispose();
   });
@@ -1057,4 +1268,24 @@ void main() {
 
     router.dispose();
   });
+}
+
+FeedViewPost _publicFeedPost() {
+  final record = FeedPostRecord(text: 'Public route post', createdAt: DateTime.utc(2026, 5, 18));
+  return FeedViewPost(
+    post: PostView(
+      uri: atcore.AtUri.parse('at://did:plc:author/app.bsky.feed.post/route'),
+      cid: 'cid-route',
+      author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social'),
+      record: record.toJson(),
+      indexedAt: DateTime.utc(2026, 5, 18),
+      replyCount: 1,
+      repostCount: 2,
+      likeCount: 3,
+    ),
+  );
+}
+
+ThreadViewPost _publicThread() {
+  return ThreadViewPost(post: _publicFeedPost().post);
 }

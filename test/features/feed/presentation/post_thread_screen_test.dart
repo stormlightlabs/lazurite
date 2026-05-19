@@ -5,18 +5,32 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
+import 'package:lazurite/features/feed/data/post_thread_repository.dart';
 import 'package:lazurite/features/feed/presentation/post_thread_screen.dart';
+import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
+import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockPostActionRepository extends Mock implements PostActionRepository {}
 
+class MockPostThreadRepository extends Mock implements PostThreadRepository {}
+
 class MockSavedPostsCubit extends MockCubit<SavedPostsState> implements SavedPostsCubit {}
 
 class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
+
+class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
+
+const _settingsState = SettingsState(
+  themePalette: AppThemePalette.oxocarbon,
+  themeVariant: AppThemeVariant.dark,
+  useSystemTheme: false,
+);
 
 PostView _makePost({
   required String did,
@@ -122,23 +136,59 @@ class _ReplyTreeHarnessState extends State<_ReplyTreeHarness> {
 
 void main() {
   late MockPostActionRepository mockPostActionRepository;
+  late MockPostThreadRepository mockPostThreadRepository;
   late MockSavedPostsCubit mockSavedPostsCubit;
   late MockConnectivityCubit mockConnectivityCubit;
+  late MockSettingsCubit mockSettingsCubit;
 
   setUp(() {
     mockPostActionRepository = MockPostActionRepository();
+    mockPostThreadRepository = MockPostThreadRepository();
     mockSavedPostsCubit = MockSavedPostsCubit();
     mockConnectivityCubit = MockConnectivityCubit();
+    mockSettingsCubit = MockSettingsCubit();
 
     const savedState = SavedPostsState(status: SavedPostsStatus.loaded, savedPosts: [], savedUris: {});
     when(() => mockSavedPostsCubit.state).thenReturn(savedState);
     whenListen(mockSavedPostsCubit, const Stream<SavedPostsState>.empty(), initialState: savedState);
     when(() => mockConnectivityCubit.state).thenReturn(const ConnectivityState.online());
+    when(() => mockSettingsCubit.state).thenReturn(_settingsState);
     whenListen(
       mockConnectivityCubit,
       const Stream<ConnectivityState>.empty(),
       initialState: const ConnectivityState.online(),
     );
+    whenListen(mockSettingsCubit, const Stream<SettingsState>.empty(), initialState: _settingsState);
+  });
+
+  testWidgets('renders public thread with read-only post cards and no action providers', (tester) async {
+    final child = _makeThread(did: 'did:plc:child', handle: 'child.bsky.social', rkey: 'child', text: 'Child reply');
+    final root = _makeThread(
+      did: 'did:plc:root',
+      handle: 'root.bsky.social',
+      rkey: 'root',
+      text: 'Root post',
+      replies: [child],
+    );
+    when(() => mockPostThreadRepository.getPostThread(root.post.uri.toString())).thenAnswer((_) async => root);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RepositoryProvider<PostThreadRepository>.value(
+          value: mockPostThreadRepository,
+          child: BlocProvider<SettingsCubit>.value(
+            value: mockSettingsCubit,
+            child: PostThreadScreen(postUri: root.post.uri.toString(), publicProviderKey: 'blacksky'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Root post', findRichText: true), findsOneWidget);
+    expect(find.text('Child reply', findRichText: true), findsOneWidget);
+    expect(find.byKey(const ValueKey('public_post_card_footer')), findsNWidgets(2));
+    expect(find.byIcon(Icons.bookmark_outline), findsNothing);
   });
 
   testWidgets('renders nested threaded replies recursively', (tester) async {

@@ -4,19 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
+import 'package:lazurite/features/feed/presentation/widgets/feed_detail_header.dart';
 import 'package:lazurite/features/feed/presentation/widgets/feed_layout_view.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
+import 'package:lazurite/features/feed/presentation/widgets/public_post_card.dart';
 import 'package:lazurite/shared/presentation/widgets/empty_state.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 import 'package:lazurite/shared/presentation/widgets/loading_state.dart';
 import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 
 class FeedDetailScreen extends StatefulWidget {
-  const FeedDetailScreen({super.key, this.feedUri, this.actor, this.rkey});
+  const FeedDetailScreen({super.key, this.feedUri, this.actor, this.rkey, this.publicProviderKey});
 
   final AtUri? feedUri;
   final String? actor;
   final String? rkey;
+  final String? publicProviderKey;
 
   @override
   State<FeedDetailScreen> createState() => _FeedDetailScreenState();
@@ -201,20 +204,26 @@ class _FeedDetailScreenState extends State<FeedDetailScreen> {
       return const LoadingState(message: 'Loading feed');
     }
 
+    final header = _generator == null ? null : FeedDetailHeader(generator: _generator!, loadedPostCount: _posts.length);
+
     if (_errorMessage != null && _posts.isEmpty) {
-      return ErrorState(
-        title: 'Failed to load feed',
-        message: _errorMessage!,
-        onRetry: _loadInitial,
-        icon: Icons.sync_problem_outlined,
+      return _withHeader(
+        header,
+        ErrorState(
+          title: 'Failed to load feed',
+          message: _errorMessage!,
+          onRetry: _loadInitial,
+          icon: Icons.sync_problem_outlined,
+        ),
       );
     }
 
     if (_posts.isEmpty) {
-      return const EmptyState(message: 'No posts yet', icon: Icons.article_outlined);
+      return _withHeader(header, const EmptyState(message: 'No posts yet', icon: Icons.article_outlined));
     }
 
-    final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
+    final publicProviderKey = widget.publicProviderKey;
+    final accountDid = publicProviderKey == null ? context.read<AuthBloc>().state.tokens?.did ?? '' : '';
     Widget buildCard(int index, PostCardVariant variant) {
       final post = _posts[index];
       final postUri = post.post.uri.toString();
@@ -222,24 +231,46 @@ class _FeedDetailScreenState extends State<FeedDetailScreen> {
         itemKey: postUri,
         index: index,
         seenKeys: _seenPostUris,
-        child: PostCardWithActions(
-          feedViewPost: post,
-          accountDid: accountDid,
-          variant: variant,
-          onDeleted: () {
-            _setStateIfMounted(() => _posts.removeWhere((p) => p.post.uri.toString() == postUri));
-          },
-        ),
+        child: publicProviderKey == null
+            ? PostCardWithActions(
+                feedViewPost: post,
+                accountDid: accountDid,
+                variant: variant,
+                onDeleted: () {
+                  _setStateIfMounted(() => _posts.removeWhere((p) => p.post.uri.toString() == postUri));
+                },
+              )
+            : PublicPostCard(feedViewPost: post, providerKey: publicProviderKey, variant: variant),
       );
     }
 
-    return FeedLayoutView(
-      itemCount: _posts.length,
-      scrollController: _scrollController,
-      isLoadingMore: _isLoadingMore,
-      onRefresh: _loadInitial,
-      gridItemBuilder: (context, index) => buildCard(index, PostCardVariant.compact),
-      linearItemBuilder: (context, index) => buildCard(index, PostCardVariant.card),
+    return Column(
+      children: [
+        ?header,
+        Expanded(
+          child: FeedLayoutView(
+            itemCount: _posts.length,
+            scrollController: _scrollController,
+            isLoadingMore: _isLoadingMore,
+            onRefresh: _loadInitial,
+            gridItemBuilder: (context, index) => buildCard(index, PostCardVariant.compact),
+            linearItemBuilder: (context, index) => buildCard(index, PostCardVariant.card),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _withHeader(Widget? header, Widget body) {
+    if (header == null) {
+      return body;
+    }
+
+    return Column(
+      children: [
+        header,
+        Expanded(child: body),
+      ],
     );
   }
 }

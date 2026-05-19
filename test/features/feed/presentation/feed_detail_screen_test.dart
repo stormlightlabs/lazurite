@@ -4,6 +4,7 @@ import 'package:poptart_core/poptart_core.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -61,7 +62,7 @@ void main() {
     );
   });
 
-  Widget buildSubject() {
+  Widget buildSubject({String? publicProviderKey}) {
     return MaterialApp(
       home: RepositoryProvider<FeedRepository>.value(
         value: feedRepository,
@@ -70,7 +71,7 @@ void main() {
             BlocProvider<AuthBloc>.value(value: authBloc),
             BlocProvider<SettingsCubit>.value(value: settingsCubit),
           ],
-          child: FeedDetailScreen(feedUri: feedUri),
+          child: FeedDetailScreen(feedUri: feedUri, publicProviderKey: publicProviderKey),
         ),
       ),
     );
@@ -128,7 +129,7 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    expect(find.text('My Feed'), findsOneWidget);
+    expect(find.text('My Feed'), findsWidgets);
   });
 
   testWidgets('shows error state and supports retry', (tester) async {
@@ -190,15 +191,62 @@ void main() {
     verify(() => feedRepository.getFeedGenerator(feedUri)).called(1);
     verify(() => feedRepository.getFeed(feedUri: feedUri, cursor: null, limit: 50)).called(1);
   });
+
+  testWidgets('renders logged-out public feed detail with read-only cards', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    when(() => authBloc.state).thenReturn(const AuthState.unauthenticated());
+    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.unauthenticated());
+    when(
+      () => feedRepository.getFeedGenerator(feedUri),
+    ).thenAnswer((_) async => _generatorView(displayName: 'Blacksky', description: 'Public community feed'));
+    when(
+      () => feedRepository.getFeed(
+        feedUri: feedUri,
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => FeedResult(posts: [_feedViewPost()]));
+
+    await tester.pumpWidget(buildSubject(publicProviderKey: 'blacksky'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('feed_detail_header')), findsOneWidget);
+    expect(find.text('Blacksky'), findsWidgets);
+    expect(find.text('Public community feed'), findsOneWidget);
+    expect(find.text('Test User'), findsOneWidget);
+    expect(find.byKey(const ValueKey('public_post_card_footer')), findsOneWidget);
+    expect(find.byTooltip('Share post'), findsOneWidget);
+    expect(find.byIcon(Icons.bookmark_outline), findsNothing);
+  });
 }
 
-GeneratorView _generatorView({required String displayName}) {
+GeneratorView _generatorView({required String displayName, String? description}) {
   return GeneratorView(
     uri: AtUri.parse('at://did:plc:creator/app.bsky.feed.generator/discover'),
     cid: 'cid-gen',
     creator: const ProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
     did: 'did:plc:creator',
     displayName: displayName,
+    description: description,
+    likeCount: 42,
     indexedAt: DateTime.utc(2026, 1, 1),
+  );
+}
+
+FeedViewPost _feedViewPost() {
+  final record = FeedPostRecord(text: 'Public post body', createdAt: DateTime.utc(2026, 3, 16));
+  return FeedViewPost(
+    post: PostView(
+      uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
+      cid: 'cid-xyz',
+      author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social', displayName: 'Test User'),
+      record: record.toJson(),
+      indexedAt: DateTime.utc(2026, 3, 16),
+      replyCount: 2,
+      repostCount: 3,
+      likeCount: 5,
+    ),
   );
 }
