@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +6,7 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/slingshot_client.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:lazurite/shared/utils/test_utils.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:poptart_core/poptart_core.dart' as atcore;
 import 'package:poptart_oauth/poptart_oauth.dart';
@@ -220,7 +220,7 @@ void main() {
     group('app password refresh', () {
       test('coalesces concurrent refreshes for the same DID', () async {
         final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-        final refreshedAccessToken = _buildJwt(
+        final refreshedAccessToken = buildJwt(
           sub: 'did:plc:abc123',
           expEpochSeconds: nowEpochSeconds + 3600,
           iatEpochSeconds: nowEpochSeconds,
@@ -341,7 +341,7 @@ void main() {
 
       test('uses newer stored session when compare-and-swap persistence loses a token race', () async {
         final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-        final refreshedAccessToken = _buildJwt(
+        final refreshedAccessToken = buildJwt(
           sub: 'did:plc:abc123',
           expEpochSeconds: nowEpochSeconds + 3600,
           iatEpochSeconds: nowEpochSeconds,
@@ -520,13 +520,13 @@ void main() {
       test('retries OAuth refresh against fallback auth service hosts', () async {
         final attemptedServices = <String>[];
         final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-        final expiredAccessToken = _buildJwt(
+        final expiredAccessToken = buildJwt(
           sub: 'did:plc:abc123',
           expEpochSeconds: nowEpochSeconds - 3600,
           iatEpochSeconds: nowEpochSeconds - 7200,
           aud: 'did:web:porcini.us-east.host.bsky.network',
         );
-        final refreshedAccessToken = _buildJwt(
+        final refreshedAccessToken = buildJwt(
           sub: 'did:plc:abc123',
           expEpochSeconds: nowEpochSeconds + 3600,
           iatEpochSeconds: nowEpochSeconds,
@@ -593,14 +593,14 @@ void main() {
 
       test('preserves stored nullable OAuth fields when refresh does not re-fetch them', () async {
         final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-        final expiredAccessToken = _buildJwt(
+        final expiredAccessToken = buildJwt(
           sub: 'did:plc:abc123',
           expEpochSeconds: nowEpochSeconds - 3600,
           iatEpochSeconds: nowEpochSeconds - 7200,
           aud: 'did:web:porcini.us-east.host.bsky.network',
           iss: 'https://bsky.social',
         );
-        final refreshedAccessToken = _buildJwt(
+        final refreshedAccessToken = buildJwt(
           sub: 'did:plc:abc123',
           expEpochSeconds: nowEpochSeconds + 3600,
           iatEpochSeconds: nowEpochSeconds,
@@ -677,14 +677,14 @@ void main() {
       test('loads OAuth refresh metadata using stored oauthClientId', () async {
         final requestedClientIds = <String>[];
         final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-        final expiredAccessToken = _buildJwt(
+        final expiredAccessToken = buildJwt(
           sub: 'did:plc:abc123',
           expEpochSeconds: nowEpochSeconds - 3600,
           iatEpochSeconds: nowEpochSeconds - 7200,
           aud: 'did:web:porcini.us-east.host.bsky.network',
           iss: 'https://northsky.social',
         );
-        final refreshedAccessToken = _buildJwt(
+        final refreshedAccessToken = buildJwt(
           sub: 'did:plc:abc123',
           expEpochSeconds: nowEpochSeconds + 3600,
           iatEpochSeconds: nowEpochSeconds,
@@ -746,14 +746,14 @@ void main() {
       test('falls back to default client id when stored oauthClientId is blank', () async {
         final requestedClientIds = <String>[];
         final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-        final expiredAccessToken = _buildJwt(
+        final expiredAccessToken = buildJwt(
           sub: 'did:plc:abc123',
           expEpochSeconds: nowEpochSeconds - 3600,
           iatEpochSeconds: nowEpochSeconds - 7200,
           aud: 'did:web:porcini.us-east.host.bsky.network',
           iss: 'https://northsky.social',
         );
-        final refreshedAccessToken = _buildJwt(
+        final refreshedAccessToken = buildJwt(
           sub: 'did:plc:abc123',
           expEpochSeconds: nowEpochSeconds + 3600,
           iatEpochSeconds: nowEpochSeconds,
@@ -814,7 +814,7 @@ void main() {
 
       test('preserves account when OAuth refresh fails transiently', () async {
         final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-        final expiredAccessToken = _buildJwt(
+        final expiredAccessToken = buildJwt(
           sub: 'did:plc:abc123',
           expEpochSeconds: nowEpochSeconds - 3600,
           iatEpochSeconds: nowEpochSeconds - 7200,
@@ -853,7 +853,7 @@ void main() {
 
       test('invalidates account when OAuth refresh token is rejected', () async {
         final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-        final expiredAccessToken = _buildJwt(
+        final expiredAccessToken = buildJwt(
           sub: 'did:plc:abc123',
           expEpochSeconds: nowEpochSeconds - 3600,
           iatEpochSeconds: nowEpochSeconds - 7200,
@@ -901,14 +901,14 @@ void main() {
 
       test('does not invalidate OAuth account when rejected refresh token is already stale', () async {
         final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-        final expiredAccessToken = _buildJwt(
+        final expiredAccessToken = buildJwt(
           sub: 'did:plc:abc123',
           expEpochSeconds: nowEpochSeconds - 3600,
           iatEpochSeconds: nowEpochSeconds - 7200,
           aud: 'did:web:porcini.us-east.host.bsky.network',
           iss: 'https://bsky.social',
         );
-        final newerAccessToken = _buildJwt(
+        final newerAccessToken = buildJwt(
           sub: 'did:plc:abc123',
           expEpochSeconds: nowEpochSeconds + 3600,
           iatEpochSeconds: nowEpochSeconds,
@@ -959,7 +959,7 @@ void main() {
       test('does not invalidate when only fallback OAuth candidates reject credentials', () async {
         final attemptedServices = <String>[];
         final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-        final expiredAccessToken = _buildJwt(
+        final expiredAccessToken = buildJwt(
           sub: 'did:plc:abc123',
           expEpochSeconds: nowEpochSeconds - 3600,
           iatEpochSeconds: nowEpochSeconds - 7200,
@@ -1641,25 +1641,3 @@ Account _accountForTokens(AuthTokens tokens) => Account(
   createdAt: DateTime.now(),
   updatedAt: DateTime.now(),
 );
-
-String _encodePart(Map<String, Object?> value) => base64Url.encode(utf8.encode(jsonEncode(value))).replaceAll('=', '');
-
-String _buildJwt({
-  required String sub,
-  required int expEpochSeconds,
-  required int iatEpochSeconds,
-  String? aud,
-  String? iss,
-}) {
-  final header = _encodePart(const {'alg': 'none', 'typ': 'JWT'});
-  final payload = _encodePart({
-    'sub': sub,
-    'exp': expEpochSeconds,
-    'iat': iatEpochSeconds,
-    'aud': ?aud,
-    'iss': ?iss,
-    'scope': 'atproto',
-  });
-
-  return '$header.$payload.signature';
-}

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,6 +16,7 @@ import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
+import 'package:lazurite/shared/utils/test_utils.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -281,7 +280,7 @@ void main() {
 
   testWidgets('shows the AT Protocol connection card for the authenticated account', (tester) async {
     final tokens = AuthTokens(
-      accessToken: _buildJwt(
+      accessToken: buildJwt(
         aud: 'shaggymane.us-west.host.bsky.network',
         sub: 'did:plc:lazurite123',
         clientId: 'https://client.example/metadata.json',
@@ -337,7 +336,7 @@ void main() {
 
   testWidgets('tapping the DID row opens Dev Tools with the DID query', (tester) async {
     final tokens = AuthTokens(
-      accessToken: _buildJwt(
+      accessToken: buildJwt(
         aud: 'shaggymane.us-west.host.bsky.network',
         sub: 'did:plc:lazurite123',
         clientId: 'https://client.example/metadata.json',
@@ -799,21 +798,6 @@ AuthTokens _authenticatedTokens() {
   );
 }
 
-String _buildJwt({required String aud, required String sub, required String clientId, required String iss}) {
-  final header = _base64UrlEncode({'alg': 'none', 'typ': 'JWT'});
-  final payload = _base64UrlEncode({
-    'aud': aud,
-    'sub': sub,
-    'client_id': clientId,
-    'scope': 'atproto transition:generic',
-    'iss': iss,
-    'exp': DateTime.now().toUtc().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/ 1000,
-    'iat': DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000,
-  });
-
-  return '$header.$payload.signature';
-}
-
 void _expectRightAlignedSelectedFontLabel(Widget widget, String label) {
   expect(widget, isA<Align>());
   final align = widget as Align;
@@ -823,8 +807,4 @@ void _expectRightAlignedSelectedFontLabel(Widget widget, String label) {
   expect(text.data, label);
   expect(text.textAlign, TextAlign.right);
   expect(text.style, isNotNull);
-}
-
-String _base64UrlEncode(Map<String, Object> value) {
-  return base64Url.encode(utf8.encode(jsonEncode(value))).replaceAll('=', '');
 }
