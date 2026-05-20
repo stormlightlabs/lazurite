@@ -4,6 +4,7 @@ import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
+import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/public/data/public_content_repository.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
@@ -23,10 +24,12 @@ class PublicRepositoryFactory {
   }
 
   FeedRepository feedRepository(String providerKey) {
+    final client = bluesky(providerKey);
     return FeedRepository(
-      bluesky: bluesky(providerKey),
+      bluesky: client,
       database: database,
       accountDid: _publicAccountDid(providerKey),
+      moderationService: _publicModerationService(client, providerKey),
       appViewProvider: providerKey,
     );
   }
@@ -36,14 +39,22 @@ class PublicRepositoryFactory {
   }
 
   ProfileRepository profileRepository(String providerKey) {
-    return ProfileRepository(database: database, bluesky: bluesky(providerKey), appViewProvider: providerKey);
+    final client = bluesky(providerKey);
+    return ProfileRepository(
+      database: database,
+      bluesky: client,
+      moderationService: _publicModerationService(client, providerKey),
+      appViewProvider: providerKey,
+    );
   }
 
   PostThreadRepository postThreadRepository(String providerKey) {
+    final client = bluesky(providerKey);
     return PostThreadRepository(
-      bluesky: bluesky(providerKey),
+      bluesky: client,
       database: database,
       accountDid: _publicAccountDid(providerKey),
+      moderationService: _publicModerationService(client, providerKey),
       appViewProvider: providerKey,
     );
   }
@@ -57,4 +68,8 @@ class PublicRepositoryFactory {
   }
 
   String _publicAccountDid(String providerKey) => 'public:${AppViewProviders.normalizeSettingKey(providerKey)}';
+
+  ModerationService _publicModerationService(Bluesky client, String providerKey) {
+    return ModerationService.public(bluesky: client, database: database, appViewProvider: providerKey);
+  }
 }

@@ -29,6 +29,27 @@ class ModerationService {
        _database = database,
        _accountDid = accountDid,
        _userDid = userDid,
+       _publicReadOnly = false,
+       _appViewContext = AppViewRequestContext(
+         appViewProvider: appViewProvider,
+         appViewProviderResolver: appViewProviderResolver,
+       ) {
+    _headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.labeler.getServices',
+      _buildLabelerHeaders(const []),
+    );
+  }
+
+  ModerationService.public({
+    required Bluesky bluesky,
+    AppDatabase? database,
+    String? appViewProvider,
+    String Function()? appViewProviderResolver,
+  }) : _bluesky = bluesky,
+       _database = database,
+       _accountDid = null,
+       _userDid = null,
+       _publicReadOnly = true,
        _appViewContext = AppViewRequestContext(
          appViewProvider: appViewProvider,
          appViewProviderResolver: appViewProviderResolver,
@@ -43,6 +64,7 @@ class ModerationService {
   final AppDatabase? _database;
   final String? _accountDid;
   final String? _userDid;
+  final bool _publicReadOnly;
   final AppViewRequestContext _appViewContext;
 
   moderation.ModerationOpts? _opts;
@@ -197,8 +219,8 @@ class ModerationService {
     return moderation.ModerationDecision(
       me: post.author.did == _resolvedUserDid,
       causes: [
-        if (opts.prefs.hiddenPosts.contains(post.uri.toString())) _hiddenCause(),
-        ..._viewerCauses(post.author.viewer),
+        if (_hasAuthenticatedViewer(opts) && opts.prefs.hiddenPosts.contains(post.uri.toString())) _hiddenCause(),
+        ..._viewerCauses(post.author.viewer, opts),
         ..._labelCauses(post.labels ?? const [], moderation.LabelTarget.content, opts),
         ..._labelCauses(post.author.labels ?? const [], moderation.LabelTarget.account, opts),
       ],
@@ -261,14 +283,18 @@ class ModerationService {
     return moderation.ModerationDecision(
       me: did == _resolvedUserDid,
       causes: [
-        ..._viewerCauses(viewer),
+        ..._viewerCauses(viewer, opts),
         ..._labelCauses(labels, moderation.LabelTarget.account, opts),
         ..._labelCauses(labels, moderation.LabelTarget.profile, opts),
       ],
     );
   }
 
-  List<moderation.ModerationCause> _viewerCauses(dynamic viewer) {
+  List<moderation.ModerationCause> _viewerCauses(dynamic viewer, moderation.ModerationOpts opts) {
+    if (!_hasAuthenticatedViewer(opts)) {
+      return const [];
+    }
+
     if (viewer == null) {
       return const [];
     }
@@ -465,6 +491,10 @@ class ModerationService {
 
     if (!forceRefresh && _preferences.isNotEmpty) {
       return _preferences;
+    }
+
+    if (_publicReadOnly) {
+      return const [];
     }
 
     final headers = _appViewContext.appBskyHeadersWithoutProxy();

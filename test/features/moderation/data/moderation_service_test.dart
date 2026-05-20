@@ -4,7 +4,7 @@ import 'package:poptart_lex/com/atproto/label/defs.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/actor/get_preferences.dart';
 import 'package:bluesky_poptart/app/bsky/actor/put_preferences.dart';
-import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart' hide ViewerState;
 import 'package:bluesky_poptart/app/bsky/labeler/defs.dart';
 import 'package:bluesky_poptart/app/bsky/labeler/get_services.dart';
 import 'package:drift/native.dart';
@@ -142,6 +142,39 @@ void main() {
       expect(profileUi.noOverride, isTrue);
       expect(avatarUi.blur, isTrue);
       expect(avatarUi.noOverride, isTrue);
+
+      service.dispose();
+    });
+
+    test('public mode skips account preferences and account viewer moderation', () async {
+      final actor = _FakeActorService(
+        preferences: [
+          const UPreferences.labelersPref(
+            data: LabelersPref(labelers: [LabelerPrefItem(did: _customLabelerDid)]),
+          ),
+        ],
+      );
+      final service = ModerationService.public(
+        bluesky: _testBlueskyClient(actor: actor, labeler: const _FakeLabelerService(), anonymous: true),
+        database: database,
+        appViewProvider: 'blacksky',
+      );
+
+      await service.ensureInitialized();
+
+      const blockedByProfile = ProfileViewDetailed(
+        did: 'did:plc:viewer-state',
+        handle: 'viewer-state.bsky.social',
+        viewer: ViewerState(blockedBy: true, muted: true),
+      );
+      final profileUi = service.profileDetailedUi(blockedByProfile, moderation.ModerationBehaviorContext.profileView);
+
+      expect(actor.getPreferencesCallCount, 0);
+      expect(service.currentOpts?.userDid, isNull);
+      expect(service.currentPreferences, isEmpty);
+      expect(service.currentHeaders['atproto-accept-labelers'], isNot(contains(_customLabelerDid)));
+      expect(profileUi.filter, isFalse);
+      expect(profileUi.blur, isFalse);
 
       service.dispose();
     });
