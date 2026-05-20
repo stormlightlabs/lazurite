@@ -3,6 +3,7 @@ import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/feed/presentation/widgets/public_post_card.dart';
@@ -33,6 +34,40 @@ void main() {
 
     expect(find.byKey(const ValueKey('public_post_card_footer')), findsOneWidget);
     expect(find.byTooltip('Share post'), findsOneWidget);
+  });
+
+  testWidgets('author taps preserve public provider context', (tester) async {
+    final visitedProfileUris = <Uri>[];
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, _) => Scaffold(
+            body: PublicPostCard(feedViewPost: _makePost(), providerKey: 'blacksky', variant: PostCardVariant.card),
+          ),
+        ),
+        GoRoute(
+          path: '/profile/:actor',
+          builder: (_, state) {
+            visitedProfileUris.add(state.uri);
+            return const Scaffold(body: Text('profile'));
+          },
+        ),
+      ],
+    );
+
+    final theme = AppTheme.getTheme(AppThemePalette.oxocarbon, AppThemeVariant.dark);
+    await tester.pumpWidget(MaterialApp.router(theme: theme, routerConfig: router));
+
+    final avatar = tester.widget<GestureDetector>(find.byKey(const ValueKey('post_card_avatar')));
+    avatar.onTap!();
+    await tester.pumpAndSettle();
+
+    expect(find.text('profile'), findsOneWidget);
+    expect(visitedProfileUris.last.pathSegments, ['profile', 'did:plc:test']);
+    expect(visitedProfileUris.last.queryParameters['provider'], 'blacksky');
+
+    router.dispose();
   });
 }
 

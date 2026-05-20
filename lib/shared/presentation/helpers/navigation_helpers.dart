@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/features/public/presentation/public_navigation.dart';
 
 /// Profile navigation helper
 ///
@@ -31,7 +32,10 @@ Future<T?>? navigateToProfile<T>(BuildContext context, String actorDid) {
     return null;
   }
 
-  final location = '/profile/${Uri.encodeComponent(normalizedActor)}';
+  final encodedActor = Uri.encodeComponent(normalizedActor);
+  final publicProviderKey = PublicProviderScope.maybeOf(context)?.providerKey;
+  final providerQuery = publicProviderKey == null ? '' : '?provider=${Uri.encodeQueryComponent(publicProviderKey)}';
+  final location = '/profile/$encodedActor$providerQuery';
   return router.push<T>(location);
 }
 

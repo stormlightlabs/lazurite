@@ -3,14 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
+import 'package:lazurite/features/feed/presentation/widgets/public_post_card.dart';
 import 'package:lazurite/features/search/cubit/topic_cubit.dart';
 import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.dart';
 import 'package:lazurite/shared/presentation/widgets/staggered_entrance.dart';
 
 class TopicScreen extends StatefulWidget {
-  const TopicScreen({super.key, required this.topic});
+  const TopicScreen({super.key, required this.topic, this.publicProviderKey});
 
   final String topic;
+  final String? publicProviderKey;
 
   @override
   State<TopicScreen> createState() => _TopicScreenState();
@@ -117,7 +119,8 @@ class _TopicScreenState extends State<TopicScreen> {
 
   Widget _buildBody(BuildContext context, TopicState state) {
     final timeline = state.currentTimeline;
-    final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
+    final publicProviderKey = widget.publicProviderKey;
+    final accountDid = publicProviderKey == null ? context.read<AuthBloc>().state.tokens?.did ?? '' : '';
     if (timeline.isLoading && timeline.posts.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -156,10 +159,15 @@ class _TopicScreenState extends State<TopicScreen> {
             itemKey: postUri,
             index: index,
             seenKeys: _seenPostUris,
-            child: PostCardWithActions(
-              feedViewPost: FeedViewPost(post: post),
-              accountDid: accountDid,
-            ),
+            child: publicProviderKey == null
+                ? PostCardWithActions(
+                    feedViewPost: FeedViewPost(post: post),
+                    accountDid: accountDid,
+                  )
+                : PublicPostCard(
+                    feedViewPost: FeedViewPost(post: post),
+                    providerKey: publicProviderKey,
+                  ),
           );
         },
       ),

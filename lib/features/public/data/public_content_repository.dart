@@ -13,6 +13,19 @@ abstract interface class PublicContentRepository {
   Future<PublicFeedsResult> searchFeeds({required String query, String? cursor, int limit = 25});
 }
 
+abstract interface class PublicContentRepositoryResolver {
+  PublicContentRepository repositoryFor(String providerKey);
+}
+
+class SinglePublicContentRepositoryResolver implements PublicContentRepositoryResolver {
+  const SinglePublicContentRepositoryResolver(this.repository);
+
+  final PublicContentRepository repository;
+
+  @override
+  PublicContentRepository repositoryFor(String providerKey) => repository;
+}
+
 class RepositoryPublicContentRepository implements PublicContentRepository {
   const RepositoryPublicContentRepository({
     required this.providerKey,

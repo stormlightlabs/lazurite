@@ -45,6 +45,7 @@ import 'package:lazurite/features/messages/bloc/message_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_screen.dart';
+import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/moderation/presentation/screens/labeler_detail_screen.dart';
 import 'package:lazurite/features/moderation/presentation/screens/moderation_settings_screen.dart';
 import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
@@ -112,8 +113,8 @@ class AppRouter {
     _profileNavigatorKey,
   ];
 
-  Page<dynamic> _page(BuildContext context, GoRouterState state, Widget child) =>
-      buildAppRoutePage(context: context, state: state, child: child);
+  // Page<dynamic> _page(BuildContext context, GoRouterState state, Widget child) =>
+  //     buildAppRoutePage(context: context, state: state, child: child);
 
   GoRouter get router => GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -132,6 +133,7 @@ class AppRouter {
         '/privacy',
         '/feed',
         '/post',
+        '/topic',
         OAuthCallbackScreen.routePath,
         OAuthCallbackScreen.compatibilityRoutePath,
       };
@@ -165,13 +167,17 @@ class AppRouter {
           final initialHandle = state.uri.queryParameters['handle']?.trim();
           final hasInitialHandle = initialHandle != null && initialHandle.isNotEmpty;
           final autoStartOAuth = state.uri.queryParameters['reauth'] == '1' && hasInitialHandle;
-          return _page(
+          return buildAppRoutePage(
             context,
             state,
-            LoginScreen(
-              initialHandle: hasInitialHandle ? initialHandle : null,
-              initialProviderKey: state.uri.queryParameters['provider'],
-              autoStartOAuth: autoStartOAuth,
+            _buildUnauthenticatedRouteShell(
+              context,
+              state,
+              LoginScreen(
+                initialHandle: hasInitialHandle ? initialHandle : null,
+                initialProviderKey: state.uri.queryParameters['provider'],
+                autoStartOAuth: autoStartOAuth,
+              ),
             ),
           );
         },
@@ -209,28 +215,31 @@ class AppRouter {
       GoRoute(
         path: '/settings',
         pageBuilder: (context, state) =>
-            _page(context, state, _buildUnauthenticatedRouteShell(context, state, const SettingsScreen())),
+            buildAppRoutePage(context, state, _buildUnauthenticatedRouteShell(context, state, const SettingsScreen())),
         routes: [
           GoRoute(
             path: 'moderation',
-            pageBuilder: (context, state) => _page(context, state, const ModerationSettingsScreen()),
+            pageBuilder: (context, state) => buildAppRoutePage(context, state, const ModerationSettingsScreen()),
             routes: [
               GoRoute(
                 path: 'detail',
                 pageBuilder: (context, state) =>
-                    _page(context, state, LabelerDetailScreen(did: state.uri.queryParameters['did'] ?? '')),
+                    buildAppRoutePage(context, state, LabelerDetailScreen(did: state.uri.queryParameters['did'] ?? '')),
               ),
             ],
           ),
           GoRoute(
             path: 'account',
-            pageBuilder: (context, state) => _page(context, state, const SettingsAccountScreen()),
+            pageBuilder: (context, state) => buildAppRoutePage(context, state, const SettingsAccountScreen()),
           ),
-          GoRoute(path: 'about', pageBuilder: (context, state) => _page(context, state, const AboutScreen())),
-          GoRoute(path: 'logs', pageBuilder: (context, state) => _page(context, state, const LogsScreen())),
+          GoRoute(
+            path: 'about',
+            pageBuilder: (context, state) => buildAppRoutePage(context, state, const AboutScreen()),
+          ),
+          GoRoute(path: 'logs', pageBuilder: (context, state) => buildAppRoutePage(context, state, const LogsScreen())),
           GoRoute(
             path: 'clean-follows',
-            pageBuilder: (context, state) => _page(
+            pageBuilder: (context, state) => buildAppRoutePage(
               context,
               state,
               BlocProvider(
@@ -247,7 +256,7 @@ class AppRouter {
           ),
           GoRoute(
             path: 'devtools',
-            pageBuilder: (context, state) => _page(
+            pageBuilder: (context, state) => buildAppRoutePage(
               context,
               state,
               _buildUnauthenticatedRouteShell(context, state, _buildDevToolsRoute(context, state)),
@@ -255,7 +264,7 @@ class AppRouter {
           ),
           GoRoute(
             path: 'video-limits',
-            pageBuilder: (context, state) => _page(
+            pageBuilder: (context, state) => buildAppRoutePage(
               context,
               state,
               BlocProvider(
@@ -269,15 +278,21 @@ class AppRouter {
       GoRoute(
         path: OAuthCallbackScreen.routePath,
         parentNavigatorKey: _rootNavigatorKey,
-        pageBuilder: (context, state) => _page(context, state, OAuthCallbackScreen(callbackUri: state.uri)),
+        pageBuilder: (context, state) => buildAppRoutePage(context, state, OAuthCallbackScreen(callbackUri: state.uri)),
       ),
       GoRoute(
         path: OAuthCallbackScreen.compatibilityRoutePath,
         parentNavigatorKey: _rootNavigatorKey,
-        pageBuilder: (context, state) => _page(context, state, OAuthCallbackScreen(callbackUri: state.uri)),
+        pageBuilder: (context, state) => buildAppRoutePage(context, state, OAuthCallbackScreen(callbackUri: state.uri)),
       ),
-      GoRoute(path: '/terms', pageBuilder: (context, state) => _page(context, state, const TermsOfServiceScreen())),
-      GoRoute(path: '/privacy', pageBuilder: (context, state) => _page(context, state, const PrivacyPolicyScreen())),
+      GoRoute(
+        path: '/terms',
+        pageBuilder: (context, state) => buildAppRoutePage(context, state, const TermsOfServiceScreen()),
+      ),
+      GoRoute(
+        path: '/privacy',
+        pageBuilder: (context, state) => buildAppRoutePage(context, state, const PrivacyPolicyScreen()),
+      ),
       GoRoute(path: '/notifications', redirect: (_, _) => '/alerts'),
       GoRoute(path: '/messages', redirect: (_, _) => '/alerts/messages'),
       GoRoute(
@@ -285,7 +300,7 @@ class AppRouter {
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: (context, state) {
           final args = ComposeRouteArgs.parseExtra(state.extra);
-          return _page(
+          return buildAppRoutePage(
             context,
             state,
             BlocProvider(
@@ -320,7 +335,7 @@ class AppRouter {
         pageBuilder: (context, state) {
           final uri = state.uri.queryParameters['uri'] ?? '';
           final provider = state.uri.queryParameters['provider'];
-          return _page(
+          return buildAppRoutePage(
             context,
             state,
             _buildPostThreadRoute(context, postUri: Uri.decodeComponent(uri), provider: provider),
@@ -332,7 +347,7 @@ class AppRouter {
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: (context, state) {
           final normalizedTag = normalizeHashtag(state.uri.queryParameters['tag'] ?? '');
-          return _page(
+          return buildAppRoutePage(
             context,
             state,
             BlocProvider(
@@ -349,14 +364,10 @@ class AppRouter {
         pageBuilder: (context, state) {
           final rawTopic = state.uri.queryParameters['topic'] ?? '';
           final topic = Uri.decodeComponent(rawTopic).trim();
-          return _page(
+          return buildAppRoutePage(
             context,
             state,
-            BlocProvider(
-              key: ValueKey('topic-$topic'),
-              create: (_) => TopicCubit(searchRepository: context.read<SearchRepository>(), topic: topic),
-              child: TopicScreen(topic: topic),
-            ),
+            _buildTopicRoute(context, topic: topic, provider: state.uri.queryParameters['provider']),
           );
         },
       ),
@@ -365,7 +376,7 @@ class AppRouter {
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: (context, state) {
           final args = state.extra as ImageViewerRouteArgs;
-          return _page(context, state, ImageViewerScreen(args: args));
+          return buildAppRoutePage(context, state, ImageViewerScreen(args: args));
         },
       ),
       GoRoute(
@@ -373,12 +384,12 @@ class AppRouter {
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: (context, state) {
           final args = state.extra as VideoPlayerRouteArgs;
-          return _page(context, state, VideoPlayerScreen(args: args));
+          return buildAppRoutePage(context, state, VideoPlayerScreen(args: args));
         },
       ),
       GoRoute(
         path: '/bookmarks',
-        pageBuilder: (context, state) => _page(
+        pageBuilder: (context, state) => buildAppRoutePage(
           context,
           state,
           SavedPostsScreen(accountDid: context.read<String>(), initialTab: SavedPostsInitialTab.bookmarks),
@@ -386,17 +397,20 @@ class AppRouter {
       ),
       GoRoute(
         path: '/liked',
-        pageBuilder: (context, state) => _page(
+        pageBuilder: (context, state) => buildAppRoutePage(
           context,
           state,
           SavedPostsScreen(accountDid: context.read<String>(), initialTab: SavedPostsInitialTab.liked),
         ),
       ),
-      GoRoute(path: '/lists', pageBuilder: (context, state) => _page(context, state, const MyListsScreen())),
+      GoRoute(
+        path: '/lists',
+        pageBuilder: (context, state) => buildAppRoutePage(context, state, const MyListsScreen()),
+      ),
       GoRoute(
         path: '/create-starter-pack',
         pageBuilder: (context, state) {
-          return _page(
+          return buildAppRoutePage(
             context,
             state,
             BlocProvider(
@@ -411,14 +425,14 @@ class AppRouter {
         pageBuilder: (context, state) {
           final uriStr = Uri.decodeComponent(state.uri.queryParameters['uri'] ?? '');
           final packUri = AtUri.parse(uriStr);
-          return _page(context, state, StarterPackDetailScreen(packUri: packUri));
+          return buildAppRoutePage(context, state, StarterPackDetailScreen(packUri: packUri));
         },
       ),
       GoRoute(
         path: '/starter-packs',
         pageBuilder: (context, state) {
           final actor = state.uri.queryParameters['actor'] ?? '';
-          return _page(context, state, ActorStarterPacksScreen(actor: actor));
+          return buildAppRoutePage(context, state, ActorStarterPacksScreen(actor: actor));
         },
       ),
       GoRoute(
@@ -426,7 +440,7 @@ class AppRouter {
         pageBuilder: (context, state) {
           final uriStr = Uri.decodeComponent(state.uri.queryParameters['uri'] ?? '');
           final listUri = AtUri.parse(uriStr);
-          return _page(context, state, ListDetailScreen(listUri: listUri));
+          return buildAppRoutePage(context, state, ListDetailScreen(listUri: listUri));
         },
         routes: [
           GoRoute(
@@ -434,7 +448,7 @@ class AppRouter {
             pageBuilder: (context, state) {
               final uriStr = Uri.decodeComponent(state.uri.queryParameters['uri'] ?? '');
               final listUri = AtUri.parse(uriStr);
-              return _page(
+              return buildAppRoutePage(
                 context,
                 state,
                 BlocProvider(
@@ -465,7 +479,7 @@ class AppRouter {
             ),
             constellationClient: ConstellationClient(baseUrl: constellationUrl),
           );
-          return _page(
+          return buildAppRoutePage(
             context,
             state,
             BlocProvider(
@@ -485,7 +499,7 @@ class AppRouter {
           }
           return null;
         },
-        pageBuilder: (context, state) => _page(
+        pageBuilder: (context, state) => buildAppRoutePage(
           context,
           state,
           _buildContextualProfileRoute(
@@ -497,7 +511,8 @@ class AppRouter {
         routes: [
           GoRoute(
             path: 'connections',
-            pageBuilder: (context, state) => _page(
+            redirect: (_, state) => authBloc.state.isAuthenticated ? null : _publicProfileLocation(state),
+            pageBuilder: (context, state) => buildAppRoutePage(
               context,
               state,
               _buildProfileConnectionsRoute(context, state, Uri.decodeComponent(state.pathParameters['actor'] ?? '')),
@@ -505,9 +520,10 @@ class AppRouter {
           ),
           GoRoute(
             path: 'search-posts',
+            redirect: (_, state) => authBloc.state.isAuthenticated ? null : _publicProfileLocation(state),
             pageBuilder: (context, state) {
               final actor = Uri.decodeComponent(state.pathParameters['actor'] ?? '');
-              return _page(
+              return buildAppRoutePage(
                 context,
                 state,
                 BlocProvider(
@@ -567,11 +583,11 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: '/',
-                pageBuilder: (context, state) => _page(context, state, const HomeFeedScreen()),
+                pageBuilder: (context, state) => buildAppRoutePage(context, state, const HomeFeedScreen()),
                 routes: [
                   GoRoute(
                     path: 'feeds',
-                    pageBuilder: (context, state) => _page(context, state, const FeedManagementScreen()),
+                    pageBuilder: (context, state) => buildAppRoutePage(context, state, const FeedManagementScreen()),
                   ),
                   GoRoute(
                     path: 'feed',
@@ -590,7 +606,7 @@ class AppRouter {
                       final actor = encodedActor == null ? null : Uri.decodeComponent(encodedActor);
                       final rkey = encodedRkey == null ? null : Uri.decodeComponent(encodedRkey);
                       final provider = encodedProvider == null ? null : Uri.decodeComponent(encodedProvider);
-                      return _page(
+                      return buildAppRoutePage(
                         context,
                         state,
                         _buildFeedDetailRoute(context, feedUri: feedUri, actor: actor, rkey: rkey, provider: provider),
@@ -599,7 +615,7 @@ class AppRouter {
                   ),
                   GoRoute(
                     path: 'trending',
-                    pageBuilder: (context, state) => _page(context, state, const TrendingScreen()),
+                    pageBuilder: (context, state) => buildAppRoutePage(context, state, const TrendingScreen()),
                   ),
                 ],
               ),
@@ -608,7 +624,10 @@ class AppRouter {
           StatefulShellBranch(
             navigatorKey: _searchNavigatorKey,
             routes: [
-              GoRoute(path: '/search', pageBuilder: (context, state) => _page(context, state, const SearchScreen())),
+              GoRoute(
+                path: '/search',
+                pageBuilder: (context, state) => buildAppRoutePage(context, state, const SearchScreen()),
+              ),
             ],
           ),
           StatefulShellBranch(
@@ -616,7 +635,7 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: '/at-explorer',
-                pageBuilder: (context, state) => _page(context, state, _buildDevToolsRoute(context, state)),
+                pageBuilder: (context, state) => buildAppRoutePage(context, state, _buildDevToolsRoute(context, state)),
               ),
             ],
           ),
@@ -626,11 +645,11 @@ class AppRouter {
               GoRoute(
                 path: '/alerts',
                 pageBuilder: (context, state) =>
-                    _page(context, state, _buildAlertsRoute(context, const AlertsScreen())),
+                    buildAppRoutePage(context, state, _buildAlertsRoute(context, const AlertsScreen())),
                 routes: [
                   GoRoute(
                     path: 'messages',
-                    pageBuilder: (context, state) => _page(
+                    pageBuilder: (context, state) => buildAppRoutePage(
                       context,
                       state,
                       _buildAlertsRoute(context, const AlertsScreen(initialTab: AlertsTab.messages)),
@@ -641,7 +660,7 @@ class AppRouter {
                         pageBuilder: (context, state) {
                           final convoId = state.pathParameters['id']!;
                           final args = state.extra as MessageThreadRouteArgs?;
-                          return _page(
+                          return buildAppRoutePage(
                             context,
                             state,
                             BlocProvider(
@@ -658,7 +677,7 @@ class AppRouter {
                   ),
                   GoRoute(
                     path: 'requests',
-                    pageBuilder: (context, state) => _page(
+                    pageBuilder: (context, state) => buildAppRoutePage(
                       context,
                       state,
                       _buildAlertsRoute(context, const AlertsScreen(initialTab: AlertsTab.requests)),
@@ -673,22 +692,25 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: '/profile/me',
-                pageBuilder: (context, state) => _page(context, state, const ProfileScreen(actor: 'me')),
+                pageBuilder: (context, state) => buildAppRoutePage(context, state, const ProfileScreen(actor: 'me')),
                 routes: [
                   GoRoute(
                     path: 'connections',
-                    pageBuilder: (context, state) =>
-                        _page(context, state, _buildProfileConnectionsRoute(context, state, context.read<String>())),
+                    pageBuilder: (context, state) => buildAppRoutePage(
+                      context,
+                      state,
+                      _buildProfileConnectionsRoute(context, state, context.read<String>()),
+                    ),
                   ),
                   GoRoute(
                     path: 'edit',
-                    pageBuilder: (context, state) => _page(context, state, const ProfileEditScreen()),
+                    pageBuilder: (context, state) => buildAppRoutePage(context, state, const ProfileEditScreen()),
                   ),
                   GoRoute(
                     path: 'search-posts',
                     pageBuilder: (context, state) {
                       final actor = context.read<String>();
-                      return _page(
+                      return buildAppRoutePage(
                         context,
                         state,
                         BlocProvider(
@@ -733,17 +755,27 @@ class AppRouter {
     return UnauthenticatedShell(
       location: state.uri.path,
       publicProviderKey: publicProviderKey,
-      publicHomeLocation: publicHomeLocation,
+      publicHomeLocation: publicHomeLocation ?? _publicHomeLocationFromQuery(state),
       child: child,
     );
   }
 
   Widget _buildPublicHomeRoute(BuildContext context, PublicRouteState routeState) {
     try {
-      context.read<PublicContentRepository>();
+      context.read<PublicContentRepositoryResolver>();
       return PublicHomeScreen(providerKey: routeState.providerKey, contentTab: routeState.contentTab);
     } catch (_) {
-      log.d('PublicContentRepository not found, creating public repository for route');
+      log.d('PublicContentRepositoryResolver not found, creating public repository resolver for route');
+    }
+
+    try {
+      final repository = context.read<PublicContentRepository>();
+      return RepositoryProvider<PublicContentRepositoryResolver>.value(
+        value: SinglePublicContentRepositoryResolver(repository),
+        child: PublicHomeScreen(providerKey: routeState.providerKey, contentTab: routeState.contentTab),
+      );
+    } catch (_) {
+      log.d('PublicContentRepository not found, creating public repository resolver for route');
     }
 
     AppDatabase database;
@@ -751,16 +783,15 @@ class AppRouter {
       database = context.read<AppDatabase>();
     } catch (error, stackTrace) {
       log.d('AppDatabase not found for public route provider setup', error: error, stackTrace: stackTrace);
-      return RepositoryProvider<PublicContentRepository>.value(
-        value: const EmptyPublicContentRepository(),
+      return RepositoryProvider<PublicContentRepositoryResolver>.value(
+        value: const SinglePublicContentRepositoryResolver(EmptyPublicContentRepository()),
         child: PublicHomeScreen(providerKey: routeState.providerKey, contentTab: routeState.contentTab),
       );
     }
 
     final factory = PublicRepositoryFactory(database: database);
-    return RepositoryProvider(
-      key: ValueKey<String>('public-content-repository-${routeState.providerKey}'),
-      create: (_) => factory.contentRepository(routeState.providerKey),
+    return RepositoryProvider<PublicContentRepositoryResolver>(
+      create: (_) => FactoryPublicContentRepositoryResolver(factory: factory),
       child: PublicHomeScreen(providerKey: routeState.providerKey, contentTab: routeState.contentTab),
     );
   }
@@ -773,7 +804,17 @@ class AppRouter {
     required String? provider,
   }) {
     if (authBloc.state.isAuthenticated) {
-      return FeedDetailScreen(feedUri: feedUri, actor: actor, rkey: rkey);
+      final providerKey = PublicRouteState.isSupportedProvider(provider)
+          ? PublicRouteState.normalizeProvider(provider)
+          : null;
+      if (providerKey == null) {
+        return FeedDetailScreen(feedUri: feedUri, actor: actor, rkey: rkey);
+      }
+      return RepositoryProvider<FeedRepository>(
+        key: ValueKey<String>('authenticated-feed-repository-$providerKey'),
+        create: (_) => _authenticatedFeedRepository(context, providerKey),
+        child: FeedDetailScreen(feedUri: feedUri, actor: actor, rkey: rkey),
+      );
     }
 
     String? fallbackProvider;
@@ -839,7 +880,17 @@ class AppRouter {
 
   Widget _buildPostThreadRoute(BuildContext context, {required String postUri, required String? provider}) {
     if (authBloc.state.isAuthenticated) {
-      return PostThreadScreen(postUri: postUri);
+      final providerKey = PublicRouteState.isSupportedProvider(provider)
+          ? PublicRouteState.normalizeProvider(provider)
+          : null;
+      if (providerKey == null) {
+        return PostThreadScreen(postUri: postUri);
+      }
+      return RepositoryProvider<PostThreadRepository>(
+        key: ValueKey<String>('authenticated-post-thread-repository-$providerKey'),
+        create: (_) => _authenticatedPostThreadRepository(context, providerKey),
+        child: PostThreadScreen(postUri: postUri),
+      );
     }
 
     final providerContext = PublicProviderContext.fromRoute(
@@ -923,6 +974,112 @@ class AppRouter {
       return context.read<SettingsCubit>().state.appViewProvider;
     } catch (_) {
       log.d('SettingsCubit not found for public provider fallback');
+      return null;
+    }
+  }
+
+  String _publicProfileLocation(GoRouterState state) {
+    final actor = Uri.decodeComponent(state.pathParameters['actor'] ?? '').trim();
+    final encodedActor = Uri.encodeComponent(actor);
+    final provider = state.uri.queryParameters['provider'];
+    final providerQuery = provider == null ? '' : '?provider=${Uri.encodeQueryComponent(provider)}';
+    return '/profile/$encodedActor$providerQuery';
+  }
+
+  String? _publicHomeLocationFromQuery(GoRouterState state) {
+    final rawLocation = state.uri.queryParameters['publicHome']?.trim();
+    if (rawLocation == null || rawLocation.isEmpty) {
+      return null;
+    }
+
+    final uri = Uri.tryParse(rawLocation);
+    final segments = uri?.pathSegments;
+    if (segments == null || segments.length != 3 || segments.first != 'public') {
+      return null;
+    }
+
+    final routeState = PublicRouteState.parse(provider: segments[1], tab: segments[2]);
+    return routeState.location;
+  }
+
+  Widget _buildTopicRoute(BuildContext context, {required String topic, required String? provider}) {
+    final providerContext = PublicProviderContext.fromRoute(
+      queryProvider: provider,
+      fallbackProvider: _settingsProviderOrNull(context),
+    );
+
+    Widget screenWithRepository(SearchRepository repository, {String? publicProviderKey}) {
+      return BlocProvider(
+        key: ValueKey('topic-$topic-${publicProviderKey ?? 'authenticated'}'),
+        create: (_) => TopicCubit(searchRepository: repository, topic: topic),
+        child: TopicScreen(topic: topic, publicProviderKey: publicProviderKey),
+      );
+    }
+
+    if (authBloc.state.isAuthenticated) {
+      if (PublicRouteState.isSupportedProvider(provider)) {
+        return screenWithRepository(_authenticatedSearchRepository(context, providerContext.providerKey));
+      }
+      return screenWithRepository(context.read<SearchRepository>());
+    }
+
+    try {
+      return screenWithRepository(context.read<SearchRepository>(), publicProviderKey: providerContext.providerKey);
+    } catch (_) {
+      log.d('SearchRepository not found for public topic route');
+    }
+
+    final database = context.read<AppDatabase>();
+    final factory = PublicRepositoryFactory(database: database);
+    return screenWithRepository(
+      factory.searchRepository(providerContext.providerKey),
+      publicProviderKey: providerContext.providerKey,
+    );
+  }
+
+  FeedRepository _authenticatedFeedRepository(BuildContext context, String providerKey) {
+    final settingsCubit = context.read<SettingsCubit>();
+    return FeedRepository(
+      bluesky: context.read<Bluesky>(),
+      database: context.read<AppDatabase>(),
+      accountDid: context.read<String>(),
+      moderationService: _moderationServiceOrNull(context),
+      appViewProvider: providerKey,
+      crossProviderFallbackEnabledResolver: () => settingsCubit.state.crossProviderFallbackEnabled,
+      routingEpoch: settingsCubit.state.routingEpoch,
+      routingEpochResolver: () => settingsCubit.state.routingEpoch,
+      onUnauthorized: onUnauthorized,
+    );
+  }
+
+  SearchRepository _authenticatedSearchRepository(BuildContext context, String providerKey) {
+    final settingsCubit = context.read<SettingsCubit>();
+    return SearchRepository(
+      bluesky: context.read<Bluesky>(),
+      moderationService: _moderationServiceOrNull(context),
+      appViewProvider: providerKey,
+      crossProviderFallbackEnabledResolver: () => settingsCubit.state.crossProviderFallbackEnabled,
+      routingEpoch: settingsCubit.state.routingEpoch,
+      routingEpochResolver: () => settingsCubit.state.routingEpoch,
+    );
+  }
+
+  PostThreadRepository _authenticatedPostThreadRepository(BuildContext context, String providerKey) {
+    return PostThreadRepository(
+      bluesky: context.read<Bluesky>(),
+      database: context.read<AppDatabase>(),
+      accountDid: context.read<String>(),
+      moderationService: _moderationServiceOrNull(context),
+      appViewProvider: providerKey,
+      onUnauthorized: onUnauthorized,
+    );
+  }
+
+  ModerationService? _moderationServiceOrNull(BuildContext context) {
+    try {
+      return context.read<ModerationService>();
+    } catch (error, stackTrace) {
+      log.d('ModerationService not found for provider-scoped route', error: error, stackTrace: stackTrace);
       return null;
     }
   }

@@ -1446,7 +1446,7 @@ void main() {
     });
 
     group('logout', () {
-      test('removes only the active account session', () async {
+      test('clears the active account marker without deleting saved accounts', () async {
         final account = Account(
           did: 'did:plc:active',
           handle: 'active.bsky.social',
@@ -1473,12 +1473,12 @@ void main() {
         await authRepository.logout();
 
         verify(() => mockDatabase.getActiveAccount()).called(1);
-        verify(() => mockDatabase.deleteAccount(account.did)).called(1);
         verify(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).called(1);
+        verifyNever(() => mockDatabase.deleteAccount(any()));
         verifyNever(() => mockDatabase.deleteAllAccounts());
       });
 
-      test('clears stale active account setting when no active account exists', () async {
+      test('clears the active account marker when no active account exists', () async {
         when(() => mockDatabase.getActiveAccount()).thenAnswer((_) async => null);
         when(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).thenAnswer((_) async => 1);
 

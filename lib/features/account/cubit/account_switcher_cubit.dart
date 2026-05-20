@@ -49,8 +49,6 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
       String? activeDid;
       if (savedDid != null && accounts.any((a) => a.did == savedDid)) {
         activeDid = savedDid;
-      } else if (accounts.isNotEmpty) {
-        activeDid = accounts.first.did;
       }
 
       emit(AccountSwitcherState.ready(accounts: accounts, activeDid: activeDid));

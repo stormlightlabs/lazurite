@@ -9,6 +9,7 @@ import 'package:lazurite/features/feed/presentation/widgets/grid_post_card.dart'
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
+import 'package:lazurite/features/public/presentation/public_navigation.dart';
 import 'package:lazurite/shared/presentation/helpers/share_helper.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:lazurite/shared/utils/parse_utils.dart';
@@ -33,11 +34,13 @@ class PublicPostCard extends StatelessWidget {
     Future<Object?> onTap() =>
         context.push('/post?uri=${Uri.encodeQueryComponent(feedViewPost.post.uri.toString())}&provider=$providerKey');
 
-    return switch (resolvedVariant) {
+    final card = switch (resolvedVariant) {
       PostCardVariant.grid => GridPostCard(feedViewPost: feedViewPost, footer: footer, onTap: onTap),
       PostCardVariant.compact => CompactPostCard(feedViewPost: feedViewPost, footer: footer, onTap: onTap),
       _ => PostCard(feedViewPost: feedViewPost, actionBar: footer, onTap: onTap),
     };
+
+    return PublicProviderScope(providerKey: providerKey, child: card);
   }
 }
 

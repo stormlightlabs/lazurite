@@ -31,46 +31,36 @@ class UnauthenticatedShell extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          children: [
-            Expanded(
-              child: NavigationBar(
-                key: const ValueKey<String>('unauthenticated-navigation-bar'),
-                height: 72,
-                backgroundColor: Colors.transparent,
-                surfaceTintColor: Colors.transparent,
-                indicatorColor: context.colorScheme.secondaryContainer,
-                selectedIndex: _selectedIndex,
-                labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-                onDestinationSelected: (index) => _goDestination(context, index),
-                destinations: [
-                  NavigationDestination(
-                    icon: const Icon(Icons.home_outlined),
-                    selectedIcon: const Icon(Icons.home),
-                    label: context.l10n.labelHome,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.explore_outlined),
-                    selectedIcon: const Icon(Icons.explore),
-                    label: context.l10n.labelAtExplorer,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.settings_outlined),
-                    selectedIcon: const Icon(Icons.settings),
-                    label: context.l10n.labelSettings,
-                  ),
-                ],
-              ),
+        child: NavigationBar(
+          key: const ValueKey<String>('unauthenticated-navigation-bar'),
+          height: 72,
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          indicatorColor: context.colorScheme.secondaryContainer,
+          selectedIndex: _selectedIndex,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          onDestinationSelected: (index) => _goDestination(context, index),
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home),
+              label: context.l10n.labelHome,
             ),
-            const SizedBox(width: 4),
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: FilledButton.icon(
-                key: const ValueKey<String>('unauthenticated-login-button'),
-                onPressed: () => context.go('/login?provider=${_loginProvider(context)}'),
-                icon: const Icon(Icons.login),
-                label: Text(context.l10n.buttonSignIn),
-              ),
+            NavigationDestination(
+              icon: const Icon(Icons.explore_outlined),
+              selectedIcon: const Icon(Icons.explore),
+              label: context.l10n.labelAtExplorer,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.settings_outlined),
+              selectedIcon: const Icon(Icons.settings),
+              label: context.l10n.labelSettings,
+            ),
+            NavigationDestination(
+              key: const ValueKey<String>('unauthenticated-login-button'),
+              icon: const Icon(Icons.login_outlined),
+              selectedIcon: const Icon(Icons.login),
+              label: context.l10n.buttonSignIn,
             ),
           ],
         ),
@@ -79,7 +69,9 @@ class UnauthenticatedShell extends StatelessWidget {
   );
 
   int get _selectedIndex {
-    if (location == '/settings/devtools') {
+    if (location == '/login') {
+      return 3;
+    } else if (location == '/settings/devtools') {
       return 1;
     } else if (location == '/settings') {
       return 2;
@@ -87,18 +79,25 @@ class UnauthenticatedShell extends StatelessWidget {
     return 0;
   }
 
-  void _goDestination(BuildContext context, int index) => switch (index) {
-    0 => context.go(
+  String get _homeLocation =>
       publicHomeLocation ??
-          const PublicRouteState(
-            providerKey: AppViewProviders.blueskyKey,
-            contentTab: PublicContentTab.discover,
-          ).location,
-    ),
-    1 => context.go('/settings/devtools'),
-    2 => context.go('/settings'),
+      const PublicRouteState(providerKey: AppViewProviders.blueskyKey, contentTab: PublicContentTab.discover).location;
+
+  void _goDestination(BuildContext context, int index) => switch (index) {
+    0 => context.go(_homeLocation),
+    1 => context.go(_routeWithPublicHome('/settings/devtools')),
+    2 => context.go(_routeWithPublicHome('/settings')),
+    3 => context.go(_routeWithPublicHome('/login', provider: _loginProvider(context))),
     _ => null,
   };
+
+  String _routeWithPublicHome(String path, {String? provider}) {
+    final queryParameters = {'publicHome': _homeLocation};
+    if (provider != null) {
+      queryParameters['provider'] = provider;
+    }
+    return Uri(path: path, queryParameters: queryParameters).toString();
+  }
 
   String _loginProvider(BuildContext context) => (publicProviderKey != null)
       ? PublicRouteState.normalizeProvider(publicProviderKey)

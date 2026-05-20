@@ -35,7 +35,12 @@ class PublicRepositoryFactory {
   }
 
   SearchRepository searchRepository(String providerKey) {
-    return SearchRepository(bluesky: bluesky(providerKey), appViewProvider: providerKey);
+    final client = bluesky(providerKey);
+    return SearchRepository(
+      bluesky: client,
+      moderationService: _publicModerationService(client, providerKey),
+      appViewProvider: providerKey,
+    );
   }
 
   ProfileRepository profileRepository(String providerKey) {
@@ -71,5 +76,18 @@ class PublicRepositoryFactory {
 
   ModerationService _publicModerationService(Bluesky client, String providerKey) {
     return ModerationService.public(bluesky: client, database: database, appViewProvider: providerKey);
+  }
+}
+
+class FactoryPublicContentRepositoryResolver implements PublicContentRepositoryResolver {
+  FactoryPublicContentRepositoryResolver({required this.factory});
+
+  final PublicRepositoryFactory factory;
+  final Map<String, PublicContentRepository> _repositories = {};
+
+  @override
+  PublicContentRepository repositoryFor(String providerKey) {
+    final normalizedProvider = AppViewProviders.normalizeSettingKey(providerKey);
+    return _repositories.putIfAbsent(normalizedProvider, () => factory.contentRepository(normalizedProvider));
   }
 }

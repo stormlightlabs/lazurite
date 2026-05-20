@@ -30,7 +30,7 @@ void main() {
         theme: ThemeData(platform: TargetPlatform.iOS),
         home: Builder(
           builder: (context) {
-            page = buildAppRoutePage<void>(context: context, state: state, child: const SizedBox());
+            page = buildAppRoutePage<void>(context, state, const SizedBox());
             return const SizedBox();
           },
         ),
@@ -48,7 +48,7 @@ void main() {
         theme: ThemeData(platform: TargetPlatform.android),
         home: Builder(
           builder: (context) {
-            page = buildAppRoutePage<void>(context: context, state: state, child: const SizedBox());
+            page = buildAppRoutePage<void>(context, state, const SizedBox());
             return const SizedBox();
           },
         ),

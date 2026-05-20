@@ -634,23 +634,26 @@ void main() {
       'HOME',
       'AT Explorer',
       'Settings',
+      'Sign In',
     ]);
 
     await tester.tap(find.text('AT Explorer').last);
     await tester.pumpAndSettle();
     expect(router.routerDelegate.currentConfiguration.uri.path, '/settings/devtools');
+    expect(router.routerDelegate.currentConfiguration.uri.queryParameters['publicHome'], '/public/blacksky/discover');
     navBar = tester.widget<NavigationBar>(find.byKey(const ValueKey<String>('unauthenticated-navigation-bar')));
     expect(navBar.selectedIndex, 1);
 
     await tester.tap(find.text('Settings').last);
     await tester.pumpAndSettle();
     expect(router.routerDelegate.currentConfiguration.uri.path, '/settings');
+    expect(router.routerDelegate.currentConfiguration.uri.queryParameters['publicHome'], '/public/blacksky/discover');
     navBar = tester.widget<NavigationBar>(find.byKey(const ValueKey<String>('unauthenticated-navigation-bar')));
     expect(navBar.selectedIndex, 2);
 
     await tester.tap(find.text('HOME').last);
     await tester.pumpAndSettle();
-    expect(router.routerDelegate.currentConfiguration.uri.path, '/public/bluesky/discover');
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/public/blacksky/discover');
 
     router.go('/public/blacksky/feeds');
     await tester.pumpAndSettle();
@@ -659,6 +662,13 @@ void main() {
 
     expect(router.routerDelegate.currentConfiguration.uri.path, '/login');
     expect(router.routerDelegate.currentConfiguration.uri.queryParameters['provider'], 'blacksky');
+    expect(router.routerDelegate.currentConfiguration.uri.queryParameters['publicHome'], '/public/blacksky/feeds');
+    navBar = tester.widget<NavigationBar>(find.byKey(const ValueKey<String>('unauthenticated-navigation-bar')));
+    expect(navBar.selectedIndex, 3);
+
+    await tester.tap(find.text('HOME').last);
+    await tester.pumpAndSettle();
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/public/blacksky/feeds');
 
     router.dispose();
   });
@@ -787,6 +797,35 @@ void main() {
     router.dispose();
   });
 
+  testWidgets('logged-out topic route uses provider query for public read-only rendering', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+    when(
+      () => searchRepository.searchTopicPosts(
+        topic: any(named: 'topic'),
+        sort: any(named: 'sort'),
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => TopicPostsResult(posts: [_publicFeedPost().post], topicName: 'Cookout'));
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('/topic?topic=1972&provider=blacksky');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Cookout'), findsWidgets);
+    expect(find.byKey(const ValueKey('public_post_card_footer')), findsOneWidget);
+    expect(find.byTooltip('Share post'), findsOneWidget);
+    expect(find.byIcon(Icons.bookmark_outline), findsNothing);
+
+    router.dispose();
+  });
+
   testWidgets('logged-out profile route resolves actor and hides authenticated controls', (tester) async {
     await tester.binding.setSurfaceSize(const Size(800, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -841,6 +880,29 @@ void main() {
     expect(find.text('QUOTES'), findsNothing);
     expect(find.byKey(const ValueKey('public_post_card_footer')), findsOneWidget);
     expect(find.byKey(const Key('profile_search_posts_button')), findsNothing);
+
+    router.dispose();
+  });
+
+  testWidgets('logged-out authenticated-only profile child routes redirect to public profile', (tester) async {
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('/profile/alice.bsky.social/connections?tab=followers&provider=blacksky');
+    await tester.pumpAndSettle();
+
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/profile/alice.bsky.social');
+    expect(router.routerDelegate.currentConfiguration.uri.queryParameters['provider'], 'blacksky');
+    expect(router.routerDelegate.currentConfiguration.uri.queryParameters.containsKey('tab'), isFalse);
+
+    router.go('/profile/alice.bsky.social/search-posts?provider=blacksky');
+    await tester.pumpAndSettle();
+
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/profile/alice.bsky.social');
+    expect(router.routerDelegate.currentConfiguration.uri.queryParameters['provider'], 'blacksky');
 
     router.dispose();
   });
@@ -1163,6 +1225,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey<String>('login-continue-button')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('unauthenticated-navigation-bar')), findsNothing);
 
     router.dispose();
   });

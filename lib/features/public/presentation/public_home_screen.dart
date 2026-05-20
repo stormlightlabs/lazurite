@@ -159,7 +159,7 @@ class _PublicDiscoverTabState extends State<_PublicDiscoverTab> with AutomaticKe
       _error = null;
     });
     try {
-      final result = await context.read<PublicContentRepository>().loadDiscover();
+      final result = await _repository(context, widget.providerKey).loadDiscover();
       if (!mounted) {
         return;
       }
@@ -185,7 +185,7 @@ class _PublicDiscoverTabState extends State<_PublicDiscoverTab> with AutomaticKe
     }
     setState(() => _loadingMore = true);
     try {
-      final next = await context.read<PublicContentRepository>().loadDiscover(cursor: cursor);
+      final next = await _repository(context, widget.providerKey).loadDiscover(cursor: cursor);
       if (!mounted) {
         return;
       }
@@ -288,7 +288,7 @@ class _PublicFeedsTabState extends State<_PublicFeedsTab> with AutomaticKeepAliv
       _error = null;
     });
     try {
-      final repository = context.read<PublicContentRepository>();
+      final repository = _repository(context, widget.providerKey);
       final result = query.isEmpty
           ? await repository.loadFeeds(cursor: cursor)
           : await repository.searchFeeds(query: query, cursor: cursor);
@@ -368,6 +368,14 @@ class _PublicFeedsTabState extends State<_PublicFeedsTab> with AutomaticKeepAliv
         ],
       ),
     );
+  }
+}
+
+PublicContentRepository _repository(BuildContext context, String providerKey) {
+  try {
+    return context.read<PublicContentRepositoryResolver>().repositoryFor(providerKey);
+  } catch (_) {
+    return context.read<PublicContentRepository>();
   }
 }
 

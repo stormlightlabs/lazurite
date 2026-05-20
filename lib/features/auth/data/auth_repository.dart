@@ -561,18 +561,8 @@ class AuthRepository {
     final storedSession = await getStoredSession();
     log.i('AuthRepository: Logging out ${storedSession?.handle ?? 'current user'}');
 
-    try {
-      if (storedSession?.refreshToken != null && storedSession?.usesOAuth == false) {
-        await atp.deleteSession(refreshJwt: storedSession!.refreshToken!, service: storedSession.service);
-      }
-    } finally {
-      if (storedSession != null) {
-        await _invalidateSession(storedSession);
-      } else {
-        await _database.deleteSetting(AppDatabase.activeAccountDidSettingKey);
-      }
-      log.i('AuthRepository: Logout complete');
-    }
+    await _database.deleteSetting(AppDatabase.activeAccountDidSettingKey);
+    log.i('AuthRepository: Logout complete');
   }
 
   Future<AuthTokens> _handleOAuthCallback(String callbackUrl) async {

@@ -78,7 +78,7 @@ void main() {
       );
 
       blocTest<AccountSwitcherCubit, AccountSwitcherState>(
-        'defaults to first account when no saved active did',
+        'keeps activeDid null when no active account is saved',
         build: buildCubit,
         setUp: () {
           final accounts = [makeAccount(did: 'did:plc:user1'), makeAccount(did: 'did:plc:user2')];
@@ -89,13 +89,14 @@ void main() {
         expect: () => [
           const AccountSwitcherState.loading(),
           predicate<AccountSwitcherState>(
-            (state) => state.status == AccountSwitcherStatus.ready && state.activeDid == 'did:plc:user1',
+            (state) =>
+                state.status == AccountSwitcherStatus.ready && state.accounts.length == 2 && state.activeDid == null,
           ),
         ],
       );
 
       blocTest<AccountSwitcherCubit, AccountSwitcherState>(
-        'defaults to first account when saved did not in accounts',
+        'keeps activeDid null when saved did is not in accounts',
         build: buildCubit,
         setUp: () {
           final accounts = [makeAccount(did: 'did:plc:user1')];
@@ -106,7 +107,8 @@ void main() {
         expect: () => [
           const AccountSwitcherState.loading(),
           predicate<AccountSwitcherState>(
-            (state) => state.status == AccountSwitcherStatus.ready && state.activeDid == 'did:plc:user1',
+            (state) =>
+                state.status == AccountSwitcherStatus.ready && state.accounts.length == 1 && state.activeDid == null,
           ),
         ],
       );
@@ -270,6 +272,10 @@ void main() {
         ),
         expect: () => [
           const AccountSwitcherState.loading(),
+          predicate<AccountSwitcherState>(
+            (state) =>
+                state.status == AccountSwitcherStatus.ready && state.accounts.length == 1 && state.activeDid == null,
+          ),
           predicate<AccountSwitcherState>(
             (state) =>
                 state.status == AccountSwitcherStatus.ready &&

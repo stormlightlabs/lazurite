@@ -82,7 +82,7 @@ void main() {
         expect(result, isNull);
       });
 
-      test('should get active account', () async {
+      test('should return null when accounts exist but no account is active', () async {
         final account = AccountsCompanion.insert(
           did: 'did:plc:abc123',
           handle: 'user.bsky.social',
@@ -92,8 +92,7 @@ void main() {
         await database.insertAccount(account);
         final active = await database.getActiveAccount();
 
-        expect(active, isNotNull);
-        expect(active!.did, equals('did:plc:abc123'));
+        expect(active, isNull);
       });
 
       test('should prefer the account selected in settings', () async {
@@ -115,7 +114,7 @@ void main() {
         expect(active!.did, equals('did:plc:older'));
       });
 
-      test('should fall back when the selected active account no longer exists', () async {
+      test('should return null when the selected active account no longer exists', () async {
         await database.insertAccount(
           AccountsCompanion.insert(
             did: 'did:plc:available',
@@ -127,8 +126,7 @@ void main() {
 
         final active = await database.getActiveAccount();
 
-        expect(active, isNotNull);
-        expect(active!.did, equals('did:plc:available'));
+        expect(active, isNull);
       });
 
       test('should return null when no active account exists', () async {

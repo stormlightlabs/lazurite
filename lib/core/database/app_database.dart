@@ -207,15 +207,11 @@ class AppDatabase extends _$AppDatabase {
 
   Future<Account?> getActiveAccount() async {
     final activeDid = await getSetting(activeAccountDidSettingKey);
-    if (activeDid != null) {
-      final activeAccount = await getAccount(activeDid);
-      if (activeAccount != null) {
-        return activeAccount;
-      }
+    if (activeDid == null) {
+      return null;
     }
 
-    final all = await (select(accounts)..orderBy([(a) => OrderingTerm.desc(a.updatedAt)])).get();
-    return all.isNotEmpty ? all.first : null;
+    return getAccount(activeDid);
   }
 
   Future<List<Account>> getAllAccounts() => select(accounts).get();

@@ -16,6 +16,15 @@ import 'package:poptart_core/poptart_core.dart' as atcore;
 
 class MockPublicContentRepository extends Mock implements PublicContentRepository {}
 
+class _MapPublicContentRepositoryResolver implements PublicContentRepositoryResolver {
+  const _MapPublicContentRepositoryResolver(this.repositories);
+
+  final Map<String, PublicContentRepository> repositories;
+
+  @override
+  PublicContentRepository repositoryFor(String providerKey) => repositories[providerKey]!;
+}
+
 void main() {
   late MockPublicContentRepository repository;
 
@@ -48,16 +57,24 @@ void main() {
   Widget buildSubject({
     String providerKey = AppViewProviders.blueskyKey,
     PublicContentTab contentTab = PublicContentTab.discover,
+    PublicContentRepositoryResolver? resolver,
   }) {
     final router = GoRouter(
       initialLocation: '/public/$providerKey/${contentTab.routeValue}',
       routes: [
         GoRoute(
           path: '/public/:provider/:tab',
-          builder: (context, state) => RepositoryProvider<PublicContentRepository>.value(
-            value: repository,
-            child: PublicHomeScreen(providerKey: providerKey, contentTab: contentTab),
-          ),
+          builder: (context, state) {
+            final routeState = PublicRouteState.parse(
+              provider: state.pathParameters['provider'],
+              tab: state.pathParameters['tab'],
+            );
+            final screen = PublicHomeScreen(providerKey: routeState.providerKey, contentTab: routeState.contentTab);
+            if (resolver != null) {
+              return RepositoryProvider<PublicContentRepositoryResolver>.value(value: resolver, child: screen);
+            }
+            return RepositoryProvider<PublicContentRepository>.value(value: repository, child: screen);
+          },
         ),
         GoRoute(
           path: '/feed',
@@ -129,6 +146,71 @@ void main() {
     completer.complete(const PublicFeedsResult(feeds: []));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('public-bluesky-feeds-empty')), findsOneWidget);
+  });
+
+  testWidgets('provider tabs load through provider-specific repositories', (tester) async {
+    final blueskyRepository = MockPublicContentRepository();
+    final blackskyRepository = MockPublicContentRepository();
+
+    when(
+      () => blueskyRepository.loadDiscover(
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => PublicDiscoverResult(feeds: [_feed('blue-discover')]));
+    when(
+      () => blueskyRepository.loadFeeds(
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => PublicFeedsResult(feeds: [_feed('blue-feeds')]));
+    when(
+      () => blueskyRepository.searchFeeds(
+        query: any(named: 'query'),
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => PublicFeedsResult(feeds: [_feed('blue-search')]));
+
+    when(
+      () => blackskyRepository.loadDiscover(
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => PublicDiscoverResult(trends: [_trend('Black Topic')]));
+    when(
+      () => blackskyRepository.loadFeeds(
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => PublicFeedsResult(feeds: [_feed('black-feeds')]));
+    when(
+      () => blackskyRepository.searchFeeds(
+        query: any(named: 'query'),
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => PublicFeedsResult(feeds: [_feed('black-search')]));
+
+    await tester.pumpWidget(
+      buildSubject(
+        resolver: _MapPublicContentRepositoryResolver({
+          AppViewProviders.blueskyKey: blueskyRepository,
+          AppViewProviders.blackskyKey: blackskyRepository,
+        }),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Feed blue-discover'), findsOneWidget);
+
+    await tester.tap(find.text('BlackSky'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('BlackSky Trending'), findsOneWidget);
+    expect(find.text('Black Topic'), findsOneWidget);
+    verify(() => blueskyRepository.loadDiscover(cursor: null, limit: 25)).called(1);
+    verify(() => blackskyRepository.loadDiscover(cursor: null, limit: 25)).called(1);
   });
 }
 
