@@ -322,16 +322,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final accountSwitcherCubit = _maybeAccountSwitcherCubit(context);
 
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            tooltip: l10n.labelSettings,
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.push('/settings'),
-          ),
-        ],
-      ),
       body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(

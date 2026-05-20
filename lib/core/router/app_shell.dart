@@ -9,6 +9,7 @@ import 'package:lazurite/core/crash_reporting/crash_reporting_consent_gate.dart'
 import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/l10n/app_localizations.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/l10n/bottom_navigation_labels.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
@@ -148,27 +149,27 @@ class _AppShellState extends State<AppShell> {
     NavigationDestination(
       icon: const _AnimatedNavIcon(selected: false, outlined: Icons.home_outlined, filled: Icons.home),
       selectedIcon: const _AnimatedNavIcon(selected: true, outlined: Icons.home_outlined, filled: Icons.home),
-      label: l10n.labelHome,
+      label: l10n.bottomNavHome,
     ),
     NavigationDestination(
       icon: const _AnimatedNavIcon(selected: false, outlined: Icons.search_outlined, filled: Icons.search),
       selectedIcon: const _AnimatedNavIcon(selected: true, outlined: Icons.search_outlined, filled: Icons.search),
-      label: l10n.labelSearchNav,
+      label: l10n.bottomNavSearch,
     ),
     NavigationDestination(
       icon: const _AnimatedNavIcon(selected: false, outlined: Icons.explore_outlined, filled: Icons.explore),
       selectedIcon: const _AnimatedNavIcon(selected: true, outlined: Icons.explore_outlined, filled: Icons.explore),
-      label: l10n.labelAtExplorer,
+      label: l10n.bottomNavAtExplorer,
     ),
     NavigationDestination(
       icon: const _AnimatedNotificationNavIcon(selected: false),
       selectedIcon: const _AnimatedNotificationNavIcon(selected: true),
-      label: l10n.labelAlerts,
+      label: l10n.bottomNavAlerts,
     ),
     NavigationDestination(
       icon: const _AnimatedNavIcon(selected: false, outlined: Icons.person_outline, filled: Icons.person),
       selectedIcon: const _AnimatedNavIcon(selected: true, outlined: Icons.person_outline, filled: Icons.person),
-      label: l10n.labelProfile,
+      label: l10n.bottomNavProfile,
     ),
   ];
 }

@@ -1,6 +1,5 @@
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
-import 'package:bluesky_poptart/app/bsky/unspecced/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
@@ -19,6 +18,7 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(<atcore.AtUri>[]);
+    registerFallbackValue(atcore.AtUri.parse('at://did:plc:feed/app.bsky.feed.generator/fallback'));
   });
 
   setUp(() {
@@ -26,7 +26,14 @@ void main() {
     searchRepository = MockSearchRepository();
   });
 
-  test('loads BlueSky discover and feeds from suggested feeds', () async {
+  test('loads BlueSky discover from the Discover feed and feeds from suggested feeds', () async {
+    when(
+      () => feedRepository.getFeed(
+        feedUri: any(named: 'feedUri'),
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => FeedResult(posts: [_post('discover')], cursor: 'next-discover'));
     when(
       () => feedRepository.getSuggestedFeeds(
         cursor: any(named: 'cursor'),
@@ -42,13 +49,27 @@ void main() {
     final discover = await repository.loadDiscover();
     final feeds = await repository.loadFeeds();
 
-    expect(discover.feeds.single.displayName, 'Feed discover');
+    expect(discover.posts.single.post.uri.toString(), 'at://did:plc:author/app.bsky.feed.post/discover');
+    expect(discover.cursor, 'next-discover');
     expect(feeds.feeds.single.displayName, 'Feed discover');
-    verify(() => feedRepository.getSuggestedFeeds(cursor: null, limit: 25)).called(2);
+    verify(
+      () => feedRepository.getFeed(
+        feedUri: RepositoryPublicContentRepository.blueskyDiscoverFeedUri,
+        cursor: null,
+        limit: 25,
+      ),
+    ).called(1);
+    verify(() => feedRepository.getSuggestedFeeds(cursor: null, limit: 25)).called(1);
   });
 
-  test('loads BlackSky discover from trends', () async {
-    when(() => feedRepository.getTrends(limit: any(named: 'limit'))).thenAnswer((_) async => [_trend()]);
+  test('loads BlackSky trending from the BlackSky trending feed', () async {
+    when(
+      () => feedRepository.getFeed(
+        feedUri: any(named: 'feedUri'),
+        cursor: any(named: 'cursor'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => FeedResult(posts: [_post('blacksky-trending')], cursor: 'next-blacksky'));
     final repository = RepositoryPublicContentRepository(
       providerKey: AppViewProviders.blackskyKey,
       feedRepository: feedRepository,
@@ -57,8 +78,16 @@ void main() {
 
     final discover = await repository.loadDiscover();
 
-    expect(discover.trends.single.displayName, 'BlackSky Topic');
-    verify(() => feedRepository.getTrends(limit: 25)).called(1);
+    expect(discover.posts.single.post.uri.toString(), 'at://did:plc:author/app.bsky.feed.post/blacksky-trending');
+    expect(discover.cursor, 'next-blacksky');
+    verify(
+      () => feedRepository.getFeed(
+        feedUri: RepositoryPublicContentRepository.blackskyTrendingFeedUri,
+        cursor: null,
+        limit: 25,
+      ),
+    ).called(1);
+    verifyNever(() => feedRepository.getTrends(limit: any(named: 'limit')));
   });
 
   test('loads BlackSky feeds from fixed feed generator list', () async {
@@ -123,13 +152,17 @@ GeneratorView _feed(String rkey) {
   );
 }
 
-TrendView _trend() {
-  return TrendView(
-    topic: 'topic',
-    displayName: 'BlackSky Topic',
-    link: '/topic/1',
-    startedAt: DateTime.utc(2026, 5, 18),
-    postCount: 1,
-    actors: const [],
+FeedViewPost _post(String rkey) {
+  return FeedViewPost(
+    post: PostView(
+      uri: atcore.AtUri.parse('at://did:plc:author/app.bsky.feed.post/$rkey'),
+      cid: 'cid-$rkey',
+      author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social', displayName: 'Author'),
+      record: {r'$type': 'app.bsky.feed.post', 'text': 'Post $rkey', 'createdAt': '2026-05-20T12:00:00.000Z'},
+      indexedAt: DateTime.utc(2026, 5, 20),
+      replyCount: 0,
+      repostCount: 0,
+      likeCount: 0,
+    ),
   );
 }

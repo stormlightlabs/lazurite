@@ -40,22 +40,24 @@ class SettingsScreen extends StatelessWidget {
     final l10n = context.l10n;
     final tokens = authState.tokens;
     final showAccountSettings = authState.isAuthenticated && tokens != null;
-    final backFallbackRoute = showAccountSettings ? '/' : '/login';
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          tooltip: l10n.labelBack,
-          onPressed: () {
-            final router = GoRouter.of(context);
-            if (router.canPop()) {
-              router.pop();
-              return;
-            }
-            router.go(backFallbackRoute);
-          },
-          icon: const Icon(Icons.arrow_back),
-        ),
+        automaticallyImplyLeading: false,
+        leading: showAccountSettings
+            ? IconButton(
+                tooltip: l10n.labelBack,
+                onPressed: () {
+                  final router = GoRouter.of(context);
+                  if (router.canPop()) {
+                    router.pop();
+                    return;
+                  }
+                  router.go('/');
+                },
+                icon: const Icon(Icons.arrow_back),
+              )
+            : null,
         title: _title(context),
         actions: showAccountSettings
             ? [

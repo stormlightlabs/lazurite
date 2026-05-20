@@ -50,17 +50,17 @@ class RepositoryPublicContentRepository implements PublicContentRepository {
     'at://did:plc:3guzzweuqraryl3rdkimjamk/app.bsky.feed.generator/for-you',
   ];
 
+  static final atcore.AtUri blueskyDiscoverFeedUri = atcore.AtUri.parse(
+    'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot',
+  );
+  static final atcore.AtUri blackskyTrendingFeedUri = atcore.AtUri.parse(blackskyFeedUris.first);
   static List<atcore.AtUri> get blackSkyFeedAtUris => blackskyFeedUris.map(atcore.AtUri.parse).toList(growable: false);
 
   @override
   Future<PublicDiscoverResult> loadDiscover({String? cursor, int limit = 25}) async {
-    if (providerKey == AppViewProviders.blackskyKey) {
-      final trends = await _feedRepository.getTrends(limit: limit);
-      return PublicDiscoverResult(trends: trends);
-    }
-
-    final feeds = await _feedRepository.getSuggestedFeeds(cursor: cursor, limit: limit);
-    return PublicDiscoverResult(feeds: feeds);
+    final feedUri = providerKey == AppViewProviders.blackskyKey ? blackskyTrendingFeedUri : blueskyDiscoverFeedUri;
+    final result = await _feedRepository.getFeed(feedUri: feedUri, cursor: cursor, limit: limit);
+    return PublicDiscoverResult(posts: result.posts, cursor: result.cursor);
   }
 
   @override
@@ -94,13 +94,14 @@ class EmptyPublicContentRepository implements PublicContentRepository {
 }
 
 class PublicDiscoverResult {
-  const PublicDiscoverResult({this.feeds = const [], this.trends = const [], this.cursor});
+  const PublicDiscoverResult({this.posts = const [], this.feeds = const [], this.trends = const [], this.cursor});
 
+  final List<FeedViewPost> posts;
   final List<GeneratorView> feeds;
   final List<TrendView> trends;
   final String? cursor;
 
-  bool get isEmpty => feeds.isEmpty && trends.isEmpty;
+  bool get isEmpty => posts.isEmpty && feeds.isEmpty && trends.isEmpty;
 }
 
 class PublicFeedsResult {

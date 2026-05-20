@@ -31,8 +31,9 @@ class PublicPostCard extends StatelessWidget {
     final resolvedVariant = variant == PostCardVariant.adaptive ? PostCardVariant.card : variant;
     final footer = PublicPostCardFooter(feedViewPost: feedViewPost, providerKey: providerKey);
 
-    Future<Object?> onTap() =>
-        context.push('/post?uri=${Uri.encodeQueryComponent(feedViewPost.post.uri.toString())}&provider=$providerKey');
+    Future<void> onTap() async {
+      context.go('/post?uri=${Uri.encodeQueryComponent(feedViewPost.post.uri.toString())}&provider=$providerKey');
+    }
 
     final card = switch (resolvedVariant) {
       PostCardVariant.grid => GridPostCard(feedViewPost: feedViewPost, footer: footer, onTap: onTap),

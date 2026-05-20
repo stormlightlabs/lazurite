@@ -43,6 +43,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('provider=blacksky'), findsOneWidget);
     expect(find.textContaining('/feed?'), findsOneWidget);
+    expect(router.canPop(), isFalse);
 
     router.go('/');
     await tester.pumpAndSettle();
@@ -50,12 +51,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('provider=blacksky'), findsOneWidget);
     expect(find.textContaining('/post?'), findsOneWidget);
+    expect(router.canPop(), isFalse);
 
     router.go('/');
     await tester.pumpAndSettle();
     navigateToPublicProfile(buttonContext, 'alice.bsky.social', context);
     await tester.pumpAndSettle();
     expect(find.text('/profile/alice.bsky.social?provider=blacksky'), findsOneWidget);
+    expect(router.canPop(), isFalse);
   });
 }
 

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/feed/presentation/widgets/public_post_card.dart';
 import 'package:poptart_core/poptart_core.dart';
@@ -66,6 +67,43 @@ void main() {
     expect(find.text('profile'), findsOneWidget);
     expect(visitedProfileUris.last.pathSegments, ['profile', 'did:plc:test']);
     expect(visitedProfileUris.last.queryParameters['provider'], 'blacksky');
+
+    router.dispose();
+  });
+
+  testWidgets('post taps replace public route instead of stacking', (tester) async {
+    final visitedPostUris = <Uri>[];
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, _) => Scaffold(
+            body: PublicPostCard(feedViewPost: _makePost(), providerKey: 'blacksky', variant: PostCardVariant.card),
+          ),
+        ),
+        GoRoute(
+          path: '/post',
+          builder: (_, state) {
+            visitedPostUris.add(state.uri);
+            return const Scaffold(body: Text('post'));
+          },
+        ),
+      ],
+    );
+
+    final theme = AppTheme.getTheme(AppThemePalette.oxocarbon, AppThemeVariant.dark);
+    await tester.pumpWidget(MaterialApp.router(theme: theme, routerConfig: router));
+
+    final postInkWell = tester.widget<InkWell>(
+      find.descendant(of: find.byType(PostCard), matching: find.byType(InkWell)).first,
+    );
+    postInkWell.onTap!();
+    await tester.pumpAndSettle();
+
+    expect(find.text('post'), findsOneWidget);
+    expect(visitedPostUris.last.path, '/post');
+    expect(visitedPostUris.last.queryParameters['provider'], 'blacksky');
+    expect(router.canPop(), isFalse);
 
     router.dispose();
   });

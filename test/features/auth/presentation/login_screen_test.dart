@@ -105,7 +105,7 @@ void main() {
     );
   }
 
-  testWidgets('shows settings icon plus terms and privacy links', (tester) async {
+  testWidgets('shows terms and privacy links without duplicate settings action', (tester) async {
     await tester.pumpWidget(buildSubject());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
@@ -115,21 +115,10 @@ void main() {
     await tester.scrollUntilVisible(find.text('Privacy Policy'), 200, scrollable: scrollable);
     await tester.pumpAndSettle();
 
-    expect(find.byTooltip('Settings'), findsOneWidget);
+    expect(find.byTooltip('Settings'), findsNothing);
     expect(find.text('Settings'), findsNothing);
     expect(find.text('Terms of Service'), findsOneWidget);
     expect(find.text('Privacy Policy'), findsOneWidget);
-  });
-
-  testWidgets('tapping settings icon opens public settings route', (tester) async {
-    await tester.pumpWidget(buildSubject());
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
-
-    await tester.tap(find.byTooltip('Settings'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('public-settings-route'), findsOneWidget);
   });
 
   testWidgets('tapping Terms of Service opens terms route', (tester) async {

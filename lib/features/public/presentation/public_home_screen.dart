@@ -10,6 +10,8 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/cache/lazurite_image_cache.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
+import 'package:lazurite/features/feed/presentation/widgets/public_post_card.dart';
 import 'package:lazurite/features/public/data/public_content_repository.dart';
 import 'package:lazurite/features/public/data/public_provider_context.dart';
 import 'package:lazurite/features/public/presentation/public_navigation.dart';
@@ -86,9 +88,18 @@ class _PublicHomeScreenState extends State<PublicHomeScreen> {
                     segments: [
                       ButtonSegment<PublicContentTab>(
                         value: PublicContentTab.discover,
+                        icon: Icon(
+                          widget.providerKey == AppViewProviders.blackskyKey
+                              ? Icons.trending_up
+                              : Icons.travel_explore_outlined,
+                        ),
                         label: Text(widget.providerKey == AppViewProviders.blackskyKey ? 'Trending' : 'Discover'),
                       ),
-                      const ButtonSegment<PublicContentTab>(value: PublicContentTab.feeds, label: Text('Feeds')),
+                      const ButtonSegment<PublicContentTab>(
+                        value: PublicContentTab.feeds,
+                        icon: Icon(Icons.rss_feed_outlined),
+                        label: Text('Feeds'),
+                      ),
                     ],
                     selected: {widget.contentTab},
                     onSelectionChanged: (selection) => _go(context, contentTab: selection.first),
@@ -191,6 +202,7 @@ class _PublicDiscoverTabState extends State<_PublicDiscoverTab> with AutomaticKe
       }
       setState(() {
         _result = PublicDiscoverResult(
+          posts: [...?_result?.posts, ...next.posts],
           feeds: [...?_result?.feeds, ...next.feeds],
           trends: [...?_result?.trends, ...next.trends],
           cursor: next.cursor,
@@ -229,6 +241,14 @@ class _PublicDiscoverTabState extends State<_PublicDiscoverTab> with AutomaticKe
     }
 
     final children = <Widget>[_PublicSectionHeader(label: label)];
+    children.addAll(
+      result.posts.map(
+        (post) => Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: PublicPostCard(feedViewPost: post, providerKey: widget.providerKey, variant: PostCardVariant.card),
+        ),
+      ),
+    );
     children.addAll(result.trends.map((trend) => _TrendCard(trend: trend, providerKey: widget.providerKey)));
     children.addAll(result.feeds.map((feed) => _FeedCard(feed: feed, providerKey: widget.providerKey)));
     if (result.cursor != null) {
@@ -478,7 +498,7 @@ class _TrendCard extends StatelessWidget {
           final link = trend.link.trim();
           if (link.startsWith('/topic/')) {
             final topicId = link.substring('/topic/'.length);
-            context.push('/topic?topic=${Uri.encodeQueryComponent(topicId)}&provider=$providerKey');
+            context.go('/topic?topic=${Uri.encodeQueryComponent(topicId)}&provider=$providerKey');
           }
         },
         leading: const Icon(Icons.trending_up),

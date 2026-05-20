@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/bottom_navigation_labels.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -10,20 +11,20 @@ import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 class UnauthenticatedShell extends StatelessWidget {
   const UnauthenticatedShell({
     super.key,
-    required this.child,
     required this.location,
+    required this.navigationShell,
     this.publicProviderKey,
     this.publicHomeLocation,
   });
 
-  final Widget child;
   final String location;
+  final StatefulNavigationShell navigationShell;
   final String? publicProviderKey;
   final String? publicHomeLocation;
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: child,
+    body: navigationShell,
     bottomNavigationBar: Container(
       decoration: BoxDecoration(
         color: context.colorScheme.surface.withValues(alpha: 0.94),
@@ -37,47 +38,36 @@ class UnauthenticatedShell extends StatelessWidget {
           backgroundColor: Colors.transparent,
           surfaceTintColor: Colors.transparent,
           indicatorColor: context.colorScheme.secondaryContainer,
-          selectedIndex: _selectedIndex,
+          selectedIndex: navigationShell.currentIndex,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           onDestinationSelected: (index) => _goDestination(context, index),
           destinations: [
             NavigationDestination(
               icon: const Icon(Icons.home_outlined),
               selectedIcon: const Icon(Icons.home),
-              label: context.l10n.labelHome,
+              label: context.l10n.bottomNavHome,
             ),
             NavigationDestination(
               icon: const Icon(Icons.explore_outlined),
               selectedIcon: const Icon(Icons.explore),
-              label: context.l10n.labelAtExplorer,
+              label: context.l10n.bottomNavAtExplorer,
             ),
             NavigationDestination(
               icon: const Icon(Icons.settings_outlined),
               selectedIcon: const Icon(Icons.settings),
-              label: context.l10n.labelSettings,
+              label: context.l10n.bottomNavSettings,
             ),
             NavigationDestination(
               key: const ValueKey<String>('unauthenticated-login-button'),
               icon: const Icon(Icons.login_outlined),
               selectedIcon: const Icon(Icons.login),
-              label: context.l10n.buttonSignIn,
+              label: context.l10n.bottomNavSignIn,
             ),
           ],
         ),
       ),
     ),
   );
-
-  int get _selectedIndex {
-    if (location == '/login') {
-      return 3;
-    } else if (location == '/settings/devtools') {
-      return 1;
-    } else if (location == '/settings') {
-      return 2;
-    }
-    return 0;
-  }
 
   String get _homeLocation =>
       publicHomeLocation ??

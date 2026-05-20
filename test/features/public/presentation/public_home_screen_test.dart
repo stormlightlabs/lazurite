@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
+import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 import 'package:bluesky_poptart/app/bsky/unspecced/defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -35,7 +36,7 @@ void main() {
         cursor: any(named: 'cursor'),
         limit: any(named: 'limit'),
       ),
-    ).thenAnswer((_) async => PublicDiscoverResult(feeds: [_feed('discover')], cursor: 'cursor-1'));
+    ).thenAnswer((_) async => PublicDiscoverResult(posts: [_post('discover')], cursor: 'cursor-1'));
     when(
       () => repository.loadFeeds(
         cursor: any(named: 'cursor'),
@@ -86,17 +87,18 @@ void main() {
     return MaterialApp.router(routerConfig: router);
   }
 
-  testWidgets('loads BlueSky Discover feeds and opens feed details with provider context', (tester) async {
+  testWidgets('loads BlueSky Discover feed posts and gives public tabs icons', (tester) async {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
     expect(find.text('BlueSky Discover'), findsOneWidget);
-    expect(find.text('Feed discover'), findsOneWidget);
+    expect(find.byKey(const ValueKey('public_post_card_footer')), findsOneWidget);
 
-    await tester.tap(find.text('Feed discover'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('feed-detail'), findsOneWidget);
+    final contentSwitch = tester.widget<SegmentedButton<PublicContentTab>>(
+      find.byKey(const ValueKey<String>('public-content-switch')),
+    );
+    expect(contentSwitch.segments[0].icon, isA<Icon>());
+    expect(contentSwitch.segments[1].icon, isA<Icon>());
   });
 
   testWidgets('renders BlackSky Trending from public trend data', (tester) async {
@@ -105,13 +107,13 @@ void main() {
         cursor: any(named: 'cursor'),
         limit: any(named: 'limit'),
       ),
-    ).thenAnswer((_) async => PublicDiscoverResult(trends: [_trend('Cookout Etiquette Debate')]));
+    ).thenAnswer((_) async => PublicDiscoverResult(posts: [_post('blacksky-trending')]));
 
     await tester.pumpWidget(buildSubject(providerKey: AppViewProviders.blackskyKey));
     await tester.pumpAndSettle();
 
     expect(find.text('BlackSky Trending'), findsOneWidget);
-    expect(find.text('Cookout Etiquette Debate'), findsOneWidget);
+    expect(find.byKey(const ValueKey('public_post_card_footer')), findsOneWidget);
   });
 
   testWidgets('loads public Feeds and searches through SearchRepository path', (tester) async {
@@ -157,7 +159,7 @@ void main() {
         cursor: any(named: 'cursor'),
         limit: any(named: 'limit'),
       ),
-    ).thenAnswer((_) async => PublicDiscoverResult(feeds: [_feed('blue-discover')]));
+    ).thenAnswer((_) async => PublicDiscoverResult(posts: [_post('blue-discover')]));
     when(
       () => blueskyRepository.loadFeeds(
         cursor: any(named: 'cursor'),
@@ -202,7 +204,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Feed blue-discover'), findsOneWidget);
+    expect(find.byKey(const ValueKey('public_post_card_footer')), findsOneWidget);
 
     await tester.tap(find.text('BlackSky'));
     await tester.pumpAndSettle();
@@ -234,5 +236,21 @@ TrendView _trend(String topic) {
     postCount: 212,
     category: 'culture',
     actors: const [],
+  );
+}
+
+FeedViewPost _post(String rkey) {
+  final record = FeedPostRecord(text: 'Post $rkey', createdAt: DateTime.utc(2026, 5, 20));
+  return FeedViewPost(
+    post: PostView(
+      uri: atcore.AtUri.parse('at://did:plc:author/app.bsky.feed.post/$rkey'),
+      cid: 'cid-$rkey',
+      author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social', displayName: 'Author'),
+      record: record.toJson(),
+      indexedAt: DateTime.utc(2026, 5, 20),
+      replyCount: 1,
+      repostCount: 2,
+      likeCount: 3,
+    ),
   );
 }

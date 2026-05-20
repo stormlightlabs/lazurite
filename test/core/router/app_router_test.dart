@@ -21,6 +21,8 @@ import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
+import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
+import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
@@ -349,7 +351,7 @@ void main() {
     expect(navBar.labelBehavior, NavigationDestinationLabelBehavior.alwaysHide);
 
     final destinations = navBar.destinations.cast<NavigationDestination>();
-    expect(destinations.map((d) => d.label), ['HOME', 'SEARCH', 'AT Explorer', 'ALERTS', 'PROFILE']);
+    expect(destinations.map((d) => d.label), ['Home', 'Search', 'AT Explorer', 'Alerts', 'Profile']);
     expect(destinations.any((d) => d.label == 'MESSAGES'), isFalse);
     expect(destinations.any((d) => d.label == 'SETTINGS'), isFalse);
   });
@@ -631,7 +633,7 @@ void main() {
     expect(navBar.selectedIndex, 0);
     expect(navBar.labelBehavior, NavigationDestinationLabelBehavior.alwaysShow);
     expect(navBar.destinations.map((destination) => (destination as NavigationDestination).label), [
-      'HOME',
+      'Home',
       'AT Explorer',
       'Settings',
       'Sign In',
@@ -651,7 +653,7 @@ void main() {
     navBar = tester.widget<NavigationBar>(find.byKey(const ValueKey<String>('unauthenticated-navigation-bar')));
     expect(navBar.selectedIndex, 2);
 
-    await tester.tap(find.text('HOME').last);
+    await tester.tap(find.text('Home').last);
     await tester.pumpAndSettle();
     expect(router.routerDelegate.currentConfiguration.uri.path, '/public/blacksky/discover');
 
@@ -666,7 +668,7 @@ void main() {
     navBar = tester.widget<NavigationBar>(find.byKey(const ValueKey<String>('unauthenticated-navigation-bar')));
     expect(navBar.selectedIndex, 3);
 
-    await tester.tap(find.text('HOME').last);
+    await tester.tap(find.text('Home').last);
     await tester.pumpAndSettle();
     expect(router.routerDelegate.currentConfiguration.uri.path, '/public/blacksky/feeds');
 
@@ -753,6 +755,7 @@ void main() {
     router.go('/feed?uri=${Uri.encodeQueryComponent(feedUri.toString())}&provider=blacksky');
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const ValueKey<String>('unauthenticated-navigation-bar')), findsOneWidget);
     expect(find.byKey(const ValueKey('public_post_card_footer')), findsOneWidget);
     expect(find.byTooltip('Share post'), findsOneWidget);
     expect(find.byIcon(Icons.bookmark_outline), findsNothing);
@@ -790,9 +793,68 @@ void main() {
     router.go('/post?uri=${Uri.encodeQueryComponent(thread.post.uri.toString())}&provider=blacksky');
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const ValueKey<String>('unauthenticated-navigation-bar')), findsOneWidget);
+    expect(router.canPop(), isFalse);
     expect(find.byKey(const ValueKey('public_post_card_footer')), findsOneWidget);
     expect(find.byTooltip('Share post'), findsOneWidget);
     expect(find.byIcon(Icons.bookmark_outline), findsNothing);
+
+    router.dispose();
+  });
+
+  testWidgets('logged-out image viewer route remains public instead of redirecting to login', (tester) async {
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go(
+      '/images',
+      extra: const ImageViewerRouteArgs(
+        images: [
+          ImageViewerItem(
+            fullsizeUrl: 'https://example.com/full.jpg',
+            thumbnailUrl: 'https://example.com/thumb.jpg',
+            heroTag: 'public-image-test',
+            altText: 'alt text',
+          ),
+        ],
+        initialIndex: 0,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/images');
+    expect(find.byTooltip('Close'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('login-continue-button')), findsNothing);
+
+    router.dispose();
+  });
+
+  testWidgets('logged-out video viewer route remains public instead of redirecting to login', (tester) async {
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go(
+      '/video',
+      extra: const VideoPlayerRouteArgs(
+        playlistUrl: 'https://example.com/video.m3u8',
+        thumbnailUrl: 'https://example.com/thumb.jpg',
+        altText: 'video alt text',
+        aspectRatio: 16 / 9,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/video');
+    expect(find.text('Video'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('login-continue-button')), findsNothing);
 
     router.dispose();
   });
@@ -818,6 +880,8 @@ void main() {
     router.go('/topic?topic=1972&provider=blacksky');
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const ValueKey<String>('unauthenticated-navigation-bar')), findsOneWidget);
+    expect(router.canPop(), isFalse);
     expect(find.text('Cookout'), findsWidgets);
     expect(find.byKey(const ValueKey('public_post_card_footer')), findsOneWidget);
     expect(find.byTooltip('Share post'), findsOneWidget);
@@ -873,6 +937,8 @@ void main() {
     router.go('/profile/alice.bsky.social?provider=blacksky');
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const ValueKey<String>('unauthenticated-navigation-bar')), findsOneWidget);
+    expect(router.canPop(), isFalse);
     expect(find.text('Alice'), findsWidgets);
     expect(find.text('POSTS'), findsWidgets);
     expect(find.text('REPLIES'), findsOneWidget);
@@ -1067,7 +1133,7 @@ void main() {
     router.dispose();
   });
 
-  testWidgets('unauthenticated settings back button falls back to login when there is no stack to pop', (tester) async {
+  testWidgets('unauthenticated settings tab root hides back button', (tester) async {
     currentAuthState = const AuthState.unauthenticated();
     when(() => authBloc.state).thenReturn(currentAuthState);
     whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
@@ -1088,11 +1154,9 @@ void main() {
     router.go('/settings');
     await tester.pumpAndSettle();
     expect(find.text('APPEARANCE'), findsOneWidget);
-
-    await tester.tap(find.byTooltip('Back'));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const ValueKey<String>('login-continue-button')), findsOneWidget);
+    expect(find.byTooltip('Back'), findsNothing);
+    final navBar = tester.widget<NavigationBar>(find.byKey(const ValueKey<String>('unauthenticated-navigation-bar')));
+    expect(navBar.selectedIndex, 2);
 
     router.dispose();
   });

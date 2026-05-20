@@ -21,15 +21,15 @@ void navigateToPublicFeed(BuildContext context, GeneratorView feed, PublicProvid
     path: '/feed',
     queryParameters: {'uri': feed.uri.toString(), 'provider': providerContext.providerKey},
   );
-  context.push(uri.toString());
+  context.go(uri.toString());
 }
 
 void navigateToPublicProfile(BuildContext context, String actor, PublicProviderContext providerContext) {
   final uri = providerContext.appendTo(Uri(path: '/profile/$actor'));
-  context.push(uri.toString());
+  context.go(uri.toString());
 }
 
 void navigateToPublicPost(BuildContext context, String postUri, PublicProviderContext providerContext) {
   final uri = Uri(path: '/post', queryParameters: {'uri': postUri, 'provider': providerContext.providerKey});
-  context.push(uri.toString());
+  context.go(uri.toString());
 }

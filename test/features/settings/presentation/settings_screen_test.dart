@@ -657,11 +657,11 @@ void main() {
     expect(find.text('Privacy Policy'), findsOneWidget);
   });
 
-  testWidgets('uses back button when unauthenticated', (tester) async {
+  testWidgets('hides back button when unauthenticated', (tester) async {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    expect(find.byTooltip('Back'), findsOneWidget);
+    expect(find.byTooltip('Back'), findsNothing);
     expect(find.byTooltip('Open menu'), findsNothing);
   });
 

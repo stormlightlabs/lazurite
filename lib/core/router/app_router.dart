@@ -105,6 +105,14 @@ class AppRouter {
   final GlobalKey<NavigatorState> _atExplorerNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'at-explorer');
   final GlobalKey<NavigatorState> _notificationsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'notifications');
   final GlobalKey<NavigatorState> _profileNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
+  final GlobalKey<NavigatorState> _unauthHomeNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'unauth-home');
+  final GlobalKey<NavigatorState> _unauthExplorerNavigatorKey = GlobalKey<NavigatorState>(
+    debugLabel: 'unauth-explorer',
+  );
+  final GlobalKey<NavigatorState> _unauthSettingsNavigatorKey = GlobalKey<NavigatorState>(
+    debugLabel: 'unauth-settings',
+  );
+  final GlobalKey<NavigatorState> _unauthLoginNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'unauth-login');
   List<GlobalKey<NavigatorState>> get _branchNavigatorKeys => [
     _homeNavigatorKey,
     _searchNavigatorKey,
@@ -112,9 +120,6 @@ class AppRouter {
     _notificationsNavigatorKey,
     _profileNavigatorKey,
   ];
-
-  // Page<dynamic> _page(BuildContext context, GoRouterState state, Widget child) =>
-  //     buildAppRoutePage(context: context, state: state, child: child);
 
   GoRouter get router => GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -134,6 +139,8 @@ class AppRouter {
         '/feed',
         '/post',
         '/topic',
+        '/images',
+        '/video',
         OAuthCallbackScreen.routePath,
         OAuthCallbackScreen.compatibilityRoutePath,
       };
@@ -161,120 +168,7 @@ class AppRouter {
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/login',
-        pageBuilder: (context, state) {
-          final initialHandle = state.uri.queryParameters['handle']?.trim();
-          final hasInitialHandle = initialHandle != null && initialHandle.isNotEmpty;
-          final autoStartOAuth = state.uri.queryParameters['reauth'] == '1' && hasInitialHandle;
-          return buildAppRoutePage(
-            context,
-            state,
-            _buildUnauthenticatedRouteShell(
-              context,
-              state,
-              LoginScreen(
-                initialHandle: hasInitialHandle ? initialHandle : null,
-                initialProviderKey: state.uri.queryParameters['provider'],
-                autoStartOAuth: autoStartOAuth,
-              ),
-            ),
-          );
-        },
-      ),
-      GoRoute(path: '/public', redirect: (_, _) => '/public/bluesky/discover'),
-      GoRoute(
-        path: '/public/:provider/:tab',
-        redirect: (_, state) {
-          final routeState = PublicRouteState.parse(
-            provider: state.pathParameters['provider'],
-            tab: state.pathParameters['tab'],
-          );
-          if (state.uri.path != routeState.location) {
-            return routeState.location;
-          }
-          return null;
-        },
-        pageBuilder: (context, state) {
-          final routeState = PublicRouteState.parse(
-            provider: state.pathParameters['provider'],
-            tab: state.pathParameters['tab'],
-          );
-          return MaterialPage<dynamic>(
-            key: const ValueKey<String>('public-home-route'),
-            child: _buildUnauthenticatedRouteShell(
-              context,
-              state,
-              _buildPublicHomeRoute(context, routeState),
-              publicProviderKey: routeState.providerKey,
-              publicHomeLocation: routeState.location,
-            ),
-          );
-        },
-      ),
-      GoRoute(
-        path: '/settings',
-        pageBuilder: (context, state) =>
-            buildAppRoutePage(context, state, _buildUnauthenticatedRouteShell(context, state, const SettingsScreen())),
-        routes: [
-          GoRoute(
-            path: 'moderation',
-            pageBuilder: (context, state) => buildAppRoutePage(context, state, const ModerationSettingsScreen()),
-            routes: [
-              GoRoute(
-                path: 'detail',
-                pageBuilder: (context, state) =>
-                    buildAppRoutePage(context, state, LabelerDetailScreen(did: state.uri.queryParameters['did'] ?? '')),
-              ),
-            ],
-          ),
-          GoRoute(
-            path: 'account',
-            pageBuilder: (context, state) => buildAppRoutePage(context, state, const SettingsAccountScreen()),
-          ),
-          GoRoute(
-            path: 'about',
-            pageBuilder: (context, state) => buildAppRoutePage(context, state, const AboutScreen()),
-          ),
-          GoRoute(path: 'logs', pageBuilder: (context, state) => buildAppRoutePage(context, state, const LogsScreen())),
-          GoRoute(
-            path: 'clean-follows',
-            pageBuilder: (context, state) => buildAppRoutePage(
-              context,
-              state,
-              BlocProvider(
-                create: (_) => FollowAuditCubit(
-                  repository: FollowAuditRepository(
-                    bluesky: context.read<Bluesky>(),
-                    appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
-                  ),
-                  ownDid: context.read<String>(),
-                ),
-                child: const FollowAuditScreen(),
-              ),
-            ),
-          ),
-          GoRoute(
-            path: 'devtools',
-            pageBuilder: (context, state) => buildAppRoutePage(
-              context,
-              state,
-              _buildUnauthenticatedRouteShell(context, state, _buildDevToolsRoute(context, state)),
-            ),
-          ),
-          GoRoute(
-            path: 'video-limits',
-            pageBuilder: (context, state) => buildAppRoutePage(
-              context,
-              state,
-              BlocProvider(
-                create: (_) => VideoUploadLimitsCubit(repository: context.read<VideoRepository>()),
-                child: const VideoUploadLimitsScreen(),
-              ),
-            ),
-          ),
-        ],
-      ),
+      _buildUnauthenticatedShellRoute(),
       GoRoute(
         path: OAuthCallbackScreen.routePath,
         parentNavigatorKey: _rootNavigatorKey,
@@ -284,14 +178,6 @@ class AppRouter {
         path: OAuthCallbackScreen.compatibilityRoutePath,
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: (context, state) => buildAppRoutePage(context, state, OAuthCallbackScreen(callbackUri: state.uri)),
-      ),
-      GoRoute(
-        path: '/terms',
-        pageBuilder: (context, state) => buildAppRoutePage(context, state, const TermsOfServiceScreen()),
-      ),
-      GoRoute(
-        path: '/privacy',
-        pageBuilder: (context, state) => buildAppRoutePage(context, state, const PrivacyPolicyScreen()),
       ),
       GoRoute(path: '/notifications', redirect: (_, _) => '/alerts'),
       GoRoute(path: '/messages', redirect: (_, _) => '/alerts/messages'),
@@ -330,19 +216,6 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: '/post',
-        parentNavigatorKey: _rootNavigatorKey,
-        pageBuilder: (context, state) {
-          final uri = state.uri.queryParameters['uri'] ?? '';
-          final provider = state.uri.queryParameters['provider'];
-          return buildAppRoutePage(
-            context,
-            state,
-            _buildPostThreadRoute(context, postUri: Uri.decodeComponent(uri), provider: provider),
-          );
-        },
-      ),
-      GoRoute(
         path: '/hashtag',
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: (context, state) {
@@ -355,19 +228,6 @@ class AppRouter {
               create: (_) => HashtagCubit(searchRepository: context.read<SearchRepository>(), tag: normalizedTag),
               child: HashtagScreen(tag: normalizedTag),
             ),
-          );
-        },
-      ),
-      GoRoute(
-        path: '/topic',
-        parentNavigatorKey: _rootNavigatorKey,
-        pageBuilder: (context, state) {
-          final rawTopic = state.uri.queryParameters['topic'] ?? '';
-          final topic = Uri.decodeComponent(rawTopic).trim();
-          return buildAppRoutePage(
-            context,
-            state,
-            _buildTopicRoute(context, topic: topic, provider: state.uri.queryParameters['provider']),
           );
         },
       ),
@@ -488,64 +348,6 @@ class AppRouter {
             ),
           );
         },
-      ),
-      GoRoute(
-        path: r'/profile/:actor(m|[^m][^/]*|m[^e][^/]*|me[^/]+)',
-        parentNavigatorKey: _rootNavigatorKey,
-        redirect: (_, state) {
-          final actor = (state.pathParameters['actor'] ?? '').trim().toLowerCase();
-          if (actor == 'me') {
-            return '/profile/me';
-          }
-          return null;
-        },
-        pageBuilder: (context, state) => buildAppRoutePage(
-          context,
-          state,
-          _buildContextualProfileRoute(
-            context,
-            Uri.decodeComponent(state.pathParameters['actor'] ?? ''),
-            provider: state.uri.queryParameters['provider'],
-          ),
-        ),
-        routes: [
-          GoRoute(
-            path: 'connections',
-            redirect: (_, state) => authBloc.state.isAuthenticated ? null : _publicProfileLocation(state),
-            pageBuilder: (context, state) => buildAppRoutePage(
-              context,
-              state,
-              _buildProfileConnectionsRoute(context, state, Uri.decodeComponent(state.pathParameters['actor'] ?? '')),
-            ),
-          ),
-          GoRoute(
-            path: 'search-posts',
-            redirect: (_, state) => authBloc.state.isAuthenticated ? null : _publicProfileLocation(state),
-            pageBuilder: (context, state) {
-              final actor = Uri.decodeComponent(state.pathParameters['actor'] ?? '');
-              return buildAppRoutePage(
-                context,
-                state,
-                BlocProvider(
-                  create: (_) => SearchBloc(
-                    searchRepository: context.read<SearchRepository>(),
-                    typeaheadRepository: context.read<TypeaheadRepository>(),
-                    database: context.read<AppDatabase>(),
-                    accountDid: context.read<String>(),
-                    config: SearchBlocConfig.profileScoped(fixedPostAuthor: actor),
-                  ),
-                  child: SearchScreen(
-                    postsOnlyMode: true,
-                    fixedPostAuthor: actor,
-                    showBackButton: true,
-                    title: 'Search @${actor.startsWith('did:') ? actor : actor}',
-                    showJumpToProfileAction: false,
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -741,22 +543,278 @@ class AppRouter {
     ],
   );
 
-  Widget _buildUnauthenticatedRouteShell(
-    BuildContext context,
-    GoRouterState state,
-    Widget child, {
-    String? publicProviderKey,
-    String? publicHomeLocation,
-  }) {
-    if (authBloc.state.isAuthenticated) {
-      return child;
-    }
+  StatefulShellRoute _buildUnauthenticatedShellRoute() {
+    return StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) {
+        if (authBloc.state.isAuthenticated) {
+          return navigationShell;
+        }
 
-    return UnauthenticatedShell(
-      location: state.uri.path,
-      publicProviderKey: publicProviderKey,
-      publicHomeLocation: publicHomeLocation ?? _publicHomeLocationFromQuery(state),
-      child: child,
+        return UnauthenticatedShell(
+          location: state.uri.path,
+          publicProviderKey: _publicProviderFromState(state),
+          publicHomeLocation: _publicHomeLocationForState(state),
+          navigationShell: navigationShell,
+        );
+      },
+      branches: [
+        StatefulShellBranch(
+          navigatorKey: _unauthHomeNavigatorKey,
+          routes: [
+            GoRoute(path: '/public', redirect: (_, _) => '/public/bluesky/discover'),
+            _buildPublicHomeRouteConfig(),
+            _buildPublicFeedRouteConfig(),
+            _buildPublicPostRouteConfig(),
+            _buildPublicTopicRouteConfig(),
+            _buildPublicProfileRouteConfig(),
+          ],
+        ),
+        StatefulShellBranch(
+          navigatorKey: _unauthExplorerNavigatorKey,
+          routes: [
+            GoRoute(
+              path: '/settings/devtools',
+              pageBuilder: (context, state) => buildAppRoutePage(context, state, _buildDevToolsRoute(context, state)),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          navigatorKey: _unauthSettingsNavigatorKey,
+          routes: [
+            _buildSettingsRouteConfig(),
+            GoRoute(
+              path: '/terms',
+              pageBuilder: (context, state) => buildAppRoutePage(context, state, const TermsOfServiceScreen()),
+            ),
+            GoRoute(
+              path: '/privacy',
+              pageBuilder: (context, state) => buildAppRoutePage(context, state, const PrivacyPolicyScreen()),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          navigatorKey: _unauthLoginNavigatorKey,
+          routes: [
+            GoRoute(
+              path: '/login',
+              pageBuilder: (context, state) {
+                final initialHandle = state.uri.queryParameters['handle']?.trim();
+                final hasInitialHandle = initialHandle != null && initialHandle.isNotEmpty;
+                final autoStartOAuth = state.uri.queryParameters['reauth'] == '1' && hasInitialHandle;
+                return buildAppRoutePage(
+                  context,
+                  state,
+                  LoginScreen(
+                    initialHandle: hasInitialHandle ? initialHandle : null,
+                    initialProviderKey: state.uri.queryParameters['provider'],
+                    autoStartOAuth: autoStartOAuth,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  GoRoute _buildPublicHomeRouteConfig() {
+    return GoRoute(
+      path: '/public/:provider/:tab',
+      redirect: (_, state) {
+        final routeState = PublicRouteState.parse(
+          provider: state.pathParameters['provider'],
+          tab: state.pathParameters['tab'],
+        );
+        if (state.uri.path != routeState.location) {
+          return routeState.location;
+        }
+        return null;
+      },
+      pageBuilder: (context, state) {
+        final routeState = PublicRouteState.parse(
+          provider: state.pathParameters['provider'],
+          tab: state.pathParameters['tab'],
+        );
+        return MaterialPage<dynamic>(
+          key: const ValueKey<String>('public-home-route'),
+          child: _buildPublicHomeRoute(context, routeState),
+        );
+      },
+    );
+  }
+
+  GoRoute _buildSettingsRouteConfig() {
+    return GoRoute(
+      path: '/settings',
+      pageBuilder: (context, state) => buildAppRoutePage(context, state, const SettingsScreen()),
+      routes: [
+        GoRoute(
+          path: 'moderation',
+          pageBuilder: (context, state) => buildAppRoutePage(context, state, const ModerationSettingsScreen()),
+          routes: [
+            GoRoute(
+              path: 'detail',
+              pageBuilder: (context, state) =>
+                  buildAppRoutePage(context, state, LabelerDetailScreen(did: state.uri.queryParameters['did'] ?? '')),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: 'account',
+          pageBuilder: (context, state) => buildAppRoutePage(context, state, const SettingsAccountScreen()),
+        ),
+        GoRoute(path: 'about', pageBuilder: (context, state) => buildAppRoutePage(context, state, const AboutScreen())),
+        GoRoute(path: 'logs', pageBuilder: (context, state) => buildAppRoutePage(context, state, const LogsScreen())),
+        GoRoute(
+          path: 'clean-follows',
+          pageBuilder: (context, state) => buildAppRoutePage(
+            context,
+            state,
+            BlocProvider(
+              create: (_) => FollowAuditCubit(
+                repository: FollowAuditRepository(
+                  bluesky: context.read<Bluesky>(),
+                  appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                ),
+                ownDid: context.read<String>(),
+              ),
+              child: const FollowAuditScreen(),
+            ),
+          ),
+        ),
+        GoRoute(
+          path: 'video-limits',
+          pageBuilder: (context, state) => buildAppRoutePage(
+            context,
+            state,
+            BlocProvider(
+              create: (_) => VideoUploadLimitsCubit(repository: context.read<VideoRepository>()),
+              child: const VideoUploadLimitsScreen(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  GoRoute _buildPublicFeedRouteConfig() {
+    return GoRoute(
+      path: '/feed',
+      pageBuilder: (context, state) {
+        final encodedUri = state.uri.queryParameters['uri'];
+        final encodedActor = state.uri.queryParameters['actor'];
+        final encodedRkey = state.uri.queryParameters['rkey'];
+        final encodedProvider = state.uri.queryParameters['provider'];
+
+        AtUri? feedUri;
+        if (encodedUri != null && encodedUri.trim().isNotEmpty) {
+          final rawUri = Uri.decodeComponent(encodedUri);
+          feedUri = AtUri.parse(rawUri);
+        }
+
+        final actor = encodedActor == null ? null : Uri.decodeComponent(encodedActor);
+        final rkey = encodedRkey == null ? null : Uri.decodeComponent(encodedRkey);
+        final provider = encodedProvider == null ? null : Uri.decodeComponent(encodedProvider);
+        return buildAppRoutePage(
+          context,
+          state,
+          _buildFeedDetailRoute(context, feedUri: feedUri, actor: actor, rkey: rkey, provider: provider),
+        );
+      },
+    );
+  }
+
+  GoRoute _buildPublicPostRouteConfig() {
+    return GoRoute(
+      path: '/post',
+      pageBuilder: (context, state) {
+        final uri = state.uri.queryParameters['uri'] ?? '';
+        final provider = state.uri.queryParameters['provider'];
+        return buildAppRoutePage(
+          context,
+          state,
+          _buildPostThreadRoute(context, postUri: Uri.decodeComponent(uri), provider: provider),
+        );
+      },
+    );
+  }
+
+  GoRoute _buildPublicTopicRouteConfig() {
+    return GoRoute(
+      path: '/topic',
+      pageBuilder: (context, state) {
+        final rawTopic = state.uri.queryParameters['topic'] ?? '';
+        final topic = Uri.decodeComponent(rawTopic).trim();
+        return buildAppRoutePage(
+          context,
+          state,
+          _buildTopicRoute(context, topic: topic, provider: state.uri.queryParameters['provider']),
+        );
+      },
+    );
+  }
+
+  GoRoute _buildPublicProfileRouteConfig() {
+    return GoRoute(
+      path: r'/profile/:actor(m|[^m][^/]*|m[^e][^/]*|me[^/]+)',
+      redirect: (_, state) {
+        final actor = (state.pathParameters['actor'] ?? '').trim().toLowerCase();
+        if (actor == 'me') {
+          return '/profile/me';
+        }
+        return null;
+      },
+      pageBuilder: (context, state) {
+        final provider = state.uri.queryParameters['provider'];
+        return buildAppRoutePage(
+          context,
+          state,
+          _buildContextualProfileRoute(
+            context,
+            Uri.decodeComponent(state.pathParameters['actor'] ?? ''),
+            provider: provider,
+          ),
+        );
+      },
+      routes: [
+        GoRoute(
+          path: 'connections',
+          redirect: (_, state) => authBloc.state.isAuthenticated ? null : _publicProfileLocation(state),
+          pageBuilder: (context, state) => buildAppRoutePage(
+            context,
+            state,
+            _buildProfileConnectionsRoute(context, state, Uri.decodeComponent(state.pathParameters['actor'] ?? '')),
+          ),
+        ),
+        GoRoute(
+          path: 'search-posts',
+          redirect: (_, state) => authBloc.state.isAuthenticated ? null : _publicProfileLocation(state),
+          pageBuilder: (context, state) {
+            final actor = Uri.decodeComponent(state.pathParameters['actor'] ?? '');
+            return buildAppRoutePage(
+              context,
+              state,
+              BlocProvider(
+                create: (_) => SearchBloc(
+                  searchRepository: context.read<SearchRepository>(),
+                  typeaheadRepository: context.read<TypeaheadRepository>(),
+                  database: context.read<AppDatabase>(),
+                  accountDid: context.read<String>(),
+                  config: SearchBlocConfig.profileScoped(fixedPostAuthor: actor),
+                ),
+                child: SearchScreen(
+                  postsOnlyMode: true,
+                  fixedPostAuthor: actor,
+                  showBackButton: true,
+                  title: 'Search @${actor.startsWith('did:') ? actor : actor}',
+                  showJumpToProfileAction: false,
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -1000,6 +1058,39 @@ class AppRouter {
 
     final routeState = PublicRouteState.parse(provider: segments[1], tab: segments[2]);
     return routeState.location;
+  }
+
+  String? _publicHomeLocationForState(GoRouterState state) {
+    final queryHome = _publicHomeLocationFromQuery(state);
+    if (queryHome != null) {
+      return queryHome;
+    }
+
+    final segments = state.uri.pathSegments;
+    if (segments.length == 3 && segments.first == 'public') {
+      return PublicRouteState.parse(provider: segments[1], tab: segments[2]).location;
+    }
+
+    final provider = _publicProviderFromState(state);
+    if (provider == null) {
+      return null;
+    }
+
+    return PublicRouteState(providerKey: provider, contentTab: PublicContentTab.discover).location;
+  }
+
+  String? _publicProviderFromState(GoRouterState state) {
+    final queryProvider = state.uri.queryParameters['provider'];
+    if (PublicRouteState.isSupportedProvider(queryProvider)) {
+      return PublicRouteState.normalizeProvider(queryProvider);
+    }
+
+    final segments = state.uri.pathSegments;
+    if (segments.length >= 2 && segments.first == 'public' && PublicRouteState.isSupportedProvider(segments[1])) {
+      return PublicRouteState.normalizeProvider(segments[1]);
+    }
+
+    return null;
   }
 
   Widget _buildTopicRoute(BuildContext context, {required String topic, required String? provider}) {
