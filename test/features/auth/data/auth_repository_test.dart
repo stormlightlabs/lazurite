@@ -32,6 +32,15 @@ void main() {
     mockSlingshotClient = MockSlingshotClient();
     when(() => mockDatabase.getAccount(any())).thenAnswer((_) async => null);
     when(
+      () => mockDatabase.acquireAuthRefreshLock(
+        any(),
+        owner: any(named: 'owner'),
+        expiresAt: any(named: 'expiresAt'),
+      ),
+    ).thenAnswer((_) async => true);
+    when(() => mockDatabase.isAuthRefreshLockActive(any())).thenAnswer((_) async => false);
+    when(() => mockDatabase.releaseAuthRefreshLock(any(), owner: any(named: 'owner'))).thenAnswer((_) async => 1);
+    when(
       () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
         any(),
         expectedRefreshToken: any(named: 'expectedRefreshToken'),
@@ -408,6 +417,124 @@ void main() {
         verifyNever(() => mockDatabase.insertAccount(any()));
       });
 
+      test('does not resurrect account when it is removed before refreshed tokens are persisted', () async {
+        final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+        final refreshedAccessToken = buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: nowEpochSeconds + 3600,
+          iatEpochSeconds: nowEpochSeconds,
+        );
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          appPasswordRefreshSession: ({required String refreshJwt, String? service}) async {
+            return _appPasswordRefreshResponse(
+              did: 'did:plc:abc123',
+              handle: 'user.bsky.social',
+              accessJwt: refreshedAccessToken,
+              refreshJwt: 'new-refresh-token',
+            );
+          },
+        );
+
+        const currentSession = AuthTokens(
+          accessToken: 'expired-access-token',
+          refreshToken: 'old-refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+        var getAccountCalls = 0;
+        when(() => mockDatabase.getAccount(currentSession.did)).thenAnswer((_) async {
+          getAccountCalls += 1;
+          return getAccountCalls == 1 ? _accountForTokens(currentSession) : null;
+        });
+        when(
+          () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
+        ).thenAnswer((_) async => currentSession.did);
+        when(
+          () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
+            any(),
+            expectedRefreshToken: any(named: 'expectedRefreshToken'),
+            handle: any(named: 'handle'),
+            accessToken: any(named: 'accessToken'),
+            refreshToken: any(named: 'refreshToken'),
+            expiresAt: any(named: 'expiresAt'),
+            displayName: any(named: 'displayName'),
+            service: any(named: 'service'),
+            oauthService: any(named: 'oauthService'),
+            oauthClientId: any(named: 'oauthClientId'),
+            dpopNonce: any(named: 'dpopNonce'),
+            dpopPublicKey: any(named: 'dpopPublicKey'),
+            dpopPrivateKey: any(named: 'dpopPrivateKey'),
+          ),
+        ).thenAnswer((_) async => false);
+
+        await expectLater(authRepository.refreshSession(currentSession), throwsA(isA<Exception>()));
+
+        verifyNever(() => mockDatabase.insertAccount(any()));
+        verifyNever(() => mockDatabase.setSetting(AppDatabase.activeAccountDidSettingKey, any()));
+      });
+
+      test('uses tokens refreshed by another worker while persistent refresh lock is held', () async {
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          appPasswordRefreshSession: ({required String refreshJwt, String? service}) async =>
+              throw StateError('refresh should be handled by the lock holder'),
+        );
+
+        const currentSession = AuthTokens(
+          accessToken: 'expired-access-token',
+          refreshToken: 'old-refresh-token',
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+
+        final newerSession = AuthTokens(
+          accessToken: 'new-access-token',
+          refreshToken: 'new-refresh-token',
+          expiresAt: DateTime.now().add(const Duration(hours: 1)),
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'bsky.social',
+          authMethod: AuthMethod.appPassword,
+        );
+        when(
+          () => mockDatabase.acquireAuthRefreshLock(
+            any(),
+            owner: any(named: 'owner'),
+            expiresAt: any(named: 'expiresAt'),
+          ),
+        ).thenAnswer((_) async => false);
+        when(
+          () => mockDatabase.getAccount(currentSession.did),
+        ).thenAnswer((_) async => _accountForTokens(newerSession));
+
+        final refreshed = await authRepository.refreshSession(currentSession);
+
+        expect(refreshed, isNotNull);
+        expect(refreshed!.refreshToken, 'new-refresh-token');
+        verifyNever(
+          () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
+            any(),
+            expectedRefreshToken: any(named: 'expectedRefreshToken'),
+            handle: any(named: 'handle'),
+            accessToken: any(named: 'accessToken'),
+            refreshToken: any(named: 'refreshToken'),
+            expiresAt: any(named: 'expiresAt'),
+            displayName: any(named: 'displayName'),
+            service: any(named: 'service'),
+            oauthService: any(named: 'oauthService'),
+            oauthClientId: any(named: 'oauthClientId'),
+            dpopNonce: any(named: 'dpopNonce'),
+            dpopPublicKey: any(named: 'dpopPublicKey'),
+            dpopPrivateKey: any(named: 'dpopPrivateKey'),
+          ),
+        );
+      });
+
       test('preserves account when refresh fails transiently', () async {
         authRepository = AuthRepository(
           database: mockDatabase,
@@ -576,10 +703,23 @@ void main() {
         when(
           () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
         ).thenAnswer((_) async => currentSession.did);
-        when(() => mockDatabase.insertAccount(any())).thenAnswer((_) async => 1);
         when(
-          () => mockDatabase.setSetting(AppDatabase.activeAccountDidSettingKey, currentSession.did),
-        ).thenAnswer((_) async => 1);
+          () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
+            any(),
+            expectedRefreshToken: any(named: 'expectedRefreshToken'),
+            handle: any(named: 'handle'),
+            accessToken: any(named: 'accessToken'),
+            refreshToken: any(named: 'refreshToken'),
+            expiresAt: any(named: 'expiresAt'),
+            displayName: any(named: 'displayName'),
+            service: any(named: 'service'),
+            oauthService: any(named: 'oauthService'),
+            oauthClientId: any(named: 'oauthClientId'),
+            dpopNonce: any(named: 'dpopNonce'),
+            dpopPublicKey: any(named: 'dpopPublicKey'),
+            dpopPrivateKey: any(named: 'dpopPrivateKey'),
+          ),
+        ).thenAnswer((_) async => true);
 
         final refreshed = await authRepository.refreshSession(sessionWithJwt);
 
@@ -588,7 +728,7 @@ void main() {
         expect(attemptedServices, equals(['porcini.us-east.host.bsky.network', 'bsky.social']));
         expect(refreshed.oauthService, equals('bsky.social'));
         verifyNever(() => mockDatabase.deleteAccount(any()));
-        verify(() => mockDatabase.insertAccount(any())).called(1);
+        verifyNever(() => mockDatabase.insertAccount(any()));
       });
 
       test('preserves stored nullable OAuth fields when refresh does not re-fetch them', () async {
@@ -732,10 +872,23 @@ void main() {
         when(
           () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
         ).thenAnswer((_) async => currentSession.did);
-        when(() => mockDatabase.insertAccount(any())).thenAnswer((_) async => 1);
         when(
-          () => mockDatabase.setSetting(AppDatabase.activeAccountDidSettingKey, currentSession.did),
-        ).thenAnswer((_) async => 1);
+          () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
+            any(),
+            expectedRefreshToken: any(named: 'expectedRefreshToken'),
+            handle: any(named: 'handle'),
+            accessToken: any(named: 'accessToken'),
+            refreshToken: any(named: 'refreshToken'),
+            expiresAt: any(named: 'expiresAt'),
+            displayName: any(named: 'displayName'),
+            service: any(named: 'service'),
+            oauthService: any(named: 'oauthService'),
+            oauthClientId: any(named: 'oauthClientId'),
+            dpopNonce: any(named: 'dpopNonce'),
+            dpopPublicKey: any(named: 'dpopPublicKey'),
+            dpopPrivateKey: any(named: 'dpopPrivateKey'),
+          ),
+        ).thenAnswer((_) async => true);
 
         final refreshed = await authRepository.refreshSession(sessionWithJwt);
 
@@ -801,10 +954,23 @@ void main() {
         when(
           () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
         ).thenAnswer((_) async => currentSession.did);
-        when(() => mockDatabase.insertAccount(any())).thenAnswer((_) async => 1);
         when(
-          () => mockDatabase.setSetting(AppDatabase.activeAccountDidSettingKey, currentSession.did),
-        ).thenAnswer((_) async => 1);
+          () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
+            any(),
+            expectedRefreshToken: any(named: 'expectedRefreshToken'),
+            handle: any(named: 'handle'),
+            accessToken: any(named: 'accessToken'),
+            refreshToken: any(named: 'refreshToken'),
+            expiresAt: any(named: 'expiresAt'),
+            displayName: any(named: 'displayName'),
+            service: any(named: 'service'),
+            oauthService: any(named: 'oauthService'),
+            oauthClientId: any(named: 'oauthClientId'),
+            dpopNonce: any(named: 'dpopNonce'),
+            dpopPublicKey: any(named: 'dpopPublicKey'),
+            dpopPrivateKey: any(named: 'dpopPrivateKey'),
+          ),
+        ).thenAnswer((_) async => true);
 
         final refreshed = await authRepository.refreshSession(sessionWithJwt);
 

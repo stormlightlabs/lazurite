@@ -1,5 +1,5 @@
-import 'package:poptart_core/poptart_core.dart' as atcore show UnauthorizedException;
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:poptart_core/poptart_core.dart' as atcore show UnauthorizedException;
 
 typedef UnauthorizedRecoveryCallback = Future<AuthTokens?> Function();
 typedef UnauthorizedClientFactory<TClient> = TClient? Function(AuthTokens tokens);
@@ -11,14 +11,17 @@ final class UnauthorizedRecoveryRunner<TClient> {
     required TClient initialClient,
     required UnauthorizedRecoveryCallback? onUnauthorized,
     required UnauthorizedClientFactory<TClient> clientFactory,
+    String? expectedDid,
     this.onUnauthorizedException,
   }) : _client = initialClient,
        _onUnauthorized = onUnauthorized,
-       _clientFactory = clientFactory;
+       _clientFactory = clientFactory,
+       _expectedDid = expectedDid;
 
   TClient _client;
   final UnauthorizedRecoveryCallback? _onUnauthorized;
   final UnauthorizedClientFactory<TClient> _clientFactory;
+  final String? _expectedDid;
   final UnauthorizedRecoveryLogger? onUnauthorizedException;
 
   TClient get client => _client;
@@ -44,6 +47,10 @@ final class UnauthorizedRecoveryRunner<TClient> {
 
     final refreshedTokens = await callback();
     if (refreshedTokens == null) {
+      return false;
+    }
+
+    if (_expectedDid != null && refreshedTokens.did != _expectedDid) {
       return false;
     }
 

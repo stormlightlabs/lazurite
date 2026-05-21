@@ -141,7 +141,7 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
   late String _observedAppViewProvider;
   var _routerGeneration = 0;
   var _isSoftRestarting = false;
-  Completer<AuthTokens?>? _authRecoveryCompleter;
+  final Map<String, Completer<AuthTokens?>> _authRecoveryCompletersByDid = {};
 
   @override
   void initState() {
@@ -229,22 +229,22 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
   }
 
   Future<AuthTokens?> _recoverAuthSession({required String trigger}) async {
-    final inFlight = _authRecoveryCompleter;
-    if (inFlight != null) {
-      return inFlight.future;
-    }
-
-    final completer = Completer<AuthTokens?>();
-    _authRecoveryCompleter = completer;
     String? refreshingDid;
+    Completer<AuthTokens?>? completer;
     try {
       final authState = widget.authBloc.state;
       final tokens = authState.tokens;
       if (!authState.isAuthenticated || tokens == null || tokens.refreshToken == null) {
-        completer.complete(null);
         return null;
       }
       refreshingDid = tokens.did;
+      final inFlight = _authRecoveryCompletersByDid[refreshingDid];
+      if (inFlight != null) {
+        return inFlight.future;
+      }
+
+      completer = Completer<AuthTokens?>();
+      _authRecoveryCompletersByDid[refreshingDid] = completer;
 
       final refreshed = await widget.authRepository.refreshSession(tokens);
       if (!_canPublishRecoveryForDid(refreshingDid)) {
@@ -264,11 +264,11 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
       if (_canPublishRecoveryForDid(refreshingDid)) {
         widget.authBloc.add(const CheckSessionRequested());
       }
-      completer.complete(null);
+      completer?.complete(null);
       return null;
     } finally {
-      if (identical(_authRecoveryCompleter, completer)) {
-        _authRecoveryCompleter = null;
+      if (refreshingDid != null && identical(_authRecoveryCompletersByDid[refreshingDid], completer)) {
+        _authRecoveryCompletersByDid.remove(refreshingDid);
       }
     }
   }

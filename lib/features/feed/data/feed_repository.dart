@@ -1,12 +1,11 @@
-import 'package:poptart_core/poptart_core.dart' as atcore show AtUri;
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/embed/record.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/get_author_feed.dart';
 import 'package:bluesky_poptart/app/bsky/unspecced/defs.dart';
 import 'package:flutter/foundation.dart';
-import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/cache/offline_cache_policy.dart';
+import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_fallback_service.dart';
@@ -17,6 +16,7 @@ import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/feed/data/trending_join.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
+import 'package:poptart_core/poptart_core.dart' as atcore show AtUri;
 
 class FeedRepository {
   FeedRepository({
@@ -49,6 +49,7 @@ class FeedRepository {
       initialClient: bluesky,
       onUnauthorized: onUnauthorized,
       clientFactory: blueskyClientFactory ?? createBlueskyClient,
+      expectedDid: accountDid,
       onUnauthorizedException: (error, stackTrace) {
         log.w('feed.auth unauthorized; attempting session recovery', error: error, stackTrace: stackTrace);
       },

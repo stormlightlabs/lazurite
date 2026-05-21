@@ -33,6 +33,7 @@ class PostThreadRepository {
       initialClient: bluesky,
       onUnauthorized: onUnauthorized,
       clientFactory: blueskyClientFactory ?? createBlueskyClient,
+      expectedDid: accountDid,
       onUnauthorizedException: (error, stackTrace) {
         log.w('thread.auth unauthorized; attempting session recovery', error: error, stackTrace: stackTrace);
       },

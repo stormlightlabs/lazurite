@@ -504,6 +504,53 @@ void main() {
 
         expect(value, equals('3'));
       });
+
+      test('auth refresh lock is exclusive until released', () async {
+        final expiresAt = DateTime.now().toUtc().add(const Duration(minutes: 1));
+
+        final firstAcquire = await database.acquireAuthRefreshLock(
+          'did:plc:test',
+          owner: 'worker-a',
+          expiresAt: expiresAt,
+        );
+        final secondAcquire = await database.acquireAuthRefreshLock(
+          'did:plc:test',
+          owner: 'worker-b',
+          expiresAt: expiresAt,
+        );
+
+        expect(firstAcquire, isTrue);
+        expect(secondAcquire, isFalse);
+        expect(await database.isAuthRefreshLockActive('did:plc:test'), isTrue);
+
+        await database.releaseAuthRefreshLock('did:plc:test', owner: 'worker-a');
+
+        final thirdAcquire = await database.acquireAuthRefreshLock(
+          'did:plc:test',
+          owner: 'worker-b',
+          expiresAt: expiresAt,
+        );
+        expect(thirdAcquire, isTrue);
+      });
+
+      test('auth refresh lock can be stolen after lease expiry', () async {
+        final expiredAt = DateTime.now().toUtc().subtract(const Duration(seconds: 1));
+        final expiresAt = DateTime.now().toUtc().add(const Duration(minutes: 1));
+
+        final firstAcquire = await database.acquireAuthRefreshLock(
+          'did:plc:test',
+          owner: 'worker-a',
+          expiresAt: expiredAt,
+        );
+        final secondAcquire = await database.acquireAuthRefreshLock(
+          'did:plc:test',
+          owner: 'worker-b',
+          expiresAt: expiresAt,
+        );
+
+        expect(firstAcquire, isTrue);
+        expect(secondAcquire, isTrue);
+      });
     });
   });
 }

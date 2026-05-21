@@ -119,6 +119,9 @@ class AuthRepository {
     'OAUTH_IOS_HTTPS_CALLBACK_ENABLED',
     defaultValue: true,
   );
+  static const Duration _refreshLockLease = Duration(seconds: 30);
+  static const Duration _refreshLockPollInterval = Duration(milliseconds: 100);
+  static const Duration _refreshLockWait = Duration(seconds: 5);
   static final Uri _mobileOAuthRedirectUri = Uri.parse('$_mobileOAuthRedirectScheme:$_mobileOAuthRedirectPath');
   static final Uri _httpsOAuthRedirectUri = Uri.https(_httpsOAuthRedirectHost, _httpsOAuthRedirectPath);
 
@@ -382,13 +385,66 @@ class AuthRepository {
     }
 
     late final Future<AuthTokens?> refresh;
-    refresh = _refreshSession(currentSession).whenComplete(() {
+    refresh = _refreshSessionWithPersistentLock(currentSession).whenComplete(() {
       if (identical(_sessionRefreshesByDid[currentSession.did], refresh)) {
         _sessionRefreshesByDid.remove(currentSession.did);
       }
     });
     _sessionRefreshesByDid[currentSession.did] = refresh;
     return refresh;
+  }
+
+  Future<AuthTokens?> _refreshSessionWithPersistentLock(AuthTokens currentSession) async {
+    final owner = _refreshLockOwner(currentSession);
+
+    while (true) {
+      final acquired = await _database.acquireAuthRefreshLock(
+        currentSession.did,
+        owner: owner,
+        expiresAt: DateTime.now().toUtc().add(_refreshLockLease),
+      );
+      if (acquired) {
+        try {
+          return await _refreshSession(currentSession);
+        } finally {
+          await _database.releaseAuthRefreshLock(currentSession.did, owner: owner);
+        }
+      }
+
+      final refreshedByOtherWorker = await _waitForCompetingRefresh(currentSession);
+      if (refreshedByOtherWorker != null) {
+        return refreshedByOtherWorker;
+      }
+
+      final storedAccount = await _database.getAccount(currentSession.did);
+      if (storedAccount == null) {
+        log.w(
+          'AuthRepository: Session for ${currentSession.handle} disappeared while waiting for refresh lock; '
+          'not refreshing stale tokens.',
+        );
+        return null;
+      }
+    }
+  }
+
+  Future<AuthTokens?> _waitForCompetingRefresh(AuthTokens currentSession) async {
+    final deadline = DateTime.now().toUtc().add(_refreshLockWait);
+    while (DateTime.now().toUtc().isBefore(deadline)) {
+      await Future<void>.delayed(_refreshLockPollInterval);
+      final storedReplacement = await _storedSessionIfRefreshTokenChanged(currentSession);
+      if (storedReplacement != null) {
+        log.i('AuthRepository: Using session refreshed by another worker for ${currentSession.handle}.');
+        return storedReplacement;
+      }
+      if (!await _database.isAuthRefreshLockActive(currentSession.did)) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  String _refreshLockOwner(AuthTokens session) {
+    return '${DateTime.now().toUtc().microsecondsSinceEpoch}-$hashCode-${identityHashCode(session)}';
   }
 
   Future<AuthTokens?> _refreshSession(AuthTokens currentSession) async {
@@ -1068,9 +1124,7 @@ class AuthRepository {
     );
   }
 
-  static String _sanitizeUriForLog(Uri uri) {
-    return uri.replace(query: null, fragment: null).toString();
-  }
+  static String _sanitizeUriForLog(Uri uri) => uri.replace(query: null, fragment: null).toString();
 
   Future<void> _invalidateSession(AuthTokens tokens) async {
     await _database.deleteAccount(tokens.did);
@@ -1121,10 +1175,9 @@ class AuthRepository {
 
     log.w(
       'AuthRepository: Refresh compare-and-swap found no current row for ${previousSession.handle}; '
-      'falling back to session upsert.',
+      'not re-saving refreshed tokens because the account may have been removed.',
     );
-    await saveSession(mergedSession, makeActive: makeActive);
-    return mergedSession;
+    throw StateError('Session changed or was removed during refresh for ${previousSession.handle}');
   }
 
   AuthTokens _mergeRefreshedSession({required AuthTokens previousSession, required AuthTokens refreshedSession}) {
@@ -1281,9 +1334,7 @@ class AuthRepository {
   static Future<atcore.XRPCResponse<atcore.Session>> _defaultAppPasswordRefreshSession({
     required String refreshJwt,
     String? service,
-  }) {
-    return atp.refreshSession(refreshJwt: refreshJwt, service: service);
-  }
+  }) => atp.refreshSession(refreshJwt: refreshJwt, service: service);
 
   static Future<(Uri, OAuthContext)> _defaultOAuthAuthorizeSession(OAuthClient client, String? identity) {
     return client.authorize(identity);
@@ -1293,9 +1344,7 @@ class AuthRepository {
     OAuthClient client,
     String callbackUrl,
     OAuthContext context,
-  ) {
-    return client.callback(callbackUrl, context);
-  }
+  ) => client.callback(callbackUrl, context);
 
   static String _defaultOAuthServiceResolver() {
     return AppViewProviders.descriptorForSetting(AppViewProviders.defaultKey).entrywayUrl.host;

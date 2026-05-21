@@ -37,6 +37,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase({QueryExecutor? executor}) : super(executor ?? _openConnection());
 
   static const activeAccountDidSettingKey = 'active_account_did';
+  static const _authRefreshLockSettingPrefix = 'auth_refresh_lock::';
   Future<void> _serializedWriteTail = Future.value();
 
   @override
@@ -321,6 +322,38 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteSetting(String key) => (delete(settings)..where((s) => s.key.equals(key))).go();
 
+  Future<bool> acquireAuthRefreshLock(String did, {required String owner, required DateTime expiresAt}) async {
+    final rowsAffected = await customUpdate(
+      '''
+      INSERT INTO settings (key, value, updated_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(key) DO UPDATE SET
+        value = excluded.value,
+        updated_at = excluded.updated_at
+      WHERE settings.updated_at < ?
+      ''',
+      variables: [
+        Variable.withString(_authRefreshLockKey(did)),
+        Variable.withString(owner),
+        Variable.withDateTime(expiresAt.toUtc()),
+        Variable.withDateTime(DateTime.now().toUtc()),
+      ],
+      updates: {settings},
+    );
+    return rowsAffected > 0;
+  }
+
+  Future<bool> isAuthRefreshLockActive(String did) async {
+    final setting = await (select(settings)..where((s) => s.key.equals(_authRefreshLockKey(did)))).getSingleOrNull();
+    return setting != null && setting.updatedAt.toUtc().isAfter(DateTime.now().toUtc());
+  }
+
+  Future<int> releaseAuthRefreshLock(String did, {required String owner}) {
+    return (delete(settings)..where((s) => s.key.equals(_authRefreshLockKey(did)) & s.value.equals(owner))).go();
+  }
+
+  static String _authRefreshLockKey(String did) => '$_authRefreshLockSettingPrefix$did';
+
   Future<void> clearLocalCaches() async {
     await runSerializedWrite(() async {
       await transaction(() async {
@@ -548,9 +581,7 @@ class AppDatabase extends _$AppDatabase {
     return query.write(draft.copyWith(updatedAt: Value(DateTime.now())));
   }
 
-  Future<int> deleteDraft(int id) async {
-    return (delete(drafts)..where((d) => d.id.equals(id))).go();
-  }
+  Future<int> deleteDraft(int id) async => (delete(drafts)..where((d) => d.id.equals(id))).go();
 
   Future<int> deleteAllDrafts(String accountDid) async {
     return (delete(drafts)..where((d) => d.accountDid.equals(accountDid))).go();
@@ -574,21 +605,16 @@ class AppDatabase extends _$AppDatabase {
     return saved != null;
   }
 
-  Future<int> savePost(SavedPostsCompanion post) async {
-    return into(savedPosts).insert(post);
-  }
+  Future<int> savePost(SavedPostsCompanion post) async => into(savedPosts).insert(post);
 
   Future<int> unsavePost(String accountDid, String postUri) async {
     return (delete(savedPosts)..where((s) => s.accountDid.equals(accountDid) & s.postUri.equals(postUri))).go();
   }
 
-  Future<int> unsavePostById(int id) async {
-    return (delete(savedPosts)..where((s) => s.id.equals(id))).go();
-  }
+  Future<int> unsavePostById(int id) async => (delete(savedPosts)..where((s) => s.id.equals(id))).go();
 
-  Future<int> deleteAllSavedPosts(String accountDid) async {
-    return (delete(savedPosts)..where((s) => s.accountDid.equals(accountDid))).go();
-  }
+  Future<int> deleteAllSavedPosts(String accountDid) async =>
+      (delete(savedPosts)..where((s) => s.accountDid.equals(accountDid))).go();
 
   Future<bool> updateSaveType(String accountDid, String postUri, String saveType) async {
     final query = update(savedPosts)..where((s) => s.accountDid.equals(accountDid) & s.postUri.equals(postUri));
@@ -596,24 +622,20 @@ class AppDatabase extends _$AppDatabase {
     return rowsAffected > 0;
   }
 
-  Stream<List<SavedPostEntry>> watchSavedPosts(String accountDid) {
-    return (select(savedPosts)
-          ..where((s) => s.accountDid.equals(accountDid))
-          ..orderBy([(s) => OrderingTerm.desc(s.savedAt)]))
-        .watch();
-  }
+  Stream<List<SavedPostEntry>> watchSavedPosts(String accountDid) =>
+      (select(savedPosts)
+            ..where((s) => s.accountDid.equals(accountDid))
+            ..orderBy([(s) => OrderingTerm.desc(s.savedAt)]))
+          .watch();
 
-  Stream<bool> watchIsPostSaved(String accountDid, String postUri) {
-    return (select(savedPosts)..where((s) => s.accountDid.equals(accountDid) & s.postUri.equals(postUri)))
-        .watchSingleOrNull()
-        .map((saved) => saved != null);
-  }
+  Stream<bool> watchIsPostSaved(String accountDid, String postUri) =>
+      (select(savedPosts)..where((s) => s.accountDid.equals(accountDid) & s.postUri.equals(postUri)))
+          .watchSingleOrNull()
+          .map((saved) => saved != null);
 
-  Stream<Set<String>> watchSavedPostUris(String accountDid) {
-    return (select(
-      savedPosts,
-    )..where((s) => s.accountDid.equals(accountDid))).watch().map((posts) => posts.map((p) => p.postUri).toSet());
-  }
+  Stream<Set<String>> watchSavedPostUris(String accountDid) => (select(
+    savedPosts,
+  )..where((s) => s.accountDid.equals(accountDid))).watch().map((posts) => posts.map((p) => p.postUri).toSet());
 
   Stream<Map<String, String>> watchSavedPostsWithType(String accountDid) {
     return (select(savedPosts)..where((s) => s.accountDid.equals(accountDid))).watch().map(
@@ -712,17 +734,15 @@ class AppDatabase extends _$AppDatabase {
     return _mapKeywordPostMatches(rows);
   }
 
-  List<KeywordPostMatch> _mapKeywordPostMatches(List<QueryRow> rows) {
-    return rows
-        .map(
-          (row) => KeywordPostMatch(
-            postUri: row.read<String>('post_uri'),
-            source: row.read<String>('source'),
-            rank: row.read<double>('rank'),
-          ),
-        )
-        .toList(growable: false);
-  }
+  List<KeywordPostMatch> _mapKeywordPostMatches(List<QueryRow> rows) => rows
+      .map(
+        (row) => KeywordPostMatch(
+          postUri: row.read<String>('post_uri'),
+          source: row.read<String>('source'),
+          rank: row.read<double>('rank'),
+        ),
+      )
+      .toList(growable: false);
 
   Future<void> _createPostSearchFtsSchema() async {
     await customStatement('''
@@ -884,11 +904,10 @@ class AppDatabase extends _$AppDatabase {
     return false;
   }
 
-  Future<NotificationDeliveryEntry?> getNotificationDelivery(String accountDid, String notificationUri) {
-    return (select(notificationDeliveries)
-          ..where((entry) => entry.accountDid.equals(accountDid) & entry.notificationUri.equals(notificationUri)))
-        .getSingleOrNull();
-  }
+  Future<NotificationDeliveryEntry?> getNotificationDelivery(String accountDid, String notificationUri) =>
+      (select(notificationDeliveries)
+            ..where((entry) => entry.accountDid.equals(accountDid) & entry.notificationUri.equals(notificationUri)))
+          .getSingleOrNull();
 
   Future<int> countNotificationDeliveries(String accountDid) async {
     final rows = await (select(notificationDeliveries)..where((entry) => entry.accountDid.equals(accountDid))).get();

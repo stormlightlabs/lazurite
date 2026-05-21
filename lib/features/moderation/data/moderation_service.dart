@@ -42,6 +42,7 @@ class ModerationService {
       initialClient: bluesky,
       onUnauthorized: onUnauthorized,
       clientFactory: blueskyClientFactory ?? createBlueskyClient,
+      expectedDid: accountDid ?? userDid,
     );
     _headers = _appViewContext.appBskyHeadersForEndpoint(
       'app.bsky.labeler.getServices',
