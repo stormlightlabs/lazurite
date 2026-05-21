@@ -206,9 +206,6 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildThemeSelector(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
-    final theme = Theme.of(context);
-    final l10n = context.l10n;
-
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
         return SettingsGroup(
@@ -218,13 +215,13 @@ class SettingsScreen extends StatelessWidget {
               child: Center(
                 child: SegmentedButton<AppearanceMode>(
                   style: SegmentedButton.styleFrom(
-                    selectedBackgroundColor: theme.colorScheme.primary,
-                    selectedForegroundColor: theme.colorScheme.onPrimary,
+                    selectedBackgroundColor: context.colorScheme.primary,
+                    selectedForegroundColor: context.colorScheme.onPrimary,
                   ),
                   segments: [
-                    ButtonSegment(value: AppearanceMode.system, label: Text(l10n.labelSystem)),
-                    ButtonSegment(value: AppearanceMode.light, label: Text(l10n.labelLight)),
-                    ButtonSegment(value: AppearanceMode.dark, label: Text(l10n.labelDark)),
+                    ButtonSegment(value: AppearanceMode.system, label: Text(context.l10n.labelSystem)),
+                    ButtonSegment(value: AppearanceMode.light, label: Text(context.l10n.labelLight)),
+                    ButtonSegment(value: AppearanceMode.dark, label: Text(context.l10n.labelDark)),
                   ],
                   selected: {AppearanceMode.fromState(state)},
                   onSelectionChanged: (selected) {
@@ -248,7 +245,7 @@ class SettingsScreen extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  l10n.labelTheme,
+                  context.l10n.labelTheme,
                   style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
                 ),
               ),
@@ -330,51 +327,52 @@ class SettingsScreen extends StatelessWidget {
 
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
-        return Container(
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: theme.dividerColor),
-              bottom: BorderSide(color: theme.dividerColor),
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Divider(height: 1, color: theme.dividerColor),
+            Material(
+              color: theme.cardColor,
+              child: Column(
+                children: [
+                  SettingsDropdownTile<FeedLayout>(
+                    title: l10n.labelFeedLayout,
+                    value: state.feedLayout,
+                    options: FeedLayout.values,
+                    labelBuilder: (layout) => switch (layout) {
+                      FeedLayout.card => l10n.messageFeedLayoutCard,
+                      FeedLayout.compact => l10n.messageFeedLayoutCompact,
+                    },
+                    onChanged: (value) {
+                      if (value != null) {
+                        settingsCubit.setFeedLayout(value);
+                      }
+                    },
+                  ),
+                  const Divider(height: 1),
+                  SettingsDropdownTile<int?>(
+                    title: l10n.labelThreadAutoCollapse,
+                    subtitle: l10n.messageThreadAutoCollapseSubtitle,
+                    value: state.threadAutoCollapseDepth,
+                    options: const <int?>[null, 1, 2, 3, 4, 5, 6],
+                    labelBuilder: (depth) => depth == null ? l10n.commonOff : l10n.formatDepth(depth),
+                    onChanged: settingsCubit.setThreadAutoCollapseDepth,
+                  ),
+                  const Divider(height: 1),
+                  SettingsTile(
+                    icon: Icons.motion_photos_off_outlined,
+                    title: l10n.labelAnimations,
+                    subtitle: l10n.messageTurnOffNonEssentialMotion,
+                    trailing: Switch.adaptive(
+                      value: state.animationsEnabled,
+                      onChanged: settingsCubit.setAnimationsEnabled,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            color: theme.cardColor,
-          ),
-          child: Column(
-            children: [
-              SettingsDropdownTile<FeedLayout>(
-                title: l10n.labelFeedLayout,
-                value: state.feedLayout,
-                options: FeedLayout.values,
-                labelBuilder: (layout) => switch (layout) {
-                  FeedLayout.card => l10n.messageFeedLayoutCard,
-                  FeedLayout.compact => l10n.messageFeedLayoutCompact,
-                },
-                onChanged: (value) {
-                  if (value != null) {
-                    settingsCubit.setFeedLayout(value);
-                  }
-                },
-              ),
-              const Divider(height: 1),
-              SettingsDropdownTile<int?>(
-                title: l10n.labelThreadAutoCollapse,
-                subtitle: l10n.messageThreadAutoCollapseSubtitle,
-                value: state.threadAutoCollapseDepth,
-                options: const <int?>[null, 1, 2, 3, 4, 5, 6],
-                labelBuilder: (depth) => depth == null ? l10n.commonOff : l10n.formatDepth(depth),
-                onChanged: settingsCubit.setThreadAutoCollapseDepth,
-              ),
-              const Divider(height: 1),
-              SettingsTile(
-                icon: Icons.motion_photos_off_outlined,
-                title: l10n.labelAnimations,
-                subtitle: l10n.messageTurnOffNonEssentialMotion,
-                trailing: Switch.adaptive(
-                  value: state.animationsEnabled,
-                  onChanged: settingsCubit.setAnimationsEnabled,
-                ),
-              ),
-            ],
-          ),
+            Divider(height: 1, color: theme.dividerColor),
+          ],
         );
       },
     );
@@ -382,119 +380,115 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildSearchSettings(BuildContext context, {required bool showTypeaheadSettings}) =>
       BlocBuilder<SettingsCubit, SettingsState>(
-        builder: (context, settingsState) {
-          final theme = Theme.of(context);
-          final l10n = context.l10n;
-          return Container(
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: theme.dividerColor),
-                bottom: BorderSide(color: theme.dividerColor),
-              ),
-              color: theme.cardColor,
-            ),
-            child: Column(
-              children: [
-                if (showTypeaheadSettings) ...[
-                  ListTile(
-                    leading: const Icon(Icons.tune_outlined),
-                    title: Text(l10n.labelTypeaheadProvider),
-                    subtitle: Text(
-                      settingsState.typeaheadProvider == 'community'
-                          ? l10n.messageCommunityTypeaheadSelected
-                          : l10n.messageBlueskyEndpointSelected,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: SegmentedButton<String>(
-                        segments: [
-                          const ButtonSegment<String>(value: 'bluesky', label: Text('Bluesky')),
-                          ButtonSegment<String>(value: 'community', label: Text(l10n.labelCommunity)),
-                        ],
-                        selected: {settingsState.typeaheadProvider},
-                        onSelectionChanged: (selection) {
-                          context.read<SettingsCubit>().setTypeaheadProvider(selection.first);
-                        },
+        builder: (context, settingsState) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Divider(height: 1, color: context.theme.dividerColor),
+            Material(
+              color: context.theme.cardColor,
+              child: Column(
+                children: [
+                  if (showTypeaheadSettings) ...[
+                    Material(
+                      type: MaterialType.transparency,
+                      child: ListTile(
+                        leading: const Icon(Icons.tune_outlined),
+                        title: Text(context.l10n.labelTypeaheadProvider),
+                        subtitle: Text(
+                          settingsState.typeaheadProvider == 'community'
+                              ? context.l10n.messageCommunityTypeaheadSelected
+                              : context.l10n.messageBlueskyEndpointSelected,
+                        ),
                       ),
                     ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: SegmentedButton<String>(
+                          segments: [
+                            const ButtonSegment<String>(value: 'bluesky', label: Text('Bluesky')),
+                            ButtonSegment<String>(value: 'community', label: Text(context.l10n.labelCommunity)),
+                          ],
+                          selected: {settingsState.typeaheadProvider},
+                          onSelectionChanged: (selection) {
+                            context.read<SettingsCubit>().setTypeaheadProvider(selection.first);
+                          },
+                        ),
+                      ),
+                    ),
+                    const Divider(height: 1),
+                  ],
+                  SettingsTile(
+                    icon: Icons.manage_search_outlined,
+                    title: context.l10n.labelSemanticSearch,
+                    subtitle: context.l10n.messageManageSemanticSearchSubtitle,
                   ),
-                  const Divider(height: 1),
                 ],
-                SettingsTile(
-                  icon: Icons.manage_search_outlined,
-                  title: l10n.labelSemanticSearch,
-                  subtitle: l10n.messageManageSemanticSearchSubtitle,
-                ),
-              ],
+              ),
             ),
-          );
-        },
+            Divider(height: 1, color: context.theme.dividerColor),
+          ],
+        ),
       );
 
   Widget _buildDeveloperSettings(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
     final crashReportingService = _readCrashReportingServiceOrNull(context);
-    final l10n = context.l10n;
-
     return BlocBuilder<SettingsCubit, SettingsState>(
-      builder: (context, state) {
-        final theme = Theme.of(context);
-        return Container(
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: theme.dividerColor),
-              bottom: BorderSide(color: theme.dividerColor),
-            ),
-            color: theme.cardColor,
-          ),
-          child: Column(
-            children: [
-              SettingsTile(
-                icon: Icons.cloud_off_outlined,
-                title: l10n.labelGoOffline,
-                subtitle: l10n.messageDeveloperGoOfflineSubtitle,
-                trailing: Switch.adaptive(value: state.simulateOffline, onChanged: settingsCubit.setSimulateOffline),
-              ),
-              const Divider(height: 1),
-              SettingsTile(
-                icon: Icons.bug_report_outlined,
-                title: l10n.labelCrashlyticsTestCrash,
-                subtitle: l10n.messageCrashlyticsTestCrashSubtitle,
-                trailing: const Icon(Icons.warning_amber_rounded),
-                onTap: crashReportingService?.crash,
-              ),
-              const Divider(height: 1),
-              SettingsTile(
-                icon: Icons.integration_instructions_outlined,
-                title: l10n.labelCrashReportScreenTest,
-                subtitle: l10n.messageCrashReportScreenTestSubtitle,
-                trailing: const Icon(Icons.open_in_new_outlined),
-                onTap: () => Navigator.of(context).push<void>(
-                  MaterialPageRoute<void>(
-                    builder: (_) => RecoverableCrashTestScreen(title: l10n.labelCrashReportScreenTest),
-                  ),
+      builder: (context, state) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Divider(height: 1, color: context.theme.dividerColor),
+          Material(
+            color: context.theme.cardColor,
+            child: Column(
+              children: [
+                SettingsTile(
+                  icon: Icons.cloud_off_outlined,
+                  title: context.l10n.labelGoOffline,
+                  subtitle: context.l10n.messageDeveloperGoOfflineSubtitle,
+                  trailing: Switch.adaptive(value: state.simulateOffline, onChanged: settingsCubit.setSimulateOffline),
                 ),
-              ),
-              if (kDebugMode || kProfileMode) ...[
                 const Divider(height: 1),
                 SettingsTile(
-                  icon: Icons.lock_reset_outlined,
-                  title: l10n.labelForceNextXrpc401,
-                  subtitle: l10n.messageForceNextXrpc401Subtitle,
-                  trailing: const Icon(Icons.play_arrow_outlined),
-                  onTap: () {
-                    XrpcNetworkInterceptor.debugForceUnauthorizedOnce();
-                    showAppSnackBar(context, l10n.messageAppViewDebug401Armed);
-                  },
+                  icon: Icons.bug_report_outlined,
+                  title: context.l10n.labelCrashlyticsTestCrash,
+                  subtitle: context.l10n.messageCrashlyticsTestCrashSubtitle,
+                  trailing: const Icon(Icons.warning_amber_rounded),
+                  onTap: crashReportingService?.crash,
                 ),
+                const Divider(height: 1),
+                SettingsTile(
+                  icon: Icons.integration_instructions_outlined,
+                  title: context.l10n.labelCrashReportScreenTest,
+                  subtitle: context.l10n.messageCrashReportScreenTestSubtitle,
+                  trailing: const Icon(Icons.open_in_new_outlined),
+                  onTap: () => Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => RecoverableCrashTestScreen(title: context.l10n.labelCrashReportScreenTest),
+                    ),
+                  ),
+                ),
+                if (kDebugMode || kProfileMode) ...[
+                  const Divider(height: 1),
+                  SettingsTile(
+                    icon: Icons.lock_reset_outlined,
+                    title: context.l10n.labelForceNextXrpc401,
+                    subtitle: context.l10n.messageForceNextXrpc401Subtitle,
+                    trailing: const Icon(Icons.play_arrow_outlined),
+                    onTap: () {
+                      XrpcNetworkInterceptor.debugForceUnauthorizedOnce();
+                      showAppSnackBar(context, context.l10n.messageAppViewDebug401Armed);
+                    },
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        );
-      },
+          Divider(height: 1, color: context.theme.dividerColor),
+        ],
+      ),
     );
   }
 
@@ -508,129 +502,135 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildAdvancedSettings(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
-    final theme = Theme.of(context);
-    final l10n = context.l10n;
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
-        return Container(
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: theme.dividerColor),
-              bottom: BorderSide(color: theme.dividerColor),
-            ),
-            color: theme.cardColor,
-          ),
-          child: Column(
-            children: [
-              SettingsTile(
-                icon: Icons.description_outlined,
-                title: l10n.labelLogs,
-                subtitle: 'View app log files',
-                onTap: () => context.push('/settings/logs'),
-              ),
-              const Divider(height: 1),
-              ConstellationUrlTile(currentUrl: state.constellationUrl),
-              const Divider(height: 1),
-              SettingsTile(
-                icon: Icons.route_outlined,
-                title: l10n.labelAppViewProvider,
-                subtitle: _appViewSubtitle(context, state.appViewProvider),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: SegmentedButton<String>(
-                    key: const Key('appview-provider-segmented'),
-                    segments: const [
-                      ButtonSegment<String>(value: AppViewProviders.blueskyKey, label: Text('Bluesky')),
-                      ButtonSegment<String>(value: AppViewProviders.blackskyKey, label: Text('Blacksky')),
-                    ],
-                    selected: {state.appViewProvider},
-                    onSelectionChanged: (selection) async {
-                      final selectedProvider = selection.first;
-                      if (selectedProvider == state.appViewProvider) {
-                        return;
-                      }
-                      await _confirmAndApplyProviderChange(context, selectedProvider);
-                    },
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Divider(height: 1, color: context.colorScheme.outline),
+            Material(
+              color: context.colorScheme.surface,
+              child: Column(
+                children: [
+                  SettingsTile(
+                    icon: Icons.description_outlined,
+                    title: context.l10n.labelLogs,
+                    // TODO: l10n
+                    subtitle: 'View app log files',
+                    onTap: () => context.push('/settings/logs'),
                   ),
-                ),
+                  const Divider(height: 1),
+                  ConstellationUrlTile(currentUrl: state.constellationUrl),
+                  const Divider(height: 1),
+                  SettingsTile(
+                    icon: Icons.route_outlined,
+                    title: context.l10n.labelAppViewProvider,
+                    subtitle: _appViewSubtitle(context, state.appViewProvider),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: SegmentedButton<String>(
+                        key: const Key('appview-provider-segmented'),
+                        segments: const [
+                          ButtonSegment<String>(value: AppViewProviders.blueskyKey, label: Text('Bluesky')),
+                          ButtonSegment<String>(value: AppViewProviders.blackskyKey, label: Text('Blacksky')),
+                        ],
+                        selected: {state.appViewProvider},
+                        onSelectionChanged: (selection) async {
+                          final selectedProvider = selection.first;
+                          if (selectedProvider == state.appViewProvider) {
+                            return;
+                          }
+                          await _confirmAndApplyProviderChange(context, selectedProvider);
+                        },
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  SettingsTile(
+                    icon: Icons.compare_arrows_outlined,
+                    title: context.l10n.labelCrossProviderFallback,
+                    subtitle: context.l10n.messageCrossProviderFallbackSubtitle,
+                    trailing: Switch.adaptive(
+                      value: state.crossProviderFallbackEnabled,
+                      onChanged: settingsCubit.setCrossProviderFallbackEnabled,
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  SettingsTile(
+                    icon: Icons.alt_route_outlined,
+                    title: context.l10n.labelSlingshotIdentityFallback,
+                    subtitle: context.l10n.messageSlingshotIdentityFallbackSubtitle,
+                    trailing: Switch.adaptive(
+                      value: state.slingshotIdentityFallbackEnabled,
+                      onChanged: settingsCubit.setSlingshotIdentityFallbackEnabled,
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  SettingsTile(
+                    icon: Icons.bug_report_outlined,
+                    title: context.l10n.labelCrashReporting,
+                    subtitle: state.crashReportingEnabled
+                        ? context.l10n.messageCrashReportingEnabled
+                        : context.l10n.messageCrashReportingDisabled,
+                    trailing: Switch.adaptive(
+                      value: state.crashReportingEnabled,
+                      onChanged: (enabled) => unawaited(_handleCrashReportingToggle(context, enabled)),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  SettingsTile(
+                    icon: Icons.monitor_heart_outlined,
+                    title: context.l10n.labelProviderDiagnostics,
+                    subtitle: context.l10n.messageProviderDiagnosticsSubtitle,
+                  ),
+                  ConnectionDetailRow(
+                    label: context.l10n.labelActiveProvider,
+                    value: AppViewProviders.providerDisplayName(state.appViewProvider),
+                  ),
+                  const Divider(height: 1),
+                  ConnectionDetailRow(
+                    label: context.l10n.labelHealth,
+                    value: state.appViewHealthSummary ?? context.l10n.commonNotCheckedYet,
+                  ),
+                  const Divider(height: 1),
+                  ConnectionDetailRow(
+                    label: context.l10n.labelLastHealthCheck,
+                    value: state.appViewHealthCheckedAt == null
+                        ? context.l10n.commonNever
+                        : formatTimestamp(state.appViewHealthCheckedAt!.toLocal()),
+                  ),
+                  const Divider(height: 1),
+                  ConnectionDetailRow(
+                    label: context.l10n.labelLastFallback,
+                    value: state.appViewLastFallback ?? context.l10n.commonNone,
+                  ),
+                  const Divider(height: 1),
+                  ConnectionDetailRow(
+                    label: context.l10n.labelLastError,
+                    value: state.appViewLastError ?? context.l10n.commonNone,
+                  ),
+                  const Divider(height: 1),
+                  SettingsTile(
+                    icon: Icons.medical_information_outlined,
+                    title: context.l10n.labelRefreshProviderHealth,
+                    subtitle: context.l10n.messageRefreshProviderHealthSubtitle,
+                    trailing: state.appViewHealthRefreshing
+                        ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.refresh_outlined),
+                    onTap: state.appViewHealthRefreshing
+                        ? null
+                        : () {
+                            unawaited(settingsCubit.refreshAppViewHealth());
+                          },
+                  ),
+                ],
               ),
-              const Divider(height: 1),
-              SettingsTile(
-                icon: Icons.compare_arrows_outlined,
-                title: l10n.labelCrossProviderFallback,
-                subtitle: l10n.messageCrossProviderFallbackSubtitle,
-                trailing: Switch.adaptive(
-                  value: state.crossProviderFallbackEnabled,
-                  onChanged: settingsCubit.setCrossProviderFallbackEnabled,
-                ),
-              ),
-              const Divider(height: 1),
-              SettingsTile(
-                icon: Icons.alt_route_outlined,
-                title: l10n.labelSlingshotIdentityFallback,
-                subtitle: l10n.messageSlingshotIdentityFallbackSubtitle,
-                trailing: Switch.adaptive(
-                  value: state.slingshotIdentityFallbackEnabled,
-                  onChanged: settingsCubit.setSlingshotIdentityFallbackEnabled,
-                ),
-              ),
-              const Divider(height: 1),
-              SettingsTile(
-                icon: Icons.bug_report_outlined,
-                title: l10n.labelCrashReporting,
-                subtitle: state.crashReportingEnabled
-                    ? l10n.messageCrashReportingEnabled
-                    : l10n.messageCrashReportingDisabled,
-                trailing: Switch.adaptive(
-                  value: state.crashReportingEnabled,
-                  onChanged: (enabled) => unawaited(_handleCrashReportingToggle(context, enabled)),
-                ),
-              ),
-              const Divider(height: 1),
-              SettingsTile(
-                icon: Icons.monitor_heart_outlined,
-                title: l10n.labelProviderDiagnostics,
-                subtitle: l10n.messageProviderDiagnosticsSubtitle,
-              ),
-              ConnectionDetailRow(
-                label: l10n.labelActiveProvider,
-                value: AppViewProviders.providerDisplayName(state.appViewProvider),
-              ),
-              const Divider(height: 1),
-              ConnectionDetailRow(
-                label: l10n.labelHealth,
-                value: state.appViewHealthSummary ?? l10n.commonNotCheckedYet,
-              ),
-              const Divider(height: 1),
-              ConnectionDetailRow(
-                label: l10n.labelLastHealthCheck,
-                value: state.appViewHealthCheckedAt == null
-                    ? l10n.commonNever
-                    : formatTimestamp(state.appViewHealthCheckedAt!.toLocal()),
-              ),
-              const Divider(height: 1),
-              ConnectionDetailRow(label: l10n.labelLastFallback, value: state.appViewLastFallback ?? l10n.commonNone),
-              const Divider(height: 1),
-              ConnectionDetailRow(label: l10n.labelLastError, value: state.appViewLastError ?? l10n.commonNone),
-              const Divider(height: 1),
-              SettingsTile(
-                icon: Icons.medical_information_outlined,
-                title: l10n.labelRefreshProviderHealth,
-                subtitle: l10n.messageRefreshProviderHealthSubtitle,
-                trailing: state.appViewHealthRefreshing
-                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.refresh_outlined),
-                onTap: state.appViewHealthRefreshing
-                    ? null
-                    : () {
-                        unawaited(settingsCubit.refreshAppViewHealth());
-                      },
-              ),
-            ],
-          ),
+            ),
+            Divider(height: 1, color: context.theme.dividerColor),
+          ],
         );
       },
     );
@@ -644,19 +644,17 @@ class SettingsScreen extends StatelessWidget {
   Future<void> _confirmAndApplyProviderChange(BuildContext context, String selectedProvider) async {
     final shouldApply = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(context.l10n.dialogSwitchAppViewProviderTitle),
-          content: Text(context.l10n.dialogSwitchAppViewProviderContent),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(context.l10n.buttonCancel)),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text(context.l10n.buttonApplyAndRestart),
-            ),
-          ],
-        );
-      },
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.l10n.dialogSwitchAppViewProviderTitle),
+        content: Text(context.l10n.dialogSwitchAppViewProviderContent),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(context.l10n.buttonCancel)),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(context.l10n.buttonApplyAndRestart),
+          ),
+        ],
+      ),
     );
 
     if (shouldApply != true || !context.mounted) {
@@ -679,54 +677,49 @@ class SettingsScreen extends StatelessWidget {
     await crashReportingService.deleteUnsentReports();
   }
 
-  Widget _buildTroubleshootingSettings(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = context.l10n;
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: theme.dividerColor),
-          bottom: BorderSide(color: theme.dividerColor),
+  Widget _buildTroubleshootingSettings(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Divider(height: 1, color: context.theme.dividerColor),
+      Material(
+        color: context.theme.cardColor,
+        child: Column(
+          children: [
+            SettingsTile(
+              icon: Icons.cached_outlined,
+              title: context.l10n.labelClearCache,
+              subtitle: context.l10n.messageClearCacheSubtitle,
+              onTap: () => unawaited(_confirmAndClearCaches(context)),
+            ),
+            const Divider(height: 1),
+            SettingsTile(
+              icon: Icons.manage_accounts_outlined,
+              title: context.l10n.labelResetSignInData,
+              subtitle: context.l10n.messageResetSignInDataSubtitle,
+              isDestructive: true,
+              onTap: () => unawaited(_confirmAndClearLocalAuthData(context)),
+            ),
+          ],
         ),
-        color: theme.cardColor,
       ),
-      child: Column(
-        children: [
-          SettingsTile(
-            icon: Icons.cached_outlined,
-            title: l10n.labelClearCache,
-            subtitle: l10n.messageClearCacheSubtitle,
-            onTap: () => unawaited(_confirmAndClearCaches(context)),
-          ),
-          const Divider(height: 1),
-          SettingsTile(
-            icon: Icons.manage_accounts_outlined,
-            title: l10n.labelResetSignInData,
-            subtitle: l10n.messageResetSignInDataSubtitle,
-            isDestructive: true,
-            onTap: () => unawaited(_confirmAndClearLocalAuthData(context)),
-          ),
-        ],
-      ),
-    );
-  }
+      Divider(height: 1, color: context.theme.dividerColor),
+    ],
+  );
 
   Future<void> _confirmAndClearCaches(BuildContext context) async {
     final shouldClear = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(context.l10n.dialogClearCacheTitle),
-          content: Text(context.l10n.dialogClearCacheContent),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(context.l10n.buttonCancel)),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text(context.l10n.buttonClearCache),
-            ),
-          ],
-        );
-      },
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.l10n.dialogClearCacheTitle),
+        content: Text(context.l10n.dialogClearCacheContent),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(context.l10n.buttonCancel)),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(context.l10n.buttonClearCache),
+          ),
+        ],
+      ),
     );
 
     if (shouldClear != true || !context.mounted) {
@@ -748,23 +741,21 @@ class SettingsScreen extends StatelessWidget {
   Future<void> _confirmAndClearLocalAuthData(BuildContext context) async {
     final shouldClear = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(context.l10n.dialogResetSignInDataTitle),
-          content: Text(context.l10n.dialogResetSignInDataContent),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(context.l10n.buttonCancel)),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(dialogContext).colorScheme.error,
-                foregroundColor: Theme.of(dialogContext).colorScheme.onError,
-              ),
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text(context.l10n.buttonResetSignInData),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.l10n.dialogResetSignInDataTitle),
+        content: Text(context.l10n.dialogResetSignInDataContent),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(context.l10n.buttonCancel)),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(dialogContext).colorScheme.error,
+              foregroundColor: Theme.of(dialogContext).colorScheme.onError,
             ),
-          ],
-        );
-      },
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(context.l10n.buttonResetSignInData),
+          ),
+        ],
+      ),
     );
 
     if (shouldClear != true || !context.mounted) {

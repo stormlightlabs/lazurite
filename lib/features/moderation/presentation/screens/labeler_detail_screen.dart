@@ -89,53 +89,52 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text(context.l10n.labelLabeler)),
+    body: FutureBuilder<_LabelerDetailData>(
+      future: _loadFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.labelLabeler)),
-      body: FutureBuilder<_LabelerDetailData>(
-        future: _loadFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(l10n.errorUnableToLoadLabeler, style: context.textTheme.titleMedium),
-                    const SizedBox(height: 8),
-                    Text(_errorMessageFor(context, snapshot.error), textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    FilledButton(onPressed: _reload, child: Text(l10n.buttonRetry)),
-                  ],
-                ),
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(context.l10n.errorUnableToLoadLabeler, style: context.textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  Text(_errorMessageFor(context, snapshot.error), textAlign: TextAlign.center),
+                  const SizedBox(height: 16),
+                  FilledButton(onPressed: _reload, child: Text(context.l10n.buttonRetry)),
+                ],
               ),
-            );
-          }
+            ),
+          );
+        }
 
-          final data = snapshot.data!;
-          final labeler = data.labeler;
-          final creator = labeler.creator;
-          final definitions = labeler.policies.labelValueDefinitions ?? const [];
-          final locale = Localizations.localeOf(context);
-          final isOfficial = widget.did == officialBlueskyLabelerDid;
+        final data = snapshot.data!;
+        final labeler = data.labeler;
+        final creator = labeler.creator;
+        final definitions = labeler.policies.labelValueDefinitions ?? const [];
+        final locale = Localizations.localeOf(context);
+        final isOfficial = widget.did == officialBlueskyLabelerDid;
 
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Container(
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Material(
+              color: context.colorScheme.surfaceContainerLow,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+                side: BorderSide(color: context.colorScheme.outlineVariant),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Padding(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: context.colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: context.colorScheme.outlineVariant),
-                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -178,141 +177,143 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _PolicyChip(label: l10n.formatCustomLabelCount(definitions.length)),
-                        _PolicyChip(label: l10n.formatPublishedValueCount(labeler.policies.labelValues.length)),
-                        if (isOfficial) _PolicyChip(label: l10n.labelBuiltInModeration),
+                        _PolicyChip(label: context.l10n.formatCustomLabelCount(definitions.length)),
+                        _PolicyChip(label: context.l10n.formatPublishedValueCount(labeler.policies.labelValues.length)),
+                        if (isOfficial) _PolicyChip(label: context.l10n.labelBuiltInModeration),
                       ],
                     ),
                     const SizedBox(height: 16),
                     SwitchListTile.adaptive(
                       value: data.isSubscribed || isOfficial,
                       onChanged: isOfficial || _isUpdatingSubscription ? null : _toggleSubscription,
-                      title: Text(isOfficial ? l10n.labelBuiltInModeration : l10n.labelSubscribed),
+                      title: Text(isOfficial ? context.l10n.labelBuiltInModeration : context.l10n.labelSubscribed),
                       subtitle: Text(
-                        isOfficial ? l10n.messageBuiltInLabelerAlwaysActive : l10n.messageSubscribedLabelersHeaders,
+                        isOfficial
+                            ? context.l10n.messageBuiltInLabelerAlwaysActive
+                            : context.l10n.messageSubscribedLabelersHeaders,
                       ),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              Text(
-                l10n.labelPublishedPolicies.toUpperCase(),
-                style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              context.l10n.labelPublishedPolicies.toUpperCase(),
+              style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: context.colorScheme.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: context.colorScheme.outlineVariant),
               ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: context.colorScheme.surfaceContainerLowest,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: context.colorScheme.outlineVariant),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [for (final value in labeler.policies.labelValues) _PolicyChip(label: value.toJson())],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              context.l10n.labelLabelPreferences.toUpperCase(),
+              style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
+            ),
+            const SizedBox(height: 8),
+            if (definitions.isEmpty)
+              _PreferenceCard(
+                child: ListTile(
+                  title: Text(context.l10n.labelNoCustomLabelDefinitions),
+                  subtitle: Text(context.l10n.messageNoCustomLabelDefinitions),
                 ),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [for (final value in labeler.policies.labelValues) _PolicyChip(label: value.toJson())],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                l10n.labelLabelPreferences.toUpperCase(),
-                style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
-              ),
-              const SizedBox(height: 8),
-              if (definitions.isEmpty)
+              )
+            else
+              for (final definition in definitions) ...[
                 _PreferenceCard(
-                  child: ListTile(
-                    title: Text(l10n.labelNoCustomLabelDefinitions),
-                    subtitle: Text(l10n.messageNoCustomLabelDefinitions),
-                  ),
-                )
-              else
-                for (final definition in definitions) ...[
-                  _PreferenceCard(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            formatLocalizedLabelName(definition.locales, locale, fallback: definition.identifier),
-                            style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          formatLocalizedLabelName(definition.locales, locale, fallback: definition.identifier),
+                          style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          formatLocalizedLabelDescription(
+                            definition.locales,
+                            locale,
+                            fallback: context.l10n.messageNoLabelDescriptionAvailable,
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            formatLocalizedLabelDescription(
-                              definition.locales,
-                              locale,
-                              fallback: l10n.messageNoLabelDescriptionAvailable,
+                          style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _PolicyChip(label: context.l10n.formatPolicyId(definition.identifier)),
+                            _PolicyChip(label: context.l10n.formatPolicyBlur(definition.blurs.toJson())),
+                            _PolicyChip(label: context.l10n.formatPolicySeverity(definition.severity.toJson())),
+                            _PolicyChip(
+                              label: context.l10n.formatPolicyDefault(
+                                visibilityFromDefaultSetting(definition.defaultSetting).name,
+                              ),
                             ),
-                            style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant),
-                          ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              _PolicyChip(label: l10n.formatPolicyId(definition.identifier)),
-                              _PolicyChip(label: l10n.formatPolicyBlur(definition.blurs.toJson())),
-                              _PolicyChip(label: l10n.formatPolicySeverity(definition.severity.toJson())),
-                              _PolicyChip(
-                                label: l10n.formatPolicyDefault(
-                                  visibilityFromDefaultSetting(definition.defaultSetting).name,
-                                ),
-                              ),
-                              if (definition.adultOnly ?? false) _PolicyChip(label: l10n.labelAdultOnlyShort),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          SegmentedButton<KnownContentLabelPrefVisibility>(
-                            segments: [
-                              ButtonSegment(
-                                value: KnownContentLabelPrefVisibility.ignore,
-                                label: Text(l10n.labelContentPreferenceIgnore),
-                              ),
-                              ButtonSegment(
-                                value: KnownContentLabelPrefVisibility.warn,
-                                label: Text(l10n.labelContentPreferenceWarn),
-                              ),
-                              ButtonSegment(
-                                value: KnownContentLabelPrefVisibility.hide,
-                                label: Text(l10n.labelContentPreferenceHide),
-                              ),
-                            ],
-                            selected: {
-                              resolveLabelPreference(
-                                data.currentPreferences,
-                                label: definition.identifier,
-                                labelerDid: widget.did,
-                                fallback: visibilityFromDefaultSetting(definition.defaultSetting),
-                              ),
-                            },
-                            onSelectionChanged: (definition.adultOnly ?? false) && !data.adultContentEnabled
-                                ? null
-                                : (selection) =>
-                                      _updatePreference(label: definition.identifier, visibility: selection.first),
-                          ),
-                          if ((definition.adultOnly ?? false) && !data.adultContentEnabled) ...[
-                            const SizedBox(height: 10),
-                            Text(
-                              l10n.messageEnableAdultContentForLabel,
-                              style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
+                            if (definition.adultOnly ?? false) _PolicyChip(label: context.l10n.labelAdultOnlyShort),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        SegmentedButton<KnownContentLabelPrefVisibility>(
+                          segments: [
+                            ButtonSegment(
+                              value: KnownContentLabelPrefVisibility.ignore,
+                              label: Text(context.l10n.labelContentPreferenceIgnore),
+                            ),
+                            ButtonSegment(
+                              value: KnownContentLabelPrefVisibility.warn,
+                              label: Text(context.l10n.labelContentPreferenceWarn),
+                            ),
+                            ButtonSegment(
+                              value: KnownContentLabelPrefVisibility.hide,
+                              label: Text(context.l10n.labelContentPreferenceHide),
                             ),
                           ],
+                          selected: {
+                            resolveLabelPreference(
+                              data.currentPreferences,
+                              label: definition.identifier,
+                              labelerDid: widget.did,
+                              fallback: visibilityFromDefaultSetting(definition.defaultSetting),
+                            ),
+                          },
+                          onSelectionChanged: (definition.adultOnly ?? false) && !data.adultContentEnabled
+                              ? null
+                              : (selection) =>
+                                    _updatePreference(label: definition.identifier, visibility: selection.first),
+                        ),
+                        if ((definition.adultOnly ?? false) && !data.adultContentEnabled) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            context.l10n.messageEnableAdultContentForLabel,
+                            style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
+                          ),
                         ],
-                      ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                ],
-            ],
-          );
-        },
-      ),
-    );
-  }
+                ),
+                const SizedBox(height: 12),
+              ],
+          ],
+        );
+      },
+    ),
+  );
 }
 
 class _LabelerDetailData {
@@ -365,12 +366,13 @@ class _PreferenceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.colorScheme.surfaceContainerLowest,
+    return Material(
+      color: context.colorScheme.surfaceContainerLowest,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: context.colorScheme.outlineVariant),
+        side: BorderSide(color: context.colorScheme.outlineVariant),
       ),
+      clipBehavior: Clip.antiAlias,
       child: child,
     );
   }

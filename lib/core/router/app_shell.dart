@@ -8,8 +8,8 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/crash_reporting/crash_reporting_consent_gate.dart';
 import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/l10n/app_localizations.dart';
-import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/l10n/bottom_navigation_labels.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/theme/animation_tokens.dart';
 import 'package:lazurite/core/theme/animation_utils.dart';
@@ -97,8 +97,6 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = context.l10n;
     CrashReportingService? crashReportingService;
     try {
       crashReportingService = context.read<CrashReportingService>();
@@ -124,8 +122,8 @@ class _AppShellState extends State<AppShell> {
               : CrashReportingConsentGate(crashReportingService: crashReportingService, child: widget.navigationShell),
           bottomNavigationBar: Container(
             decoration: BoxDecoration(
-              color: theme.colorScheme.surface.withValues(alpha: 0.92),
-              border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
+              color: context.theme.colorScheme.surface.withValues(alpha: 0.92),
+              border: Border(top: BorderSide(color: context.theme.colorScheme.outlineVariant)),
             ),
             child: NavigationBar(
               height: 80,
@@ -137,7 +135,7 @@ class _AppShellState extends State<AppShell> {
                 widget.navigationShell.goBranch(index, initialLocation: index == widget.navigationShell.currentIndex);
               },
               labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-              destinations: _destinations(l10n),
+              destinations: _destinations(context.l10n),
             ),
           ),
         ),
@@ -263,7 +261,6 @@ class _AppMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final currentPath = GoRouterState.of(rootContext).uri.path;
     final isComposeRoute = currentPath == '/compose';
     final isHomeRoute = currentPath == '/';
@@ -276,10 +273,9 @@ class _AppMenu extends StatelessWidget {
     final isMessagesRoute = currentPath.startsWith('/alerts/messages') || currentPath.startsWith('/alerts/requests');
     final isNotificationsRoute = currentPath.startsWith('/alerts') && !isMessagesRoute;
     final isOffline = rootContext.read<ConnectivityCubit>().state.isOffline;
-    final l10n = context.l10n;
     final tokens = rootContext.watch<AuthBloc>().state.tokens;
-    final displayName = tokens?.displayName ?? tokens?.handle ?? l10n.labelGuest;
-    final handle = tokens?.handle ?? l10n.labelSignInRequired;
+    final displayName = tokens?.displayName ?? tokens?.handle ?? context.l10n.labelGuest;
+    final handle = tokens?.handle ?? context.l10n.labelSignInRequired;
     final did = tokens?.did;
     final initials = _initialsFor(tokens?.displayName ?? tokens?.handle ?? 'L');
     final drawerWidth = (MediaQuery.sizeOf(context).width * 0.82).clamp(280.0, 320.0).toDouble();
@@ -292,8 +288,8 @@ class _AppMenu extends StatelessWidget {
             Container(
               padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                border: Border(bottom: BorderSide(color: theme.colorScheme.outlineVariant)),
+                color: context.theme.colorScheme.surface,
+                border: Border(bottom: BorderSide(color: context.theme.colorScheme.outlineVariant)),
               ),
               child: Column(
                 children: [
@@ -301,10 +297,13 @@ class _AppMenu extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
                     child: Row(
                       children: [
-                        Text(l10n.appTitle, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                        Text(
+                          context.l10n.appTitle,
+                          style: context.theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                        ),
                         const Spacer(),
                         IconButton(
-                          tooltip: l10n.buttonCancel,
+                          tooltip: context.l10n.buttonCancel,
                           onPressed: () => Navigator.of(context).pop(),
                           icon: const Icon(Icons.close),
                         ),
@@ -325,38 +324,38 @@ class _AppMenu extends StatelessWidget {
                       _MenuTile(
                         icon: Icons.add_circle_outline,
                         selectedIcon: Icons.add_circle,
-                        label: l10n.labelNewPost,
+                        label: context.l10n.labelNewPost,
                         isSelected: isComposeRoute,
                         tooltip: isOffline ? offlineActionMessage('compose a post') : null,
                         onTap: isOffline ? null : () => _pushRoute(context, '/compose'),
                       ),
                       const Divider(height: 24),
-                      _MenuSectionLabel(label: l10n.labelNavigation),
+                      _MenuSectionLabel(label: context.l10n.labelNavigation),
                       _MenuTile(
                         icon: Icons.home_outlined,
                         selectedIcon: Icons.home,
-                        label: l10n.labelHome,
+                        label: context.l10n.labelHome,
                         isSelected: isHomeRoute,
                         onTap: () => _selectBranch(context, 0),
                       ),
                       _MenuTile(
                         icon: Icons.search_outlined,
                         selectedIcon: Icons.search,
-                        label: l10n.labelSearch,
+                        label: context.l10n.labelSearch,
                         isSelected: isSearchRoute,
                         onTap: () => _selectBranch(context, 1),
                       ),
                       _MenuTile(
                         icon: Icons.rss_feed_outlined,
                         selectedIcon: Icons.rss_feed,
-                        label: l10n.labelFeeds,
+                        label: context.l10n.labelFeeds,
                         isSelected: isFeedsRoute,
                         onTap: () => _pushRoute(context, '/feeds'),
                       ),
                       _MenuTile(
                         icon: Icons.notifications_outlined,
                         selectedIcon: Icons.notifications,
-                        label: l10n.labelNotifications,
+                        label: context.l10n.labelNotifications,
                         isSelected: isNotificationsRoute,
                         trailing: _notificationsBadge(),
                         onTap: () => _goRoute(context, '/alerts'),
@@ -364,30 +363,30 @@ class _AppMenu extends StatelessWidget {
                       _MenuTile(
                         icon: Icons.chat_bubble_outline,
                         selectedIcon: Icons.chat_bubble,
-                        label: l10n.labelMessages,
+                        label: context.l10n.labelMessages,
                         isSelected: isMessagesRoute,
                         onTap: () => _goRoute(context, '/alerts/messages'),
                       ),
                       _MenuTile(
                         icon: Icons.person_outline,
                         selectedIcon: Icons.person,
-                        label: l10n.labelProfile,
+                        label: context.l10n.labelProfile,
                         isSelected: isProfileRoute,
                         onTap: () => _selectBranch(context, 4),
                       ),
                       const Divider(height: 24),
-                      _MenuSectionLabel(label: l10n.labelAdvanced),
+                      _MenuSectionLabel(label: context.l10n.labelAdvanced),
                       _MenuTile(
                         icon: Icons.explore_outlined,
                         selectedIcon: Icons.explore,
-                        label: l10n.labelAtExplorer,
+                        label: context.l10n.labelAtExplorer,
                         isSelected: isDevToolsRoute,
                         onTap: () => _selectBranch(context, 2),
                       ),
                       _MenuTile(
                         icon: Icons.cleaning_services_outlined,
                         selectedIcon: Icons.cleaning_services,
-                        label: l10n.labelAuditFollows,
+                        label: context.l10n.labelAuditFollows,
                         isSelected: isCleanFollowsRoute,
                         onTap: () => _pushRoute(context, '/settings/clean-follows'),
                       ),
@@ -395,14 +394,14 @@ class _AppMenu extends StatelessWidget {
                       _MenuTile(
                         icon: Icons.settings_outlined,
                         selectedIcon: Icons.settings,
-                        label: l10n.labelSettings,
+                        label: context.l10n.labelSettings,
                         isSelected: isSettingsRoute,
                         onTap: () => _pushRoute(context, '/settings'),
                       ),
                       _MenuTile(
                         icon: Icons.logout,
                         selectedIcon: Icons.logout,
-                        label: l10n.labelLogOut,
+                        label: context.l10n.labelLogOut,
                         isDestructive: true,
                         onTap: () =>
                             _runAfterClose(context, () => rootContext.read<AuthBloc>().add(const LogoutRequested())),
@@ -418,16 +417,20 @@ class _AppMenu extends StatelessWidget {
     );
   }
 
-  Widget _profileTag(ThemeData theme, String content, bool isLabel) {
-    final style = isLabel
+  Widget _profileTag(ThemeData theme, String content, bool isLabel) => Text(
+    content,
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
+    style: isLabel
         ? theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)
-        : theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant);
-    return Text(content, maxLines: 1, overflow: TextOverflow.ellipsis, style: style);
-  }
+        : theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+  );
 
   Widget _buildProfileTag(BuildContext context, String displayName, String handle, String initials, String? did) {
-    final theme = Theme.of(context);
-    final deco = BoxDecoration(color: theme.colorScheme.surfaceContainerHigh, borderRadius: BorderRadius.circular(20));
+    final deco = BoxDecoration(
+      color: context.theme.colorScheme.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(20),
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       child: InkWell(
@@ -444,9 +447,9 @@ class _AppMenu extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _profileTag(theme, displayName, true),
+                    _profileTag(context.theme, displayName, true),
                     const SizedBox(height: 2),
-                    _profileTag(theme, '@$handle', false),
+                    _profileTag(context.theme, '@$handle', false),
                   ],
                 ),
               ),
@@ -573,20 +576,18 @@ class _MenuProfileAvatarState extends State<_MenuProfileAvatar> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<String?>(
-      future: _avatarFuture,
-      builder: (context, snapshot) {
-        final avatarUrl = snapshot.data;
-        return CircleAvatar(
-          radius: 24,
-          backgroundColor: context.colorScheme.surfaceContainerHighest,
-          backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
-          child: avatarUrl == null ? Text(widget.initials) : null,
-        );
-      },
-    );
-  }
+  Widget build(BuildContext context) => FutureBuilder<String?>(
+    future: _avatarFuture,
+    builder: (context, snapshot) {
+      final avatarUrl = snapshot.data;
+      return CircleAvatar(
+        radius: 24,
+        backgroundColor: context.colorScheme.surfaceContainerHighest,
+        backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+        child: avatarUrl == null ? Text(widget.initials) : null,
+      );
+    },
+  );
 }
 
 class _MenuTile extends StatelessWidget {
@@ -612,19 +613,18 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = _color(theme);
+    final color = _color(context.theme);
 
     Widget tile = ListTile(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       leading: Icon(isSelected ? selectedIcon : icon, color: color),
       title: Text(
         label.toUpperCase(),
-        style: theme.textTheme.bodyMedium?.copyWith(color: color, fontWeight: FontWeight.w700),
+        style: context.theme.textTheme.bodyMedium?.copyWith(color: color, fontWeight: FontWeight.w700),
       ),
       trailing: trailing,
       selected: isSelected,
-      selectedTileColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.45),
+      selectedTileColor: context.theme.colorScheme.primaryContainer.withValues(alpha: 0.45),
       onTap: onTap,
     );
 
@@ -632,7 +632,7 @@ class _MenuTile extends StatelessWidget {
       tile = Tooltip(message: tooltip!, child: tile);
     }
 
-    return tile;
+    return Material(type: MaterialType.transparency, child: tile);
   }
 
   Color _color(ThemeData theme) {

@@ -18,50 +18,46 @@ class DevToolsScreen extends StatelessWidget {
   final String? initialQuery;
 
   @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: Text(context.l10n.labelPdsExplorer),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.open_in_new),
+          tooltip: context.l10n.tooltipGoToPdsLs,
+          onPressed: () => openExternalUrl('https://pds.ls'),
+        ),
+      ],
+    ),
+    body: BlocConsumer<DevToolsCubit, DevToolsState>(
+      listenWhen: (previous, current) =>
+          previous.errorMessage != current.errorMessage &&
+          current.errorMessage != null &&
+          current.status != DevToolsStatus.error,
+      listener: (context, state) {
+        final message = state.errorMessage;
+        if (message == null) {
+          return;
+        }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.labelPdsExplorer),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.open_in_new),
-            tooltip: l10n.tooltipGoToPdsLs,
-            onPressed: () => openExternalUrl('https://pds.ls'),
-          ),
-        ],
-      ),
-      body: BlocConsumer<DevToolsCubit, DevToolsState>(
-        listenWhen: (previous, current) =>
-            previous.errorMessage != current.errorMessage &&
-            current.errorMessage != null &&
-            current.status != DevToolsStatus.error,
-        listener: (context, state) {
-          final message = state.errorMessage;
-          if (message == null) {
-            return;
-          }
-
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(message), behavior: SnackBarBehavior.floating));
-        },
-        builder: (context, state) {
-          return Column(
-            children: [
-              _SearchInput(state: state, initialQuery: initialQuery),
-              if (state.status == DevToolsStatus.repoLoaded ||
-                  state.status == DevToolsStatus.collectionLoaded ||
-                  state.status == DevToolsStatus.recordLoaded)
-                _BreadcrumbBar(state: state),
-              Expanded(child: _Content(state: state)),
-            ],
-          );
-        },
-      ),
-    );
-  }
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(message), behavior: SnackBarBehavior.floating));
+      },
+      builder: (context, state) {
+        return Column(
+          children: [
+            _SearchInput(state: state, initialQuery: initialQuery),
+            if (state.status == DevToolsStatus.repoLoaded ||
+                state.status == DevToolsStatus.collectionLoaded ||
+                state.status == DevToolsStatus.recordLoaded)
+              _BreadcrumbBar(state: state),
+            Expanded(child: _Content(state: state)),
+          ],
+        );
+      },
+    ),
+  );
 }
 
 class _SearchInput extends StatefulWidget {
@@ -102,7 +98,6 @@ class _SearchInputState extends State<_SearchInput> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final shouldShowTypeahead =
         _controller.text.trim().startsWith('@') &&
         (widget.state.isTypeaheadLoading || widget.state.typeaheadActors.isNotEmpty);
@@ -118,7 +113,7 @@ class _SearchInputState extends State<_SearchInput> {
                 child: TextField(
                   controller: _controller,
                   decoration: InputDecoration(
-                    hintText: l10n.placeholderHandleDidOrAtUri,
+                    hintText: context.l10n.placeholderHandleDidOrAtUri,
                     border: const OutlineInputBorder(),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     isDense: true,
@@ -131,7 +126,7 @@ class _SearchInputState extends State<_SearchInput> {
               const SizedBox(width: 8),
               FilledButton(
                 onPressed: widget.state.isLoading ? null : () => _resolve(_controller.text),
-                child: Text(l10n.buttonResolve),
+                child: Text(context.l10n.buttonResolve),
               ),
             ],
           ),
@@ -198,15 +193,15 @@ class _TypeaheadResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final listHeight = (actors.length * 56.0).clamp(56.0, 220.0);
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: theme.dividerColor),
+    return Material(
+      color: context.colorScheme.surface,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-        color: theme.colorScheme.surface,
+        side: BorderSide(color: context.theme.dividerColor),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -216,7 +211,7 @@ class _TypeaheadResults extends StatelessWidget {
               height: listHeight,
               child: ListView.separated(
                 itemCount: actors.length,
-                separatorBuilder: (_, _) => Divider(height: 1, color: theme.dividerColor),
+                separatorBuilder: (_, _) => Divider(height: 1, color: context.theme.dividerColor),
                 itemBuilder: (context, index) {
                   final actor = actors[index];
                   return ListTile(
@@ -378,14 +373,13 @@ class _RepoOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalRepoRecords = state.totalRepoRecords;
-    final theme = Theme.of(context);
     return ListView(
       children: [
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: context.colorScheme.surfaceContainerHighest,
-            border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
+            border: Border(bottom: BorderSide(color: context.theme.dividerColor)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -420,7 +414,7 @@ class _RepoOverview extends StatelessWidget {
                 children: [
                   Text(
                     context.l10n.formatCollectionsCount(state.collections.length),
-                    style: theme.textTheme.bodySmall!.copyWith(color: theme.colorScheme.onSurface),
+                    style: context.textTheme.bodySmall!.copyWith(color: context.colorScheme.onSurface),
                   ),
                   Text(
                     totalRepoRecords == null

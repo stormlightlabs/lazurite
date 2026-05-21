@@ -22,17 +22,15 @@ class SettingsGroup extends StatelessWidget {
   final List<Widget> children;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: theme.dividerColor),
-          bottom: BorderSide(color: theme.dividerColor),
-        ),
-        color: theme.cardColor,
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Divider(height: 1, color: context.theme.dividerColor),
+      Material(
+        color: context.theme.cardColor,
+        child: Column(children: children),
       ),
-      child: Column(children: children),
-    );
-  }
+      Divider(height: 1, color: context.theme.dividerColor),
+    ],
+  );
 }

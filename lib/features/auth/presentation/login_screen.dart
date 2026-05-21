@@ -10,6 +10,7 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/atproto_identifier.dart';
@@ -316,9 +317,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final l10n = context.l10n;
     final accountSwitcherCubit = _maybeAccountSwitcherCubit(context);
 
     return Scaffold(
@@ -327,7 +325,7 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [colorScheme.surface, colorScheme.surfaceContainerLowest],
+            colors: [context.colorScheme.surface, context.colorScheme.surfaceContainerLowest],
           ),
         ),
         child: SafeArea(
@@ -352,27 +350,27 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const SizedBox(height: 16),
-                        _LogoCard(colorScheme: colorScheme),
+                        _LogoCard(colorScheme: context.colorScheme),
                         const SizedBox(height: 24),
                         Text(
-                          l10n.appTitle,
+                          context.l10n.appTitle,
                           textAlign: TextAlign.center,
-                          style: theme.textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
+                          style: context.textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          l10n.labelRoamTheAtmosphere,
+                          context.l10n.labelRoamTheAtmosphere,
                           textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
+                          style: context.textTheme.bodyLarge?.copyWith(color: context.colorScheme.onSurfaceVariant),
                         ),
                         const SizedBox(height: 32),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
-                              l10n.labelChooseYourPortal,
+                              context.l10n.labelChooseYourPortal,
                               textAlign: TextAlign.center,
-                              style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+                              style: context.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 8),
                             Center(
@@ -404,7 +402,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             final busy = state.isLoading || _isPersistingProvider;
                             final border = OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: colorScheme.outlineVariant, width: 1.5),
+                              borderSide: BorderSide(color: context.colorScheme.outlineVariant, width: 1.5),
                             );
 
                             return TypeaheadTextField(
@@ -415,24 +413,24 @@ class _LoginScreenState extends State<LoginScreen> {
                               debounceMs: 300,
                               limit: 8,
                               decoration: InputDecoration(
-                                labelText: l10n.promptHandleOrDid,
-                                hintText: l10n.placeholderHandleOrDid,
+                                labelText: context.l10n.promptHandleOrDid,
+                                hintText: context.l10n.placeholderHandleOrDid,
                                 prefixIcon: const Icon(Icons.person_outline),
                                 filled: true,
-                                fillColor: colorScheme.surface,
+                                fillColor: context.colorScheme.surface,
                                 contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
                                 border: border,
                                 enabledBorder: border,
                                 focusedBorder: border.copyWith(
-                                  borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+                                  borderSide: BorderSide(color: context.colorScheme.primary, width: 1.5),
                                 ),
                                 suffixIconConstraints: const BoxConstraints(minWidth: 52, minHeight: 52),
                                 suffixIcon: Padding(
                                   padding: const EdgeInsets.all(5),
                                   child: Tooltip(
-                                    message: busy ? l10n.labelStartingSignIn : l10n.buttonContinue,
+                                    message: busy ? context.l10n.labelStartingSignIn : context.l10n.buttonContinue,
                                     child: Semantics(
-                                      label: busy ? l10n.labelStartingSignIn : l10n.labelContinueSignIn,
+                                      label: busy ? context.l10n.labelStartingSignIn : context.l10n.labelContinueSignIn,
                                       button: true,
                                       enabled: !busy,
                                       child: FilledButton(
@@ -502,7 +500,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               const Expanded(child: Divider()),
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                                child: Text(l10n.labelDebug, style: theme.textTheme.labelMedium),
+                                child: Text(context.l10n.labelDebug, style: context.textTheme.labelMedium),
                               ),
                               const Expanded(child: Divider()),
                             ],
@@ -519,7 +517,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                       const Icon(Icons.bug_report_outlined),
                                       const SizedBox(width: 8),
                                       Expanded(
-                                        child: Text(l10n.labelAppPasswordLogin, style: theme.textTheme.titleMedium),
+                                        child: Text(
+                                          context.l10n.labelAppPasswordLogin,
+                                          style: context.textTheme.titleMedium,
+                                        ),
                                       ),
                                       TextButton(
                                         onPressed: () {
@@ -527,7 +528,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             _showDebugForm = !_showDebugForm;
                                           });
                                         },
-                                        child: Text(_showDebugForm ? l10n.labelHide : l10n.labelShow),
+                                        child: Text(_showDebugForm ? context.l10n.labelHide : context.l10n.labelShow),
                                       ),
                                     ],
                                   ),
@@ -536,15 +537,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                     TextFormField(
                                       controller: _appPasswordController,
                                       decoration: InputDecoration(
-                                        labelText: l10n.labelAppPassword,
-                                        hintText: l10n.placeholderAppPassword,
+                                        labelText: context.l10n.labelAppPassword,
+                                        hintText: context.l10n.placeholderAppPassword,
                                         prefixIcon: const Icon(Icons.lock_outline),
                                         border: const OutlineInputBorder(),
                                       ),
                                       obscureText: true,
                                       validator: (value) {
                                         if (_showDebugForm && (value == null || value.trim().isEmpty)) {
-                                          return l10n.validationEnterAppPassword;
+                                          return context.l10n.validationEnterAppPassword;
                                         }
                                         return null;
                                       },
@@ -561,14 +562,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                                   unawaited(_onAppPasswordLogin());
                                                 },
                                           icon: const Icon(Icons.login),
-                                          label: Text(l10n.buttonSignIn),
+                                          label: Text(context.l10n.buttonSignIn),
                                         );
                                       },
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      l10n.messageAppPasswordGeneratedViaBluesky,
-                                      style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                                      context.l10n.messageAppPasswordGeneratedViaBluesky,
+                                      style: context.textTheme.bodySmall?.copyWith(
+                                        color: context.colorScheme.onSurfaceVariant,
+                                      ),
                                       textAlign: TextAlign.center,
                                     ),
                                   ],
@@ -583,9 +586,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           crossAxisAlignment: WrapCrossAlignment.center,
                           spacing: 8,
                           children: [
-                            TextButton(onPressed: () => context.push('/terms'), child: Text(l10n.labelTermsOfService)),
-                            Text('•', style: theme.textTheme.bodySmall),
-                            TextButton(onPressed: () => context.push('/privacy'), child: Text(l10n.labelPrivacyPolicy)),
+                            TextButton(
+                              onPressed: () => context.push('/terms'),
+                              child: Text(context.l10n.labelTermsOfService),
+                            ),
+                            Text('•', style: context.textTheme.bodySmall),
+                            TextButton(
+                              onPressed: () => context.push('/privacy'),
+                              child: Text(context.l10n.labelPrivacyPolicy),
+                            ),
                           ],
                         ),
                       ],
@@ -641,72 +650,65 @@ class _SavedAccountsSection extends StatelessWidget {
   final ValueChanged<Account> onRemove;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(context.l10n.labelSavedAccounts, style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: colorScheme.outlineVariant),
-          ),
-          child: Column(
-            children: [
-              for (var index = 0; index < accounts.length; index++) ...[
-                _SavedAccountTile(
-                  key: ValueKey<String>('saved-account-${accounts[index].did}'),
-                  account: accounts[index],
-                  avatarFutureForDid: avatarFutureForDid,
-                  onTap: () => onSelect(accounts[index]),
-                  onRemove: () => onRemove(accounts[index]),
-                ),
-                if (index != accounts.length - 1) Divider(height: 1, color: colorScheme.outlineVariant),
-              ],
-            ],
-          ),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Text(context.l10n.labelSavedAccounts, style: context.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600)),
+      const SizedBox(height: 8),
+      Material(
+        color: context.colorScheme.surfaceContainerLowest,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: context.colorScheme.outlineVariant),
         ),
-      ],
-    );
-  }
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            for (var index = 0; index < accounts.length; index++) ...[
+              _SavedAccountTile(
+                key: ValueKey<String>('saved-account-${accounts[index].did}'),
+                account: accounts[index],
+                avatarFutureForDid: avatarFutureForDid,
+                onTap: () => onSelect(accounts[index]),
+                onRemove: () => onRemove(accounts[index]),
+              ),
+              if (index != accounts.length - 1) Divider(height: 1, color: context.colorScheme.outlineVariant),
+            ],
+          ],
+        ),
+      ),
+    ],
+  );
 }
 
 class _SavedAccountsLoading extends StatelessWidget {
   const _SavedAccountsLoading();
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(context.l10n.labelSavedAccounts, style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: colorScheme.outlineVariant),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                const SizedBox(width: 10),
-                Text(context.l10n.messageLoadingSavedAccounts),
-              ],
-            ),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Text(context.l10n.labelSavedAccounts, style: context.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600)),
+      const SizedBox(height: 8),
+      DecoratedBox(
+        decoration: BoxDecoration(
+          color: context.colorScheme.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: context.colorScheme.outlineVariant),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+              const SizedBox(width: 10),
+              Text(context.l10n.messageLoadingSavedAccounts),
+            ],
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
 }
 
 class _SavedAccountTile extends StatelessWidget {

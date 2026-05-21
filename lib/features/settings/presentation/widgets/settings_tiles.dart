@@ -20,17 +20,16 @@ class SettingsTile extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final color = isDestructive ? context.colorScheme.error : null;
-
-    return ListTile(
-      leading: icon != null ? Icon(icon, color: color) : null,
-      title: Text(title, style: TextStyle(color: color)),
+  Widget build(BuildContext context) => Material(
+    type: MaterialType.transparency,
+    child: ListTile(
+      leading: icon != null ? Icon(icon, color: isDestructive ? context.colorScheme.error : null) : null,
+      title: Text(title, style: TextStyle(color: isDestructive ? context.colorScheme.error : null)),
       subtitle: subtitle != null ? Text(subtitle!) : null,
       trailing: trailing ?? (onTap != null ? const Icon(Icons.chevron_right) : null),
       onTap: onTap,
-    );
-  }
+    ),
+  );
 }
 
 class ConstellationUrlTile extends StatelessWidget {
@@ -39,10 +38,13 @@ class ConstellationUrlTile extends StatelessWidget {
   final String currentUrl;
 
   @override
-  Widget build(BuildContext context) => ListTile(
-    leading: const Icon(Icons.hub_outlined),
-    title: const Text('Constellation URL'),
-    subtitle: Text(currentUrl, maxLines: 1, overflow: TextOverflow.ellipsis),
+  Widget build(BuildContext context) => Material(
+    type: MaterialType.transparency,
+    child: ListTile(
+      leading: const Icon(Icons.hub_outlined),
+      title: const Text('Constellation URL'),
+      subtitle: Text(currentUrl, maxLines: 1, overflow: TextOverflow.ellipsis),
+    ),
   );
 }
 
@@ -67,26 +69,29 @@ class SettingsDropdownTile<T> extends StatelessWidget {
   final Widget Function(BuildContext context, T value)? optionBuilder;
 
   @override
-  Widget build(BuildContext context) => ListTile(
-    title: Text(title),
-    subtitle: subtitle != null ? Text(subtitle!) : null,
-    trailing: DropdownButtonHideUnderline(
-      child: DropdownButton<T>(
-        alignment: AlignmentDirectional.centerEnd,
-        value: value,
-        onChanged: onChanged,
-        selectedItemBuilder: (context) => [
-          for (final option in options)
-            Align(alignment: AlignmentDirectional.centerEnd, child: _buildOption(context, option)),
-        ],
-        items: [
-          for (final option in options)
-            DropdownMenuItem<T>(
-              value: option,
-              alignment: AlignmentDirectional.centerEnd,
-              child: Align(alignment: AlignmentDirectional.centerEnd, child: _buildOption(context, option)),
-            ),
-        ],
+  Widget build(BuildContext context) => Material(
+    type: MaterialType.transparency,
+    child: ListTile(
+      title: Text(title),
+      subtitle: subtitle != null ? Text(subtitle!) : null,
+      trailing: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          alignment: AlignmentDirectional.centerEnd,
+          value: value,
+          onChanged: onChanged,
+          selectedItemBuilder: (context) => [
+            for (final option in options)
+              Align(alignment: AlignmentDirectional.centerEnd, child: _buildOption(context, option)),
+          ],
+          items: [
+            for (final option in options)
+              DropdownMenuItem<T>(
+                value: option,
+                alignment: AlignmentDirectional.centerEnd,
+                child: Align(alignment: AlignmentDirectional.centerEnd, child: _buildOption(context, option)),
+              ),
+          ],
+        ),
       ),
     ),
   );
