@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:poptart_core/poptart_core.dart'
-    show HttpMethod, HttpStatus, RateLimit, UnauthorizedException, XRPCError, XRPCRequest, XRPCResponse;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/notifications/domain/push_registration_service.dart';
 import 'package:lazurite/features/notifications/domain/push_token_provider.dart';
+import 'package:lazurite/shared/utils/test_utils.dart';
+import 'package:poptart_core/poptart_core.dart' show HttpMethod;
 import 'package:mocktail/mocktail.dart';
 
 class MockNotificationRepository extends Mock implements NotificationRepository {}
@@ -253,7 +253,7 @@ void main() {
           platform: any(named: 'platform'),
           ageRestricted: any(named: 'ageRestricted'),
         ),
-      ).thenThrow(_unauthorizedException());
+      ).thenThrow(testUnauthorizedException('app.bsky.notification.registerPush', method: HttpMethod.post));
 
       await service.start(initialTokens: accountATokens);
 
@@ -302,19 +302,4 @@ void main() {
       ).called(1);
     });
   });
-}
-
-UnauthorizedException _unauthorizedException() {
-  return UnauthorizedException(
-    XRPCResponse<XRPCError>(
-      headers: const {},
-      status: HttpStatus.unauthorized,
-      request: XRPCRequest(
-        method: HttpMethod.post,
-        url: Uri.parse('https://example.com/xrpc/app.bsky.notification.registerPush'),
-      ),
-      rateLimit: RateLimit.unlimited(),
-      data: const XRPCError(error: 'Unauthorized', message: '"exp" claim timestamp check failed'),
-    ),
-  );
 }

@@ -1,5 +1,9 @@
 import 'package:bluesky_poptart/app/bsky/video/get_upload_limits.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
+import 'package:lazurite/core/network/xrpc_client_factory.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 
 abstract interface class VideoUploadLimitsApi {
   Future<VideoGetUploadLimitsOutput> getUploadLimits();
@@ -33,10 +37,56 @@ final class BlueskyVideoUploadLimitsApi implements VideoUploadLimitsApi {
   }
 }
 
+final class RecoveringVideoUploadLimitsApi implements VideoUploadLimitsApi {
+  RecoveringVideoUploadLimitsApi({
+    required VideoUploadLimitsApi initialApi,
+    required Future<AuthTokens?> Function()? onUnauthorized,
+    required VideoUploadLimitsApi? Function(AuthTokens tokens) apiFactory,
+  }) {
+    _authRecovery = UnauthorizedRecoveryRunner<VideoUploadLimitsApi>(
+      initialClient: initialApi,
+      onUnauthorized: onUnauthorized,
+      clientFactory: apiFactory,
+    );
+  }
+
+  late final UnauthorizedRecoveryRunner<VideoUploadLimitsApi> _authRecovery;
+
+  @override
+  Future<VideoGetUploadLimitsOutput> getUploadLimits() {
+    return _authRecovery.run((api) => api.getUploadLimits());
+  }
+
+  @override
+  Future<String> getUploadLimitsAuthToken() {
+    return _authRecovery.run((api) => api.getUploadLimitsAuthToken());
+  }
+
+  @override
+  Future<VideoGetUploadLimitsOutput> getUploadLimitsWithAuthToken(String authToken) {
+    return _authRecovery.run((api) => api.getUploadLimitsWithAuthToken(authToken));
+  }
+}
+
 class VideoRepository {
-  VideoRepository({Bluesky? bluesky, VideoUploadLimitsApi? api})
-    : assert(bluesky != null || api != null, 'Provide either bluesky or api'),
-      _api = api ?? BlueskyVideoUploadLimitsApi(bluesky: bluesky!);
+  VideoRepository({
+    Bluesky? bluesky,
+    VideoUploadLimitsApi? api,
+    Future<AuthTokens?> Function()? onUnauthorized,
+    VideoUploadLimitsApi? Function(AuthTokens tokens)? apiFactory,
+  }) : assert(bluesky != null || api != null, 'Provide either bluesky or api'),
+       _api = onUnauthorized == null
+           ? api ?? BlueskyVideoUploadLimitsApi(bluesky: bluesky!)
+           : RecoveringVideoUploadLimitsApi(
+               initialApi: api ?? BlueskyVideoUploadLimitsApi(bluesky: bluesky!),
+               onUnauthorized: onUnauthorized,
+               apiFactory:
+                   apiFactory ??
+                   (tokens) {
+                     final refreshedBluesky = createBlueskyClient(tokens);
+                     return refreshedBluesky == null ? null : BlueskyVideoUploadLimitsApi(bluesky: refreshedBluesky);
+                   },
+             );
 
   final VideoUploadLimitsApi _api;
 
@@ -49,7 +99,12 @@ class VideoRepository {
         final authToken = await _api.getUploadLimitsAuthToken();
         final limits = await _api.getUploadLimitsWithAuthToken(authToken);
         return _mapLimits(limits);
-      } catch (_) {
+      } catch (fallbackError, fallbackStackTrace) {
+        log.d(
+          'Video upload limits fallback failed; rethrowing original limits request error',
+          error: fallbackError,
+          stackTrace: fallbackStackTrace,
+        );
         Error.throwWithStackTrace(error, stackTrace);
       }
     }

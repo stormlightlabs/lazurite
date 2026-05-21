@@ -12,8 +12,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart' show Bluesky;
-import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
+import 'package:lazurite/shared/utils/test_utils.dart';
 import 'package:poptart_core/poptart_core.dart' as atp_core;
 import 'package:poptart_lex/com/atproto/repo/get_record.dart';
 import 'package:poptart_lex/com/atproto/repo/put_record.dart';
@@ -162,7 +162,9 @@ void main() {
 
     test('refreshes and retries getProfile after unauthorized response', () async {
       final profile = _buildProfile();
-      final initialActor = _FakeActorService(onGetProfile: (_) async => throw _unauthorizedException());
+      final initialActor = _FakeActorService(
+        onGetProfile: (_) async => throw testUnauthorizedException('app.bsky.actor.getProfile'),
+      );
       final refreshedActor = _FakeActorService(onGetProfile: (_) async => _FakeResponse(profile));
       final initialClient = _testBlueskyClient(actor: initialActor);
       final refreshedClient = _testBlueskyClient(actor: refreshedActor);
@@ -173,11 +175,12 @@ void main() {
         bluesky: initialClient,
         onUnauthorized: () async {
           recoveryCalls += 1;
-          return const AuthTokens(
+          return testAuthTokens(
             accessToken: 'fresh-access',
             refreshToken: 'fresh-refresh',
             did: 'did:plc:alice',
             handle: 'alice.bsky.social',
+            service: null,
           );
         },
         blueskyClientFactory: (_) => refreshedClient,
@@ -794,19 +797,4 @@ class _FakeFollowersData {
   final ProfileView subject;
   final List<ProfileView> followers;
   final String? cursor;
-}
-
-atp_core.UnauthorizedException _unauthorizedException() {
-  return atp_core.UnauthorizedException(
-    atp_core.XRPCResponse<atp_core.XRPCError>(
-      headers: const {},
-      status: atp_core.HttpStatus.unauthorized,
-      request: atp_core.XRPCRequest(
-        method: atp_core.HttpMethod.get,
-        url: Uri.parse('https://example.com/xrpc/app.bsky.actor.getProfile'),
-      ),
-      rateLimit: atp_core.RateLimit.unlimited(),
-      data: const atp_core.XRPCError(error: 'Unauthorized', message: '"exp" claim timestamp check failed'),
-    ),
-  );
 }

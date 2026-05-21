@@ -117,7 +117,7 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
       physics: const NeverScrollableScrollPhysics(),
       buildDefaultDragHandles: false,
       itemCount: pinnedFeeds.length,
-      onReorder: (oldIndex, newIndex) {
+      onReorderItem: (oldIndex, newIndex) {
         context.read<FeedPreferencesCubit>().reorderPinnedFeeds(oldIndex, newIndex);
       },
       itemBuilder: (context, index) {

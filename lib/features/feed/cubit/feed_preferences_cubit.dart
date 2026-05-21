@@ -105,10 +105,10 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
     final unpinnedFeeds = state.unpinnedFeeds;
 
     if (oldIndex < 0 || oldIndex >= pinnedFeeds.length) return;
+    if (newIndex < 0) return;
 
-    final adjustedNewIndex = newIndex > oldIndex ? newIndex - 1 : newIndex;
     final item = pinnedFeeds.removeAt(oldIndex);
-    pinnedFeeds.insert(adjustedNewIndex, item);
+    pinnedFeeds.insert(newIndex.clamp(0, pinnedFeeds.length), item);
 
     final newFeeds = [...pinnedFeeds, ...unpinnedFeeds];
     await _savePreferences(newFeeds);

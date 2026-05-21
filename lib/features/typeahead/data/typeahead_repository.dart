@@ -6,6 +6,9 @@ import 'package:http/http.dart' as http;
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
+import 'package:lazurite/core/network/xrpc_client_factory.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 
@@ -18,8 +21,9 @@ class TypeaheadRepository {
     String Function()? appViewProviderResolver,
     ModerationService? moderationService,
     http.Client? httpClient,
-  }) : _bluesky = bluesky,
-       _provider = provider?.trim().toLowerCase(),
+    Future<AuthTokens?> Function()? onUnauthorized,
+    Bluesky? Function(AuthTokens tokens)? blueskyClientFactory,
+  }) : _provider = provider?.trim().toLowerCase(),
        _providerResolver = providerResolver,
        _moderationService = moderationService,
        _httpClient = httpClient ?? http.Client(),
@@ -34,6 +38,14 @@ class TypeaheadRepository {
     if (_provider != null && !_isSupportedProvider(_provider)) {
       throw ArgumentError.value(provider, 'provider', 'Supported providers are "bluesky" and "community".');
     }
+
+    _authRecovery = bluesky == null
+        ? null
+        : UnauthorizedRecoveryRunner<Bluesky>(
+            initialClient: bluesky,
+            onUnauthorized: onUnauthorized,
+            clientFactory: blueskyClientFactory ?? createBlueskyClient,
+          );
   }
 
   static const String blueskyProvider = 'bluesky';
@@ -43,7 +55,7 @@ class TypeaheadRepository {
   static const String _communityPath = '/xrpc/app.bsky.actor.searchActorsTypeahead';
   static const String _searchActorsTypeaheadEndpoint = 'app.bsky.actor.searchActorsTypeahead';
 
-  final Bluesky? _bluesky;
+  late final UnauthorizedRecoveryRunner<Bluesky>? _authRecovery;
   final String? _provider;
   final String Function()? _providerResolver;
   final ModerationService? _moderationService;
@@ -66,7 +78,7 @@ class TypeaheadRepository {
     try {
       return await _searchCommunity(query: normalizedQuery, limit: normalizedLimit);
     } catch (error, stackTrace) {
-      if (_bluesky == null) {
+      if (_authRecovery == null) {
         rethrow;
       }
 
@@ -101,17 +113,17 @@ class TypeaheadRepository {
   }
 
   Future<List<TypeaheadResult>> _searchBluesky({required String query, required int limit}) async {
-    final bluesky = _bluesky;
-    if (bluesky == null) {
+    final authRecovery = _authRecovery;
+    if (authRecovery == null) {
       return _searchBlueskyPublicHttp(query: query, limit: limit);
     }
+    final headers = await _moderationService?.headersForRequest();
 
-    final response = await bluesky.actor.searchActorsTypeahead(
-      q: query,
-      limit: limit,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        _searchActorsTypeaheadEndpoint,
-        await _moderationService?.headersForRequest(),
+    final response = await authRecovery.run(
+      (client) => client.actor.searchActorsTypeahead(
+        q: query,
+        limit: limit,
+        $headers: _appViewContext.appBskyHeadersForEndpoint(_searchActorsTypeaheadEndpoint, headers),
       ),
     );
 

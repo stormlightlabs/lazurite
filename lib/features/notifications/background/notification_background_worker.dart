@@ -8,6 +8,7 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/notifications/data/flutter_local_notification_adapter.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
@@ -143,10 +144,24 @@ class _BackgroundNotificationContext {
     final authRepository = AuthRepository(database: database);
 
     try {
-      final tokens = await authRepository.restoreSession();
+      var tokens = await authRepository.restoreSession();
       if (tokens == null) {
         await database.close();
         return null;
+      }
+      final accountDid = tokens.did;
+
+      Future<AuthTokens?> recoverSession() async {
+        final currentTokens = tokens;
+        if (currentTokens == null) {
+          return null;
+        }
+        final refreshed = await authRepository.refreshSession(currentTokens);
+        if (refreshed == null || refreshed.did != accountDid) {
+          return null;
+        }
+        tokens = refreshed;
+        return refreshed;
       }
 
       final bluesky = createBlueskyClient(tokens);
@@ -158,20 +173,25 @@ class _BackgroundNotificationContext {
       final moderationService = ModerationService(
         bluesky: bluesky,
         database: database,
-        accountDid: tokens.did,
-        userDid: tokens.did,
+        accountDid: accountDid,
+        userDid: accountDid,
+        onUnauthorized: recoverSession,
       );
       await moderationService.ensureInitialized();
 
       final localNotificationAdapter = FlutterLocalNotificationAdapter();
       await localNotificationAdapter.initialize(onTap: (_) {});
 
-      final notificationRepository = NotificationRepository(bluesky: bluesky, moderationService: moderationService);
+      final notificationRepository = NotificationRepository(
+        bluesky: bluesky,
+        moderationService: moderationService,
+        onUnauthorized: recoverSession,
+      );
 
       final domainService = NotificationDomainService(
         notificationRepository: notificationRepository,
         database: database,
-        accountDid: tokens.did,
+        accountDid: accountDid,
         localNotificationAdapter: localNotificationAdapter,
       );
 

@@ -4,6 +4,7 @@ import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/search_posts.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/search/data/post_search_filters.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 
@@ -118,6 +119,43 @@ void main() {
 
       expect(feed.lastQ, '*');
       expect(feed.lastAuthor, 'did:plc:author');
+    });
+
+    test('refreshes and retries search after unauthorized response', () async {
+      var initialRequests = 0;
+      var recoveryCalls = 0;
+      final refreshedFeed = _FakeFeedService();
+      final initialClient = testBluesky(
+        getClient: (url, {headers}) async {
+          initialRequests += 1;
+          return http.Response(
+            '{"error":"Unauthorized","message":"\\"exp\\" claim timestamp check failed"}',
+            401,
+            request: http.Request('GET', url),
+          );
+        },
+      );
+      final refreshedClient = testBluesky(getClient: refreshedFeed.get);
+      final recoveringRepository = SearchRepository(
+        bluesky: initialClient,
+        onUnauthorized: () async {
+          recoveryCalls += 1;
+          return const AuthTokens(
+            accessToken: 'fresh-access',
+            refreshToken: 'fresh-refresh',
+            did: 'did:plc:test',
+            handle: 'test.bsky.social',
+          );
+        },
+        blueskyClientFactory: (_) => refreshedClient,
+      );
+
+      final result = await recoveringRepository.searchPosts(query: 'flutter');
+
+      expect(result.posts, hasLength(1));
+      expect(initialRequests, 1);
+      expect(recoveryCalls, 1);
+      expect(refreshedFeed.lastQ, 'flutter');
     });
 
     test('throws validation exception when query and filters are empty', () {

@@ -338,6 +338,7 @@ class AppRouter {
               postClient: XrpcNetworkInterceptor.wrapPostClient(),
             ),
             constellationClient: ConstellationClient(baseUrl: constellationUrl),
+            onUnauthorized: onUnauthorized,
           );
           return buildAppRoutePage(
             context,
@@ -676,6 +677,7 @@ class AppRouter {
                 repository: FollowAuditRepository(
                   bluesky: context.read<Bluesky>(),
                   appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                  onUnauthorized: onUnauthorized,
                 ),
                 ownDid: context.read<String>(),
               ),
@@ -1152,6 +1154,7 @@ class AppRouter {
       crossProviderFallbackEnabledResolver: () => settingsCubit.state.crossProviderFallbackEnabled,
       routingEpoch: settingsCubit.state.routingEpoch,
       routingEpochResolver: () => settingsCubit.state.routingEpoch,
+      onUnauthorized: onUnauthorized,
     );
   }
 

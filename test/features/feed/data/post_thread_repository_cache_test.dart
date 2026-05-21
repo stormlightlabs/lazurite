@@ -9,8 +9,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/database/app_database.dart';
-import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
+import 'package:lazurite/shared/utils/test_utils.dart';
 
 import '../../../helpers/test_bluesky_client.dart';
 
@@ -132,7 +132,7 @@ void main() {
       final primaryFeedApi = _FakeThreadFeedTransport(
         getPostThreadHandler: ({required uri}) async {
           primaryCalls += 1;
-          throw _unauthorizedException('app.bsky.feed.getPostThread');
+          throw testUnauthorizedException('app.bsky.feed.getPostThread');
         },
       );
       final fallbackFeedApi = _FakeThreadFeedTransport(
@@ -147,7 +147,7 @@ void main() {
         accountDid: 'did:plc:test',
         onUnauthorized: () async {
           refreshCalls += 1;
-          return _testTokens();
+          return testAuthTokens();
         },
         blueskyClientFactory: (_) => testBluesky(getClient: fallbackFeedApi.get),
       );
@@ -177,29 +177,5 @@ PostView _post({required String uri, required String cid, required String text})
     author: ProfileViewBasic(did: did, handle: '$did.bsky.social'),
     record: {r'$type': 'app.bsky.feed.post', 'text': text, 'createdAt': timestamp.toIso8601String()},
     indexedAt: timestamp,
-  );
-}
-
-AuthTokens _testTokens() {
-  final now = DateTime.now().toUtc();
-  return AuthTokens(
-    accessToken: 'access-token',
-    refreshToken: 'refresh-token',
-    expiresAt: now.add(const Duration(hours: 1)),
-    did: 'did:plc:test',
-    handle: 'test.bsky.social',
-    service: 'bsky.social',
-  );
-}
-
-UnauthorizedException _unauthorizedException(String methodId) {
-  return UnauthorizedException(
-    XRPCResponse(
-      headers: const {},
-      status: HttpStatus.unauthorized,
-      request: XRPCRequest(method: HttpMethod.get, url: Uri.https('bsky.social', '/xrpc/$methodId')),
-      rateLimit: RateLimit.unlimited(),
-      data: const XRPCError(error: 'Unauthorized', message: 'exp claim timestamp check failed'),
-    ),
   );
 }

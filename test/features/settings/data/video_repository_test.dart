@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bluesky_poptart/app/bsky/video/get_upload_limits.dart';
 import 'package:lazurite/features/settings/data/video_repository.dart';
+import 'package:lazurite/shared/utils/test_utils.dart';
 
 class FakeVideoUploadLimitsApi implements VideoUploadLimitsApi {
   FakeVideoUploadLimitsApi({
@@ -81,6 +82,40 @@ void main() {
       expect(result.remainingDailyBytes, 0);
       expect(result.message, 'Daily limit reached');
       expect(result.error, 'DAILY_LIMIT_EXCEEDED');
+    });
+
+    test('refreshes and retries direct limits request after unauthorized response', () async {
+      var initialCalls = 0;
+      var recoveryCalls = 0;
+      var refreshedCalls = 0;
+      final initialApi = FakeVideoUploadLimitsApi(
+        getUploadLimitsHandler: () async {
+          initialCalls += 1;
+          throw testUnauthorizedException('app.bsky.video.getUploadLimits');
+        },
+      );
+      final refreshedApi = FakeVideoUploadLimitsApi(
+        getUploadLimitsHandler: () async {
+          refreshedCalls += 1;
+          return const VideoGetUploadLimitsOutput(canUpload: true, remainingDailyVideos: 8, remainingDailyBytes: 1000);
+        },
+      );
+      final repository = VideoRepository(
+        api: initialApi,
+        onUnauthorized: () async {
+          recoveryCalls += 1;
+          return testAuthTokens(accessToken: 'fresh-access', refreshToken: 'fresh-refresh', service: null);
+        },
+        apiFactory: (_) => refreshedApi,
+      );
+
+      final result = await repository.getUploadLimits();
+
+      expect(result.canUpload, isTrue);
+      expect(result.remainingDailyVideos, 8);
+      expect(initialCalls, 1);
+      expect(recoveryCalls, 1);
+      expect(refreshedCalls, 1);
     });
 
     test('rethrows the original error when direct and fallback requests fail', () async {

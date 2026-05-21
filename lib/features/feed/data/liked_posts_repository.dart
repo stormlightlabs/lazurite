@@ -4,6 +4,9 @@ import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
+import 'package:lazurite/core/network/xrpc_client_factory.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/search/data/semantic_indexer.dart';
 
 class LikedPostsRepository {
@@ -13,15 +16,22 @@ class LikedPostsRepository {
     SemanticIndexer? semanticIndexer,
     String? appViewProvider,
     String Function()? appViewProviderResolver,
-  }) : _bluesky = bluesky,
-       _database = database,
+    Future<AuthTokens?> Function()? onUnauthorized,
+    Bluesky? Function(AuthTokens tokens)? blueskyClientFactory,
+  }) : _database = database,
        _semanticIndexer = semanticIndexer,
        _appViewContext = AppViewRequestContext(
          appViewProvider: appViewProvider,
          appViewProviderResolver: appViewProviderResolver,
-       );
+       ) {
+    _authRecovery = UnauthorizedRecoveryRunner<Bluesky>(
+      initialClient: bluesky,
+      onUnauthorized: onUnauthorized,
+      clientFactory: blueskyClientFactory ?? createBlueskyClient,
+    );
+  }
 
-  final Bluesky _bluesky;
+  late final UnauthorizedRecoveryRunner<Bluesky> _authRecovery;
   final AppDatabase _database;
   final SemanticIndexer? _semanticIndexer;
   final AppViewRequestContext _appViewContext;
@@ -38,11 +48,13 @@ class LikedPostsRepository {
     var scanned = 0;
 
     while (scanned < _maxLikes) {
-      final response = await _bluesky.feed.getActorLikes(
-        actor: accountDid,
-        limit: _pageSize,
-        cursor: cursor,
-        $headers: _appViewContext.appBskyHeadersWithoutProxy(),
+      final response = await _authRecovery.run(
+        (client) => client.feed.getActorLikes(
+          actor: accountDid,
+          limit: _pageSize,
+          cursor: cursor,
+          $headers: _appViewContext.appBskyHeadersWithoutProxy(),
+        ),
       );
 
       final data = response.data;

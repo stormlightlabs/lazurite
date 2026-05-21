@@ -8,6 +8,9 @@ import 'package:bluesky_poptart/app/bsky/graph/get_lists_with_membership.dart';
 import 'package:bluesky_poptart/app/bsky/graph/list.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
+import 'package:lazurite/core/network/xrpc_client_factory.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 
 class ListRepository {
@@ -16,14 +19,21 @@ class ListRepository {
     ModerationService? moderationService,
     String? appViewProvider,
     String Function()? appViewProviderResolver,
-  }) : _bluesky = bluesky,
-       _moderationService = moderationService,
+    Future<AuthTokens?> Function()? onUnauthorized,
+    Bluesky? Function(AuthTokens tokens)? blueskyClientFactory,
+  }) : _moderationService = moderationService,
        _appViewContext = AppViewRequestContext(
          appViewProvider: appViewProvider,
          appViewProviderResolver: appViewProviderResolver,
-       );
+       ) {
+    _authRecovery = UnauthorizedRecoveryRunner<Bluesky>(
+      initialClient: bluesky,
+      onUnauthorized: onUnauthorized,
+      clientFactory: blueskyClientFactory ?? createBlueskyClient,
+    );
+  }
 
-  final Bluesky _bluesky;
+  late final UnauthorizedRecoveryRunner<Bluesky> _authRecovery;
   final ModerationService? _moderationService;
   final AppViewRequestContext _appViewContext;
 
@@ -33,14 +43,14 @@ class ListRepository {
     int limit = 50,
     bool includeReference = false,
   }) async {
-    final response = await _bluesky.graph.getLists(
-      actor: actor,
-      cursor: cursor,
-      limit: limit,
-      purposes: includeReference ? null : _listPurposes,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.graph.getLists',
-        await _moderationService?.headersForRequest(),
+    final headers = await _moderationService?.headersForRequest();
+    final response = await _authRecovery.run(
+      (client) => client.graph.getLists(
+        actor: actor,
+        cursor: cursor,
+        limit: limit,
+        purposes: includeReference ? null : _listPurposes,
+        $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.graph.getLists', headers),
       ),
     );
 
@@ -48,13 +58,13 @@ class ListRepository {
   }
 
   Future<ListDetailResult> getList({required AtUri listUri, String? cursor, int limit = 50}) async {
-    final response = await _bluesky.graph.getList(
-      list: listUri,
-      cursor: cursor,
-      limit: limit,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.graph.getList',
-        await _moderationService?.headersForRequest(),
+    final headers = await _moderationService?.headersForRequest();
+    final response = await _authRecovery.run(
+      (client) => client.graph.getList(
+        list: listUri,
+        cursor: cursor,
+        limit: limit,
+        $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.graph.getList', headers),
       ),
     );
 
@@ -66,13 +76,13 @@ class ListRepository {
   }
 
   Future<ListFeedResult> getListFeed({required AtUri listUri, String? cursor, int limit = 50}) async {
-    final response = await _bluesky.feed.getListFeed(
-      list: listUri,
-      cursor: cursor,
-      limit: limit,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.feed.getListFeed',
-        await _moderationService?.headersForRequest(),
+    final headers = await _moderationService?.headersForRequest();
+    final response = await _authRecovery.run(
+      (client) => client.feed.getListFeed(
+        list: listUri,
+        cursor: cursor,
+        limit: limit,
+        $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.feed.getListFeed', headers),
       ),
     );
 
@@ -84,14 +94,14 @@ class ListRepository {
     String? cursor,
     int limit = 50,
   }) async {
-    final response = await _bluesky.graph.getListsWithMembership(
-      actor: actor,
-      cursor: cursor,
-      limit: limit,
-      purposes: _membershipPurposes,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.graph.getListsWithMembership',
-        await _moderationService?.headersForRequest(),
+    final headers = await _moderationService?.headersForRequest();
+    final response = await _authRecovery.run(
+      (client) => client.graph.getListsWithMembership(
+        actor: actor,
+        cursor: cursor,
+        limit: limit,
+        purposes: _membershipPurposes,
+        $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.graph.getListsWithMembership', headers),
       ),
     );
 
@@ -102,12 +112,12 @@ class ListRepository {
   }
 
   Future<List<ProfileViewBasic>> searchActorsTypeahead({required String query, int limit = 10}) async {
-    final response = await _bluesky.actor.searchActorsTypeahead(
-      q: query,
-      limit: limit,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.actor.searchActorsTypeahead',
-        await _moderationService?.headersForRequest(),
+    final headers = await _moderationService?.headersForRequest();
+    final response = await _authRecovery.run(
+      (client) => client.actor.searchActorsTypeahead(
+        q: query,
+        limit: limit,
+        $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.actor.searchActorsTypeahead', headers),
       ),
     );
 
@@ -115,58 +125,72 @@ class ListRepository {
   }
 
   Future<String> addListItem({required AtUri listUri, required String subjectDid}) async {
-    final response = await _bluesky.graph.listitem.create(
-      list: listUri,
-      subject: subjectDid,
-      createdAt: DateTime.now(),
-      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
+    final headers = await _moderationService?.headersForRequest();
+    final response = await _authRecovery.run(
+      (client) => client.graph.listitem.create(
+        list: listUri,
+        subject: subjectDid,
+        createdAt: DateTime.now(),
+        $headers: _appViewContext.appBskyHeadersWithoutProxy(headers),
+      ),
     );
 
     return response.data.uri.toString();
   }
 
   Future<void> removeListItem({required AtUri listItemUri}) async {
-    await _bluesky.graph.listitem.delete(
-      rkey: listItemUri.rkey,
-      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
+    final headers = await _moderationService?.headersForRequest();
+    await _authRecovery.run(
+      (client) => client.graph.listitem.delete(
+        rkey: listItemUri.rkey,
+        $headers: _appViewContext.appBskyHeadersWithoutProxy(headers),
+      ),
     );
   }
 
   Future<void> muteList({required AtUri listUri}) async {
-    await _bluesky.graph.muteActorList(
-      list: listUri,
-      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
+    final headers = await _moderationService?.headersForRequest();
+    await _authRecovery.run(
+      (client) =>
+          client.graph.muteActorList(list: listUri, $headers: _appViewContext.appBskyHeadersWithoutProxy(headers)),
     );
   }
 
   Future<void> unmuteList({required AtUri listUri}) async {
-    await _bluesky.graph.unmuteActorList(
-      list: listUri,
-      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
+    final headers = await _moderationService?.headersForRequest();
+    await _authRecovery.run(
+      (client) =>
+          client.graph.unmuteActorList(list: listUri, $headers: _appViewContext.appBskyHeadersWithoutProxy(headers)),
     );
   }
 
   Future<String> blockList({required AtUri listUri}) async {
-    final response = await _bluesky.graph.listblock.create(
-      subject: listUri,
-      createdAt: DateTime.now(),
-      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
+    final headers = await _moderationService?.headersForRequest();
+    final response = await _authRecovery.run(
+      (client) => client.graph.listblock.create(
+        subject: listUri,
+        createdAt: DateTime.now(),
+        $headers: _appViewContext.appBskyHeadersWithoutProxy(headers),
+      ),
     );
 
     return response.data.uri.toString();
   }
 
   Future<void> unblockList({required AtUri blockUri}) async {
-    await _bluesky.graph.listblock.delete(
-      rkey: blockUri.rkey,
-      $headers: _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest()),
+    final headers = await _moderationService?.headersForRequest();
+    await _authRecovery.run(
+      (client) => client.graph.listblock.delete(
+        rkey: blockUri.rkey,
+        $headers: _appViewContext.appBskyHeadersWithoutProxy(headers),
+      ),
     );
   }
 
   Future<Blob?> uploadListAvatar({required List<int> bytes, String mimeType = 'image/jpeg'}) async {
-    final response = await _bluesky.atproto.repo.uploadBlob(
-      bytes: Uint8List.fromList(bytes),
-      $headers: {'Content-Type': mimeType},
+    final response = await _authRecovery.run(
+      (client) =>
+          client.atproto.repo.uploadBlob(bytes: Uint8List.fromList(bytes), $headers: {'Content-Type': mimeType}),
     );
     return response.data.blob;
   }
@@ -186,10 +210,9 @@ class ListRepository {
       createdAt: DateTime.now().toUtc(),
     );
 
-    final response = await _bluesky.atproto.repo.createRecord(
-      repo: userDid,
-      collection: 'app.bsky.graph.list',
-      record: record.toJson(),
+    final response = await _authRecovery.run(
+      (client) =>
+          client.atproto.repo.createRecord(repo: userDid, collection: 'app.bsky.graph.list', record: record.toJson()),
     );
     return response.data.uri;
   }
@@ -210,16 +233,21 @@ class ListRepository {
       createdAt: DateTime.now().toUtc(),
     );
 
-    await _bluesky.atproto.repo.putRecord(
-      repo: userDid,
-      collection: 'app.bsky.graph.list',
-      rkey: listUri.rkey,
-      record: record.toJson(),
+    await _authRecovery.run(
+      (client) => client.atproto.repo.putRecord(
+        repo: userDid,
+        collection: 'app.bsky.graph.list',
+        rkey: listUri.rkey,
+        record: record.toJson(),
+      ),
     );
   }
 
   Future<void> deleteList({required AtUri listUri, required String userDid}) async {
-    await _bluesky.atproto.repo.deleteRecord(repo: userDid, collection: 'app.bsky.graph.list', rkey: listUri.rkey);
+    await _authRecovery.run(
+      (client) =>
+          client.atproto.repo.deleteRecord(repo: userDid, collection: 'app.bsky.graph.list', rkey: listUri.rkey),
+    );
   }
 
   List<ListView> _filterLists(List<ListView> lists) {

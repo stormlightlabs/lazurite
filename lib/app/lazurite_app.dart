@@ -457,6 +457,7 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
                         accountDid: accountDid,
                         userDid: accountDid,
                         appViewProviderResolver: () => settingsCubit.state.appViewProvider,
+                        onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),
                       );
                       unawaited(moderationService.ensureInitialized());
                       return moderationService;
@@ -489,6 +490,7 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
                         appViewFallbackService: widget.appViewFallbackService,
                         routingEpoch: settingsCubit.state.routingEpoch,
                         routingEpochResolver: () => settingsCubit.state.routingEpoch,
+                        onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),
                       );
                     },
                   ),
@@ -500,6 +502,7 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
                         providerResolver: () => settingsCubit.state.typeaheadProvider,
                         appViewProviderResolver: () => settingsCubit.state.appViewProvider,
                         moderationService: context.read<ModerationService>(),
+                        onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),
                       );
                     },
                   ),
@@ -508,6 +511,7 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
                       bluesky: bluesky,
                       moderationService: context.read<ModerationService>(),
                       appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                      onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),
                     ),
                   ),
                   RepositoryProvider(
@@ -554,18 +558,21 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
                       bluesky: bluesky,
                       moderationService: context.read<ModerationService>(),
                       appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                      onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),
                     ),
                   ),
                   RepositoryProvider(
                     create: (context) => PostActionRepository(
                       bluesky: bluesky,
                       appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                      onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),
                     ),
                   ),
                   RepositoryProvider(
                     create: (context) => ProfileActionRepository(
                       bluesky: bluesky,
                       appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                      onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),
                     ),
                   ),
                   RepositoryProvider(
@@ -575,7 +582,12 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
                     ),
                   ),
                   RepositoryProvider(create: (_) => PostActionCache()),
-                  RepositoryProvider(create: (_) => VideoRepository(bluesky: bluesky)),
+                  RepositoryProvider(
+                    create: (_) => VideoRepository(
+                      bluesky: bluesky,
+                      onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),
+                    ),
+                  ),
                   RepositoryProvider.value(value: bluesky),
                   RepositoryProvider.value(value: widget.objectBoxStore),
                   RepositoryProvider.value(value: widget.embeddingService),
@@ -593,6 +605,7 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
                       database: widget.database,
                       semanticIndexer: context.read<SemanticIndexer>(),
                       appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                      onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),
                     ),
                   ),
                   RepositoryProvider(

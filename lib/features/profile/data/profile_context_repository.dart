@@ -6,6 +6,9 @@ import 'package:equatable/equatable.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
+import 'package:lazurite/core/network/xrpc_client_factory.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 
 const _blockedByPageSize = 16;
 const _listsPageSize = 16;
@@ -40,11 +43,18 @@ class ProfileContextRepository {
     required Bluesky bluesky,
     Bluesky? publicBluesky,
     required ConstellationClient constellationClient,
-  }) : _bluesky = bluesky,
-       _publicBluesky = publicBluesky ?? bluesky,
-       _constellation = constellationClient;
+    Future<AuthTokens?> Function()? onUnauthorized,
+    Bluesky? Function(AuthTokens tokens)? blueskyClientFactory,
+  }) : _publicBluesky = publicBluesky ?? bluesky,
+       _constellation = constellationClient {
+    _authRecovery = UnauthorizedRecoveryRunner<Bluesky>(
+      initialClient: bluesky,
+      onUnauthorized: onUnauthorized,
+      clientFactory: blueskyClientFactory ?? createBlueskyClient,
+    );
+  }
 
-  final Bluesky _bluesky;
+  late final UnauthorizedRecoveryRunner<Bluesky> _authRecovery;
   final Bluesky _publicBluesky;
   final ConstellationClient _constellation;
 
@@ -104,11 +114,9 @@ class ProfileContextRepository {
     String? cursor;
 
     do {
-      final response = await _bluesky.atproto.repo.listRecords(
-        repo: did,
-        collection: 'app.bsky.graph.block',
-        limit: 100,
-        cursor: cursor,
+      final response = await _authRecovery.run(
+        (client) =>
+            client.atproto.repo.listRecords(repo: did, collection: 'app.bsky.graph.block', limit: 100, cursor: cursor),
       );
 
       total += response.data.records.length;
@@ -124,11 +132,9 @@ class ProfileContextRepository {
   Future<({List<ProfileView> profiles, List<UnavailableProfileRef> unavailable, String? cursor, int total})>
   getBlockingProfiles(String did, {String? cursor}) async {
     _assertCurrentSessionRepoAccess(did: did, operation: 'getBlockingProfiles');
-    final response = await _bluesky.atproto.repo.listRecords(
-      repo: did,
-      collection: 'app.bsky.graph.block',
-      limit: 50,
-      cursor: cursor,
+    final response = await _authRecovery.run(
+      (client) =>
+          client.atproto.repo.listRecords(repo: did, collection: 'app.bsky.graph.block', limit: 50, cursor: cursor),
     );
 
     final subjectDids = response.data.records.map(_blockSubjectDid).whereType<String>().toList(growable: false);
@@ -354,12 +360,12 @@ class ProfileContextRepository {
   }
 
   String? _currentSessionDid() {
-    final sessionDid = _bluesky.session?.did.trim().toLowerCase();
+    final sessionDid = _authRecovery.client.session?.did.trim().toLowerCase();
     if (sessionDid != null && sessionDid.isNotEmpty) {
       return sessionDid;
     }
 
-    final oauthDid = _bluesky.oAuthSession?.sub.trim().toLowerCase();
+    final oauthDid = _authRecovery.client.oAuthSession?.sub.trim().toLowerCase();
     if (oauthDid != null && oauthDid.isNotEmpty) {
       return oauthDid;
     }

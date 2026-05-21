@@ -10,6 +10,9 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
+import 'package:lazurite/core/network/xrpc_client_factory.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/moderation/domain/moderation_models.dart' as moderation;
 import 'package:poptart_lex/com/atproto/label/defs.dart';
 
@@ -25,8 +28,9 @@ class ModerationService {
     String? userDid,
     String? appViewProvider,
     String Function()? appViewProviderResolver,
-  }) : _bluesky = bluesky,
-       _database = database,
+    Future<AuthTokens?> Function()? onUnauthorized,
+    Bluesky? Function(AuthTokens tokens)? blueskyClientFactory,
+  }) : _database = database,
        _accountDid = accountDid,
        _userDid = userDid,
        _publicReadOnly = false,
@@ -34,6 +38,11 @@ class ModerationService {
          appViewProvider: appViewProvider,
          appViewProviderResolver: appViewProviderResolver,
        ) {
+    _authRecovery = UnauthorizedRecoveryRunner<Bluesky>(
+      initialClient: bluesky,
+      onUnauthorized: onUnauthorized,
+      clientFactory: blueskyClientFactory ?? createBlueskyClient,
+    );
     _headers = _appViewContext.appBskyHeadersForEndpoint(
       'app.bsky.labeler.getServices',
       _buildLabelerHeaders(const []),
@@ -45,8 +54,7 @@ class ModerationService {
     AppDatabase? database,
     String? appViewProvider,
     String Function()? appViewProviderResolver,
-  }) : _bluesky = bluesky,
-       _database = database,
+  }) : _database = database,
        _accountDid = null,
        _userDid = null,
        _publicReadOnly = true,
@@ -54,13 +62,18 @@ class ModerationService {
          appViewProvider: appViewProvider,
          appViewProviderResolver: appViewProviderResolver,
        ) {
+    _authRecovery = UnauthorizedRecoveryRunner<Bluesky>(
+      initialClient: bluesky,
+      onUnauthorized: null,
+      clientFactory: createBlueskyClient,
+    );
     _headers = _appViewContext.appBskyHeadersForEndpoint(
       'app.bsky.labeler.getServices',
       _buildLabelerHeaders(const []),
     );
   }
 
-  final Bluesky _bluesky;
+  late final UnauthorizedRecoveryRunner<Bluesky> _authRecovery;
   final AppDatabase? _database;
   final String? _accountDid;
   final String? _userDid;
@@ -119,11 +132,10 @@ class ModerationService {
     if (labelerDids.isEmpty) {
       return const [];
     }
+    final headers = await headersForRequest();
 
-    final response = await _bluesky.labeler.getServices(
-      dids: labelerDids,
-      detailed: true,
-      $headers: await headersForRequest(),
+    final response = await _authRecovery.run(
+      (client) => client.labeler.getServices(dids: labelerDids, detailed: true, $headers: headers),
     );
 
     await _cacheLabelerPolicies(response.data.views);
@@ -131,10 +143,9 @@ class ModerationService {
   }
 
   Future<LabelerViewDetailed?> getLabelerDetails(String did) async {
-    final response = await _bluesky.labeler.getServices(
-      dids: [did],
-      detailed: true,
-      $headers: await headersForRequest(),
+    final headers = await headersForRequest();
+    final response = await _authRecovery.run(
+      (client) => client.labeler.getServices(dids: [did], detailed: true, $headers: headers),
     );
 
     await _cacheLabelerPolicies(response.data.views);
@@ -499,7 +510,7 @@ class ModerationService {
 
     final headers = _appViewContext.appBskyHeadersWithoutProxy();
     try {
-      final prefsResponse = await _bluesky.actor.getPreferences($headers: headers);
+      final prefsResponse = await _authRecovery.run((client) => client.actor.getPreferences($headers: headers));
       final preferences = prefsResponse.data.preferences;
       await _cachePreferences(preferences);
       return preferences;
@@ -519,7 +530,7 @@ class ModerationService {
     final headers = _appViewContext.appBskyHeadersWithoutProxy(
       _buildLabelerHeaders(moderationPrefs.labelers.map((labeler) => labeler.did)),
     );
-    await _bluesky.actor.putPreferences(preferences: preferences, $headers: headers);
+    await _authRecovery.run((client) => client.actor.putPreferences(preferences: preferences, $headers: headers));
     await updatePreferences(preferences: preferences);
   }
 
@@ -532,10 +543,9 @@ class ModerationService {
     }.where((did) => did.startsWith('did:')).toList();
 
     try {
-      final response = await _bluesky.labeler.getServices(
-        dids: labelerDids,
-        detailed: true,
-        $headers: _buildHeadersForPrefs(prefs),
+      final response = await _authRecovery.run(
+        (client) =>
+            client.labeler.getServices(dids: labelerDids, detailed: true, $headers: _buildHeadersForPrefs(prefs)),
       );
 
       await _cacheLabelerPolicies(response.data.views);
@@ -849,7 +859,8 @@ class ModerationService {
       return explicitUserDid;
     }
 
-    return _bluesky.oAuthSession?.sub ?? _bluesky.session?.did;
+    final client = _authRecovery.client;
+    return client.oAuthSession?.sub ?? client.session?.did;
   }
 
   LabelValueDefinition? _labelValueDefinitionForIdentifier(LabelerPolicies? policies, String identifier) {

@@ -350,7 +350,7 @@ void main() {
         when(() => mockFeedRepository.getPreferences()).thenAnswer((_) async => PreferencesResult(preferences: []));
         when(() => mockFeedRepository.putPreferences(preferences: any(named: 'preferences'))).thenAnswer((_) async {});
       },
-      act: (cubit) => cubit.reorderPinnedFeeds(0, 3),
+      act: (cubit) => cubit.reorderPinnedFeeds(0, 2),
       expect: () => [
         isA<FeedPreferencesState>().having((s) => s.status, 'status', FeedPreferencesStatus.saving),
         predicate<FeedPreferencesState>(

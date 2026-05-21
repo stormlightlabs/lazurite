@@ -2,11 +2,15 @@ import 'dart:async';
 
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/graph/follow.dart';
+import 'package:poptart_core/poptart_core.dart' as atcore show UnauthorizedException;
 import 'package:poptart_lex/com/atproto/repo/apply_writes.dart';
 import 'package:equatable/equatable.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
+import 'package:lazurite/core/network/xrpc_client_factory.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 
 enum FollowStatus { deleted, deactivated, suspended, blockedBy, blocking, mutualBlock, hidden, selfFollow }
 
@@ -83,25 +87,39 @@ const _maxRetries = 3;
 const _unfollowBatchSize = 200;
 
 class FollowAuditRepository {
-  FollowAuditRepository({required Bluesky bluesky, String? appViewProvider, String Function()? appViewProviderResolver})
-    : _bluesky = bluesky,
-      _appViewContext = AppViewRequestContext(
-        appViewProvider: appViewProvider,
-        appViewProviderResolver: appViewProviderResolver,
-      );
+  FollowAuditRepository({
+    required Bluesky bluesky,
+    String? appViewProvider,
+    String Function()? appViewProviderResolver,
+    Future<AuthTokens?> Function()? onUnauthorized,
+    Bluesky? Function(AuthTokens tokens)? blueskyClientFactory,
+  }) : _appViewContext = AppViewRequestContext(
+         appViewProvider: appViewProvider,
+         appViewProviderResolver: appViewProviderResolver,
+       ) {
+    _authRecovery = UnauthorizedRecoveryRunner<Bluesky>(
+      initialClient: bluesky,
+      onUnauthorized: onUnauthorized,
+      clientFactory: blueskyClientFactory ?? createBlueskyClient,
+    );
+  }
 
-  final Bluesky _bluesky;
+  late final UnauthorizedRecoveryRunner<Bluesky> _authRecovery;
   final AppViewRequestContext _appViewContext;
 
   Future<int?> fetchFollowCount(String did) async {
     _assertCurrentSessionRepoAccess(did: did, operation: 'fetchFollowCount');
     try {
-      final response = await _bluesky.actor.getProfile(
-        actor: did,
-        $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.actor.getProfile'),
+      final response = await _authRecovery.run(
+        (client) => client.actor.getProfile(
+          actor: did,
+          $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.actor.getProfile'),
+        ),
       );
       final count = response.data.followsCount;
       return count is int && count >= 0 ? count : null;
+    } on atcore.UnauthorizedException {
+      rethrow;
     } catch (error, stackTrace) {
       log.w('FollowAuditRepository: failed to fetch followsCount for $did', error: error, stackTrace: stackTrace);
       return null;
@@ -110,11 +128,13 @@ class FollowAuditRepository {
 
   Future<FollowRecordPage> fetchFollowPage(String did, {String? cursor, int limit = 100}) async {
     _assertCurrentSessionRepoAccess(did: did, operation: 'fetchFollowPage');
-    final response = await _bluesky.atproto.repo.listRecords(
-      repo: did,
-      collection: 'app.bsky.graph.follow',
-      limit: limit.clamp(1, 100),
-      cursor: cursor,
+    final response = await _authRecovery.run(
+      (client) => client.atproto.repo.listRecords(
+        repo: did,
+        collection: 'app.bsky.graph.follow',
+        limit: limit.clamp(1, 100),
+        cursor: cursor,
+      ),
     );
 
     final records = <FollowRecord>[];
@@ -253,9 +273,11 @@ class FollowAuditRepository {
   Future<Map<String, ProfileView>> _fetchBatchWithRetry(List<String> batch) async {
     for (var attempt = 0; attempt <= _maxRetries; attempt++) {
       try {
-        final response = await _bluesky.actor.getProfiles(
-          actors: batch,
-          $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.actor.getProfiles'),
+        final response = await _authRecovery.run(
+          (client) => client.actor.getProfiles(
+            actors: batch,
+            $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.actor.getProfiles'),
+          ),
         );
         final result = <String, ProfileView>{};
         for (final profile in response.data.profiles) {
@@ -265,6 +287,8 @@ class FollowAuditRepository {
           }
         }
         return result;
+      } on atcore.UnauthorizedException {
+        rethrow;
       } catch (error, stackTrace) {
         if (attempt >= _maxRetries || !_isRetryable(error)) {
           log.w(
@@ -283,12 +307,16 @@ class FollowAuditRepository {
   Future<_SingleResult> _fetchSingleWithRetry(String did) async {
     for (var attempt = 0; attempt <= _maxRetries; attempt++) {
       try {
-        final response = await _bluesky.actor.getProfile(
-          actor: did,
-          $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.actor.getProfile'),
+        final response = await _authRecovery.run(
+          (client) => client.actor.getProfile(
+            actor: did,
+            $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.actor.getProfile'),
+          ),
         );
         final view = _asProfileView(response.data);
         return _SingleResult(profile: view, status: null, failed: view == null);
+      } on atcore.UnauthorizedException {
+        rethrow;
       } catch (error, stackTrace) {
         if (attempt >= _maxRetries || !_isRetryable(error)) {
           final status = _classifyError(error);
@@ -325,7 +353,7 @@ class FollowAuditRepository {
           )
           .toList();
 
-      await _bluesky.atproto.repo.applyWrites(repo: ownDid, writes: writes);
+      await _authRecovery.run((client) => client.atproto.repo.applyWrites(repo: ownDid, writes: writes));
       deletedCount += chunk.length;
     }
 
@@ -441,12 +469,12 @@ class FollowAuditRepository {
   }
 
   String? _currentSessionDid() {
-    final sessionDid = _bluesky.session?.did.trim().toLowerCase();
+    final sessionDid = _authRecovery.client.session?.did.trim().toLowerCase();
     if (sessionDid != null && sessionDid.isNotEmpty) {
       return sessionDid;
     }
 
-    final oauthDid = _bluesky.oAuthSession?.sub.trim().toLowerCase();
+    final oauthDid = _authRecovery.client.oAuthSession?.sub.trim().toLowerCase();
     if (oauthDid != null && oauthDid.isNotEmpty) {
       return oauthDid;
     }

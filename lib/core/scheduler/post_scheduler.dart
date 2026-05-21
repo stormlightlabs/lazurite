@@ -15,6 +15,7 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/data/draft_embed_payload.dart';
 import 'package:lazurite/features/notifications/background/notification_background_worker.dart';
@@ -63,9 +64,23 @@ Future<void> _submitScheduledDraft(int draftId) async {
   final database = AppDatabase();
   try {
     final authRepo = AuthRepository(database: database);
-    final tokens = await authRepo.restoreSession();
+    var tokens = await authRepo.restoreSession();
     if (tokens == null) {
       throw Exception('No authenticated session for scheduled draft $draftId');
+    }
+    final accountDid = tokens.did;
+
+    Future<AuthTokens?> recoverSession() async {
+      final currentTokens = tokens;
+      if (currentTokens == null) {
+        return null;
+      }
+      final refreshed = await authRepo.refreshSession(currentTokens);
+      if (refreshed == null || refreshed.did != accountDid) {
+        return null;
+      }
+      tokens = refreshed;
+      return refreshed;
     }
 
     final bluesky = createBlueskyClient(tokens);
@@ -79,7 +94,7 @@ Future<void> _submitScheduledDraft(int draftId) async {
       return;
     }
 
-    final composeRepo = ComposeRepository(bluesky: bluesky);
+    final composeRepo = ComposeRepository(bluesky: bluesky, onUnauthorized: recoverSession);
 
     final facets = <RichtextFacet>[];
     for (final entity in BlueskyText(draft.content).entities) {
@@ -121,7 +136,7 @@ Future<void> _submitScheduledDraft(int draftId) async {
       facets: facets,
       embed: embed,
       reply: reply,
-      repo: tokens.did,
+      repo: accountDid,
     );
 
     if (!success) {
@@ -167,8 +182,8 @@ Future<UFeedPostEmbed?> _buildImageEmbed(ComposeRepository repo, DraftImagesEmbe
       if (dims != null) {
         aspectRatio = embed_defs.AspectRatio(width: dims.width, height: dims.height);
       }
-    } catch (_) {
-      log.w('Scheduled post: could not read image dimensions for ${paths[i]}');
+    } catch (error, stackTrace) {
+      log.w('Scheduled post: could not read image dimensions for ${paths[i]}', error: error, stackTrace: stackTrace);
     }
 
     images.add(EmbedImagesImage(image: blob, alt: altText, aspectRatio: aspectRatio));

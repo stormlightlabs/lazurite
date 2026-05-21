@@ -267,10 +267,12 @@ class FeedRepository {
     return _runPublicReadWithFallback(
       endpointId: 'app.bsky.unspecced.getTrendingTopics',
       request: (context, headers, {required fallbackUsed}) async {
-        final response = await _authRecovery.client.unspecced.getTrendingTopics(
-          limit: clampedLimit,
-          $service: context.publicServiceHost(),
-          $headers: headers,
+        final response = await _authRecovery.run(
+          (client) => client.unspecced.getTrendingTopics(
+            limit: clampedLimit,
+            $service: context.publicServiceHost(),
+            $headers: headers,
+          ),
         );
         return TrendingTopicsResult(topics: response.data.topics, suggested: response.data.suggested);
       },
@@ -282,10 +284,9 @@ class FeedRepository {
     return _runPublicReadWithFallback(
       endpointId: 'app.bsky.unspecced.getTrends',
       request: (context, headers, {required fallbackUsed}) async {
-        final response = await _authRecovery.client.unspecced.getTrends(
-          limit: clampedLimit,
-          $service: context.publicServiceHost(),
-          $headers: headers,
+        final response = await _authRecovery.run(
+          (client) =>
+              client.unspecced.getTrends(limit: clampedLimit, $service: context.publicServiceHost(), $headers: headers),
         );
         return response.data.trends;
       },

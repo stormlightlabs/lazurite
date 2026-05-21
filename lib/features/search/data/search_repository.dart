@@ -5,10 +5,14 @@ import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/search_posts.dart';
 import 'package:bluesky_poptart/app/bsky/graph/defs.dart';
 import 'package:flutter/foundation.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_fallback_service.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
+import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
+import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/search/data/post_search_filters.dart';
 
@@ -23,8 +27,9 @@ class SearchRepository {
     AppViewFallbackService? appViewFallbackService,
     int routingEpoch = 0,
     int Function()? routingEpochResolver,
-  }) : _bluesky = bluesky,
-       _moderationService = moderationService,
+    Future<AuthTokens?> Function()? onUnauthorized,
+    Bluesky? Function(AuthTokens tokens)? blueskyClientFactory,
+  }) : _moderationService = moderationService,
        _appViewContext = AppViewRequestContext(
          appViewProvider: appViewProvider,
          appViewProviderResolver: appViewProviderResolver,
@@ -33,9 +38,15 @@ class SearchRepository {
        _crossProviderFallbackEnabledResolver = crossProviderFallbackEnabledResolver,
        _appViewFallbackService = appViewFallbackService ?? AppViewFallbackService(),
        _routingEpoch = routingEpoch,
-       _routingEpochResolver = routingEpochResolver;
+       _routingEpochResolver = routingEpochResolver {
+    _authRecovery = UnauthorizedRecoveryRunner<Bluesky>(
+      initialClient: bluesky,
+      onUnauthorized: onUnauthorized,
+      clientFactory: blueskyClientFactory ?? createBlueskyClient,
+    );
+  }
 
-  final Bluesky _bluesky;
+  late final UnauthorizedRecoveryRunner<Bluesky> _authRecovery;
   final ModerationService? _moderationService;
   final AppViewRequestContext _appViewContext;
   final bool _crossProviderFallbackEnabled;
@@ -63,23 +74,22 @@ class SearchRepository {
     final sortValue = normalized.sort == 'latest'
         ? const FeedSearchPostsSort.knownValue(data: KnownFeedSearchPostsSort.latest)
         : const FeedSearchPostsSort.knownValue(data: KnownFeedSearchPostsSort.top);
-
-    final response = await _bluesky.feed.searchPosts(
-      q: normalized.query.isEmpty ? '*' : normalized.query,
-      sort: sortValue,
-      since: normalized.filters.sinceIso,
-      until: normalized.filters.untilIso,
-      mentions: normalized.filters.mentions,
-      author: normalized.filters.author,
-      lang: normalized.filters.lang,
-      domain: normalized.filters.domain,
-      url: normalized.filters.url,
-      tag: normalized.filters.tags.isEmpty ? null : normalized.filters.tags,
-      cursor: normalized.cursor,
-      limit: normalized.limit,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.feed.searchPosts',
-        await _moderationService?.headersForRequest(),
+    final headers = await _moderationService?.headersForRequest();
+    final response = await _authRecovery.run(
+      (client) => client.feed.searchPosts(
+        q: normalized.query.isEmpty ? '*' : normalized.query,
+        sort: sortValue,
+        since: normalized.filters.sinceIso,
+        until: normalized.filters.untilIso,
+        mentions: normalized.filters.mentions,
+        author: normalized.filters.author,
+        lang: normalized.filters.lang,
+        domain: normalized.filters.domain,
+        url: normalized.filters.url,
+        tag: normalized.filters.tags.isEmpty ? null : normalized.filters.tags,
+        cursor: normalized.cursor,
+        limit: normalized.limit,
+        $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.feed.searchPosts', headers),
       ),
     );
 
@@ -91,13 +101,13 @@ class SearchRepository {
   }
 
   Future<SearchActorsResult> searchActors({required String query, String? cursor, int limit = 50}) async {
-    final response = await _bluesky.actor.searchActors(
-      q: query,
-      cursor: cursor,
-      limit: limit,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.actor.searchActors',
-        await _moderationService?.headersForRequest(),
+    final headers = await _moderationService?.headersForRequest();
+    final response = await _authRecovery.run(
+      (client) => client.actor.searchActors(
+        q: query,
+        cursor: cursor,
+        limit: limit,
+        $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.actor.searchActors', headers),
       ),
     );
 
@@ -108,12 +118,14 @@ class SearchRepository {
     final response = await _runPublicReadWithFallback(
       endpointId: 'app.bsky.graph.searchStarterPacks',
       request: (context, headers, {required fallbackUsed}) {
-        return _bluesky.graph.searchStarterPacks(
-          q: query,
-          cursor: cursor,
-          limit: limit,
-          $service: context.publicServiceHost(),
-          $headers: headers,
+        return _authRecovery.run(
+          (client) => client.graph.searchStarterPacks(
+            q: query,
+            cursor: cursor,
+            limit: limit,
+            $service: context.publicServiceHost(),
+            $headers: headers,
+          ),
         );
       },
     );
@@ -125,12 +137,14 @@ class SearchRepository {
     final response = await _runPublicReadWithFallback(
       endpointId: 'app.bsky.unspecced.getPopularFeedGenerators',
       request: (context, headers, {required fallbackUsed}) {
-        return _bluesky.unspecced.getPopularFeedGenerators(
-          query: query,
-          cursor: cursor,
-          limit: limit,
-          $service: context.publicServiceHost(),
-          $headers: headers,
+        return _authRecovery.run(
+          (client) => client.unspecced.getPopularFeedGenerators(
+            query: query,
+            cursor: cursor,
+            limit: limit,
+            $service: context.publicServiceHost(),
+            $headers: headers,
+          ),
         );
       },
     );
@@ -139,12 +153,12 @@ class SearchRepository {
   }
 
   Future<List<ProfileViewBasic>> searchActorsTypeahead({required String query, int limit = 10}) async {
-    final response = await _bluesky.actor.searchActorsTypeahead(
-      q: query,
-      limit: limit,
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.actor.searchActorsTypeahead',
-        await _moderationService?.headersForRequest(),
+    final headers = await _moderationService?.headersForRequest();
+    final response = await _authRecovery.run(
+      (client) => client.actor.searchActorsTypeahead(
+        q: query,
+        limit: limit,
+        $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.actor.searchActorsTypeahead', headers),
       ),
     );
 
@@ -202,7 +216,9 @@ class SearchRepository {
       }
       try {
         atUris.add(AtUri.parse(value));
-      } catch (_) {}
+      } catch (error, stackTrace) {
+        log.d('Skipping invalid Blacksky topic feed post URI: $value', error: error, stackTrace: stackTrace);
+      }
     }
 
     if (atUris.isEmpty) {
@@ -212,13 +228,13 @@ class SearchRepository {
         topicName: _topicNameFromDecoded(decoded),
       );
     }
+    final updatedHeaders = await _moderationService?.headersForRequest();
 
-    final hydrated = await _bluesky.feed.getPosts(
-      uris: atUris,
-      $service: _appViewContext.publicServiceHost(),
-      $headers: _appViewContext.appBskyHeadersForEndpoint(
-        'app.bsky.feed.getPosts',
-        await _moderationService?.headersForRequest(),
+    final hydrated = await _authRecovery.run(
+      (client) => client.feed.getPosts(
+        uris: atUris,
+        $service: _appViewContext.publicServiceHost(),
+        $headers: _appViewContext.appBskyHeadersForEndpoint('app.bsky.feed.getPosts', updatedHeaders),
       ),
     );
 
