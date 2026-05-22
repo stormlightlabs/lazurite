@@ -113,7 +113,7 @@ class AuthRepository {
   static const String _httpsOAuthRedirectPath = '/oauth/callback';
   static const bool _androidHttpsCallbackEnabled = bool.fromEnvironment(
     'OAUTH_ANDROID_HTTPS_CALLBACK_ENABLED',
-    defaultValue: true,
+    defaultValue: false,
   );
   static const bool _iosHttpsCallbackEnabled = bool.fromEnvironment(
     'OAUTH_IOS_HTTPS_CALLBACK_ENABLED',
@@ -1036,7 +1036,11 @@ class AuthRepository {
   bool _isSupportedHttpsRedirect(Uri redirectUri) {
     return redirectUri.scheme == 'https' &&
         redirectUri.host == _httpsOAuthRedirectHost &&
-        redirectUri.path == _httpsOAuthRedirectPath;
+        _isSupportedHttpsRedirectPath(redirectUri.path);
+  }
+
+  bool _isSupportedHttpsRedirectPath(String path) {
+    return path == _httpsOAuthRedirectPath || path == '$_httpsOAuthRedirectPath/';
   }
 
   @visibleForTesting

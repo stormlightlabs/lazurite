@@ -27,6 +27,10 @@ void main() {
     registerFallbackValue(FakeAccountsCompanion());
   });
 
+  tearDown(() {
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   setUp(() {
     mockDatabase = MockAppDatabase();
     mockSlingshotClient = MockSlingshotClient();
@@ -1463,6 +1467,21 @@ void main() {
         expect(normalized.queryParameters['state'], equals('xyz'));
       });
 
+      test('accepts hosted HTTPS callback URI after static host trailing slash redirect', () {
+        final normalized = authRepository.normalizeOAuthCallbackUri(
+          Uri.parse(
+            'https://lazurite.stormlightlabs.org/oauth/callback/?code=abc&state=xyz&iss=https%3A%2F%2Fbsky.social',
+          ),
+        );
+
+        expect(normalized, isNotNull);
+        expect(normalized!.scheme, equals('https'));
+        expect(normalized.host, equals('lazurite.stormlightlabs.org'));
+        expect(normalized.path, equals('/oauth/callback/'));
+        expect(normalized.queryParameters['code'], equals('abc'));
+        expect(normalized.queryParameters['state'], equals('xyz'));
+      });
+
       test('rejects HTTPS callback URI with unexpected host', () {
         final normalized = authRepository.normalizeOAuthCallbackUri(
           Uri.parse('https://example.com/oauth/callback?code=abc&state=xyz'),
@@ -1513,6 +1532,35 @@ void main() {
     });
 
     group('oauth redirect URI selection', () {
+      test('uses custom scheme callback by default on Android login', () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        var sawAuthorize = false;
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          loadClientMetadata: (_) async => _testClientMetadata(),
+          oauthServiceResolver: () => 'bsky.social',
+          resolveHandleDid: (_) async => 'did:plc:alice',
+          resolveDidDocument: (_) async => const {
+            'service': [
+              {
+                'id': '#atproto_pds',
+                'type': 'AtprotoPersonalDataServer',
+                'serviceEndpoint': 'https://bsky.social',
+              },
+            ],
+          },
+          resolveAuthorizationServiceForPdsHost: (_) async => null,
+          oauthAuthorizeSession: (client, identity) async {
+            sawAuthorize = true;
+            expect(client.metadata.redirectUris, equals(['org.stormlightlabs.lazurite:/oauth/callback']));
+            throw const OAuthException('stop after redirect assertion');
+          },
+        );
+
+        await expectLater(authRepository.loginWithOAuth('alice.bsky.social'), throwsA(isA<Exception>()));
+        expect(sawAuthorize, isTrue);
+      });
+
       test('prefers HTTPS callback on Android when flag is enabled', () {
         final selected = authRepository.selectOAuthRedirectUriTemplate(
           const ['org.stormlightlabs.lazurite:/oauth/callback', 'https://lazurite.stormlightlabs.org/oauth/callback'],
