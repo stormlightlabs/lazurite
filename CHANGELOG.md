@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## v1.0.0 (Alpha 9)
+
+### Added
+
+- Signed-out/public browsing for feeds, profiles, posts, topics, and settings.
+- Feed display preferences in account settings.
+- Known followers tab in profile connections.
+- Recursive quote rendering and expanded record embed support.
+- AT Explorer now a first-class entry point.
+
+### Changed
+
+- Split routing into authenticated and unauthenticated shells
+- Centralized unauthorized-response recovery and session refresh handling.
+- Updated moderation behavior for public browsing.
+- Cleaned up settings layout and account settings state.
+- Centralized URL launching helpers.
+
+### Fixed
+
+- Constant logout/session-loss behavior from token refresh races.
+- Session refresh preserving or resurrecting the wrong account state.
+- Public routes rendering outside the unauthenticated shell after logout.
+- `ListTile` material assertions (from the update to Flutter 3.44)
+
 ## v1.0.0 (Alpha 8)
 
 ### Added
