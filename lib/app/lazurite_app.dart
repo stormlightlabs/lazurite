@@ -219,6 +219,8 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
     }
   }
 
+  /// Resume is a cheap chance to refresh expired tokens before the first visible
+  /// request hits a 401. Valid sessions are left untouched.
   Future<void> _refreshExpiredSessionOnResume() async {
     final authState = widget.authBloc.state;
     final tokens = authState.tokens;
@@ -228,6 +230,9 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
     await _recoverAuthSession(trigger: 'app_resumed');
   }
 
+  /// Shared auth recovery entry point for app resume, router/repository 401s,
+  /// push registration, and background-triggered work. Recovery is coalesced by
+  /// DID so simultaneous failures spend at most one rotating refresh token.
   Future<AuthTokens?> _recoverAuthSession({required String trigger}) async {
     String? refreshingDid;
     Completer<AuthTokens?>? completer;
@@ -273,6 +278,7 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
     }
   }
 
+  /// Guard against publishing refreshed tokens after logout or account switch.
   bool _canPublishRecoveryForDid(String? refreshingDid) {
     if (!mounted || refreshingDid == null) {
       return false;
@@ -290,6 +296,8 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
     ).router;
   }
 
+  /// Router state is keyed by DID so authenticated route providers are rebuilt
+  /// when accounts change, but not for token rotations within the same account.
   String _sessionKeyFor(AuthState state) => state.tokens?.did ?? 'guest';
 
   void _handleSessionKeyChanged(String sessionKey) {

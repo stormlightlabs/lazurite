@@ -99,6 +99,12 @@ void main() {
     );
     expect(contentSwitch.segments[0].icon, isA<Icon>());
     expect(contentSwitch.segments[1].icon, isA<Icon>());
+    final discoverLabel = tester.widget<Text>(find.text('Discover'));
+    final feedsLabel = tester.widget<Text>(find.text('Feeds'));
+    expect(discoverLabel.softWrap, isFalse);
+    expect(discoverLabel.maxLines, 1);
+    expect(feedsLabel.softWrap, isFalse);
+    expect(feedsLabel.maxLines, 1);
   });
 
   testWidgets('renders BlackSky Trending from public trend data', (tester) async {

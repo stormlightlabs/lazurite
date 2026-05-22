@@ -6,6 +6,10 @@ typedef UnauthorizedClientFactory<TClient> = TClient? Function(AuthTokens tokens
 typedef UnauthorizedRecoveryLogger = void Function(Object error, StackTrace stackTrace);
 
 /// Centralized helper for retry-on-unauthorized with token refresh.
+///
+/// Repositories keep their current client locally. On a 401, this asks the app
+/// shell to refresh the session, rebuilds the client from fresh tokens, and
+/// retries the original request once.
 final class UnauthorizedRecoveryRunner<TClient> {
   UnauthorizedRecoveryRunner({
     required TClient initialClient,
@@ -26,6 +30,8 @@ final class UnauthorizedRecoveryRunner<TClient> {
 
   TClient get client => _client;
 
+  /// Runs [request] with the current client. Only UnauthorizedException is
+  /// recoverable; all other failures belong to the caller's normal error path.
   Future<T> run<T>(Future<T> Function(TClient client) request) async {
     try {
       return await request(_client);
@@ -50,6 +56,8 @@ final class UnauthorizedRecoveryRunner<TClient> {
       return false;
     }
 
+    // Account-scoped repositories must not switch to a refreshed client for a
+    // different DID when account switching or background work overlaps recovery.
     if (_expectedDid != null && refreshedTokens.did != _expectedDid) {
       return false;
     }

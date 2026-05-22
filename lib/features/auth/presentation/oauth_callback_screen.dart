@@ -5,6 +5,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 
+/// Thin route used by custom-scheme and HTTPS app-link callbacks.
+///
+/// It must hand the raw callback URI to AuthBloc; the repository validates the
+/// state/code against the pending OAuth flow created before browser launch.
 class OAuthCallbackScreen extends StatefulWidget {
   const OAuthCallbackScreen({required this.callbackUri, super.key});
 
@@ -26,6 +30,8 @@ class _OAuthCallbackScreenState extends State<OAuthCallbackScreen> {
     unawaited(_consumeCallback());
   }
 
+  /// Consume once on route creation. The repository joins duplicate deliveries,
+  /// which matters because OAuth codes are single-use.
   Future<void> _consumeCallback() async {
     final handled = await context.read<AuthBloc>().handleOAuthRedirectUri(widget.callbackUri);
     if (!mounted) {

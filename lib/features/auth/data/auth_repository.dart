@@ -224,6 +224,9 @@ class AuthRepository {
     await _database.deleteSetting(AppDatabase.activeAccountDidSettingKey);
   }
 
+  /// Starts ATProto OAuth by resolving the account's PDS, selecting an
+  /// authorization server, launching PAR, then waiting for the app callback.
+  /// The pending OAuth fields are the bridge between browser launch and callback.
   Future<AuthTokens?> loginWithOAuth(String handle) async {
     try {
       _oauthCompleter = Completer<AuthTokens?>();
@@ -373,6 +376,9 @@ class AuthRepository {
     }
   }
 
+  /// Refreshes the current session while coalescing same-DID refreshes in this
+  /// isolate. The refresh token is rotating, so callers must not refresh the
+  /// same account independently.
   Future<AuthTokens?> refreshSession(AuthTokens currentSession) async {
     if (currentSession.refreshToken == null) {
       throw Exception('No refresh token available for session refresh');
@@ -394,6 +400,9 @@ class AuthRepository {
     return refresh;
   }
 
+  /// Extends refresh coalescing across foreground/background isolates using a
+  /// short database lease. A loser waits for the winner's persisted token before
+  /// attempting to spend the refresh token itself.
   Future<AuthTokens?> _refreshSessionWithPersistentLock(AuthTokens currentSession) async {
     final owner = _refreshLockOwner(currentSession);
 
@@ -447,6 +456,8 @@ class AuthRepository {
     return '${DateTime.now().toUtc().microsecondsSinceEpoch}-$hashCode-${identityHashCode(session)}';
   }
 
+  /// Performs the network refresh. Before spending a refresh token, check
+  /// storage because another worker may already have rotated and persisted it.
   Future<AuthTokens?> _refreshSession(AuthTokens currentSession) async {
     var session = currentSession;
     final storedReplacement = await _storedSessionIfRefreshTokenChanged(currentSession);
@@ -621,6 +632,9 @@ class AuthRepository {
     log.i('AuthRepository: Logout complete');
   }
 
+  /// Redeems the authorization code from the browser callback. If the callback
+  /// includes an issuer, exchange at that authorization server because the PAR
+  /// host and final issuer can differ for account-routed OAuth.
   Future<AuthTokens> _handleOAuthCallback(String callbackUrl) async {
     final oauthClient = _pendingOAuthClient;
     final oauthContext = _pendingOAuthContext;
@@ -664,6 +678,8 @@ class AuthRepository {
     return tokens;
   }
 
+  /// Entry point for app links/routes that deliver OAuth callbacks. Duplicate
+  /// deliveries are joined so a single-use authorization code is redeemed once.
   Future<bool> completeOAuthCallbackFromUri(Uri callbackUri) async {
     final pendingOAuthFlow =
         _pendingOAuthClient != null &&
@@ -705,6 +721,8 @@ class AuthRepository {
     }
   }
 
+  /// Joins concurrent callback deliveries to the first exchange future. This is
+  /// intentionally not a retry: OAuth authorization codes are single-use.
   @visibleForTesting
   Future<AuthTokens> runOAuthCallbackExchangeOnce(
     Uri normalizedCallbackUri,
@@ -724,6 +742,8 @@ class AuthRepository {
     return exchange;
   }
 
+  /// Converts the OAuth library session into persisted app tokens, enriching it
+  /// with the resolved handle/profile when possible without failing login.
   Future<AuthTokens> _buildOAuthTokens(
     OAuthSession session, {
     required String fallbackHandle,
@@ -783,6 +803,8 @@ class AuthRepository {
     );
   }
 
+  /// Resolves a handle or DID to the account PDS. OAuth uses this to discover
+  /// the protected resource before choosing the authorization server.
   @visibleForTesting
   Future<String> resolveServiceForIdentifier(String identifier) async {
     log.d('AuthRepository: Resolving AT Protocol service for $identifier');
@@ -1043,6 +1065,8 @@ class AuthRepository {
     return path == _httpsOAuthRedirectPath || path == '$_httpsOAuthRedirectPath/';
   }
 
+  /// Accepts only callbacks we registered, normalizing Android/iOS route shapes
+  /// and the hosted callback's trailing-slash redirect into one exchange URL.
   @visibleForTesting
   Uri? normalizeOAuthCallbackUri(Uri callbackUri) {
     if (_isSupportedCustomSchemeRedirect(callbackUri)) {
@@ -1085,6 +1109,9 @@ class AuthRepository {
         (queryParameters.containsKey('code') || queryParameters.containsKey('error'));
   }
 
+  /// Chooses the registered redirect URI for the platform. Android defaults to
+  /// the custom scheme to avoid browser/app-link relay ambiguity; HTTPS remains
+  /// available behind a build flag and for iOS.
   @visibleForTesting
   Uri selectOAuthRedirectUriTemplate(
     List<String> redirectUris, {
@@ -1137,6 +1164,8 @@ class AuthRepository {
     }
   }
 
+  /// Persists rotated tokens with compare-and-swap on the previous refresh
+  /// token. Losing the race means another worker won or the account was removed.
   Future<AuthTokens> _persistRefreshedSession({
     required AuthTokens previousSession,
     required AuthTokens refreshedSession,
@@ -1202,6 +1231,8 @@ class AuthRepository {
     );
   }
 
+  /// Deletes credentials only if storage still contains the rejected refresh
+  /// token. This avoids logging out a session already refreshed by another path.
   Future<void> _invalidateSessionIfStillCurrent(AuthTokens tokens) async {
     final storedAccount = await _database.getAccount(tokens.did);
     if (storedAccount == null) {
@@ -1282,6 +1313,8 @@ class AuthRepository {
     return null;
   }
 
+  /// Treat invalid_grant as terminal only when every candidate rejects the token
+  /// or the authoritative issuer does. Other host failures remain retryable.
   bool _shouldInvalidateOAuthSessionAfterRefreshFailures(
     List<_OAuthRefreshAttemptFailure> failures, {
     required String? issuerHost,

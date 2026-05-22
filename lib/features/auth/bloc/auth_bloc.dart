@@ -21,6 +21,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   final AuthRepository _authRepository;
 
+  /// Routes browser/app-link OAuth callbacks to the repository because the
+  /// repository owns the pending PAR context needed to redeem the code.
   Future<bool> handleOAuthRedirectUri(Uri uri) => _authRepository.completeOAuthCallbackFromUri(uri);
 
   Future<void> _onLoginRequested(LoginRequested event, Emitter<AuthState> emit) async {
@@ -40,6 +42,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
+  /// Starts OAuth login and leaves completion to the callback route. The
+  /// repository future resolves only after the browser returns with a code.
   Future<void> _onOAuthLoginRequested(OAuthLoginRequested event, Emitter<AuthState> emit) async {
     emit(const AuthState.authenticating());
 
@@ -75,10 +79,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
+  /// Publishes tokens refreshed outside this bloc, such as unauthorized recovery
+  /// in the app shell or account switching.
   Future<void> _onSessionRestored(SessionRestored event, Emitter<AuthState> emit) async {
     emit(AuthState.authenticated(event.tokens));
   }
 
+  /// Re-reads persisted auth state during startup or recovery fallback. This is
+  /// intentionally separate from explicit logout/clear events.
   Future<void> _onCheckSessionRequested(CheckSessionRequested event, Emitter<AuthState> emit) async {
     emit(const AuthState.authenticating());
 

@@ -2,6 +2,10 @@ import 'package:equatable/equatable.dart';
 
 enum AuthMethod { appPassword, oauth }
 
+/// Persisted credentials plus routing metadata for either auth method.
+///
+/// [service] is the user's PDS. [oauthService] is the OAuth authorization
+/// server. They can differ, so network clients must choose carefully.
 class AuthTokens extends Equatable {
   const AuthTokens({
     required this.accessToken,
@@ -66,6 +70,8 @@ class AuthTokens extends Equatable {
 
   bool get usesOAuth => authMethod == AuthMethod.oauth;
 
+  /// Treat tokens as expired slightly early so foreground requests do not race
+  /// the server-side expiration boundary.
   bool get isExpired {
     if (expiresAt == null) return false;
     return DateTime.now().isAfter(expiresAt!.subtract(const Duration(minutes: 5)));

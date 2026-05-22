@@ -93,12 +93,17 @@ class _PublicHomeScreenState extends State<PublicHomeScreen> {
                               ? Icons.trending_up
                               : Icons.travel_explore_outlined,
                         ),
-                        label: Text(widget.providerKey == AppViewProviders.blackskyKey ? 'Trending' : 'Discover'),
+                        label: Text(
+                          widget.providerKey == AppViewProviders.blackskyKey ? 'Trending' : 'Discover',
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.fade,
+                        ),
                       ),
                       const ButtonSegment<PublicContentTab>(
                         value: PublicContentTab.feeds,
                         icon: Icon(Icons.rss_feed_outlined),
-                        label: Text('Feeds'),
+                        label: Text('Feeds', maxLines: 1, softWrap: false, overflow: TextOverflow.fade),
                       ),
                     ],
                     selected: {widget.contentTab},

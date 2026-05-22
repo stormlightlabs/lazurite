@@ -14,6 +14,14 @@ fun Project.configureAndroidJvmCompatibility() {
     }
 }
 
+fun Project.configureKotlinJvmCompatibility() {
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+    }
+}
+
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")
@@ -30,12 +38,15 @@ subprojects {
         }
     }
 
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
+    configureKotlinJvmCompatibility()
+}
+
+gradle.projectsEvaluated {
+    subprojects {
+        configureKotlinJvmCompatibility()
     }
 }
+
 subprojects {
     project.evaluationDependsOn(":app")
 }
