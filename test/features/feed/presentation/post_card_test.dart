@@ -7,6 +7,8 @@ import 'package:bluesky_poptart/app/bsky/embed/record.dart';
 import 'package:bluesky_poptart/app/bsky/embed/record_with_media.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/post.dart';
+import 'package:bluesky_poptart/app/bsky/graph/defs.dart' as bsky_graph;
+import 'package:bluesky_poptart/app/bsky/labeler/defs.dart' as bsky_labeler;
 import 'package:bluesky_poptart/app/bsky/richtext/facet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -625,4 +627,281 @@ void main() {
     expect(heroTags.length, greaterThanOrEqualTo(2));
     expect(heroTags.toSet().length, heroTags.length);
   });
+
+  testWidgets('renders starter pack record embeds and navigates to detail', (tester) async {
+    final packUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.starterpack/pack');
+    final post = _makePostWithRecordEmbed(
+      UEmbedRecordViewRecord.starterPackViewBasic(
+        data: bsky_graph.StarterPackViewBasic(
+          uri: packUri,
+          cid: 'cid-pack',
+          record: const {'name': 'Starter Pack Picks', 'description': 'People worth following'},
+          creator: const ProfileViewBasic(
+            did: 'did:plc:creator',
+            handle: 'creator.bsky.social',
+            displayName: 'Creator',
+          ),
+          listItemCount: 12,
+          indexedAt: DateTime.utc(2026, 3, 15),
+        ),
+      ),
+    );
+    String? pushedRoute;
+
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => Scaffold(body: PostCard(feedViewPost: post)),
+        ),
+        GoRoute(
+          path: '/starter-pack',
+          builder: (context, state) {
+            pushedRoute = state.uri.toString();
+            return const Scaffold(body: Text('starter pack detail'));
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+
+    expect(find.text('STARTER PACK'), findsOneWidget);
+    expect(find.text('Starter Pack Picks'), findsOneWidget);
+    expect(find.text('People worth following'), findsOneWidget);
+    expect(find.text('12 members'), findsOneWidget);
+
+    await tester.tap(find.text('Starter Pack Picks'));
+    await tester.pumpAndSettle();
+
+    expect(pushedRoute, isNotNull);
+    expect(Uri.parse(pushedRoute!).path, '/starter-pack');
+    expect(Uri.decodeComponent(Uri.parse(pushedRoute!).queryParameters['uri']!), packUri.toString());
+  });
+
+  testWidgets('renders feed, list, labeler, and unknown record embeds', (tester) async {
+    const creator = ProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social', displayName: 'Creator');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                PostCard(
+                  feedViewPost: _makePostWithRecordEmbed(
+                    UEmbedRecordViewRecord.generatorView(
+                      data: GeneratorView(
+                        uri: AtUri.parse('at://did:plc:creator/app.bsky.feed.generator/feed'),
+                        cid: 'cid-feed',
+                        did: 'did:web:feed.example',
+                        creator: creator,
+                        displayName: 'News Feed',
+                        description: 'Fresh posts',
+                        likeCount: 1200,
+                        indexedAt: DateTime.utc(2026, 3, 15),
+                      ),
+                    ),
+                    rkey: 'feed',
+                  ),
+                ),
+                PostCard(
+                  feedViewPost: _makePostWithRecordEmbed(
+                    UEmbedRecordViewRecord.listView(
+                      data: bsky_graph.ListView(
+                        uri: AtUri.parse('at://did:plc:creator/app.bsky.graph.list/list'),
+                        cid: 'cid-list',
+                        creator: creator,
+                        name: 'Good Accounts',
+                        purpose: const bsky_graph.ListPurpose.knownValue(
+                          data: bsky_graph.KnownListPurpose.appBskyGraphDefsCuratelist,
+                        ),
+                        description: 'Useful people',
+                        listItemCount: 42,
+                        indexedAt: DateTime.utc(2026, 3, 15),
+                      ),
+                    ),
+                    rkey: 'list',
+                  ),
+                ),
+                PostCard(
+                  feedViewPost: _makePostWithRecordEmbed(
+                    UEmbedRecordViewRecord.labelerView(
+                      data: bsky_labeler.LabelerView(
+                        uri: AtUri.parse('at://did:plc:labeler/app.bsky.labeler.service/self'),
+                        cid: 'cid-labeler',
+                        creator: const ProfileView(
+                          did: 'did:plc:labeler',
+                          handle: 'labeler.bsky.social',
+                          displayName: 'Labeler Service',
+                        ),
+                        likeCount: 7,
+                        indexedAt: DateTime.utc(2026, 3, 15),
+                      ),
+                    ),
+                    rkey: 'labeler',
+                  ),
+                ),
+                PostCard(
+                  feedViewPost: _makePostWithRecordEmbed(
+                    const UEmbedRecordViewRecord.unknown(data: {r'$type': 'app.example.record'}),
+                    rkey: 'unknown',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('FEED'), findsOneWidget);
+    expect(find.text('News Feed'), findsOneWidget);
+    expect(find.text('Fresh posts'), findsOneWidget);
+    expect(find.text('1.2K likes'), findsOneWidget);
+    expect(find.text('LIST'), findsOneWidget);
+    expect(find.text('Good Accounts'), findsOneWidget);
+    expect(find.text('42 members'), findsOneWidget);
+    expect(find.text('LABELER'), findsOneWidget);
+    expect(find.text('Labeler Service'), findsOneWidget);
+    expect(find.text('7 likes'), findsOneWidget);
+    expect(find.text('UNKNOWN'), findsOneWidget);
+    expect(find.text('Quoted post is unavailable'), findsOneWidget);
+  });
+
+  testWidgets('feed, list, and labeler record embeds navigate through internal routes', (tester) async {
+    const creator = ProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social', displayName: 'Creator');
+    final feedUri = AtUri.parse('at://did:plc:creator/app.bsky.feed.generator/feed');
+    final listUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.list/list');
+    String? pushedRoute;
+
+    await _pumpRecordEmbedRouter(
+      tester,
+      post: _makePostWithRecordEmbed(
+        UEmbedRecordViewRecord.generatorView(
+          data: GeneratorView(
+            uri: feedUri,
+            cid: 'cid-feed',
+            did: 'did:web:feed.example',
+            creator: creator,
+            displayName: 'News Feed',
+            indexedAt: DateTime.utc(2026, 3, 15),
+          ),
+        ),
+      ),
+      routePath: '/feed',
+      onRoute: (uri) => pushedRoute = uri.toString(),
+    );
+
+    await tester.tap(find.text('News Feed'));
+    await tester.pumpAndSettle();
+
+    expect(Uri.parse(pushedRoute!).path, '/feed');
+    expect(Uri.decodeComponent(Uri.parse(pushedRoute!).queryParameters['uri']!), feedUri.toString());
+
+    pushedRoute = null;
+    await _pumpRecordEmbedRouter(
+      tester,
+      post: _makePostWithRecordEmbed(
+        UEmbedRecordViewRecord.listView(
+          data: bsky_graph.ListView(
+            uri: listUri,
+            cid: 'cid-list',
+            creator: creator,
+            name: 'Good Accounts',
+            purpose: const bsky_graph.ListPurpose.knownValue(
+              data: bsky_graph.KnownListPurpose.appBskyGraphDefsCuratelist,
+            ),
+            indexedAt: DateTime.utc(2026, 3, 15),
+          ),
+        ),
+      ),
+      routePath: '/list',
+      onRoute: (uri) => pushedRoute = uri.toString(),
+    );
+
+    await tester.tap(find.text('Good Accounts'));
+    await tester.pumpAndSettle();
+
+    expect(Uri.parse(pushedRoute!).path, '/list');
+    expect(Uri.decodeComponent(Uri.parse(pushedRoute!).queryParameters['uri']!), listUri.toString());
+
+    pushedRoute = null;
+    await _pumpRecordEmbedRouter(
+      tester,
+      post: _makePostWithRecordEmbed(
+        UEmbedRecordViewRecord.labelerView(
+          data: bsky_labeler.LabelerView(
+            uri: AtUri.parse('at://did:plc:labeler/app.bsky.labeler.service/self'),
+            cid: 'cid-labeler',
+            creator: const ProfileView(
+              did: 'did:plc:labeler',
+              handle: 'labeler.bsky.social',
+              displayName: 'Labeler Service',
+            ),
+            indexedAt: DateTime.utc(2026, 3, 15),
+          ),
+        ),
+      ),
+      routePath: '/settings/moderation/detail',
+      onRoute: (uri) => pushedRoute = uri.toString(),
+    );
+
+    await tester.tap(find.text('Labeler Service'));
+    await tester.pumpAndSettle();
+
+    expect(Uri.parse(pushedRoute!).path, '/settings/moderation/detail');
+    expect(Uri.parse(pushedRoute!).queryParameters['did'], 'did:plc:labeler');
+  });
+
+  testWidgets('renders unknown top-level embed fallback', (tester) async {
+    final post = _makePostWithEmbed(const UPostViewEmbed.unknown(data: {r'$type': 'com.example.embed'}));
+
+    await tester.pumpWidget(buildSubject(post));
+
+    expect(find.text('UNKNOWN'), findsOneWidget);
+  });
+}
+
+FeedViewPost _makePostWithRecordEmbed(UEmbedRecordViewRecord record, {String rkey = 'record'}) => _makePostWithEmbed(
+  UPostViewEmbed.embedRecordView(data: EmbedRecordView(record: record)),
+  rkey: rkey,
+);
+
+FeedViewPost _makePostWithEmbed(UPostViewEmbed embed, {String rkey = 'record'}) => FeedViewPost(
+  post: PostView(
+    uri: AtUri.parse('at://did:plc:test/app.bsky.feed.post/$rkey'),
+    cid: 'cid-$rkey',
+    author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+    record: FeedPostRecord(text: 'Main post', createdAt: DateTime.utc(2026, 3, 16)).toJson(),
+    indexedAt: DateTime.utc(2026, 3, 16),
+    embed: embed,
+  ),
+);
+
+Future<void> _pumpRecordEmbedRouter(
+  WidgetTester tester, {
+  required FeedViewPost post,
+  required String routePath,
+  required ValueChanged<Uri> onRoute,
+}) async {
+  final router = GoRouter(
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (context, state) => Scaffold(body: PostCard(feedViewPost: post)),
+      ),
+      GoRoute(
+        path: routePath,
+        builder: (context, state) {
+          onRoute(state.uri);
+          return const Scaffold(body: Text('destination'));
+        },
+      ),
+    ],
+  );
+
+  await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+  await tester.pumpAndSettle();
 }

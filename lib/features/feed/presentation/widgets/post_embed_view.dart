@@ -1,4 +1,3 @@
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/embed/external.dart';
 import 'package:bluesky_poptart/app/bsky/embed/images.dart';
 import 'package:bluesky_poptart/app/bsky/embed/record.dart';
@@ -15,15 +14,11 @@ import 'package:lazurite/features/feed/presentation/media/image_viewer_route_arg
 import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
 import 'package:lazurite/features/feed/presentation/media/video_layout.dart';
 import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
-import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
-import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dart';
+import 'package:lazurite/features/feed/presentation/widgets/post_record_embed.dart';
 import 'package:lazurite/features/moderation/domain/moderation_models.dart' as bsky_moderation;
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
-import 'package:lazurite/shared/presentation/widgets/actor_name_widget.dart';
 import 'package:lazurite/shared/presentation/widgets/external_link_preview_card.dart';
-import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
-import 'package:lazurite/shared/utils/parse_utils.dart';
 
 /// Renders the appropriate embed widget for a post embed.
 ///
@@ -87,6 +82,9 @@ class PostEmbedView extends StatelessWidget {
         ],
       );
     }
+    if (embed.isUnknown) {
+      return _buildUnknownEmbed(context);
+    }
 
     return null;
   }
@@ -105,7 +103,7 @@ class PostEmbedView extends StatelessWidget {
     if (media.isEmbedVideoView) {
       return _buildVideoEmbed(context, media.embedVideoView!);
     }
-    return const SizedBox.shrink();
+    return _buildUnknownEmbed(context);
   }
 
   Widget _buildImagesEmbed(BuildContext context, List<EmbedImagesViewImage> images, {required String heroNamespace}) {
@@ -286,207 +284,27 @@ class PostEmbedView extends StatelessWidget {
     required String heroNamespace,
     required int quoteDepth,
   }) {
-    final record = recordView.record;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    if (record.isEmbedRecordViewRecord) {
-      final quoted = record.embedRecordViewRecord!;
-      final quotedRecord = tryParseRecord(quoted.value);
-      final nestedHeroNamespace = '$heroNamespace/quote:${quoted.uri}';
-      final nestedEmbed = quoteDepth >= maxQuoteDepth
-          ? null
-          : _buildQuotedEmbeds(
-              context,
-              quoted.embeds,
-              heroNamespace: '$nestedHeroNamespace/embeds',
-              quoteDepth: quoteDepth + 1,
-            );
-
-      return Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: colorScheme.outlineVariant),
-          borderRadius: BorderRadius.circular(12),
-          color: colorScheme.surfaceContainerLow,
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () {
-            GoRouter.maybeOf(context)?.push('/post?uri=${Uri.encodeComponent(quoted.uri.toString())}');
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ProfileAvatar(
-                      size: 28,
-                      imageUrl: quoted.author.avatar,
-                      fallbackText: quoted.author.displayName ?? quoted.author.handle,
-                      shape: BoxShape.rectangle,
-                      border: Border.all(color: context.colorScheme.outlineVariant),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ActorNameWidget(
-                        displayName: quoted.author.displayName,
-                        handle: quoted.author.handle,
-                        displayNameStyle: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface,
-                        ),
-                        handleStyle: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                        uppercaseHandle: false,
-                      ),
-                    ),
-                  ],
-                ),
-                if (quotedRecord != null && quotedRecord.text.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  FacetText(
-                    text: quotedRecord.text,
-                    facets: quotedRecord.facets,
-                    style: feedPostBodyTextStyle(context, compact: compact, nested: true),
-                    maxLines: compact ? 6 : null,
-                    overflow: compact ? TextOverflow.ellipsis : TextOverflow.visible,
-                  ),
-                ],
-                if (nestedEmbed != null) ...[const SizedBox(height: 8), nestedEmbed],
-                if (quoteDepth == maxQuoteDepth && _hasQuotedRecordEmbed(quoted.embeds)) ...[
-                  const SizedBox(height: 8),
-                  _buildShallowQuote(context, _nestedQuotedAuthor(quoted.embeds) ?? quoted.author),
-                ],
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (record.isEmbedRecordViewNotFound) {
-      return _buildUnavailableQuote(context, context.l10n.messageQuotedPostNotFound);
-    }
-    if (record.isEmbedRecordViewBlocked) {
-      return _buildUnavailableQuote(context, context.l10n.messageQuotedPostBlocked);
-    }
-    if (record.isEmbedRecordViewDetached) {
-      return _buildUnavailableQuote(context, context.l10n.messageQuotedPostUnavailable);
-    }
-
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildShallowQuote(BuildContext context, ProfileViewBasic author) {
-    final colorScheme = context.colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(compact ? 8 : 10),
-      decoration: BoxDecoration(
-        border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(10),
-        color: colorScheme.surfaceContainerLow,
-      ),
-      child: Row(
-        children: [
-          ProfileAvatar(
-            size: compact ? 20 : 24,
-            imageUrl: author.avatar,
-            fallbackText: author.displayName ?? author.handle,
-            shape: BoxShape.rectangle,
-            border: Border.all(color: colorScheme.outlineVariant),
-          ),
-          SizedBox(width: compact ? 6 : 8),
-          Expanded(
-            child: Text(
-              '${author.displayName ?? author.handle} @${author.handle} ...',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: context.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-            ),
-          ),
-        ],
-      ),
+    return PostRecordEmbed(
+      recordView: recordView,
+      heroNamespace: heroNamespace,
+      quoteDepth: quoteDepth,
+      maxQuoteDepth: maxQuoteDepth,
+      compact: compact,
+      buildImagesEmbed: _buildImagesEmbed,
+      buildExternalEmbed: _buildExternalEmbed,
+      buildVideoEmbed: _buildVideoEmbed,
+      buildUnknownEmbed: _buildUnknownEmbed,
     );
   }
 
-  Widget _buildUnavailableQuote(BuildContext context, String label) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: context.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(label, style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant)),
+  Widget _buildUnknownEmbed(BuildContext context) {
+    return PostRecordResourceCard(
+      icon: Icons.extension_outlined,
+      fallbackText: context.l10n.labelUnknown,
+      label: context.l10n.labelUnknown,
+      title: context.l10n.labelUnknown,
+      compact: compact,
     );
-  }
-
-  Widget? _buildQuotedEmbeds(
-    BuildContext context,
-    List<UEmbedRecordViewRecordEmbeds>? embeds, {
-    required String heroNamespace,
-    required int quoteDepth,
-  }) {
-    if (embeds == null || embeds.isEmpty) return null;
-
-    final embed = embeds.first;
-
-    if (embed.isEmbedImagesView) {
-      return _buildImagesEmbed(context, embed.embedImagesView!.images, heroNamespace: '$heroNamespace/images');
-    }
-    if (embed.isEmbedExternalView) {
-      return _buildExternalEmbed(context, embed.embedExternalView!.external);
-    }
-    if (embed.isEmbedVideoView) {
-      return _buildVideoEmbed(context, embed.embedVideoView!);
-    }
-    if (embed.isEmbedRecordView) {
-      return _buildQuotedRecord(
-        context,
-        embed.embedRecordView!,
-        heroNamespace: '$heroNamespace/record',
-        quoteDepth: quoteDepth,
-      );
-    }
-    if (embed.isEmbedRecordWithMediaView) {
-      final recordWithMedia = embed.embedRecordWithMediaView!;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildRecordWithMediaMedia(context, recordWithMedia.media, heroNamespace: '$heroNamespace/rwm-media'),
-          const SizedBox(height: 8),
-          _buildQuotedRecord(
-            context,
-            recordWithMedia.record,
-            heroNamespace: '$heroNamespace/rwm-record',
-            quoteDepth: quoteDepth,
-          ),
-        ],
-      );
-    }
-
-    return null;
-  }
-
-  bool _hasQuotedRecordEmbed(List<UEmbedRecordViewRecordEmbeds>? embeds) {
-    if (embeds == null || embeds.isEmpty) return false;
-    final embed = embeds.first;
-    return embed.isEmbedRecordView || embed.isEmbedRecordWithMediaView;
-  }
-
-  ProfileViewBasic? _nestedQuotedAuthor(List<UEmbedRecordViewRecordEmbeds>? embeds) {
-    if (embeds == null || embeds.isEmpty) return null;
-    final embed = embeds.first;
-    final recordView = embed.isEmbedRecordView
-        ? embed.embedRecordView
-        : embed.isEmbedRecordWithMediaView
-        ? embed.embedRecordWithMediaView?.record
-        : null;
-    final record = recordView?.record;
-    return record?.isEmbedRecordViewRecord == true ? record!.embedRecordViewRecord!.author : null;
   }
 
   void _openImageViewer(

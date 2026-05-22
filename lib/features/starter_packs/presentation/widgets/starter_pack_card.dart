@@ -13,9 +13,6 @@ class StarterPackCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = context.colorScheme;
-    final textTheme = context.textTheme;
-
     final name = (pack.record['name'] as String?) ?? context.l10n.labelStarterPack;
     final memberCount = pack.listItemCount;
     final joinedWeek = pack.joinedWeekCount;
@@ -36,8 +33,9 @@ class StarterPackCard extends StatelessWidget {
                   ProfileAvatar(
                     size: 40,
                     fallbackText: name,
-                    backgroundColor: colorScheme.primaryContainer,
-                    fallbackBuilder: (_) => Icon(Icons.group_outlined, color: colorScheme.onPrimaryContainer, size: 20),
+                    backgroundColor: context.colorScheme.primaryContainer,
+                    fallbackBuilder: (_) =>
+                        Icon(Icons.group_outlined, color: context.colorScheme.onPrimaryContainer, size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -46,13 +44,13 @@ class StarterPackCard extends StatelessWidget {
                       children: [
                         Text(
                           name,
-                          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                          style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           context.l10n.formatListByHandle(pack.creator.handle),
-                          style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                          style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -76,13 +74,11 @@ class StarterPackCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStat(BuildContext context, int count, String label) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(formatCount(count), style: context.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
-        Text(label, style: context.textTheme.labelSmall?.copyWith(color: context.colorScheme.onSurfaceVariant)),
-      ],
-    );
-  }
+  Widget _buildStat(BuildContext context, int count, String label) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(formatCount(count), style: context.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
+      Text(label, style: context.textTheme.labelSmall?.copyWith(color: context.colorScheme.onSurfaceVariant)),
+    ],
+  );
 }
