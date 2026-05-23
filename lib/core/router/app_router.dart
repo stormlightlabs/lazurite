@@ -234,16 +234,30 @@ class AppRouter {
       GoRoute(
         path: '/images',
         parentNavigatorKey: _rootNavigatorKey,
+        redirect: (context, state) {
+          if (ImageViewerRouteArgs.tryParse(state.extra, state.uri) != null) {
+            return null;
+          }
+          log.w('Image viewer route opened without valid route arguments; redirecting home. uri=${state.uri}');
+          return '/';
+        },
         pageBuilder: (context, state) {
-          final args = state.extra as ImageViewerRouteArgs;
+          final args = ImageViewerRouteArgs.tryParse(state.extra, state.uri)!;
           return buildAppRoutePage(context, state, ImageViewerScreen(args: args));
         },
       ),
       GoRoute(
         path: '/video',
         parentNavigatorKey: _rootNavigatorKey,
+        redirect: (context, state) {
+          if (VideoPlayerRouteArgs.tryParse(state.extra, state.uri) != null) {
+            return null;
+          }
+          log.w('Video player route opened without valid route arguments; redirecting home. uri=${state.uri}');
+          return '/';
+        },
         pageBuilder: (context, state) {
-          final args = state.extra as VideoPlayerRouteArgs;
+          final args = VideoPlayerRouteArgs.tryParse(state.extra, state.uri)!;
           return buildAppRoutePage(context, state, VideoPlayerScreen(args: args));
         },
       ),

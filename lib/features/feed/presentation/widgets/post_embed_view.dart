@@ -313,21 +313,19 @@ class PostEmbedView extends StatelessWidget {
     required int initialIndex,
     required String heroNamespace,
   }) {
-    GoRouter.maybeOf(context)?.push(
-      '/images',
-      extra: ImageViewerRouteArgs(
-        images: [
-          for (var i = 0; i < images.length; i++)
-            ImageViewerItem(
-              fullsizeUrl: images[i].fullsize,
-              thumbnailUrl: images[i].thumb,
-              altText: images[i].alt,
-              heroTag: _imageHeroTag(heroNamespace, i),
-            ),
-        ],
-        initialIndex: initialIndex,
-      ),
+    final args = ImageViewerRouteArgs(
+      images: [
+        for (var i = 0; i < images.length; i++)
+          ImageViewerItem(
+            fullsizeUrl: images[i].fullsize,
+            thumbnailUrl: images[i].thumb,
+            altText: images[i].alt,
+            heroTag: _imageHeroTag(heroNamespace, i),
+          ),
+      ],
+      initialIndex: initialIndex,
     );
+    GoRouter.maybeOf(context)?.push(args.location, extra: args);
   }
 
   Future<void> _showImageContextMenu(
@@ -361,17 +359,15 @@ class PostEmbedView extends StatelessWidget {
     final ratio = normalizeVideoAspectRatio(_rawAspectRatio(video));
     final isGif = video.presentation?.knownValue == KnownEmbedVideoViewPresentation.gif;
     final downloadUrl = MediaActions.buildBlueskyBlobDownloadUrl(playlistUrl: video.playlist);
-    GoRouter.maybeOf(context)?.push(
-      '/video',
-      extra: VideoPlayerRouteArgs(
-        playlistUrl: video.playlist,
-        downloadUrl: downloadUrl,
-        thumbnailUrl: video.thumbnail,
-        altText: video.alt,
-        aspectRatio: ratio,
-        isGif: isGif,
-      ),
+    final args = VideoPlayerRouteArgs(
+      playlistUrl: video.playlist,
+      downloadUrl: downloadUrl,
+      thumbnailUrl: video.thumbnail,
+      altText: video.alt,
+      aspectRatio: ratio,
+      isGif: isGif,
     );
+    GoRouter.maybeOf(context)?.push(args.location, extra: args);
   }
 
   double? _rawAspectRatio(EmbedVideoView video) {

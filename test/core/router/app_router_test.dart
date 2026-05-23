@@ -802,6 +802,59 @@ void main() {
     router.dispose();
   });
 
+  testWidgets('image viewer route without extra redirects home instead of throwing', (tester) async {
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('/images');
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/');
+
+    router.dispose();
+  });
+
+  testWidgets('image viewer route with invalid args redirects home instead of indexing missing images', (tester) async {
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('/images', extra: const ImageViewerRouteArgs(images: [], initialIndex: 0));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/');
+
+    router.dispose();
+  });
+
+  testWidgets('image viewer route restores from URL payload when extra is missing', (tester) async {
+    final router = AppRouter(authBloc: authBloc).router;
+    const args = ImageViewerRouteArgs(
+      images: [
+        ImageViewerItem(
+          fullsizeUrl: 'https://example.com/full.jpg',
+          thumbnailUrl: 'https://example.com/thumb.jpg',
+          heroTag: 'restored-image-test',
+          altText: 'restored alt text',
+        ),
+      ],
+      initialIndex: 0,
+    );
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go(args.location);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(tester.takeException(), isNull);
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/images');
+    expect(find.byTooltip('Close'), findsOneWidget);
+    expect(find.text('restored alt text'), findsOneWidget);
+
+    router.dispose();
+  });
+
   testWidgets('logged-out image viewer route remains public instead of redirecting to login', (tester) async {
     currentAuthState = const AuthState.unauthenticated();
     when(() => authBloc.state).thenReturn(currentAuthState);
@@ -829,6 +882,56 @@ void main() {
     expect(router.routerDelegate.currentConfiguration.uri.path, '/images');
     expect(find.byTooltip('Close'), findsOneWidget);
     expect(find.byKey(const ValueKey<String>('login-continue-button')), findsNothing);
+
+    router.dispose();
+  });
+
+  testWidgets('video viewer route without extra redirects home instead of throwing', (tester) async {
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('/video');
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/');
+
+    router.dispose();
+  });
+
+  testWidgets('video viewer route with invalid args redirects home instead of initializing blank video', (tester) async {
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('/video', extra: const VideoPlayerRouteArgs(playlistUrl: ''));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/');
+
+    router.dispose();
+  });
+
+  testWidgets('video viewer route restores from URL payload when extra is missing', (tester) async {
+    final router = AppRouter(authBloc: authBloc).router;
+    const args = VideoPlayerRouteArgs(
+      playlistUrl: 'https://example.com/video.m3u8',
+      downloadUrl: 'https://example.com/video.mp4',
+      thumbnailUrl: 'https://example.com/thumb.jpg',
+      altText: 'restored video alt text',
+      aspectRatio: 16 / 9,
+      isGif: true,
+    );
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go(args.location);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(tester.takeException(), isNull);
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/video');
+    expect(find.text('Video'), findsOneWidget);
+    expect(find.text('restored video alt text'), findsOneWidget);
 
     router.dispose();
   });
