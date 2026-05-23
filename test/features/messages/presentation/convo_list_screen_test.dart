@@ -185,7 +185,7 @@ void main() {
         ],
         muted: false,
         unreadCount: 0,
-        status: const ConvoViewStatus.knownValue(data: KnownConvoViewStatus.request),
+        status: const ConvoStatus.knownValue(data: KnownConvoStatus.request),
       );
 
       when(

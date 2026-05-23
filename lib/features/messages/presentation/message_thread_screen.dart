@@ -60,7 +60,12 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
   void _copyAllMessages(List<UConvoGetMessagesMessages> messages) {
     final lines = messages.reversed
         .map(
-          (m) => m.when(messageView: (data) => data.text, deletedMessageView: (_) => '[deleted]', unknown: (_) => ''),
+          (m) => m.when(
+            messageView: (data) => data.text,
+            deletedMessageView: (_) => '[deleted]',
+            systemMessageView: (_) => '',
+            unknown: (_) => '',
+          ),
         )
         .where((t) => t.isNotEmpty)
         .join('\n');
@@ -129,6 +134,7 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
                       messageView: (data) =>
                           MessageBubble(message: data, isCurrentUser: data.sender.did == currentUserDid),
                       deletedMessageView: (data) => const DeletedMessageBubble(isCurrentUser: false),
+                      systemMessageView: (_) => const SizedBox.shrink(),
                       unknown: (_) => const SizedBox.shrink(),
                     );
                   },

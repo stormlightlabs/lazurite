@@ -1,6 +1,6 @@
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart' as actor;
 import 'package:bluesky_poptart/app/bsky/notification/list_notifications.dart' as bsky;
-import 'package:lazurite/features/moderation/domain/moderation_models.dart' as bsky_moderation;
+import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart' hide Notification;
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/l10n/l10n.dart';

@@ -91,7 +91,7 @@ void main() {
             ],
             muted: false,
             unreadCount: 0,
-            status: ConvoViewStatus.knownValue(data: KnownConvoViewStatus.request),
+            status: ConvoStatus.knownValue(data: KnownConvoStatus.request),
           ),
         ],
         cursor: null,

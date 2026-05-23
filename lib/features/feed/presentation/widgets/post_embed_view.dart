@@ -15,7 +15,7 @@ import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
 import 'package:lazurite/features/feed/presentation/media/video_layout.dart';
 import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_record_embed.dart';
-import 'package:lazurite/features/moderation/domain/moderation_models.dart' as bsky_moderation;
+import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/shared/presentation/widgets/external_link_preview_card.dart';

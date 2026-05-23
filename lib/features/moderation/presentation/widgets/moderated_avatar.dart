@@ -1,4 +1,4 @@
-import 'package:lazurite/features/moderation/domain/moderation_models.dart' as bsky_moderation;
+import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:lazurite/core/cache/lazurite_image_cache.dart';

@@ -5,6 +5,7 @@ import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bluesky_poptart/app/bsky/labeler/defs.dart';
 import 'package:bluesky_poptart/app/bsky/labeler/get_services.dart';
 import 'package:bluesky_poptart/app/bsky/notification/list_notifications.dart' as notifications;
+import 'package:bluesky_poptart/app/bsky/actor/get_preferences/output.dart';
 import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
@@ -13,13 +14,11 @@ import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
-import 'package:lazurite/features/moderation/domain/moderation_models.dart' as moderation;
-import 'package:poptart_lex/com/atproto/label/defs.dart';
+import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as moderation;
+import 'package:poptart_lex/com/atproto/label/defs.dart' show LabelValueDefinition, LabelValueDefinitionStrings;
 
 const _officialBlueskyLabelerDid = 'did:plc:ar7c4by46qjdydhdevvrndac';
 const _maxCustomLabelers = 20;
-const _noUnauthenticatedLabel = '!no-unauthenticated';
-
 class ModerationService {
   ModerationService({
     required Bluesky bluesky,
@@ -225,157 +224,50 @@ class ModerationService {
   moderation.ModerationDecision moderatePost(PostView post) {
     final opts = _opts;
     if (opts == null) {
-      return const moderation.ModerationDecision.empty();
+      return moderation.ModerationDecision.init();
     }
 
-    return moderation.ModerationDecision(
-      me: post.author.did == _resolvedUserDid,
-      causes: [
-        if (_hasAuthenticatedViewer(opts) && opts.prefs.hiddenPosts.contains(post.uri.toString())) _hiddenCause(),
-        ..._viewerCauses(post.author.viewer, opts),
-        ..._labelCauses(post.labels ?? const [], moderation.LabelTarget.content, opts),
-        ..._labelCauses(post.author.labels ?? const [], moderation.LabelTarget.account, opts),
-      ],
-    );
+    return moderation.moderatePost(moderation.ModerationSubjectPost.postView(data: post), opts);
   }
 
   moderation.ModerationDecision moderateProfile(ProfileView profile) {
     final opts = _opts;
     if (opts == null) {
-      return const moderation.ModerationDecision.empty();
+      return moderation.ModerationDecision.init();
     }
 
-    return _moderateActor(did: profile.did, viewer: profile.viewer, labels: profile.labels ?? const [], opts: opts);
+    return moderation.moderateProfile(moderation.ModerationSubjectProfile.profileView(data: profile), opts);
   }
 
   moderation.ModerationDecision moderateProfileBasic(ProfileViewBasic profile) {
     final opts = _opts;
     if (opts == null) {
-      return const moderation.ModerationDecision.empty();
+      return moderation.ModerationDecision.init();
     }
 
-    return _moderateActor(did: profile.did, viewer: profile.viewer, labels: profile.labels ?? const [], opts: opts);
+    return moderation.moderateProfile(moderation.ModerationSubjectProfile.profileViewBasic(data: profile), opts);
   }
 
   moderation.ModerationDecision moderateProfileDetailed(ProfileViewDetailed profile) {
     final opts = _opts;
     if (opts == null) {
-      return const moderation.ModerationDecision.empty();
+      return moderation.ModerationDecision.init();
     }
 
-    return _moderateActor(did: profile.did, viewer: profile.viewer, labels: profile.labels ?? const [], opts: opts);
+    return moderation.moderateProfile(moderation.ModerationSubjectProfile.profileViewDetailed(data: profile), opts);
   }
 
   moderation.ModerationDecision moderateNotification(notifications.Notification notification) {
     final opts = _opts;
     if (opts == null) {
-      return const moderation.ModerationDecision.empty();
+      return moderation.ModerationDecision.init();
     }
 
-    return moderation.ModerationDecision.merge([
-      _moderateActor(
-        did: notification.author.did,
-        viewer: notification.author.viewer,
-        labels: notification.author.labels ?? const [],
-        opts: opts,
-      ),
-      moderation.ModerationDecision(
-        me: notification.author.did == _resolvedUserDid,
-        causes: _labelCauses(notification.labels ?? const [], moderation.LabelTarget.content, opts),
-      ),
-    ]);
-  }
-
-  moderation.ModerationDecision _moderateActor({
-    required String did,
-    required dynamic viewer,
-    required List<Label> labels,
-    required moderation.ModerationOpts opts,
-  }) {
-    return moderation.ModerationDecision(
-      me: did == _resolvedUserDid,
-      causes: [
-        ..._viewerCauses(viewer, opts),
-        ..._labelCauses(labels, moderation.LabelTarget.account, opts),
-        ..._labelCauses(labels, moderation.LabelTarget.profile, opts),
-      ],
+    return moderation.moderateNotification(
+      moderation.ModerationSubjectNotification.notification(data: notification),
+      opts,
     );
   }
-
-  List<moderation.ModerationCause> _viewerCauses(dynamic viewer, moderation.ModerationOpts opts) {
-    if (!_hasAuthenticatedViewer(opts)) {
-      return const [];
-    }
-
-    if (viewer == null) {
-      return const [];
-    }
-
-    final causes = <moderation.ModerationCause>[];
-    try {
-      if (viewer.muted == true) {
-        causes.add(_mutedCause());
-      }
-      if (viewer.blockedBy == true) {
-        causes.add(_blockedByCause());
-      }
-      if (viewer.blocking != null) {
-        causes.add(_blockingCause());
-      }
-    } catch (error, stackTrace) {
-      log.d('Unable to read moderation viewer state: $error\n$stackTrace');
-    }
-    return causes;
-  }
-
-  List<moderation.ModerationCause> _labelCauses(
-    List<Label> labels,
-    moderation.LabelTarget target,
-    moderation.ModerationOpts opts,
-  ) {
-    return labels
-        .map((label) => _labelCause(label, target, opts))
-        .whereType<moderation.ModerationCause>()
-        .toList(growable: false);
-  }
-
-  moderation.ModerationCause? _labelCause(Label label, moderation.LabelTarget target, moderation.ModerationOpts opts) {
-    if (label.val == _noUnauthenticatedLabel && _hasAuthenticatedViewer(opts)) {
-      return null;
-    }
-
-    final definition = _definitionForLabel(label, opts);
-    if (definition == null) {
-      return null;
-    }
-
-    final labeler = opts.prefs.labelers.where((item) => item.did == label.src).firstOrNull;
-    final isSelf = label.src == _resolvedUserDid;
-    if (!isSelf && labeler == null && !moderation.knownLabelDefinitions.containsKey(label.val)) {
-      return null;
-    }
-
-    final setting = _preferenceForLabel(definition, labeler, opts.prefs);
-    if (setting == moderation.LabelPreference.ignore) {
-      return null;
-    }
-
-    return moderation.ModerationCause.label(
-      data: moderation.ModerationCauseLabel(
-        source: isSelf || labeler == null
-            ? const moderation.ModerationCauseSource.user(data: moderation.ModerationCauseSourceUser())
-            : moderation.ModerationCauseSource.labeler(data: moderation.ModerationCauseSourceLabeler(did: labeler.did)),
-        label: label,
-        labelDef: definition,
-        target: target,
-        setting: setting,
-        behavior: definition.behaviorForTarget(target),
-        noOverride: definition.noOverride || (definition.adultOnly && !opts.prefs.adultContentEnabled),
-      ),
-    );
-  }
-
-  bool _hasAuthenticatedViewer(moderation.ModerationOpts opts) => opts.userDid != null && opts.userDid!.isNotEmpty;
 
   moderation.ModerationUI postUi(PostView post, moderation.ModerationBehaviorContext context) =>
       moderatePost(post).getUI(context);
@@ -690,48 +582,9 @@ class ModerationService {
   }
 
   moderation.ModerationPrefs _toModerationPrefs(List<UPreferences> preferences) {
-    var adultContentEnabled = false;
-    final globalLabels = <String, moderation.LabelPreference>{};
-    final labelsByLabeler = <String, Map<String, moderation.LabelPreference>>{};
-    final labelerDids = <String>{_officialBlueskyLabelerDid};
-    final mutedWords = <MutedWord>[];
-    final hiddenPosts = <String>[];
-
-    for (final preference in preferences) {
-      if (preference.isAdultContentPref) {
-        adultContentEnabled = preference.adultContentPref!.enabled;
-      } else if (preference.isContentLabelPref) {
-        final contentLabel = preference.contentLabelPref!;
-        final value = _labelPreferenceFromVisibility(contentLabel.visibility);
-        if (value == null) {
-          continue;
-        }
-        final labelerDid = contentLabel.labelerDid;
-        if (labelerDid == null || labelerDid.isEmpty) {
-          globalLabels[contentLabel.label] = value;
-        } else {
-          labelsByLabeler.putIfAbsent(labelerDid, () => {})[contentLabel.label] = value;
-        }
-      } else if (preference.isLabelersPref) {
-        labelerDids.addAll(
-          preference.labelersPref!.labelers.map((labeler) => labeler.did).where((did) => did.startsWith('did:')),
-        );
-      } else if (preference.isMutedWordsPref) {
-        mutedWords.addAll(preference.mutedWordsPref!.items);
-      } else if (preference.isHiddenPostsPref) {
-        hiddenPosts.addAll(preference.hiddenPostsPref!.items.map((uri) => uri.toString()));
-      }
-    }
-
-    return moderation.ModerationPrefs(
-      adultContentEnabled: adultContentEnabled,
-      labels: globalLabels,
-      labelers: labelerDids
-          .map((did) => moderation.ModerationPrefsLabeler(did: did, labels: labelsByLabeler[did] ?? const {}))
-          .toList(growable: false),
-      mutedWords: mutedWords,
-      hiddenPosts: hiddenPosts,
-    );
+    return ActorGetPreferencesOutput(
+      preferences: preferences,
+    ).getModerationPrefs(appLabelers: const [_officialBlueskyLabelerDid]);
   }
 
   Map<String, List<moderation.InterpretedLabelValueDefinition>> _mapLabelDefinitions(
@@ -773,69 +626,6 @@ class ModerationService {
             )
             .toList() ??
         const [];
-  }
-
-  moderation.InterpretedLabelValueDefinition? _definitionForLabel(Label label, moderation.ModerationOpts opts) {
-    final custom = opts.labelDefs[label.src]?.where((definition) => definition.identifier == label.val).firstOrNull;
-    if (custom != null) {
-      return custom.withDefinedBy(label.src);
-    }
-    return moderation.knownLabelDefinitions[label.val]?.withDefinedBy(label.src);
-  }
-
-  moderation.LabelPreference _preferenceForLabel(
-    moderation.InterpretedLabelValueDefinition definition,
-    moderation.ModerationPrefsLabeler? labeler,
-    moderation.ModerationPrefs prefs,
-  ) {
-    if (!definition.configurable) {
-      return definition.defaultSetting;
-    }
-    if (definition.adultOnly && !prefs.adultContentEnabled) {
-      return moderation.LabelPreference.hide;
-    }
-    return labeler?.labels[definition.identifier] ?? prefs.labels[definition.identifier] ?? definition.defaultSetting;
-  }
-
-  moderation.LabelPreference? _labelPreferenceFromVisibility(ContentLabelPrefVisibility visibility) {
-    return switch (visibility.toJson()) {
-      'ignore' || 'show' => moderation.LabelPreference.ignore,
-      'warn' => moderation.LabelPreference.warn,
-      'hide' => moderation.LabelPreference.hide,
-      _ => null,
-    };
-  }
-
-  moderation.ModerationCause _hiddenCause() {
-    return const moderation.ModerationCause.hidden(
-      data: moderation.ModerationCauseHidden(
-        source: moderation.ModerationCauseSource.user(data: moderation.ModerationCauseSourceUser()),
-      ),
-    );
-  }
-
-  moderation.ModerationCause _mutedCause() {
-    return const moderation.ModerationCause.muted(
-      data: moderation.ModerationCauseMuted(
-        source: moderation.ModerationCauseSource.user(data: moderation.ModerationCauseSourceUser()),
-      ),
-    );
-  }
-
-  moderation.ModerationCause _blockingCause() {
-    return const moderation.ModerationCause.blocking(
-      data: moderation.ModerationCauseBlocking(
-        source: moderation.ModerationCauseSource.user(data: moderation.ModerationCauseSourceUser()),
-      ),
-    );
-  }
-
-  moderation.ModerationCause _blockedByCause() {
-    return const moderation.ModerationCause.blockedBy(
-      data: moderation.ModerationCauseBlockedBy(
-        source: moderation.ModerationCauseSource.user(data: moderation.ModerationCauseSourceUser()),
-      ),
-    );
   }
 
   Map<String, String> _buildHeadersForPrefs(moderation.ModerationPrefs prefs) {

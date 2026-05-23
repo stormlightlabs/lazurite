@@ -103,6 +103,7 @@ class ConvoListItem extends StatelessWidget {
     return lastMessage.when(
       messageView: (data) => data.text.isNotEmpty ? data.text : null,
       deletedMessageView: (_) => context.l10n.messageDeleted,
+      systemMessageView: (_) => null,
       unknown: (_) => null,
     );
   }

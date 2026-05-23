@@ -13,7 +13,7 @@ import 'package:http/http.dart' as http;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
-import 'package:lazurite/features/moderation/domain/moderation_models.dart' as moderation;
+import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as moderation;
 
 import '../../../helpers/test_bluesky_client.dart';
 

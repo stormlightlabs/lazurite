@@ -99,6 +99,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
         final isTarget = m.when(
           messageView: (data) => data.id == event.messageId,
           deletedMessageView: (_) => false,
+          systemMessageView: (_) => false,
           unknown: (_) => false,
         );
         return isTarget ? deletedMessage : m;

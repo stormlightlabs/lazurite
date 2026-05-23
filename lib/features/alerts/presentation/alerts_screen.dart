@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:bluesky_poptart/chat/bsky/convo/defs.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/presentation/widgets/convo_list_pane.dart';
@@ -11,7 +12,17 @@ import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/presentation/widgets/notifications_pane.dart';
 import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 
-enum AlertsTab { notifications, messages, requests }
+enum AlertsTab {
+  notifications,
+  messages,
+  requests;
+
+  String get target => switch (this) {
+    AlertsTab.notifications => '/alerts',
+    AlertsTab.messages => '/alerts/messages',
+    AlertsTab.requests => '/alerts/requests',
+  };
+}
 
 class AlertsScreen extends StatefulWidget {
   const AlertsScreen({super.key, this.initialTab = AlertsTab.notifications});
@@ -63,7 +74,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
     var unread = 0;
     for (final convo in state.convos) {
       final status = convo.status;
-      final isRequest = status != null && status.isKnownValue && status.knownValue == KnownConvoViewStatus.request;
+      final isRequest = status != null && status.isKnownValue && status.knownValue == KnownConvoStatus.request;
       if (!isRequest) {
         unread += convo.unreadCount;
       }
@@ -71,16 +82,11 @@ class _AlertsScreenState extends State<AlertsScreen> {
     return unread;
   }
 
-  Widget _buildTab(AlertsTab tab) {
-    switch (tab) {
-      case AlertsTab.notifications:
-        return const NotificationsPane();
-      case AlertsTab.messages:
-        return const ConvoListPane(tab: ConvoTab.primary);
-      case AlertsTab.requests:
-        return const ConvoListPane(tab: ConvoTab.requests);
-    }
-  }
+  Widget _buildTab(AlertsTab tab) => switch (tab) {
+    AlertsTab.notifications => const NotificationsPane(),
+    AlertsTab.messages => const ConvoListPane(tab: ConvoTab.primary),
+    AlertsTab.requests => const ConvoListPane(tab: ConvoTab.requests),
+  };
 
   void _markAllRead(BuildContext context) {
     context.read<NotificationBloc>().add(const NotificationsMarkedRead());
@@ -100,47 +106,44 @@ class _AlertsTabs extends StatelessWidget {
   final int messagesUnreadCount;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
-      ),
-      child: Row(
-        children: [
-          _AlertsTabButton(
-            tab: AlertsTab.notifications,
-            label: context.l10n.labelNotifications,
-            currentTab: currentTab,
-            unreadCount: notificationsUnreadCount,
-          ),
-          _AlertsTabButton(
-            tab: AlertsTab.messages,
-            label: context.l10n.labelMessages,
-            currentTab: currentTab,
-            unreadCount: messagesUnreadCount,
-          ),
-          _AlertsTabButton(tab: AlertsTab.requests, label: context.l10n.labelMessageRequests, currentTab: currentTab),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
+    ),
+    child: Row(
+      children: [
+        _AlertsTabButton(
+          tab: AlertsTab.notifications,
+          label: context.l10n.labelNotifications,
+          currentTab: currentTab,
+          unreadCount: notificationsUnreadCount,
+        ),
+        _AlertsTabButton(
+          tab: AlertsTab.messages,
+          label: context.l10n.labelMessages,
+          currentTab: currentTab,
+          unreadCount: messagesUnreadCount,
+        ),
+        _AlertsTabButton(tab: AlertsTab.requests, label: context.l10n.labelMessageRequests, currentTab: currentTab),
+      ],
+    ),
+  );
 }
 
 class _AlertsTabButton extends StatelessWidget {
   const _AlertsTabButton({required this.tab, required this.label, required this.currentTab, this.unreadCount = 0});
 
   final AlertsTab tab;
-  final String label;
   final AlertsTab currentTab;
+  final String label;
   final int unreadCount;
 
   @override
   Widget build(BuildContext context) {
     final isSelected = currentTab == tab;
-    final theme = Theme.of(context);
-    final textStyle = theme.textTheme.bodyLarge?.copyWith(
+    final textStyle = context.textTheme.bodyLarge?.copyWith(
       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      color: isSelected ? theme.colorScheme.onSurface : theme.colorScheme.onSurfaceVariant,
+      color: isSelected ? context.colorScheme.onSurface : context.colorScheme.onSurfaceVariant,
     );
 
     return Expanded(
@@ -150,7 +153,7 @@ class _AlertsTabButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(color: isSelected ? theme.colorScheme.primary : Colors.transparent, width: 2),
+              bottom: BorderSide(color: isSelected ? context.colorScheme.primary : Colors.transparent, width: 2),
             ),
           ),
           child: Row(
@@ -164,12 +167,15 @@ class _AlertsTabButton extends StatelessWidget {
                   key: ValueKey('alerts-tab-unread-${tab.name}'),
                   constraints: const BoxConstraints(minWidth: 18),
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(
+                    color: context.colorScheme.primary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Text(
                     unreadCount > 99 ? '99+' : unreadCount.toString(),
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onPrimary,
+                    style: context.textTheme.labelSmall?.copyWith(
+                      color: context.colorScheme.onPrimary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -183,14 +189,8 @@ class _AlertsTabButton extends StatelessWidget {
   }
 
   void _navigateToTab(BuildContext context) {
-    final target = switch (tab) {
-      AlertsTab.notifications => '/alerts',
-      AlertsTab.messages => '/alerts/messages',
-      AlertsTab.requests => '/alerts/requests',
-    };
-
-    if (GoRouterState.of(context).uri.path != target) {
-      context.go(target);
+    if (GoRouterState.of(context).uri.path != tab.target) {
+      context.go(tab.target);
     }
   }
 }
