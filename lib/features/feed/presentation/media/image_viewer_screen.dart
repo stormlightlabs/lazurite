@@ -5,6 +5,11 @@ import 'package:lazurite/features/feed/presentation/media/image_viewer_route_arg
 import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 
+/// Full-screen, zoomable gallery for one or more images in a post embed.
+///
+/// The screen assumes [args] have already been validated by the router. It owns
+/// viewer-only interaction state such as the current page, swipe-to-dismiss
+/// offset, and download progress.
 class ImageViewerScreen extends StatefulWidget {
   const ImageViewerScreen({super.key, required this.args});
 
@@ -14,6 +19,10 @@ class ImageViewerScreen extends StatefulWidget {
   State<ImageViewerScreen> createState() => _ImageViewerScreenState();
 }
 
+/// Runtime state for the image viewer overlay.
+///
+/// Keeps the selected image index in sync with the page view and handles the
+/// lightweight vertical drag gesture used to dismiss the viewer.
 class _ImageViewerScreenState extends State<ImageViewerScreen> {
   late final PageController _pageController;
   late int _currentIndex;

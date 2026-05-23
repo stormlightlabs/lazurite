@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,6 +15,8 @@ import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/data/link_preview_service.dart';
+import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
+import 'package:lazurite/features/compose/presentation/widgets/compose_alt_text_dialog.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
@@ -25,7 +26,7 @@ import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/external_link_preview_card.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
-import 'package:video_player/video_player.dart';
+import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
 
 const int _composerMinTextAreaLines = 2;
 
@@ -49,6 +50,23 @@ class ComposeScreen extends StatefulWidget {
     this.typeaheadRepository,
     this.linkPreviewService,
   });
+
+  factory ComposeScreen.fromArgs(ComposeRouteArgs args) => ComposeScreen(
+    replyParentUri: args.replyParentUri,
+    replyParentCid: args.replyParentCid,
+    replyRootUri: args.replyRootUri,
+    replyRootCid: args.replyRootCid,
+    replyAuthorHandle: args.replyAuthorHandle,
+    quoteUri: args.quoteUri,
+    quoteCid: args.quoteCid,
+    quoteAuthorHandle: args.quoteAuthorHandle,
+    quoteText: args.quoteText,
+    draftId: args.draftId,
+    initialText: args.initialText,
+    editPostUri: args.editPostUri,
+    editPostCid: args.editPostCid,
+    editRecord: args.editRecord,
+  );
 
   final String? replyParentUri;
   final String? replyParentCid;
@@ -168,6 +186,475 @@ class _ComposeScreenState extends State<ComposeScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _syncComposerAvatarFuture();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<ComposeBloc, ComposeState>(
+      listener: (context, state) {
+        if (state.text != _textController.text) {
+          _textController.text = state.text;
+          _textController.selection = TextSelection.collapsed(offset: state.text.length);
+        }
+
+        if (state.isSuccess) {
+          if (state.isEditing) {
+            showAppSnackBar(context, context.l10n.messageChangesSaved, behavior: SnackBarBehavior.floating);
+          }
+          Navigator.of(context).pop(
+            state.isEditing
+                ? {'editedText': state.text}
+                : {
+                    'status': state.hasScheduledTime ? 'scheduled' : 'posted',
+                    'isReply': state.isReply,
+                    'replyParentUri': state.replyParentUri,
+                    'replyRootUri': state.replyRootUri,
+                  },
+          );
+        }
+
+        if (state.hasError && state.errorMessage != null) {
+          showAppSnackBar(
+            context,
+            _localizedComposeError(context, state.errorMessage!),
+            behavior: SnackBarBehavior.floating,
+            isError: true,
+          );
+        }
+      },
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (bool didPop, dynamic result) {
+          if (didPop) return;
+          _handleBackNavigation(context);
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            backgroundColor: context.colorScheme.surface,
+            surfaceTintColor: Colors.transparent,
+            shape: Border(bottom: BorderSide(color: context.colorScheme.outlineVariant)),
+            leading: TextButton(
+              onPressed: () => _handleBackNavigation(context),
+              child: Text(context.l10n.buttonCancel),
+            ),
+            leadingWidth: 80,
+            title: BlocBuilder<ComposeBloc, ComposeState>(
+              builder: (context, state) => Text(
+                state.isEditing ? context.l10n.labelEditPost : context.l10n.labelNewPost,
+                style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            centerTitle: true,
+            actions: [
+              BlocBuilder<ComposeBloc, ComposeState>(
+                builder: (context, state) {
+                  final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
+                  final button = FilledButton(
+                    onPressed: !isOffline && state.canSubmit && !state.isSubmitting ? _submitPost : null,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(64, 36),
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    child: state.isSubmitting
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : Text(state.isEditing ? context.l10n.buttonSaveChanges : context.l10n.buttonPost),
+                  );
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: isOffline
+                        ? Tooltip(
+                            message: context.l10n.formatOfflineReconnectAction(context.l10n.actionPublishYourPost),
+                            child: button,
+                          )
+                        : button,
+                  );
+                },
+              ),
+            ],
+          ),
+          body: SafeArea(
+            child: Column(
+              children: [
+                BlocBuilder<ComposeBloc, ComposeState>(
+                  builder: (context, state) {
+                    if (state.isEditing) {
+                      return Container(
+                        margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: context.colorScheme.surfaceContainerHighest,
+                          border: Border.all(color: context.colorScheme.outlineVariant),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.info_outline, color: context.colorScheme.onSurfaceVariant, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                context.l10n.messageComposeEditNotice,
+                                style: context.textTheme.bodySmall?.copyWith(
+                                  color: context.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: _showEditAlgorithmInfo,
+                              icon: const Icon(Icons.help_outline),
+                              tooltip: context.l10n.labelMoreInfo,
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    if (!state.isReply || widget.replyAuthorHandle == null) {
+                      return _buildQuotePreview(state);
+                    }
+                    return Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: context.colorScheme.surfaceContainerHighest,
+                            border: Border(bottom: BorderSide(color: context.theme.dividerColor)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.reply, size: 16, color: context.colorScheme.onSurfaceVariant),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text.rich(
+                                  TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: '${context.l10n.messageReplyingTo} ',
+                                        style: context.textTheme.bodySmall?.copyWith(
+                                          color: context.colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: '@${widget.replyAuthorHandle}',
+                                        style: context.textTheme.bodySmall?.copyWith(
+                                          color: context.colorScheme.primary,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        _buildQuotePreview(state),
+                      ],
+                    );
+                  },
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    child: Column(
+                      children: [
+                        _buildComposerTextArea(),
+                        _buildMentionAutocompletePanel(),
+                        BlocBuilder<ComposeBloc, ComposeState>(
+                          builder: (context, state) => _buildComposerLinkPreview(state),
+                        ),
+                        if (_isLoadingLinkPreview)
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: 8),
+                            child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                          ),
+                        BlocBuilder<ComposeBloc, ComposeState>(builder: (context, state) => _buildScheduledPill(state)),
+
+                        BlocBuilder<ComposeBloc, ComposeState>(
+                          builder: (context, state) {
+                            if (state.isEditing) {
+                              return const SizedBox.shrink();
+                            }
+                            if (state.mediaAttachments.isEmpty) return const SizedBox.shrink();
+
+                            return Padding(
+                              padding: const EdgeInsets.fromLTRB(68, 0, 16, 16),
+                              child: GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: state.mediaAttachments.length,
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  mainAxisSpacing: 8,
+                                  crossAxisSpacing: 8,
+                                  childAspectRatio: 4 / 3,
+                                ),
+                                itemBuilder: (context, index) {
+                                  final attachment = state.mediaAttachments[index];
+                                  return Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      Positioned.fill(
+                                        child: DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            color: context.colorScheme.surfaceContainerLow,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: const SizedBox.expand(),
+                                        ),
+                                      ),
+                                      Positioned.fill(
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: Image.file(File(attachment.localPath), fit: BoxFit.cover),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        left: 6,
+                                        bottom: 6,
+                                        child: Material(
+                                          color: attachment.altText.isNotEmpty
+                                              ? context.colorScheme.primary
+                                              : Colors.black54,
+                                          borderRadius: BorderRadius.circular(4),
+                                          child: InkWell(
+                                            borderRadius: BorderRadius.circular(4),
+                                            onTap: () => _showAltTextDialog(index, attachment),
+                                            child: ConstrainedBox(
+                                              constraints: const BoxConstraints(minWidth: 40, minHeight: 30),
+                                              child: Center(
+                                                child: Text(
+                                                  context.l10n.labelAlt,
+                                                  style: context.textTheme.labelSmall?.copyWith(
+                                                    color: attachment.altText.isNotEmpty
+                                                        ? context.colorScheme.onPrimary
+                                                        : Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        top: 6,
+                                        right: 6,
+                                        child: SizedBox(
+                                          width: 32,
+                                          height: 32,
+                                          child: IconButton(
+                                            padding: EdgeInsets.zero,
+                                            style: IconButton.styleFrom(backgroundColor: Colors.black54),
+                                            onPressed: () => context.read<ComposeBloc>().add(MediaRemoved(index)),
+                                            icon: const Icon(Icons.close, size: 16, color: Colors.white),
+                                            tooltip: context.l10n.messageComposeRemoveImage,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                        BlocBuilder<ComposeBloc, ComposeState>(
+                          builder: (context, state) {
+                            if (state.isEditing) {
+                              return const SizedBox.shrink();
+                            }
+                            final video = state.videoAttachment;
+                            if (video == null) return const SizedBox.shrink();
+
+                            return Container(
+                              margin: const EdgeInsets.fromLTRB(68, 0, 16, 16),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: context.colorScheme.surfaceContainerLow,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: video.hasError ? context.colorScheme.error : context.theme.dividerColor,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      color: context.colorScheme.primaryContainer,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: video.isActive
+                                        ? Padding(
+                                            padding: const EdgeInsets.all(12),
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              value: video.isActive && video.uploadProgress > 0
+                                                  ? video.uploadProgress / 100
+                                                  : null,
+                                            ),
+                                          )
+                                        : Icon(
+                                            video.hasError ? Icons.error_outline : Icons.videocam_outlined,
+                                            color: video.hasError
+                                                ? context.colorScheme.error
+                                                : context.colorScheme.onPrimaryContainer,
+                                          ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          video.localPath.split('/').last,
+                                          style: context.textTheme.bodyMedium,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _videoStatusLabel(context, video),
+                                          style: context.textTheme.bodySmall?.copyWith(
+                                            color: video.hasError
+                                                ? context.colorScheme.error
+                                                : context.colorScheme.onSurfaceVariant,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        if (video.isActive && video.uploadProgress > 0) ...[
+                                          const SizedBox(height: 4),
+                                          LinearProgressIndicator(
+                                            value: video.uploadProgress / 100,
+                                            borderRadius: BorderRadius.circular(2),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  if (video.isReady) ...[
+                                    IconButton(
+                                      icon: const Icon(Icons.subtitles_outlined),
+                                      tooltip: context.l10n.messageComposeAddAltText,
+                                      onPressed: () => _showVideoAltTextDialog(video),
+                                      color: video.altText.isNotEmpty
+                                          ? context.colorScheme.primary
+                                          : context.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ],
+                                  IconButton(
+                                    icon: const Icon(Icons.close),
+                                    onPressed: () => context.read<ComposeBloc>().add(const VideoRemoved()),
+                                    color: context.colorScheme.onSurfaceVariant,
+                                    tooltip: context.l10n.buttonRemove,
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                        AnimatedSize(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeInOut,
+                          child: context.select<ComposeBloc, bool>((bloc) => bloc.state.isEditing)
+                              ? const SizedBox.shrink()
+                              : (_showDrafts ? _buildDraftsPanel() : const SizedBox.shrink()),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: context.colorScheme.surface,
+                    border: Border(top: BorderSide(color: context.colorScheme.outlineVariant)),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: SafeArea(
+                    top: false,
+                    child: Row(
+                      children: [
+                        BlocBuilder<ComposeBloc, ComposeState>(
+                          builder: (context, state) {
+                            if (state.isEditing) return const SizedBox.shrink();
+                            return _buildToolbarIconButton(
+                              icon: Icons.image_outlined,
+                              tooltip: context.l10n.messageComposeAddImage,
+                              onPressed: state.canAddMoreMedia ? _pickImage : null,
+                            );
+                          },
+                        ),
+                        BlocBuilder<ComposeBloc, ComposeState>(
+                          builder: (context, state) {
+                            if (state.isEditing) return const SizedBox.shrink();
+                            return _buildToolbarIconButton(
+                              icon: Icons.videocam_outlined,
+                              tooltip: context.l10n.messageComposeAddVideo,
+                              onPressed: state.canAddVideo ? _pickVideo : null,
+                            );
+                          },
+                        ),
+                        BlocBuilder<ComposeBloc, ComposeState>(
+                          builder: (context, state) {
+                            if (state.isEditing) return const SizedBox.shrink();
+                            final hasDraftableContent =
+                                state.text.trim().isNotEmpty ||
+                                state.hasMedia ||
+                                state.hasVideo ||
+                                state.hasScheduledTime;
+                            return _buildToolbarIconButton(
+                              icon: Icons.save_outlined,
+                              tooltip: context.l10n.messageComposeSaveDraft,
+                              onPressed: hasDraftableContent ? _saveDraft : null,
+                            );
+                          },
+                        ),
+                        BlocBuilder<ComposeBloc, ComposeState>(
+                          builder: (context, state) {
+                            if (state.isEditing) return const SizedBox.shrink();
+                            return _buildToolbarIconButton(
+                              icon: Icons.drive_file_rename_outline,
+                              tooltip: context.l10n.messageComposeDrafts,
+                              onPressed: _toggleDrafts,
+                              isActive: _showDrafts,
+                            );
+                          },
+                        ),
+                        BlocBuilder<ComposeBloc, ComposeState>(
+                          builder: (context, state) {
+                            if (state.isEditing) return const SizedBox.shrink();
+                            return _buildToolbarIconButton(
+                              icon: Icons.schedule,
+                              tooltip: context.l10n.labelSchedule,
+                              onPressed: _showSchedulePicker,
+                              isActive: state.hasScheduledTime,
+                            );
+                          },
+                        ),
+                        const Spacer(),
+                        BlocBuilder<ComposeBloc, ComposeState>(
+                          builder: (context, state) {
+                            return _CharCounter(count: state.graphemeCount, maxCount: kMaxGraphemes);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _syncComposerAvatarFuture() {
@@ -484,7 +971,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
   Future<void> _showVideoAltTextDialog(VideoAttachment video) async {
     final result = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => _VideoAltTextDialog(
+      builder: (dialogContext) => VideoAltTextDialog(
         video: video,
         onCancel: () => Navigator.pop(dialogContext),
         onSave: (altText) => Navigator.pop(dialogContext, altText),
@@ -499,7 +986,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
   Future<void> _showAltTextDialog(int index, MediaAttachment attachment) async {
     final result = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => _ImageAltTextDialog(
+      builder: (dialogContext) => ImageAltTextDialog(
         imagePath: attachment.localPath,
         initialAltText: attachment.altText,
         onCancel: () => Navigator.pop(dialogContext),
@@ -582,25 +1069,24 @@ class _ComposeScreenState extends State<ComposeScreen> {
   Widget _buildDraftsPanel() {
     return BlocBuilder<ComposeBloc, ComposeState>(
       builder: (context, state) {
-        final colorScheme = theme.colorScheme;
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               height: 8,
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerLow,
+                color: context.colorScheme.surfaceContainerLow,
                 border: Border(
-                  top: BorderSide(color: colorScheme.outlineVariant),
-                  bottom: BorderSide(color: colorScheme.outlineVariant),
+                  top: BorderSide(color: context.colorScheme.outlineVariant),
+                  bottom: BorderSide(color: context.colorScheme.outlineVariant),
                 ),
               ),
             ),
             Container(
               constraints: const BoxConstraints(maxHeight: 292),
               decoration: BoxDecoration(
-                color: colorScheme.surface,
-                border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+                color: context.colorScheme.surface,
+                border: Border(bottom: BorderSide(color: context.colorScheme.outlineVariant)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -612,11 +1098,11 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       children: [
                         Text(
                           context.l10n.messageComposeDrafts,
-                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                          style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         Text(
                           context.l10n.formatDraftCount(state.drafts.length),
-                          style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                          style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -632,7 +1118,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       child: Center(
                         child: Text(
                           context.l10n.messageComposeNoDraftsSaved,
-                          style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                          style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant),
                         ),
                       ),
                     )
@@ -641,7 +1127,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       child: ListView.separated(
                         shrinkWrap: true,
                         itemCount: state.drafts.length,
-                        separatorBuilder: (_, _) => Divider(height: 1, color: colorScheme.outlineVariant),
+                        separatorBuilder: (_, _) => Divider(height: 1, color: context.colorScheme.outlineVariant),
                         itemBuilder: (context, index) {
                           final draft = state.drafts[index];
                           return _DraftListItem(
@@ -689,9 +1175,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
+        color: context.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
+        border: Border.all(color: context.colorScheme.outlineVariant),
       ),
       constraints: const BoxConstraints(maxHeight: 220),
       child: _isSearchingMentions
@@ -702,7 +1188,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
           : ListView.separated(
               shrinkWrap: true,
               itemCount: _mentionSuggestions.length,
-              separatorBuilder: (_, _) => Divider(height: 1, color: theme.colorScheme.outlineVariant),
+              separatorBuilder: (_, _) => Divider(height: 1, color: context.colorScheme.outlineVariant),
               itemBuilder: (context, index) {
                 final actor = _mentionSuggestions[index];
                 return ListTile(
@@ -718,9 +1204,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     actor.displayName ?? actor.handle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium,
+                    style: context.textTheme.bodyMedium,
                   ),
-                  subtitle: Text('@${actor.handle}', style: theme.textTheme.bodySmall),
+                  subtitle: Text('@${actor.handle}', style: context.textTheme.bodySmall),
                   onTap: () => _applyMention(actor),
                 );
               },
@@ -740,14 +1226,14 @@ class _ComposeScreenState extends State<ComposeScreen> {
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
+        color: context.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
+        border: Border.all(color: context.colorScheme.outlineVariant),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.format_quote, size: 18, color: theme.colorScheme.onSurfaceVariant),
+          Icon(Icons.format_quote, size: 18, color: context.colorScheme.onSurfaceVariant),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -757,7 +1243,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                   quotedHandle != null && quotedHandle.isNotEmpty
                       ? context.l10n.formatComposeQuotingHandle(quotedHandle)
                       : context.l10n.messageComposeQuotingPost,
-                  style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+                  style: context.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 if (quotedText.isNotEmpty) ...[
                   const SizedBox(height: 4),
@@ -765,7 +1251,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     quotedText,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                   ),
                 ],
               ],
@@ -804,8 +1290,6 @@ class _ComposeScreenState extends State<ComposeScreen> {
       ),
     );
   }
-
-  ThemeData get theme => Theme.of(context);
 
   void _submitPost() {
     context.read<ComposeBloc>().add(PostSubmitted(suppressedLinkUri: _hiddenPreviewUrl));
@@ -901,9 +1385,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
       size: 40,
       imageUrl: null,
       fallbackText: _composerAvatarFallbackText(),
-      backgroundColor: theme.colorScheme.surfaceContainerHighest,
-      placeholderTextStyle: theme.textTheme.labelMedium?.copyWith(
-        color: theme.colorScheme.onSurface,
+      backgroundColor: context.colorScheme.surfaceContainerHighest,
+      placeholderTextStyle: context.textTheme.labelMedium?.copyWith(
+        color: context.colorScheme.onSurface,
         fontWeight: FontWeight.w700,
       ),
     );
@@ -921,9 +1405,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
           size: 40,
           imageUrl: snapshot.data,
           fallbackText: _composerAvatarFallbackText(),
-          backgroundColor: theme.colorScheme.surfaceContainerHighest,
-          placeholderTextStyle: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSurface,
+          backgroundColor: context.colorScheme.surfaceContainerHighest,
+          placeholderTextStyle: context.textTheme.labelMedium?.copyWith(
+            color: context.colorScheme.onSurface,
             fontWeight: FontWeight.w700,
           ),
         );
@@ -951,11 +1435,11 @@ class _ComposeScreenState extends State<ComposeScreen> {
             scrollPadding: const EdgeInsets.only(bottom: 96),
             decoration: InputDecoration(
               hintText: context.l10n.messageComposePlaceholder,
-              hintStyle: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              hintStyle: context.textTheme.bodyLarge?.copyWith(color: context.colorScheme.onSurfaceVariant),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.fromLTRB(4, 4, 4, 10),
             ),
-            style: theme.textTheme.bodyLarge?.copyWith(height: 1.5, fontSize: 16),
+            style: context.textTheme.bodyLarge?.copyWith(height: 1.5, fontSize: 16),
           ),
         ),
       ],
@@ -967,32 +1451,34 @@ class _ComposeScreenState extends State<ComposeScreen> {
       return const SizedBox.shrink();
     }
 
-    final colorScheme = theme.colorScheme;
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.fromLTRB(68, 4, 16, 12),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: colorScheme.primary,
+          color: context.colorScheme.primary,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: colorScheme.primary),
+          border: Border.all(color: context.colorScheme.primary),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.schedule, size: 15, color: colorScheme.onPrimary),
+            Icon(Icons.schedule, size: 15, color: context.colorScheme.onPrimary),
             const SizedBox(width: 7),
             Text(
               context.l10n.formatComposeScheduledFor(
                 DateFormat.yMMMd(Localizations.localeOf(context).toString()).add_jm().format(state.scheduledAt!),
               ),
-              style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onPrimary, fontWeight: FontWeight.w600),
+              style: context.textTheme.bodySmall?.copyWith(
+                color: context.colorScheme.onPrimary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(width: 2),
             IconButton(
               onPressed: () => context.read<ComposeBloc>().add(const ScheduleCleared()),
-              icon: Icon(Icons.close, size: 16, color: colorScheme.onPrimary),
+              icon: Icon(Icons.close, size: 16, color: context.colorScheme.onPrimary),
               tooltip: context.l10n.messageComposeClearScheduledTime,
               constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
               padding: EdgeInsets.zero,
@@ -1014,10 +1500,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
     required VoidCallback? onPressed,
     bool isActive = false,
   }) {
-    final colorScheme = theme.colorScheme;
     final foregroundColor = onPressed == null
-        ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
-        : colorScheme.primary;
+        ? context.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
+        : context.colorScheme.primary;
 
     return IconButton(
       onPressed: onPressed,
@@ -1031,475 +1516,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
         minimumSize: const Size(40, 40),
         padding: EdgeInsets.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        backgroundColor: isActive ? colorScheme.surfaceContainerLow : Colors.transparent,
+        backgroundColor: isActive ? context.colorScheme.surfaceContainerLow : Colors.transparent,
         shape: const CircleBorder(),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocListener<ComposeBloc, ComposeState>(
-      listener: (context, state) {
-        if (state.text != _textController.text) {
-          _textController.text = state.text;
-          _textController.selection = TextSelection.collapsed(offset: state.text.length);
-        }
-
-        if (state.isSuccess) {
-          if (state.isEditing) {
-            showAppSnackBar(context, context.l10n.messageChangesSaved, behavior: SnackBarBehavior.floating);
-          }
-          Navigator.of(context).pop(
-            state.isEditing
-                ? {'editedText': state.text}
-                : {
-                    'status': state.hasScheduledTime ? 'scheduled' : 'posted',
-                    'isReply': state.isReply,
-                    'replyParentUri': state.replyParentUri,
-                    'replyRootUri': state.replyRootUri,
-                  },
-          );
-        }
-
-        if (state.hasError && state.errorMessage != null) {
-          showAppSnackBar(
-            context,
-            _localizedComposeError(context, state.errorMessage!),
-            behavior: SnackBarBehavior.floating,
-            isError: true,
-          );
-        }
-      },
-      child: PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (bool didPop, dynamic result) {
-          if (didPop) return;
-          _handleBackNavigation(context);
-        },
-        child: Scaffold(
-          appBar: AppBar(
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            backgroundColor: theme.colorScheme.surface,
-            surfaceTintColor: Colors.transparent,
-            shape: Border(bottom: BorderSide(color: theme.colorScheme.outlineVariant)),
-            leading: TextButton(
-              onPressed: () => _handleBackNavigation(context),
-              child: Text(context.l10n.buttonCancel),
-            ),
-            leadingWidth: 80,
-            title: BlocBuilder<ComposeBloc, ComposeState>(
-              builder: (context, state) => Text(
-                state.isEditing ? context.l10n.labelEditPost : context.l10n.labelNewPost,
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ),
-            centerTitle: true,
-            actions: [
-              BlocBuilder<ComposeBloc, ComposeState>(
-                builder: (context, state) {
-                  final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
-                  final button = FilledButton(
-                    onPressed: !isOffline && state.canSubmit && !state.isSubmitting ? _submitPost : null,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(64, 36),
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    child: state.isSubmitting
-                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                        : Text(state.isEditing ? context.l10n.buttonSaveChanges : context.l10n.buttonPost),
-                  );
-
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: isOffline
-                        ? Tooltip(
-                            message: context.l10n.formatOfflineReconnectAction(context.l10n.actionPublishYourPost),
-                            child: button,
-                          )
-                        : button,
-                  );
-                },
-              ),
-            ],
-          ),
-          body: SafeArea(
-            child: Column(
-              children: [
-                BlocBuilder<ComposeBloc, ComposeState>(
-                  builder: (context, state) {
-                    if (state.isEditing) {
-                      return Container(
-                        margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          border: Border.all(color: theme.colorScheme.outlineVariant),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(Icons.info_outline, color: theme.colorScheme.onSurfaceVariant, size: 20),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                context.l10n.messageComposeEditNotice,
-                                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: _showEditAlgorithmInfo,
-                              icon: const Icon(Icons.help_outline),
-                              tooltip: context.l10n.labelMoreInfo,
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-
-                    if (!state.isReply || widget.replyAuthorHandle == null) {
-                      return _buildQuotePreview(state);
-                    }
-                    return Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            border: Border(bottom: BorderSide(color: theme.dividerColor)),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.reply, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text.rich(
-                                  TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: '${context.l10n.messageReplyingTo} ',
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: theme.colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                      TextSpan(
-                                        text: '@${widget.replyAuthorHandle}',
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: theme.colorScheme.primary,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        _buildQuotePreview(state),
-                      ],
-                    );
-                  },
-                ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                    child: Column(
-                      children: [
-                        _buildComposerTextArea(),
-                        _buildMentionAutocompletePanel(),
-                        BlocBuilder<ComposeBloc, ComposeState>(
-                          builder: (context, state) => _buildComposerLinkPreview(state),
-                        ),
-                        if (_isLoadingLinkPreview)
-                          const Padding(
-                            padding: EdgeInsets.only(bottom: 8),
-                            child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
-                          ),
-                        BlocBuilder<ComposeBloc, ComposeState>(builder: (context, state) => _buildScheduledPill(state)),
-
-                        BlocBuilder<ComposeBloc, ComposeState>(
-                          builder: (context, state) {
-                            if (state.isEditing) {
-                              return const SizedBox.shrink();
-                            }
-                            if (state.mediaAttachments.isEmpty) return const SizedBox.shrink();
-
-                            return Padding(
-                              padding: const EdgeInsets.fromLTRB(68, 0, 16, 16),
-                              child: GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: state.mediaAttachments.length,
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  mainAxisSpacing: 8,
-                                  crossAxisSpacing: 8,
-                                  childAspectRatio: 4 / 3,
-                                ),
-                                itemBuilder: (context, index) {
-                                  final attachment = state.mediaAttachments[index];
-                                  return Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      Positioned.fill(
-                                        child: DecoratedBox(
-                                          decoration: BoxDecoration(
-                                            color: theme.colorScheme.surfaceContainerLow,
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: const SizedBox.expand(),
-                                        ),
-                                      ),
-                                      Positioned.fill(
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(12),
-                                          child: Image.file(File(attachment.localPath), fit: BoxFit.cover),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        left: 6,
-                                        bottom: 6,
-                                        child: Material(
-                                          color: attachment.altText.isNotEmpty
-                                              ? theme.colorScheme.primary
-                                              : Colors.black54,
-                                          borderRadius: BorderRadius.circular(4),
-                                          child: InkWell(
-                                            borderRadius: BorderRadius.circular(4),
-                                            onTap: () => _showAltTextDialog(index, attachment),
-                                            child: ConstrainedBox(
-                                              constraints: const BoxConstraints(minWidth: 40, minHeight: 30),
-                                              child: Center(
-                                                child: Text(
-                                                  context.l10n.labelAlt,
-                                                  style: theme.textTheme.labelSmall?.copyWith(
-                                                    color: attachment.altText.isNotEmpty
-                                                        ? theme.colorScheme.onPrimary
-                                                        : Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: 6,
-                                        right: 6,
-                                        child: SizedBox(
-                                          width: 32,
-                                          height: 32,
-                                          child: IconButton(
-                                            padding: EdgeInsets.zero,
-                                            style: IconButton.styleFrom(backgroundColor: Colors.black54),
-                                            onPressed: () => context.read<ComposeBloc>().add(MediaRemoved(index)),
-                                            icon: const Icon(Icons.close, size: 16, color: Colors.white),
-                                            tooltip: context.l10n.messageComposeRemoveImage,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                        BlocBuilder<ComposeBloc, ComposeState>(
-                          builder: (context, state) {
-                            if (state.isEditing) {
-                              return const SizedBox.shrink();
-                            }
-                            final video = state.videoAttachment;
-                            if (video == null) return const SizedBox.shrink();
-
-                            return Container(
-                              margin: const EdgeInsets.fromLTRB(68, 0, 16, 16),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerLow,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: video.hasError ? theme.colorScheme.error : theme.dividerColor,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      color: theme.colorScheme.primaryContainer,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: video.isActive
-                                        ? Padding(
-                                            padding: const EdgeInsets.all(12),
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              value: video.isActive && video.uploadProgress > 0
-                                                  ? video.uploadProgress / 100
-                                                  : null,
-                                            ),
-                                          )
-                                        : Icon(
-                                            video.hasError ? Icons.error_outline : Icons.videocam_outlined,
-                                            color: video.hasError
-                                                ? theme.colorScheme.error
-                                                : theme.colorScheme.onPrimaryContainer,
-                                          ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          video.localPath.split('/').last,
-                                          style: theme.textTheme.bodyMedium,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          _videoStatusLabel(context, video),
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            color: video.hasError
-                                                ? theme.colorScheme.error
-                                                : theme.colorScheme.onSurfaceVariant,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        if (video.isActive && video.uploadProgress > 0) ...[
-                                          const SizedBox(height: 4),
-                                          LinearProgressIndicator(
-                                            value: video.uploadProgress / 100,
-                                            borderRadius: BorderRadius.circular(2),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                  if (video.isReady) ...[
-                                    IconButton(
-                                      icon: const Icon(Icons.subtitles_outlined),
-                                      tooltip: context.l10n.messageComposeAddAltText,
-                                      onPressed: () => _showVideoAltTextDialog(video),
-                                      color: video.altText.isNotEmpty
-                                          ? theme.colorScheme.primary
-                                          : theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ],
-                                  IconButton(
-                                    icon: const Icon(Icons.close),
-                                    onPressed: () => context.read<ComposeBloc>().add(const VideoRemoved()),
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                    tooltip: context.l10n.buttonRemove,
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                        AnimatedSize(
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeInOut,
-                          child: context.select<ComposeBloc, bool>((bloc) => bloc.state.isEditing)
-                              ? const SizedBox.shrink()
-                              : (_showDrafts ? _buildDraftsPanel() : const SizedBox.shrink()),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                    border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: SafeArea(
-                    top: false,
-                    child: Row(
-                      children: [
-                        BlocBuilder<ComposeBloc, ComposeState>(
-                          builder: (context, state) {
-                            if (state.isEditing) return const SizedBox.shrink();
-                            return _buildToolbarIconButton(
-                              icon: Icons.image_outlined,
-                              tooltip: context.l10n.messageComposeAddImage,
-                              onPressed: state.canAddMoreMedia ? _pickImage : null,
-                            );
-                          },
-                        ),
-                        BlocBuilder<ComposeBloc, ComposeState>(
-                          builder: (context, state) {
-                            if (state.isEditing) return const SizedBox.shrink();
-                            return _buildToolbarIconButton(
-                              icon: Icons.videocam_outlined,
-                              tooltip: context.l10n.messageComposeAddVideo,
-                              onPressed: state.canAddVideo ? _pickVideo : null,
-                            );
-                          },
-                        ),
-                        BlocBuilder<ComposeBloc, ComposeState>(
-                          builder: (context, state) {
-                            if (state.isEditing) return const SizedBox.shrink();
-                            final hasDraftableContent =
-                                state.text.trim().isNotEmpty ||
-                                state.hasMedia ||
-                                state.hasVideo ||
-                                state.hasScheduledTime;
-                            return _buildToolbarIconButton(
-                              icon: Icons.save_outlined,
-                              tooltip: context.l10n.messageComposeSaveDraft,
-                              onPressed: hasDraftableContent ? _saveDraft : null,
-                            );
-                          },
-                        ),
-                        BlocBuilder<ComposeBloc, ComposeState>(
-                          builder: (context, state) {
-                            if (state.isEditing) return const SizedBox.shrink();
-                            return _buildToolbarIconButton(
-                              icon: Icons.drive_file_rename_outline,
-                              tooltip: context.l10n.messageComposeDrafts,
-                              onPressed: _toggleDrafts,
-                              isActive: _showDrafts,
-                            );
-                          },
-                        ),
-                        BlocBuilder<ComposeBloc, ComposeState>(
-                          builder: (context, state) {
-                            if (state.isEditing) return const SizedBox.shrink();
-                            return _buildToolbarIconButton(
-                              icon: Icons.schedule,
-                              tooltip: context.l10n.labelSchedule,
-                              onPressed: _showSchedulePicker,
-                              isActive: state.hasScheduledTime,
-                            );
-                          },
-                        ),
-                        const Spacer(),
-                        BlocBuilder<ComposeBloc, ComposeState>(
-                          builder: (context, state) {
-                            return _CharCounter(count: state.graphemeCount, maxCount: kMaxGraphemes);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -1564,9 +1582,6 @@ class _DraftListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -1582,24 +1597,27 @@ class _DraftListItem extends StatelessWidget {
                     draft.content.isEmpty ? context.l10n.messageComposeNoText : draft.content,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.35),
+                    style: context.textTheme.bodyMedium?.copyWith(height: 1.35),
                   ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
                       Text(
                         formattedTime,
-                        style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                        style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                       ),
                       if (draft.scheduledAt != null) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(color: colorScheme.primary, borderRadius: BorderRadius.circular(4)),
+                          decoration: BoxDecoration(
+                            color: context.colorScheme.primary,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                           child: Text(
                             context.l10n.labelScheduled,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: colorScheme.onPrimary,
+                            style: context.textTheme.labelSmall?.copyWith(
+                              color: context.colorScheme.onPrimary,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -1611,7 +1629,7 @@ class _DraftListItem extends StatelessWidget {
               ),
             ),
             IconButton(
-              icon: Icon(Icons.delete_outline, color: colorScheme.error),
+              icon: Icon(Icons.delete_outline, color: context.colorScheme.error),
               onPressed: onDelete,
               tooltip: context.l10n.labelDeleteDraft,
               visualDensity: VisualDensity.compact,
@@ -1637,7 +1655,6 @@ class _FacetHighlightController extends TextEditingController {
     final entities = BlueskyText(text).entities.where((e) => e.type != EntityType.markdownLink).toList();
     if (entities.isEmpty) return TextSpan(style: style, text: text);
 
-    final colorScheme = context.colorScheme;
     final textBytes = utf8.encode(text);
     final spans = <InlineSpan>[];
     int lastCharEnd = 0;
@@ -1654,11 +1671,11 @@ class _FacetHighlightController extends TextEditingController {
 
       final Color entityColor;
       if (entity.isHandle) {
-        entityColor = colorScheme.primary;
+        entityColor = context.colorScheme.primary;
       } else if (entity.isLink) {
-        entityColor = colorScheme.tertiary;
+        entityColor = context.colorScheme.tertiary;
       } else {
-        entityColor = colorScheme.secondary;
+        entityColor = context.colorScheme.secondary;
       }
 
       spans.add(
@@ -1685,385 +1702,6 @@ class _FacetHighlightController extends TextEditingController {
   }
 }
 
-class _ImageAltTextDialog extends StatefulWidget {
-  const _ImageAltTextDialog({
-    required this.imagePath,
-    required this.initialAltText,
-    required this.onCancel,
-    required this.onSave,
-  });
-
-  final String imagePath;
-  final String initialAltText;
-  final VoidCallback onCancel;
-  final ValueChanged<String> onSave;
-
-  @override
-  State<_ImageAltTextDialog> createState() => _ImageAltTextDialogState();
-}
-
-class _ImageAltTextDialogState extends State<_ImageAltTextDialog> {
-  late final TextEditingController _controller = TextEditingController(text: widget.initialAltText);
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final size = MediaQuery.sizeOf(context);
-    final imageHeight = (size.height * 0.32).clamp(140.0, 280.0).toDouble();
-
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) widget.onSave(_controller.text);
-      },
-      child: Dialog(
-        clipBehavior: Clip.antiAlias,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: 560, maxHeight: size.height * 0.9),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(context.l10n.messageComposeImageAltTextTitle, style: theme.textTheme.titleLarge),
-                    ),
-                    IconButton(
-                      tooltip: context.l10n.labelClose,
-                      onPressed: () => widget.onSave(_controller.text),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  height: imageHeight,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.6)),
-                  ),
-                  child: Image.file(
-                    key: const ValueKey('alt-text-image-preview'),
-                    File(widget.imagePath),
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) =>
-                        Center(child: Icon(Icons.broken_image_outlined, size: 40, color: colorScheme.onSurfaceVariant)),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  key: const ValueKey('alt-text-field'),
-                  controller: _controller,
-                  minLines: 3,
-                  maxLines: 5,
-                  maxLength: 1000,
-                  textInputAction: TextInputAction.newline,
-                  decoration: InputDecoration(
-                    hintText: context.l10n.messageComposeDescribeImage,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(onPressed: widget.onCancel, child: Text(context.l10n.buttonCancel)),
-                    const SizedBox(width: 8),
-                    FilledButton(
-                      onPressed: () => widget.onSave(_controller.text),
-                      child: Text(context.l10n.buttonSave),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _VideoAltTextDialog extends StatefulWidget {
-  const _VideoAltTextDialog({required this.video, required this.onCancel, required this.onSave});
-
-  final VideoAttachment video;
-  final VoidCallback onCancel;
-  final ValueChanged<String> onSave;
-
-  @override
-  State<_VideoAltTextDialog> createState() => _VideoAltTextDialogState();
-}
-
-class _VideoAltTextDialogState extends State<_VideoAltTextDialog> {
-  late final TextEditingController _controller = TextEditingController(text: widget.video.altText);
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final size = MediaQuery.sizeOf(context);
-    final previewHeight = (size.height * 0.32).clamp(140.0, 280.0).toDouble();
-
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) widget.onSave(_controller.text);
-      },
-      child: Dialog(
-        clipBehavior: Clip.antiAlias,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: 560, maxHeight: size.height * 0.9),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(context.l10n.messageComposeVideoAltTextTitle, style: theme.textTheme.titleLarge),
-                    ),
-                    IconButton(
-                      tooltip: context.l10n.labelClose,
-                      onPressed: () => widget.onSave(_controller.text),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _LocalVideoPreview(videoPath: widget.video.localPath, height: previewHeight),
-                const SizedBox(height: 16),
-                TextField(
-                  key: const ValueKey('video-alt-text-field'),
-                  controller: _controller,
-                  minLines: 3,
-                  maxLines: 5,
-                  maxLength: 1000,
-                  textInputAction: TextInputAction.newline,
-                  decoration: InputDecoration(
-                    hintText: context.l10n.messageComposeDescribeVideo,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(onPressed: widget.onCancel, child: Text(context.l10n.buttonCancel)),
-                    const SizedBox(width: 8),
-                    FilledButton(
-                      onPressed: () => widget.onSave(_controller.text),
-                      child: Text(context.l10n.buttonSave),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LocalVideoPreview extends StatefulWidget {
-  const _LocalVideoPreview({required this.videoPath, required this.height});
-
-  final String videoPath;
-  final double height;
-
-  @override
-  State<_LocalVideoPreview> createState() => _LocalVideoPreviewState();
-}
-
-class _LocalVideoPreviewState extends State<_LocalVideoPreview> {
-  VideoPlayerController? _controller;
-  Object? _error;
-  bool _isInitializing = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initialize();
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final controller = _controller;
-    final filename = widget.videoPath.split('/').last;
-
-    return Container(
-      key: const ValueKey('video-alt-preview'),
-      height: widget.height,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.6)),
-      ),
-      child: GestureDetector(
-        onTap: controller != null && controller.value.isInitialized ? _togglePlayback : null,
-        child: Stack(
-          fit: StackFit.expand,
-          alignment: Alignment.center,
-          children: [
-            if (controller != null && controller.value.isInitialized)
-              FittedBox(
-                fit: BoxFit.contain,
-                child: SizedBox(
-                  width: controller.value.size.width,
-                  height: controller.value.size.height,
-                  child: VideoPlayer(controller),
-                ),
-              )
-            else
-              _VideoPreviewFallback(filename: filename, isLoading: _isInitializing, error: _error),
-            Center(
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.62), shape: BoxShape.circle),
-                child: Icon(
-                  controller?.value.isPlaying == true ? Icons.pause : Icons.play_arrow,
-                  color: Colors.white,
-                  size: 30,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _initialize() async {
-    final file = File(widget.videoPath);
-    if (!file.existsSync()) {
-      return;
-    }
-
-    setState(() {
-      _isInitializing = true;
-    });
-
-    try {
-      final controller = VideoPlayerController.file(file);
-      await controller.initialize();
-      await controller.setLooping(true);
-
-      if (!mounted) {
-        await controller.dispose();
-        return;
-      }
-
-      setState(() {
-        _controller = controller;
-        _isInitializing = false;
-      });
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _error = error;
-        _isInitializing = false;
-      });
-    }
-  }
-
-  Future<void> _togglePlayback() async {
-    final controller = _controller;
-    if (controller == null || !controller.value.isInitialized) {
-      return;
-    }
-
-    if (controller.value.isPlaying) {
-      await controller.pause();
-    } else {
-      await controller.play();
-    }
-
-    if (mounted) {
-      setState(() {});
-    }
-  }
-}
-
-class _VideoPreviewFallback extends StatelessWidget {
-  const _VideoPreviewFallback({required this.filename, required this.isLoading, required this.error});
-
-  final String filename;
-  final bool isLoading;
-  final Object? error;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isLoading)
-              const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.4))
-            else
-              Icon(Icons.videocam_outlined, size: 40, color: colorScheme.onSurfaceVariant),
-            const SizedBox(height: 10),
-            Text(
-              filename.isEmpty ? context.l10n.labelVideo : filename,
-              key: const ValueKey('video-alt-preview-filename'),
-              style: theme.textTheme.bodyMedium,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-            if (error != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                context.l10n.messageComposePreviewUnavailable,
-                style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _CharCounter extends StatelessWidget {
   const _CharCounter({required this.count, required this.maxCount});
 
@@ -2074,14 +1712,13 @@ class _CharCounter extends StatelessWidget {
   Widget build(BuildContext context) {
     final remaining = maxCount - count;
     final progress = count / maxCount;
-    final theme = Theme.of(context);
     Color color;
     if (progress < 0.8) {
-      color = theme.colorScheme.primary;
+      color = context.colorScheme.primary;
     } else if (progress < 0.95) {
-      color = theme.colorScheme.error.withValues(alpha: 0.7);
+      color = context.colorScheme.error.withValues(alpha: 0.7);
     } else {
-      color = theme.colorScheme.error;
+      color = context.colorScheme.error;
     }
 
     return Row(
@@ -2089,9 +1726,10 @@ class _CharCounter extends StatelessWidget {
       children: [
         Text(
           '$remaining',
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: color, fontFeatures: const [FontFeature.tabularFigures()]),
+          style: context.textTheme.bodySmall?.copyWith(
+            color: color,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
         ),
         const SizedBox(width: 8),
         SizedBox(
@@ -2101,7 +1739,7 @@ class _CharCounter extends StatelessWidget {
             painter: _ProgressRingPainter(
               progress: progress.clamp(0.0, 1.0),
               color: color,
-              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              backgroundColor: context.colorScheme.surfaceContainerHighest,
             ),
           ),
         ),

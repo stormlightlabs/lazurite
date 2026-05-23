@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/router/app_route_paths.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 
 /// Thin route used by custom-scheme and HTTPS app-link callbacks.
@@ -12,8 +13,8 @@ import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 class OAuthCallbackScreen extends StatefulWidget {
   const OAuthCallbackScreen({required this.callbackUri, super.key});
 
-  static const String routePath = '/oauth/callback';
-  static const String compatibilityRoutePath = '/callback';
+  static String get routePath => AppRoutePath.oauthCallback.path;
+  static String get compatibilityRoutePath => AppRoutePath.oauthCallbackCompatibility.path;
 
   final Uri callbackUri;
 

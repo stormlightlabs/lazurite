@@ -9,8 +9,13 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+/// Media categories that require gallery/storage permissions before saving.
 enum MediaAssetType { image, video }
 
+/// Share and download actions used by the full-screen media viewers and embeds.
+///
+/// This class keeps platform permission handling, temporary downloads, gallery
+/// writes, and user-facing snack bars out of the viewer widgets themselves.
 class MediaActions {
   MediaActions._();
 

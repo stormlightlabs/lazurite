@@ -9,6 +9,11 @@ import 'package:lazurite/features/feed/presentation/media/video_layout.dart';
 import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
 import 'package:video_player/video_player.dart';
 
+/// Full-screen player for a video embedded in a feed post.
+///
+/// The screen receives validated [VideoPlayerRouteArgs] from the router, then
+/// creates and owns the platform video controller and Chewie UI controller for
+/// the lifetime of the route.
 class VideoPlayerScreen extends StatefulWidget {
   const VideoPlayerScreen({super.key, required this.args});
 
@@ -18,6 +23,10 @@ class VideoPlayerScreen extends StatefulWidget {
   State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
 }
 
+/// Runtime state for video playback, initialization errors, and downloads.
+///
+/// Controller setup is asynchronous, so this state keeps the placeholder,
+/// failure UI, and playback UI mutually exclusive while initialization runs.
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
