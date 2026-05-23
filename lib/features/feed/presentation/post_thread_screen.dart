@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
@@ -16,8 +17,10 @@ import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
 import 'package:lazurite/features/feed/cubit/post_action_cubit.dart';
 import 'package:lazurite/features/feed/cubit/post_thread_cubit.dart';
 import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
+import 'package:lazurite/features/feed/cubit/similar_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
+import 'package:lazurite/features/feed/data/similar_posts_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/compact_post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_action_bar.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
@@ -25,6 +28,7 @@ import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actio
 import 'package:lazurite/features/feed/presentation/widgets/post_interactions_sheet.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_menu_actions.dart';
 import 'package:lazurite/features/feed/presentation/widgets/public_post_card.dart';
+import 'package:lazurite/features/feed/presentation/widgets/similar_posts_section.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
@@ -45,10 +49,37 @@ class PostThreadScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => PostThreadCubit(postThreadRepository: context.read<PostThreadRepository>())..load(postUri),
-      child: _PostThreadContent(postUri: postUri, publicProviderKey: publicProviderKey),
+    final similarPostsRepository = publicProviderKey == null ? _similarPostsRepositoryOrNull(context) : null;
+    final content = _PostThreadContent(
+      postUri: postUri,
+      publicProviderKey: publicProviderKey,
+      showSimilarPosts: similarPostsRepository != null,
     );
+    if (similarPostsRepository == null) {
+      return BlocProvider(
+        create: (_) => PostThreadCubit(postThreadRepository: context.read<PostThreadRepository>())..load(postUri),
+        child: content,
+      );
+    }
+
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => PostThreadCubit(postThreadRepository: context.read<PostThreadRepository>())..load(postUri),
+        ),
+        BlocProvider(create: (_) => SimilarPostsCubit(repository: similarPostsRepository)),
+      ],
+      child: content,
+    );
+  }
+
+  SimilarPostsRepository? _similarPostsRepositoryOrNull(BuildContext context) {
+    try {
+      return context.read<SimilarPostsRepository>();
+    } catch (error, stackTrace) {
+      log.d('SimilarPostsRepository not found; hiding similar posts section', error: error, stackTrace: stackTrace);
+      return null;
+    }
   }
 }
 
@@ -81,9 +112,10 @@ Set<String> computeInitialCollapsedThreadUris(ThreadViewPost thread, {required i
 }
 
 class _PostThreadContent extends StatefulWidget {
-  const _PostThreadContent({required this.postUri, this.publicProviderKey});
+  const _PostThreadContent({required this.postUri, required this.showSimilarPosts, this.publicProviderKey});
 
   final String postUri;
+  final bool showSimilarPosts;
   final String? publicProviderKey;
 
   @override
@@ -257,6 +289,7 @@ class _PostThreadContentState extends State<_PostThreadContent> {
               feedViewPost: FeedViewPost(post: thread.post),
               providerKey: publicProviderKey,
             ),
+          if (widget.showSimilarPosts) SimilarPostsSection(postUri: thread.post.uri.toString()),
           if (replies.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),

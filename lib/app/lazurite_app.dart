@@ -12,6 +12,7 @@ import 'package:lazurite/core/l10n/app_localizations.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/logging/logging_navigator_observer.dart';
 import 'package:lazurite/core/network/app_view_fallback_service.dart';
+import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/objectbox/objectbox_store.dart';
@@ -33,6 +34,7 @@ import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/features/feed/data/liked_posts_repository.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
+import 'package:lazurite/features/feed/data/similar_posts_repository.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
@@ -556,6 +558,17 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
                       bluesky: bluesky,
                       database: widget.database,
                       accountDid: accountDid,
+                      moderationService: context.read<ModerationService>(),
+                      appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
+                      onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),
+                    ),
+                  ),
+                  RepositoryProvider(
+                    create: (context) => SimilarPostsRepository(
+                      bluesky: bluesky,
+                      constellationClient: ConstellationClient(
+                        baseUrl: context.read<SettingsCubit>().state.constellationUrl,
+                      ),
                       moderationService: context.read<ModerationService>(),
                       appViewProviderResolver: () => context.read<SettingsCubit>().state.appViewProvider,
                       onUnauthorized: () => _recoverAuthSession(trigger: 'unauthorized_response'),

@@ -10,6 +10,7 @@ import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
+import 'package:lazurite/features/feed/data/similar_posts_repository.dart';
 import 'package:lazurite/features/feed/presentation/feed_detail_screen.dart';
 import 'package:lazurite/features/feed/presentation/post_thread_screen.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
@@ -151,9 +152,16 @@ class ContentRouteFactory {
       if (providerKey == null) {
         return PostThreadScreen(postUri: postUri);
       }
-      return RepositoryProvider<PostThreadRepository>(
-        key: ValueKey<String>('authenticated-post-thread-repository-$providerKey'),
-        create: (_) => _authenticatedPostThreadRepository(context, providerKey),
+      return MultiRepositoryProvider(
+        key: ValueKey<String>('authenticated-post-thread-repositories-$providerKey'),
+        providers: [
+          RepositoryProvider<PostThreadRepository>(
+            create: (_) => _authenticatedPostThreadRepository(context, providerKey),
+          ),
+          RepositoryProvider<SimilarPostsRepository>(
+            create: (_) => _authenticatedSimilarPostsRepository(context, providerKey),
+          ),
+        ],
         child: PostThreadScreen(postUri: postUri),
       );
     }
@@ -349,6 +357,15 @@ class ContentRouteFactory {
         bluesky: context.read<Bluesky>(),
         database: context.read<AppDatabase>(),
         accountDid: context.read<String>(),
+        moderationService: _moderationServiceOrNull(context),
+        appViewProvider: providerKey,
+        onUnauthorized: onUnauthorized,
+      );
+
+  SimilarPostsRepository _authenticatedSimilarPostsRepository(BuildContext context, String providerKey) =>
+      SimilarPostsRepository(
+        bluesky: context.read<Bluesky>(),
+        constellationClient: ConstellationClient(baseUrl: context.read<SettingsCubit>().state.constellationUrl),
         moderationService: _moderationServiceOrNull(context),
         appViewProvider: providerKey,
         onUnauthorized: onUnauthorized,
