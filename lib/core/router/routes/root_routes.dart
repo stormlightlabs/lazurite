@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
 import 'package:lazurite/core/router/app_route_page.dart';
 import 'package:lazurite/core/router/app_route_paths.dart';
+import 'package:lazurite/core/router/invalid_route_screen.dart';
 import 'package:lazurite/core/router/route_query.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/auth/presentation/oauth_callback_screen.dart';
@@ -126,8 +128,38 @@ List<RouteBase> buildRootRoutes({
     ),
     GoRoute(
       path: AppRoutePath.starterPack.path,
+      redirect: (_, state) {
+        final packUri = RouteQuery(state).tryAtUri('uri');
+        return _canonicalRecordLocation(
+          packUri,
+          collection: _starterPackCollection,
+          routeBase: AppRoutePath.starterPack.path,
+          sourceUri: state.uri,
+        );
+      },
       pageBuilder: (context, state) {
-        final packUri = AtUri.parse(RouteQuery(state).decodedOrEmpty('uri'));
+        final packUri = RouteQuery(state).tryAtUri('uri');
+        if (packUri == null || !_hasCollection(packUri, _starterPackCollection)) {
+          return buildAppRoutePage(
+            context,
+            state,
+            const InvalidRouteScreen(message: 'This starter pack link is invalid.'),
+          );
+        }
+        return buildAppRoutePage(context, state, StarterPackDetailScreen(packUri: packUri));
+      },
+    ),
+    GoRoute(
+      path: AppRoutePath.starterPackRecord.path,
+      pageBuilder: (context, state) {
+        final packUri = _recordUriFromPath(state, _starterPackCollection);
+        if (packUri == null) {
+          return buildAppRoutePage(
+            context,
+            state,
+            const InvalidRouteScreen(message: 'This starter pack link is invalid.'),
+          );
+        }
         return buildAppRoutePage(context, state, StarterPackDetailScreen(packUri: packUri));
       },
     ),
@@ -140,24 +172,63 @@ List<RouteBase> buildRootRoutes({
     ),
     GoRoute(
       path: AppRoutePath.list.path,
+      redirect: (_, state) {
+        final listUri = RouteQuery(state).tryAtUri('uri');
+        return _canonicalRecordLocation(
+          listUri,
+          collection: _listCollection,
+          routeBase: AppRoutePath.list.path,
+          sourceUri: state.uri,
+        );
+      },
       pageBuilder: (context, state) {
-        final listUri = AtUri.parse(RouteQuery(state).decodedOrEmpty('uri'));
+        final listUri = RouteQuery(state).tryAtUri('uri');
+        if (listUri == null || !_hasCollection(listUri, _listCollection)) {
+          return buildAppRoutePage(context, state, const InvalidRouteScreen(message: 'This list link is invalid.'));
+        }
+        return buildAppRoutePage(context, state, ListDetailScreen(listUri: listUri));
+      },
+      routes: [
+        GoRoute(
+          path: 'members',
+          redirect: (_, state) {
+            final listUri = RouteQuery(state).tryAtUri('uri');
+            return _canonicalRecordLocation(
+              listUri,
+              collection: _listCollection,
+              routeBase: AppRoutePath.list.path,
+              suffix: 'members',
+              sourceUri: state.uri,
+            );
+          },
+          pageBuilder: (context, state) {
+            final listUri = RouteQuery(state).tryAtUri('uri');
+            if (listUri == null || !_hasCollection(listUri, _listCollection)) {
+              return buildAppRoutePage(context, state, const InvalidRouteScreen(message: 'This list link is invalid.'));
+            }
+            return _buildListMembersPage(context, state, listUri);
+          },
+        ),
+      ],
+    ),
+    GoRoute(
+      path: AppRoutePath.listRecord.path,
+      pageBuilder: (context, state) {
+        final listUri = _recordUriFromPath(state, _listCollection);
+        if (listUri == null) {
+          return buildAppRoutePage(context, state, const InvalidRouteScreen(message: 'This list link is invalid.'));
+        }
         return buildAppRoutePage(context, state, ListDetailScreen(listUri: listUri));
       },
       routes: [
         GoRoute(
           path: 'members',
           pageBuilder: (context, state) {
-            final listUri = AtUri.parse(RouteQuery(state).decodedOrEmpty('uri'));
-            return buildAppRoutePage(
-              context,
-              state,
-              BlocProvider(
-                create: (_) =>
-                    ListBloc(listRepository: context.read<ListRepository>())..add(ListRequested(listUri: listUri)),
-                child: ListMembersScreen(listUri: listUri),
-              ),
-            );
+            final listUri = _recordUriFromPath(state, _listCollection);
+            if (listUri == null) {
+              return buildAppRoutePage(context, state, const InvalidRouteScreen(message: 'This list link is invalid.'));
+            }
+            return _buildListMembersPage(context, state, listUri);
           },
         ),
       ],
@@ -192,4 +263,69 @@ List<RouteBase> buildRootRoutes({
       },
     ),
   ];
+}
+
+
+const _listCollection = 'app.bsky.graph.list';
+const _starterPackCollection = 'app.bsky.graph.starterpack';
+
+bool _hasCollection(AtUri uri, String collection) {
+  try {
+    return uri.collection.toString() == collection;
+  } catch (error, stackTrace) {
+    log.d('Invalid AT-URI collection for route', error: error, stackTrace: stackTrace);
+    return false;
+  }
+}
+
+String? _canonicalRecordLocation(
+  AtUri? uri, {
+  required String collection,
+  required String routeBase,
+  required Uri sourceUri,
+  String? suffix,
+}) {
+  if (uri == null || !_hasCollection(uri, collection)) {
+    return null;
+  }
+
+  try {
+    final encodedActor = Uri.encodeComponent(uri.hostname);
+    final encodedRkey = Uri.encodeComponent(uri.rkey);
+    final suffixPath = suffix == null ? '' : '/$suffix';
+    final query = Map<String, String>.from(sourceUri.queryParameters)..remove('uri');
+    final queryString = query.isEmpty ? '' : '?${Uri(queryParameters: query).query}';
+    return '$routeBase/$encodedActor/$encodedRkey$suffixPath$queryString';
+  } catch (error, stackTrace) {
+    log.d('Invalid AT-URI record parts for route', error: error, stackTrace: stackTrace);
+    return null;
+  }
+}
+
+AtUri? _recordUriFromPath(GoRouterState state, String collection) {
+  final actor = state.pathParameters['actor'];
+  final rkey = state.pathParameters['rkey'];
+  if (actor == null || actor.trim().isEmpty || rkey == null || rkey.trim().isEmpty) {
+    return null;
+  }
+
+  try {
+    return AtUri.parse(
+      'at://${Uri.decodeComponent(actor)}/$collection/${Uri.decodeComponent(rkey)}',
+    );
+  } catch (error, stackTrace) {
+    log.d('Invalid AT-URI record path params for route', error: error, stackTrace: stackTrace);
+    return null;
+  }
+}
+
+Page<dynamic> _buildListMembersPage(BuildContext context, GoRouterState state, AtUri listUri) {
+  return buildAppRoutePage(
+    context,
+    state,
+    BlocProvider(
+      create: (_) => ListBloc(listRepository: context.read<ListRepository>())..add(ListRequested(listUri: listUri)),
+      child: ListMembersScreen(listUri: listUri),
+    ),
+  );
 }

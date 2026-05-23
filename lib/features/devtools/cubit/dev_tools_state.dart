@@ -24,7 +24,8 @@ class RecordInfo extends Equatable {
   String get rkey {
     try {
       return AtUri.parse(uri).rkey;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d('DevToolsState: unable to read rkey from record URI', error: error, stackTrace: stackTrace);
       return '';
     }
   }

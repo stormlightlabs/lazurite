@@ -5,6 +5,7 @@ import 'package:lazurite/core/router/app_route_page.dart';
 import 'package:lazurite/core/router/app_route_paths.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/router/content_route_factory.dart';
+import 'package:lazurite/core/router/invalid_route_screen.dart';
 import 'package:lazurite/core/router/route_query.dart';
 import 'package:lazurite/features/alerts/presentation/alerts_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_management_screen.dart';
@@ -17,6 +18,7 @@ import 'package:lazurite/features/messages/presentation/message_thread_screen.da
 import 'package:lazurite/features/profile/presentation/profile_edit_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_screen.dart';
 import 'package:lazurite/features/search/presentation/search_screen.dart';
+import 'package:poptart_core/poptart_core.dart';
 
 /// Builds the authenticated tab shell and its branch routes.
 ///
@@ -49,12 +51,20 @@ StatefulShellRoute buildAuthenticatedShellRoute({
                 path: AppRoutePath.feed.childPath,
                 pageBuilder: (context, state) {
                   final query = RouteQuery(state);
+                  final feedUri = query.atUri('uri');
+                  if (query.hasNonEmpty('uri') && (feedUri == null || !_isFeedGeneratorUri(feedUri))) {
+                    return buildAppRoutePage(
+                      context,
+                      state,
+                      const InvalidRouteScreen(message: 'This feed link is invalid.'),
+                    );
+                  }
                   return buildAppRoutePage(
                     context,
                     state,
                     contentRouteFactory.feedDetail(
                       context,
-                      feedUri: query.atUri('uri'),
+                      feedUri: feedUri,
                       actor: query.decoded('actor'),
                       rkey: query.decoded('rkey'),
                       provider: query.decoded('provider'),
@@ -169,3 +179,5 @@ StatefulShellRoute buildAuthenticatedShellRoute({
     ],
   );
 }
+
+bool _isFeedGeneratorUri(AtUri uri) => uri.collection.toString() == 'app.bsky.feed.generator' && uri.rkey.isNotEmpty;

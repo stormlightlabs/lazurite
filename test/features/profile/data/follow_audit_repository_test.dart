@@ -394,6 +394,21 @@ void main() {
       expect(page.records.first.rkey, 'rkey123');
       expect(page.cursor, 'page1');
     });
+
+    test('skips follow records with malformed record URIs', () async {
+      final client = _bluesky(
+        pages: [
+          [('not-an-at-uri', 'did:plc:bad'), (_uri('did:plc:alice', 'rkey123'), 'did:plc:alice')],
+        ],
+      );
+      final repo = _repo(client);
+
+      final page = await repo.fetchFollowPage(_ownerDid);
+
+      expect(page.records, hasLength(1));
+      expect(page.records.single.subjectDid, 'did:plc:alice');
+      expect(page.records.single.rkey, 'rkey123');
+    });
   });
 
   group('FollowAuditRepository.fetchFollowCount', () {

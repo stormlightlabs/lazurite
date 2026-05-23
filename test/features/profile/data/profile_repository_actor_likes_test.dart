@@ -53,6 +53,7 @@ void main() {
 
   test('non-self likes path uses actor PDS listRecords + appview getPosts and keeps record order', () async {
     const actorDid = 'did:plc:friend';
+    const malformedSubject = 'not-an-at-uri';
     const firstSubject = 'at://did:plc:author/app.bsky.feed.post/first';
     const secondSubject = 'at://did:plc:author/app.bsky.feed.post/second';
     final feedService = _FakeFeedService(
@@ -62,6 +63,13 @@ void main() {
     final repoService = _FakeRepoService(
       recordsData: const _FakeListRecordsData(
         records: [
+          _FakeRepoRecord(
+            value: {
+              r'$type': 'app.bsky.feed.like',
+              'subject': {'uri': malformedSubject, 'cid': 'cid-malformed'},
+              'createdAt': '2026-05-02T02:00:00.000Z',
+            },
+          ),
           _FakeRepoRecord(
             value: {
               r'$type': 'app.bsky.feed.like',
@@ -103,9 +111,12 @@ void main() {
     expect(feedService.getActorLikesCallCount, 0);
     expect(feedService.getPostsCallCount, 1);
     expect(feedService.lastGetPostsServiceHost, 'public.api.bsky.app');
-    expect(result.entries.length, 2);
-    expect(result.entries.first.isAvailable, isFalse);
-    expect(result.entries.first.subjectUri, firstSubject);
+    expect(feedService.lastGetPostsUris, [firstSubject, secondSubject]);
+    expect(result.entries.length, 3);
+    expect(result.entries[0].isAvailable, isFalse);
+    expect(result.entries[0].subjectUri, malformedSubject);
+    expect(result.entries[1].isAvailable, isFalse);
+    expect(result.entries[1].subjectUri, firstSubject);
     expect(result.entries.last.isAvailable, isTrue);
     expect(result.entries.last.feedViewPost?.post.uri.toString(), secondSubject);
   });
@@ -149,6 +160,7 @@ class _FakeFeedService {
   int getActorLikesCallCount = 0;
   int getPostsCallCount = 0;
   String? lastGetPostsServiceHost;
+  List<String> lastGetPostsUris = const [];
 
   Future<_FakeResponse<_FakeActorLikesData>> getActorLikes({
     required String actor,
@@ -168,6 +180,7 @@ class _FakeFeedService {
   }) async {
     getPostsCallCount++;
     lastGetPostsServiceHost = $service;
+    lastGetPostsUris = uris.map((uri) => uri.toString()).toList(growable: false);
     return _FakeResponse(_FakeGetPostsData(posts: _hydratedPosts));
   }
 }

@@ -886,6 +886,59 @@ void main() {
     router.dispose();
   });
 
+  testWidgets('invalid list route shows invalid-link screen instead of throwing', (tester) async {
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('/list?uri=not-an-at-uri');
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Invalid link'), findsWidgets);
+    expect(find.text('This list link is invalid.'), findsOneWidget);
+
+    router.dispose();
+  });
+
+  testWidgets('invalid feed query route shows invalid-link screen instead of resolving as missing', (tester) async {
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('/feed?uri=not-an-at-uri');
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Invalid link'), findsWidgets);
+    expect(find.text('This feed link is invalid.'), findsOneWidget);
+    verifyNever(
+      () => feedRepository.resolveFeedGeneratorUri(
+        actor: any(named: 'actor'),
+        rkey: any(named: 'rkey'),
+      ),
+    );
+
+    router.dispose();
+  });
+
+  testWidgets('logged-out invalid feed query route shows invalid-link screen instead of resolving as missing', (
+    tester,
+  ) async {
+    currentAuthState = const AuthState.unauthenticated();
+    when(() => authBloc.state).thenReturn(currentAuthState);
+    whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('/feed?uri=not-an-at-uri&provider=blacksky');
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Invalid link'), findsWidgets);
+    expect(find.text('This feed link is invalid.'), findsOneWidget);
+
+    router.dispose();
+  });
+
   testWidgets('video viewer route without extra redirects home instead of throwing', (tester) async {
     final router = AppRouter(authBloc: authBloc).router;
 
@@ -899,7 +952,9 @@ void main() {
     router.dispose();
   });
 
-  testWidgets('video viewer route with invalid args redirects home instead of initializing blank video', (tester) async {
+  testWidgets('video viewer route with invalid args redirects home instead of initializing blank video', (
+    tester,
+  ) async {
     final router = AppRouter(authBloc: authBloc).router;
 
     await tester.pumpWidget(buildSubjectWithRouter(router));

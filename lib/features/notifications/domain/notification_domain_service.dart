@@ -257,7 +257,8 @@ class NotificationPushPayload {
     try {
       final atUri = AtUri.parse(value);
       return atUri.toString().isNotEmpty;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d('NotificationDomainService: ignoring malformed push record URI', error: error, stackTrace: stackTrace);
       return false;
     }
   }

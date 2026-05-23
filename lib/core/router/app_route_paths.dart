@@ -22,8 +22,11 @@ enum AppRoutePath {
   /// Feed detail route shared by authenticated and public contexts.
   feed,
 
-  /// Post thread route shared by authenticated and public contexts.
+  /// Post thread compatibility route using a query AT-URI.
   post,
+
+  /// Canonical post route using actor and record key path params.
+  postRecord,
 
   /// Topic timeline route shared by authenticated and public contexts.
   topic,
@@ -52,14 +55,20 @@ enum AppRoutePath {
   /// Lists overview route.
   lists,
 
-  /// List detail route.
+  /// List detail compatibility route using a query AT-URI.
   list,
+
+  /// Canonical list detail route using actor and record key path params.
+  listRecord,
 
   /// Create starter pack route.
   createStarterPack,
 
-  /// Starter pack detail route.
+  /// Starter pack compatibility route using a query AT-URI.
   starterPack,
+
+  /// Canonical starter pack detail route using actor and record key path params.
+  starterPackRecord,
 
   /// Actor starter packs route.
   starterPacks,
@@ -113,6 +122,7 @@ enum AppRoutePath {
     AppRoutePath.hashtag => '/hashtag',
     AppRoutePath.feed => '/feed',
     AppRoutePath.post => '/post',
+    AppRoutePath.postRecord => '/profile/:actor/post/:rkey',
     AppRoutePath.topic => '/topic',
     AppRoutePath.publicProfile => r'/profile/:actor(m|[^m][^/]*|m[^e][^/]*|me[^/]+)',
     AppRoutePath.profileMe => '/profile/me',
@@ -123,8 +133,10 @@ enum AppRoutePath {
     AppRoutePath.liked => '/liked',
     AppRoutePath.lists => '/lists',
     AppRoutePath.list => '/list',
+    AppRoutePath.listRecord => '/list/:actor/:rkey',
     AppRoutePath.createStarterPack => '/create-starter-pack',
     AppRoutePath.starterPack => '/starter-pack',
+    AppRoutePath.starterPackRecord => '/starter-pack/:actor/:rkey',
     AppRoutePath.starterPacks => '/starter-packs',
     AppRoutePath.alerts => '/alerts',
     AppRoutePath.notifications => '/notifications',

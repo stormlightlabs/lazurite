@@ -3,6 +3,7 @@ import 'package:bluesky_poptart/app/bsky/notification/list_notifications.dart' a
 import 'dart:ui';
 
 import 'package:lazurite/core/l10n/app_localizations.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/notifications/domain/notification_local_models.dart';
 
 abstract final class NotificationReasonUtils {
@@ -175,7 +176,8 @@ abstract final class NotificationReasonUtils {
 
     try {
       return AtUri.parse(uriValue.trim());
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d('NotificationReasonUtils: ignoring malformed subject URI', error: error, stackTrace: stackTrace);
       return null;
     }
   }

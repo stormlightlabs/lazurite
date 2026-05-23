@@ -248,7 +248,23 @@ class ProfileRepository {
     );
     final moderationService = _moderationService;
     final postsByUri = <String, PostView>{};
-    final subjectUris = likeRecords.map((record) => atp_core.AtUri.parse(record.subjectUri)).toList(growable: false);
+    final subjectUris = <atp_core.AtUri>[];
+    for (final record in likeRecords) {
+      try {
+        final subjectUri = atp_core.AtUri.parse(record.subjectUri);
+        if (subjectUri.collection.toString() != 'app.bsky.feed.post' || subjectUri.rkey.isEmpty) {
+          log.w('ProfileRepository: skipping malformed liked post URI ${record.subjectUri}');
+          continue;
+        }
+        subjectUris.add(subjectUri);
+      } catch (error, stackTrace) {
+        log.w(
+          'ProfileRepository: skipping malformed liked post URI ${record.subjectUri}',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
     for (var i = 0; i < subjectUris.length; i += _maxPostsHydrationBatchSize) {
       final batch = subjectUris.sublist(i, (i + _maxPostsHydrationBatchSize).clamp(0, subjectUris.length));
       final response = await _authRecovery.run(

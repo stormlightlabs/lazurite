@@ -241,7 +241,12 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
           continue;
         }
         feedUris.add(parsed);
-      } catch (_) {
+      } catch (error, stackTrace) {
+        log.d(
+          'FeedPreferencesCubit: skipping malformed saved feed URI ${feed.value}',
+          error: error,
+          stackTrace: stackTrace,
+        );
         continue;
       }
     }
@@ -316,7 +321,8 @@ class FeedPreferencesCubit extends Cubit<FeedPreferencesState> {
       final left = AtUri.parse(lhs);
       final right = AtUri.parse(rhs);
       return left.hostname == right.hostname && left.collection == right.collection && left.rkey == right.rkey;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d('FeedPreferencesCubit: cannot compare malformed feed URIs', error: error, stackTrace: stackTrace);
       return false;
     }
   }
@@ -433,7 +439,8 @@ class FeedPreferencesState extends Equatable {
       final left = AtUri.parse(lhs);
       final right = AtUri.parse(rhs);
       return left.hostname == right.hostname && left.collection == right.collection && left.rkey == right.rkey;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log.d('FeedPreferencesState: cannot compare malformed feed URIs', error: error, stackTrace: stackTrace);
       return false;
     }
   }

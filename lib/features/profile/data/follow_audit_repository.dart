@@ -147,7 +147,17 @@ class FollowAuditRepository {
 
       final follow = const GraphFollowRecordConverter().fromJson(value);
       final uri = raw.uri.toString();
-      final rkey = AtUri.parse(uri).rkey;
+      late final String rkey;
+      try {
+        rkey = AtUri.parse(uri).rkey;
+      } catch (error, stackTrace) {
+        log.w(
+          'FollowAuditRepository: skipping follow record with malformed uri=$uri',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        continue;
+      }
       records.add(FollowRecord(uri: uri, rkey: rkey, subjectDid: follow.subject));
     }
 

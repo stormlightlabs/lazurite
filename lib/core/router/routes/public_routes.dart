@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/router/app_route_page.dart';
 import 'package:lazurite/core/router/app_route_paths.dart';
+import 'package:lazurite/core/router/invalid_route_screen.dart';
 import 'package:lazurite/core/router/route_query.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/public/presentation/public_route_state.dart';
@@ -55,6 +57,9 @@ List<RouteBase> buildPublicRoutes({
       pageBuilder: (context, state) {
         final query = RouteQuery(state);
         final feedUri = query.atUri('uri');
+        if (query.hasNonEmpty('uri') && (feedUri == null || !_isFeedGeneratorUri(feedUri))) {
+          return buildAppRoutePage(context, state, const InvalidRouteScreen(message: 'This feed link is invalid.'));
+        }
         final actor = query.decoded('actor');
         final rkey = query.decoded('rkey');
         final provider = query.decoded('provider');
@@ -67,14 +72,33 @@ List<RouteBase> buildPublicRoutes({
     ),
     GoRoute(
       path: AppRoutePath.post.path,
+      redirect: (_, state) {
+        final postUri = RouteQuery(state).tryAtUri('uri');
+        return _canonicalPostLocation(postUri, sourceUri: state.uri);
+      },
       pageBuilder: (context, state) {
-        final query = RouteQuery(state);
-        final uri = query.decoded('uri') ?? '';
-        final provider = state.uri.queryParameters['provider'];
+        final postUri = RouteQuery(state).tryAtUri('uri');
+        if (postUri == null || !_hasCollection(postUri, _postCollection)) {
+          return buildAppRoutePage(context, state, const InvalidRouteScreen(message: 'This post link is invalid.'));
+        }
         return buildAppRoutePage(
           context,
           state,
-          buildPostThreadRoute(context, postUri: uri, provider: provider),
+          buildPostThreadRoute(context, postUri: postUri.toString(), provider: state.uri.queryParameters['provider']),
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutePath.postRecord.path,
+      pageBuilder: (context, state) {
+        final postUri = _postUriFromPath(state);
+        if (postUri == null) {
+          return buildAppRoutePage(context, state, const InvalidRouteScreen(message: 'This post link is invalid.'));
+        }
+        return buildAppRoutePage(
+          context,
+          state,
+          buildPostThreadRoute(context, postUri: postUri.toString(), provider: state.uri.queryParameters['provider']),
         );
       },
     ),
@@ -104,14 +128,28 @@ List<RouteBase> buildPublicRoutes({
         return buildAppRoutePage(
           context,
           state,
-          buildContextualProfileRoute(
-            context,
-            RouteQuery(state).decodedPathOrEmpty('actor'),
-            provider: provider,
-          ),
+          buildContextualProfileRoute(context, RouteQuery(state).decodedPathOrEmpty('actor'), provider: provider),
         );
       },
       routes: [
+        GoRoute(
+          path: 'post/:rkey',
+          pageBuilder: (context, state) {
+            final postUri = _postUriFromPath(state);
+            if (postUri == null) {
+              return buildAppRoutePage(context, state, const InvalidRouteScreen(message: 'This post link is invalid.'));
+            }
+            return buildAppRoutePage(
+              context,
+              state,
+              buildPostThreadRoute(
+                context,
+                postUri: postUri.toString(),
+                provider: state.uri.queryParameters['provider'],
+              ),
+            );
+          },
+        ),
         GoRoute(
           path: 'connections',
           redirect: (_, state) => authBloc.state.isAuthenticated ? null : publicProfileLocation(state),
@@ -126,11 +164,7 @@ List<RouteBase> buildPublicRoutes({
           redirect: (_, state) => authBloc.state.isAuthenticated ? null : publicProfileLocation(state),
           pageBuilder: (context, state) {
             final actor = RouteQuery(state).decodedPathOrEmpty('actor');
-            return buildAppRoutePage(
-              context,
-              state,
-              buildProfileSearchRoute(context, actor),
-            );
+            return buildAppRoutePage(context, state, buildProfileSearchRoute(context, actor));
           },
         ),
       ],
@@ -142,16 +176,18 @@ List<RouteBase> buildPublicRoutes({
 typedef PublicHomeRouteBuilder = Widget Function(BuildContext context, PublicRouteState routeState);
 
 /// Builds a feed detail screen with provider-aware repository wiring.
-typedef FeedDetailRouteBuilder = Widget Function(
-  BuildContext context, {
-  required AtUri? feedUri,
-  required String? actor,
-  required String? rkey,
-  required String? provider,
-});
+typedef FeedDetailRouteBuilder =
+    Widget Function(
+      BuildContext context, {
+      required AtUri? feedUri,
+      required String? actor,
+      required String? rkey,
+      required String? provider,
+    });
 
 /// Builds a post thread screen with provider-aware repository wiring.
-typedef PostThreadRouteBuilder = Widget Function(BuildContext context, {required String postUri, required String? provider});
+typedef PostThreadRouteBuilder =
+    Widget Function(BuildContext context, {required String postUri, required String? provider});
 
 /// Builds a topic timeline with authenticated or public search dependencies.
 typedef TopicRouteBuilder = Widget Function(BuildContext context, {required String topic, required String? provider});
@@ -167,3 +203,48 @@ typedef ProfileSearchRouteBuilder = Widget Function(BuildContext context, String
 
 /// Returns the public profile route to use when blocking authenticated-only child routes.
 typedef PublicProfileLocationBuilder = String Function(GoRouterState state);
+
+const _postCollection = 'app.bsky.feed.post';
+
+bool _isFeedGeneratorUri(AtUri uri) => _hasCollection(uri, 'app.bsky.feed.generator') && uri.rkey.isNotEmpty;
+
+bool _hasCollection(AtUri uri, String collection) {
+  try {
+    return uri.collection.toString() == collection;
+  } catch (error, stackTrace) {
+    log.d('Invalid AT-URI collection for public route', error: error, stackTrace: stackTrace);
+    return false;
+  }
+}
+
+String? _canonicalPostLocation(AtUri? uri, {required Uri sourceUri}) {
+  if (uri == null || !_hasCollection(uri, _postCollection)) {
+    return null;
+  }
+
+  try {
+    final actor = Uri.encodeComponent(uri.hostname);
+    final rkey = Uri.encodeComponent(uri.rkey);
+    final query = Map<String, String>.from(sourceUri.queryParameters)..remove('uri');
+    final queryString = query.isEmpty ? '' : '?${Uri(queryParameters: query).query}';
+    return '/profile/$actor/post/$rkey$queryString';
+  } catch (error, stackTrace) {
+    log.d('Invalid AT-URI record parts for public post route', error: error, stackTrace: stackTrace);
+    return null;
+  }
+}
+
+AtUri? _postUriFromPath(GoRouterState state) {
+  final actor = state.pathParameters['actor'];
+  final rkey = state.pathParameters['rkey'];
+  if (actor == null || actor.trim().isEmpty || rkey == null || rkey.trim().isEmpty) {
+    return null;
+  }
+
+  try {
+    return AtUri.parse('at://${Uri.decodeComponent(actor)}/$_postCollection/${Uri.decodeComponent(rkey)}');
+  } catch (error, stackTrace) {
+    log.d('Invalid AT-URI record path params for public post route', error: error, stackTrace: stackTrace);
+    return null;
+  }
+}
