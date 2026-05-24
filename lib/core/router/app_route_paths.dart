@@ -126,6 +126,9 @@ enum AppRoutePath {
     AppRoutePath.topic => '/topic',
     AppRoutePath.publicProfile => r'/profile/:actor(m|[^m][^/]*|m[^e][^/]*|me[^/]+)',
     AppRoutePath.profileMe => '/profile/me',
+    // TODO: consider refactoring/nesting this such that it doesn't require
+    //  query params, i.e. `/profile/:actor/context` over passing handle & did
+    //  in calls to context.push
     AppRoutePath.profileContext => '/profile-context',
     AppRoutePath.images => '/images',
     AppRoutePath.video => '/video',

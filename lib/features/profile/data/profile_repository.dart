@@ -6,6 +6,7 @@ import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/actor/profile.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/like.dart';
+import 'package:bluesky_poptart/app/bsky/feed/search_posts.dart';
 import 'package:characters/characters.dart';
 import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/database/app_database.dart';
@@ -185,6 +186,45 @@ class ProfileRepository {
     );
     final profiles = _filterProfileList(response.data.followers);
     return ProfileConnectionsPage(subject: response.data.subject, profiles: profiles, cursor: response.data.cursor);
+  }
+
+  /// Finds posts that mention [actor] via rich-text mention facets.
+  ///
+  /// `app.bsky.feed.searchPosts` runs on AppView and returns hydrated [PostView]
+  /// records, so the records have already passed through the network layer
+  /// that knows about deletions, takedowns, blocks, labels, embeds, and viewer
+  /// state. This repository still applies Lazurite's moderation service before
+  /// ranking so the pane never renders content hidden by the viewer's settings.
+  ///
+  /// Ranking is intentionally lightweight. Non-replies and recent/high-signal
+  /// posts are promoted, posts with many mentions or repeated text are demoted,
+  /// and each page caps repeated authors to keep one account from flooding a
+  /// profile's mentions tab.
+  Future<ProfileMentionsResult> getActorMentions({required String actor, String? cursor, int limit = 50}) async {
+    final normalizedActor = actor.trim();
+    if (normalizedActor.isEmpty) {
+      return const ProfileMentionsResult(posts: <PostView>[]);
+    }
+
+    final headers = _appViewContext.appBskyHeadersForEndpoint(
+      'app.bsky.feed.searchPosts',
+      await _moderationService?.headersForRequest(),
+    );
+    final response = await _authRecovery.run(
+      (client) => client.feed.searchPosts(
+        q: '*',
+        mentions: normalizedActor,
+        sort: const FeedSearchPostsSort.knownValue(data: KnownFeedSearchPostsSort.latest),
+        cursor: cursor,
+        limit: limit.clamp(1, 100),
+        $headers: headers,
+      ),
+    );
+
+    final visiblePosts = _moderationService == null
+        ? response.data.posts
+        : response.data.posts.where((post) => !_moderationService.shouldFilterPostInList(post)).toList();
+    return ProfileMentionsResult(posts: _rankMentionPosts(visiblePosts), cursor: response.data.cursor);
   }
 
   /// Likes transport matrix:
@@ -527,6 +567,111 @@ class ProfileRepository {
     return records;
   }
 
+  /// Orders one AppView page of mention results for usefulness rather than
+  /// raw recency.
+  ///
+  /// AppView search is still the source of truth for membership in the result
+  /// set. This method only reorders and trims that page so the top of the tab
+  /// is less likely to be dominated by:
+  /// - reply spam
+  /// - mass-mention posts
+  /// - duplicate text
+  /// - one prolific author
+  List<PostView> _rankMentionPosts(List<PostView> posts) {
+    final repeatedTextCounts = <String, int>{};
+    for (final post in posts) {
+      final textKey = _normalizedMentionText(post);
+      if (textKey.isEmpty) continue;
+      repeatedTextCounts[textKey] = (repeatedTextCounts[textKey] ?? 0) + 1;
+    }
+
+    final ranked = posts.toList()
+      ..sort((a, b) {
+        final aScore = _mentionPostScore(a, repeatedTextCounts);
+        final bScore = _mentionPostScore(b, repeatedTextCounts);
+        final byScore = bScore.compareTo(aScore);
+        if (byScore != 0) return byScore;
+        final byDate = b.indexedAt.compareTo(a.indexedAt);
+        if (byDate != 0) return byDate;
+        return a.uri.toString().compareTo(b.uri.toString());
+      });
+
+    final authorCounts = <String, int>{};
+    final capped = <PostView>[];
+    const maxPostsPerAuthor = 2;
+    for (final post in ranked) {
+      final authorDid = post.author.did;
+      final count = authorCounts[authorDid] ?? 0;
+      if (count >= maxPostsPerAuthor) continue;
+      authorCounts[authorDid] = count + 1;
+      capped.add(post);
+    }
+    return capped;
+  }
+
+  /// Computes a simple, deterministic score for a mention candidate.
+  ///
+  /// The constants are intentionally coarse to encode priorities instead of an
+  /// explicit model.
+  /// Direct posts should beat replies, newer posts should generally beat older
+  /// posts, engagement is a small boost, and common spam shapes are small
+  /// penalties.
+  ///
+  /// The URI tie-breaker in [_rankMentionPosts] keeps ordering stable when
+  /// scores match.
+  int _mentionPostScore(PostView post, Map<String, int> repeatedTextCounts) {
+    final isReply = _isReplyPost(post);
+    final mentionCount = _mentionCount(post);
+    final textKey = _normalizedMentionText(post);
+    final repeatedTextPenalty = textKey.isNotEmpty && (repeatedTextCounts[textKey] ?? 0) > 1 ? 30 : 0;
+    final engagement =
+        (post.likeCount ?? 0) + (post.repostCount ?? 0) + (post.replyCount ?? 0) + (post.quoteCount ?? 0);
+    final recencyBucket = post.indexedAt.millisecondsSinceEpoch ~/ Duration.millisecondsPerHour;
+
+    return (isReply ? 0 : 1000000) +
+        recencyBucket.clamp(0, 900000) +
+        engagement.clamp(0, 5000) * 10 -
+        mentionCount.clamp(0, 20) * 25 -
+        repeatedTextPenalty;
+  }
+
+  bool _isReplyPost(PostView post) => post.record['reply'] != null;
+
+  /// Counts rich-text mention features on a post record.
+  ///
+  /// A high count often means a broad callout or spammy mention blast, so the
+  /// ranking step treats it as a weak negative signal.
+  ///
+  /// Missing or malformed facet data is treated as zero mentions rather than an
+  /// error because AppView has already accepted the post as a search result.
+  int _mentionCount(PostView post) {
+    final facets = post.record['facets'];
+    if (facets is! List) return 0;
+    var count = 0;
+    for (final facet in facets) {
+      if (facet is! Map) continue;
+      final features = facet['features'];
+      if (features is! List) continue;
+      for (final feature in features) {
+        if (feature is Map && feature[r'$type'] == 'app.bsky.richtext.facet#mention') {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+
+  /// Normalizes text for duplicate detection within a single search page.
+  ///
+  /// Avoids heavyweight near-duplicate matching. Exact text after
+  /// whitespace/case normalization *should* be enough to demote obvious
+  /// repeated promo or bot posts without making ranking hard to reason about.
+  String _normalizedMentionText(PostView post) {
+    final text = post.record['text'];
+    if (text is! String) return '';
+    return text.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+  }
+
   DateTime? _extractLikedAtFromReason(UFeedViewPostReason? reason) {
     if (reason == null) {
       return null;
@@ -546,24 +691,22 @@ class ProfileRepository {
     return profiles.where((profile) => !moderationService.shouldFilterProfileInList(profile)).toList(growable: false);
   }
 
-  ProfileView _profileViewFromDetailed(ProfileViewDetailed profile) {
-    return ProfileView(
-      did: profile.did,
-      handle: profile.handle,
-      displayName: profile.displayName,
-      pronouns: profile.pronouns,
-      description: profile.description,
-      avatar: profile.avatar,
-      associated: profile.associated,
-      indexedAt: profile.indexedAt,
-      createdAt: profile.createdAt,
-      viewer: profile.viewer,
-      labels: profile.labels,
-      verification: profile.verification,
-      status: profile.status,
-      debug: profile.debug,
-    );
-  }
+  ProfileView _profileViewFromDetailed(ProfileViewDetailed profile) => ProfileView(
+    did: profile.did,
+    handle: profile.handle,
+    displayName: profile.displayName,
+    pronouns: profile.pronouns,
+    description: profile.description,
+    avatar: profile.avatar,
+    associated: profile.associated,
+    indexedAt: profile.indexedAt,
+    createdAt: profile.createdAt,
+    viewer: profile.viewer,
+    labels: profile.labels,
+    verification: profile.verification,
+    status: profile.status,
+    debug: profile.debug,
+  );
 }
 
 class ProfileConnectionsPage {
@@ -593,6 +736,17 @@ class ProfileImageUpload {
 
   final List<int> bytes;
   final String mimeType;
+}
+
+/// A page of hydrated, moderation-filtered posts mentioning a profile.
+///
+/// [cursor] is the AppView search cursor. Callers should pass it unchanged when
+/// loading the next page; ranking is applied per page rather than globally.
+class ProfileMentionsResult {
+  const ProfileMentionsResult({required this.posts, this.cursor});
+
+  final List<PostView> posts;
+  final String? cursor;
 }
 
 class ProfileActorLikesResult {

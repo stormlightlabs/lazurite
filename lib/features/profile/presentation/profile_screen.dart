@@ -28,7 +28,6 @@ import 'package:lazurite/features/lists/cubit/add_to_list_cubit.dart';
 import 'package:lazurite/features/lists/cubit/my_lists_cubit.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/widgets/list_row_tile.dart';
-import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
@@ -40,6 +39,7 @@ import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/profile_action_buttons.dart';
 import 'package:lazurite/features/profile/presentation/widgets/profile_liked_posts_pane.dart';
+import 'package:lazurite/features/profile/presentation/widgets/profile_mentions_pane.dart';
 import 'package:lazurite/features/profile/presentation/widgets/profile_starter_packs_pane.dart';
 import 'package:lazurite/features/profile/presentation/widgets/suggested_follows_list.dart';
 import 'package:lazurite/features/profile/presentation/widgets/suggested_follows_sheet.dart';
@@ -53,6 +53,7 @@ import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 import 'package:lazurite/shared/utils/url_utils.dart';
+import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 
 enum _ProfileFeedSlice { posts, replies, quotes, reposts, media }
 
@@ -88,8 +89,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     _ProfileFeedTabConfig(requestFilter: FeedFilter.postsWithMedia, slice: _ProfileFeedSlice.media),
   ];
 
-  static const _baseTabCountOwn = 7;
-  static const _baseTabCountOther = 8;
+  static const _baseTabCountOwn = 8;
+  static const _baseTabCountOther = 9;
   static const _coverRefreshTriggerDistance = 72.0;
 
   late TabController _tabController;
@@ -287,6 +288,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       l10n.labelReposts.toUpperCase(),
       l10n.labelMedia.toUpperCase(),
       if (_showSuggestedTab) l10n.labelLiked.toUpperCase(),
+      l10n.labelMentions.toUpperCase(),
       l10n.labelLists.toUpperCase(),
       l10n.labelStarterPacks.toUpperCase(),
       if (_showSuggestedTab) l10n.labelSuggested.toUpperCase(),
@@ -531,6 +533,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                       ),
                     if (!_isPublic)
                       KeyedSubtree(
+                        key: const PageStorageKey<String>('profile-mentions-tab'),
+                        child: _buildMentionsTab(context, actorScopedProfile),
+                      ),
+                    if (!_isPublic)
+                      KeyedSubtree(
                         key: const PageStorageKey<String>('profile-lists-tab'),
                         child: _buildListsTab(context, actorScopedProfile),
                       ),
@@ -668,29 +675,25 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildProfileFabs(BuildContext context) {
-    final jumpToTopButton = FloatingActionButton.small(
-      key: const ValueKey('profile-jump-top-fab'),
-      heroTag: 'profile-jump-top-fab',
-      tooltip: context.l10n.tooltipJumpToTop,
-      onPressed: _jumpToTop,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
-      foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
-      elevation: 1.5,
-      child: const Icon(Icons.arrow_upward, size: 18),
-    );
-
-    return Row(
-      mainAxisSize: MainAxisSize.max,
-      children: [
-        const SizedBox(width: 24),
-        jumpToTopButton,
-        const Spacer(),
-        _buildComposeFab(context),
-        const SizedBox(width: 24),
-      ],
-    );
-  }
+  Widget _buildProfileFabs(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.max,
+    children: [
+      const SizedBox(width: 24),
+      FloatingActionButton.small(
+        key: const ValueKey('profile-jump-top-fab'),
+        heroTag: 'profile-jump-top-fab',
+        tooltip: context.l10n.tooltipJumpToTop,
+        onPressed: _jumpToTop,
+        backgroundColor: context.colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
+        foregroundColor: context.colorScheme.onSurfaceVariant,
+        elevation: 1.5,
+        child: const Icon(Icons.arrow_upward, size: 18),
+      ),
+      const Spacer(),
+      _buildComposeFab(context),
+      const SizedBox(width: 24),
+    ],
+  );
 
   Widget _buildCoverSection(BuildContext context, ProfileViewDetailed? profile) {
     final width = MediaQuery.of(context).size.width;
@@ -772,21 +775,19 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildProfileError(BuildContext context, String? errorMessage) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(context.l10n.errorFailedToLoadProfile, style: context.textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text(errorMessage ?? context.l10n.errorUnknown, style: context.textTheme.bodyMedium),
-          const SizedBox(height: 12),
-          FilledButton(onPressed: _loadProfileAndFeed, child: Text(context.l10n.buttonTryAgain)),
-        ],
-      ),
-    );
-  }
+  Widget _buildProfileError(BuildContext context, String? errorMessage) => Padding(
+    padding: const EdgeInsets.all(24),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(context.l10n.errorFailedToLoadProfile, style: context.textTheme.titleLarge),
+        const SizedBox(height: 8),
+        Text(errorMessage ?? context.l10n.errorUnknown, style: context.textTheme.bodyMedium),
+        const SizedBox(height: 12),
+        FilledButton(onPressed: _loadProfileAndFeed, child: Text(context.l10n.buttonTryAgain)),
+      ],
+    ),
+  );
 
   Widget _buildProfileSummary(BuildContext context, ProfileViewDetailed? profile, bool isOwnProfile) {
     if (profile == null) return const SizedBox.shrink();
@@ -1521,6 +1522,21 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     return ProfileLikedPostsPane(actor: actor, profileRepository: profileRepository);
   }
 
+  Widget _buildMentionsTab(BuildContext context, ProfileViewDetailed? profile) {
+    final actorDid = profile?.did;
+    if (actorDid == null || actorDid.isEmpty) return const SizedBox.shrink();
+
+    ProfileRepository? profileRepository;
+    try {
+      profileRepository = context.read<ProfileRepository>();
+    } catch (error, stackTrace) {
+      log.d('ProfileScreen: ProfileRepository unavailable for mentions tab', error: error, stackTrace: stackTrace);
+      return const SizedBox.shrink();
+    }
+
+    return ProfileMentionsPane(actorDid: actorDid, profileRepository: profileRepository);
+  }
+
   Widget _buildStarterPacksTab(BuildContext context, ProfileViewDetailed? profile) {
     final actor = profile?.did ?? _resolvedActor;
     if (actor == null) return const SizedBox.shrink();
@@ -1605,17 +1621,15 @@ class _ProfileReplyThreadItem extends StatelessWidget {
     );
   }
 
-  Widget _buildThreadConnector(BuildContext context) {
-    return SizedBox(
-      height: 16,
-      child: Row(
-        children: [
-          const SizedBox(width: 37),
-          Container(width: 2, color: Theme.of(context).dividerColor),
-        ],
-      ),
-    );
-  }
+  Widget _buildThreadConnector(BuildContext context) => SizedBox(
+    height: 16,
+    child: Row(
+      children: [
+        const SizedBox(width: 37),
+        Container(width: 2, color: Theme.of(context).dividerColor),
+      ],
+    ),
+  );
 }
 
 class _SuggestedFollowsTab extends StatefulWidget {
