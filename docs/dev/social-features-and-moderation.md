@@ -91,3 +91,15 @@ record.
 Starter pack detail screens render creator, description, member sample, feed
 recommendations, and join counts. Actor profile surfaces can show starter packs
 created by that actor, and search can route directly to a pack detail screen.
+
+## Profile Context
+
+Profile context surfaces public relationship data that helps a user understand an
+account before acting on it. Keep the presentation neutral: show lists, blocks,
+and related social context without scoring the account or implying intent.
+
+Constellation-backed lookups should stay behind small repository methods. Hydrate
+returned DIDs and records through the normal Bluesky profile/list APIs before
+rendering, then apply the same moderation filtering used elsewhere. Keep the
+Constellation base URL configurable internally, but avoid exposing it as a casual
+end-user setting.

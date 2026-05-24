@@ -81,7 +81,7 @@ Use `just` for common workflows:
 | `just check`           | Format, lint, and test in sequence                    |
 
 For release versioning, signing, packaging, and distribution, see the
-[release documentation](docs/release.md).
+[release documentation](docs/dev/release.md).
 
 ## Website
 

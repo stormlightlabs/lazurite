@@ -17,6 +17,8 @@ in the `app.bsky.feed.post` collection.
 Text length is counted with Dart grapheme clusters, not code units. The submit
 action is disabled for empty text and over-limit posts. Rich text facets are
 detected before submission and rendered as a live preview while the user types.
+Post editing reuses compose in a restricted edit mode; see
+[post-editing.md](./post-editing.md).
 
 Images upload through `com.atproto.repo.uploadBlob` and are embedded as
 `app.bsky.embed.images`. A post may include up to four images. Video upload
@@ -31,15 +33,14 @@ returns.
 
 ## Notifications
 
-`NotificationBloc` in `lib/features/notifications/bloc` owns polling state.
-Polling notifications use `app.bsky.notification.listNotifications`,
-`getUnreadCount`, and `updateSeen`. Notifications are grouped by day and render
-author, reason, reason icon, read state, and an optional post preview.
+`NotificationBloc` in `lib/features/notifications/bloc` owns alerts-screen state.
+`NotificationDomainService` owns polling, push-triggered reconcile, delivery
+dedupe, and local notification display. See [notifications.md](./notifications.md)
+for the full processing model.
 
 Foreground unread polling runs on an interval while the app is active. Opening
 the notifications screen marks current notifications as seen. Tapping a
-notification routes to the relevant post or profile. Later push notification
-work builds on this navigation and seen-state model.
+notification routes to the relevant post or profile.
 
 ## Post And Profile Actions
 

@@ -72,6 +72,7 @@
 - Edit profile screen with support for updating display name, bio, images, pronouns,
 and website
 - Display pronouns and website (with link to browser) on profile screens
+- English localization foundation and expanded localized UI coverage.
 
 ### Changed
 
@@ -208,3 +209,10 @@ TODO
 #### 2026-05-01
 
 - Separate views for local and protocol-level saved/bookmarked posts.
+- Local notification UI and unread-count badges.
+- Push notification registration and delivery flow.
+
+#### 2026-05-03
+
+- Firebase push-notification configuration for iOS and Android.
+- Notification reason handling and deep links for notification taps.

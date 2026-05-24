@@ -1,29 +1,8 @@
-# Internationalization Milestones
+# Internationalization Tasks
 
-## M0 - Foundation and English ARB
-
-- [x] Add `flutter_localizations`, `intl`, `flutter.generate`, and `l10n.yaml`
-- [x] Add canonical `lib/core/l10n/intl_en.arb`
-- [x] Generate and track `AppLocalizations` Dart files
-- [x] Wire `MaterialApp.router` delegates and supported locales
-- [x] Add `context.l10n` helper for Lazurite widgets
-
-## M1 - Core, Shared, Auth, Settings, Search
-
-- [x] Localize app shell navigation, drawer labels, and common menu copy
-- [x] Localize shared confirmation/error/moderation overlay copy
-- [x] Localize login, saved account actions, and legal links
-- [x] Localize settings sections, provider dialogs, and troubleshooting actions
-- [x] Localize primary search tabs, placeholders, filters, and unavailable states
-- [x] Add focused widget/localization tests for migrated surfaces
-
-## M2 - Remaining Feature Surfaces
-
-- [x] Localize feed cards, post menus, post actions, saved posts, and trending
-- [x] Localize compose flow, media alt text editors, draft/schedule states, and validation
-- [x] Localize profile screens, profile actions, reports, follows, lists, and starter packs
-- [x] Localize messages, notifications, alerts, and account switching sheets
-- [x] Localize moderation settings/detail screens and logs/devtools user-facing labels
+Completed localization foundation and feature-surface migration work is recorded in
+[CHANGELOG.md, v1.0.0 (Alpha 6)](../../CHANGELOG.md#v100-alpha-6). Notes live in
+[docs/dev/internationalization.md](../dev/internationalization.md).
 
 ## M3 - User-Facing Language Selection
 

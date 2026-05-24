@@ -1,6 +1,6 @@
 ---
 title: To-Do/Parking Lot
-updated: 2026-05-16
+updated: 2026-05-23
 ---
 
 ## Tests
@@ -46,6 +46,43 @@ updated: 2026-05-16
   - Cards (stacked) on Mobile, with swipe to go back
 
 ## Enhancements
+
+### Relational Discovery
+
+- Post threads: show quote posts for the focused post.
+  - Discover candidate posts from `app.bsky.feed.post` record embeds that point at
+    the focused post.
+  - Hydrate through AppView before rendering and apply existing moderation filtering.
+- Post/link cards: show more posts about the same link or domain.
+  - Use post facets/external embeds for URL/domain relationships.
+  - Rank recent/high-signal posts first and cap repeated authors.
+- Profiles: show starter packs featuring the account.
+  - Use `app.bsky.graph.starterpackitem:subject` relationships.
+  - Hydrate starter packs before rendering and filter unsafe/unavailable records.
+- Profiles: show public lists containing the account.
+  - Use `app.bsky.graph.listitem:subject` relationships.
+  - Be careful with abusive list names/descriptions; hydrate/filter before rendering.
+- Profiles: show similar accounts.
+  - Define as accounts often followed by the same people, or accounts followed by
+    people who follow this account.
+  - Add ranking dampening so celebrity accounts do not dominate results.
+- Post threads: show "Also reposted" posts.
+  - Define as posts reposted by accounts who reposted the focused post.
+  - Keep the relationship lookup plus AppView hydration bounded to one page at a time.
+- Thread roots: show other active branches in the same conversation.
+  - Use `app.bsky.feed.post` reply root/parent relationships.
+  - Rank by recent activity and collapse noisy branches by default.
+- Lists/starter packs: show similar lists and similar starter packs by overlapping
+  members.
+  - Hydrate records before display and avoid surfacing unavailable/deleted records.
+- Profiles: show posts mentioning the account.
+  - Use mention facets pointing at the account DID.
+  - Hydrate through AppView, apply existing moderation filtering, then rank for
+    usefulness.
+  - MVP ranking guardrails: prefer non-replies, recent/high-engagement posts, cap posts
+    per author, and deprioritize posts with many mentions or repeated text.
+
+---
 
 - Adding `/rss` for public BlueSky profiles shows their profile as an RSS feed.
   It would be cool to display this and allow exporting the feed or a link to it.
