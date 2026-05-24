@@ -40,6 +40,7 @@ import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/notifications/background/notification_background_worker.dart';
+import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/notifications/domain/local_notification_adapter.dart';
 import 'package:lazurite/features/notifications/domain/notification_deep_link_navigator.dart';
@@ -659,6 +660,10 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
                         database: widget.database,
                         accountDid: accountDid,
                       ),
+                    ),
+                    BlocProvider(
+                      create: (context) =>
+                          UnreadCountCubit(notificationDomainService: context.read<NotificationDomainService>()),
                     ),
                     BlocProvider(
                       create: (context) =>
