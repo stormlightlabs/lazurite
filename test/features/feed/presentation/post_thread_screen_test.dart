@@ -188,7 +188,38 @@ void main() {
     expect(find.text('Root post', findRichText: true), findsOneWidget);
     expect(find.text('Child reply', findRichText: true), findsOneWidget);
     expect(find.byKey(const ValueKey('public_post_card_footer')), findsNWidgets(2));
+    expect(find.byType(BackButton), findsOneWidget);
     expect(find.byIcon(Icons.bookmark_outline), findsNothing);
+  });
+
+  testWidgets('renders authenticated thread with an explicit back button', (tester) async {
+    final root = _makeThread(did: 'did:plc:root', handle: 'root.bsky.social', rkey: 'root', text: 'Root post');
+    when(() => mockPostThreadRepository.getPostThread(root.post.uri.toString())).thenAnswer((_) async => root);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<String>.value(value: 'did:plc:current'),
+            RepositoryProvider<PostThreadRepository>.value(value: mockPostThreadRepository),
+            RepositoryProvider<PostActionRepository>.value(value: mockPostActionRepository),
+            RepositoryProvider<PostActionCache>(create: (_) => PostActionCache()),
+          ],
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider<SettingsCubit>.value(value: mockSettingsCubit),
+              BlocProvider<SavedPostsCubit>.value(value: mockSavedPostsCubit),
+              BlocProvider<ConnectivityCubit>.value(value: mockConnectivityCubit),
+            ],
+            child: PostThreadScreen(postUri: root.post.uri.toString()),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Root post', findRichText: true), findsOneWidget);
+    expect(find.byType(BackButton), findsOneWidget);
   });
 
   testWidgets('renders nested threaded replies recursively', (tester) async {

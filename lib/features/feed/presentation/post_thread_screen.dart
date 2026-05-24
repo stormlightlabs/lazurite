@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/post.dart';
-import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/router/app_route_paths.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
@@ -34,12 +34,14 @@ import 'package:lazurite/features/moderation/presentation/widgets/moderated_avat
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/report_dialog.dart';
+import 'package:lazurite/features/public/presentation/public_route_state.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/shared/presentation/helpers/haptic_helper.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
-import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.dart';
+import 'package:lazurite/shared/presentation/widgets/confirmation_dialog.dart';
 import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
+import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 
 class PostThreadScreen extends StatelessWidget {
   const PostThreadScreen({super.key, required this.postUri, this.publicProviderKey});
@@ -218,7 +220,10 @@ class _PostThreadContentState extends State<_PostThreadContent> {
         _syncInitialCollapsedUris(state.thread!);
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Thread')),
+        appBar: AppBar(
+          leading: _ThreadBackButton(publicProviderKey: widget.publicProviderKey),
+          title: const Text('Thread'),
+        ),
         body: BlocBuilder<PostThreadCubit, PostThreadState>(
           builder: (context, state) {
             return switch (state.status) {
@@ -342,6 +347,34 @@ class _PostThreadContentState extends State<_PostThreadContent> {
       current = parentThread.parent;
     }
     return parents.reversed.toList();
+  }
+}
+
+class _ThreadBackButton extends StatelessWidget {
+  const _ThreadBackButton({required this.publicProviderKey});
+
+  final String? publicProviderKey;
+
+  @override
+  Widget build(BuildContext context) => BackButton(onPressed: () => unawaited(_navigateBack(context)));
+
+  Future<void> _navigateBack(BuildContext context) async {
+    final router = GoRouter.maybeOf(context);
+    if (router != null && router.canPop()) {
+      router.pop();
+      return;
+    }
+
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+
+    final fallbackLocation = publicProviderKey == null
+        ? AppRoutePath.home.path
+        : PublicRouteState(providerKey: publicProviderKey!, contentTab: PublicContentTab.discover).location;
+    router?.go(fallbackLocation);
   }
 }
 

@@ -47,12 +47,14 @@ void main() {
 
     router.go('/');
     await tester.pumpAndSettle();
-    navigateToPublicPost(buttonContext, 'at://did:plc:alice/app.bsky.feed.post/abc', context);
+    final postNavigation = navigateToPublicPost(buttonContext, 'at://did:plc:alice/app.bsky.feed.post/abc', context);
     await tester.pumpAndSettle();
     expect(find.textContaining('provider=blacksky'), findsOneWidget);
     expect(find.textContaining('/post?'), findsOneWidget);
-    expect(router.canPop(), isFalse);
+    expect(router.canPop(), isTrue);
 
+    router.pop();
+    await postNavigation;
     router.go('/');
     await tester.pumpAndSettle();
     navigateToPublicProfile(buttonContext, 'alice.bsky.social', context);
@@ -62,13 +64,11 @@ void main() {
   });
 }
 
-GeneratorView _feed() {
-  return GeneratorView(
-    uri: atcore.AtUri.parse('at://did:plc:feed/app.bsky.feed.generator/news'),
-    cid: 'cid',
-    did: 'did:web:feeds.example',
-    creator: const ProfileView(did: 'did:plc:feed', handle: 'feeds.example'),
-    displayName: 'News',
-    indexedAt: DateTime.utc(2026, 5, 18),
-  );
-}
+GeneratorView _feed() => GeneratorView(
+  uri: atcore.AtUri.parse('at://did:plc:feed/app.bsky.feed.generator/news'),
+  cid: 'cid',
+  did: 'did:web:feeds.example',
+  creator: const ProfileView(did: 'did:plc:feed', handle: 'feeds.example'),
+  displayName: 'News',
+  indexedAt: DateTime.utc(2026, 5, 18),
+);

@@ -29,7 +29,7 @@ void navigateToPublicProfile(BuildContext context, String actor, PublicProviderC
   context.go(uri.toString());
 }
 
-void navigateToPublicPost(BuildContext context, String postUri, PublicProviderContext providerContext) {
+Future<Object?> navigateToPublicPost(BuildContext context, String postUri, PublicProviderContext providerContext) {
   final uri = Uri(path: '/post', queryParameters: {'uri': postUri, 'provider': providerContext.providerKey});
-  context.go(uri.toString());
+  return context.push(uri.toString());
 }
