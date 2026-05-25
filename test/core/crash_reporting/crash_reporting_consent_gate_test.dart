@@ -67,7 +67,7 @@ void main() {
       themePalette: AppThemePalette.oxocarbon,
       themeVariant: AppThemeVariant.dark,
       useSystemTheme: false,
-      feedLayout: FeedLayout.card,
+      feedLayout: FeedLayout.comfortable,
       crashReportingEnabled: false,
       crashReportingConsentPrompted: false,
     );

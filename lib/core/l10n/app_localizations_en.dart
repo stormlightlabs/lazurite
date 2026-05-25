@@ -868,7 +868,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messageDeveloperGoOfflineSubtitle => 'Turn off online connectivity';
 
   @override
-  String get messageFeedLayoutCard => 'Card';
+  String get messageFeedLayoutComfortable => 'Comfortable';
 
   @override
   String get messageLoadingSavedAccounts => 'Loading saved accounts...';

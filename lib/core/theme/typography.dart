@@ -38,19 +38,38 @@ enum AppCodeFontFamily {
   final String label;
 }
 
+enum AppFontSize {
+  small('small', 'Small', 14),
+  normal('normal', 'Normal', 16),
+  large('large', 'Large', 18);
+
+  const AppFontSize(this.key, this.label, this.value);
+
+  final String key;
+  final String label;
+  final double value;
+}
+
 @immutable
 class AppFontTheme extends ThemeExtension<AppFontTheme> {
-  const AppFontTheme({required this.headingFontFamily, required this.contentFontFamily, required this.codeFontFamily});
+  const AppFontTheme({
+    required this.headingFontFamily,
+    required this.contentFontFamily,
+    required this.codeFontFamily,
+    required this.contentFontSize,
+  });
 
   static const defaults = AppFontTheme(
     headingFontFamily: AppHeadingFontFamily.lora,
     contentFontFamily: AppContentFontFamily.googleSans,
     codeFontFamily: AppCodeFontFamily.googleSansCode,
+    contentFontSize: AppFontSize.normal,
   );
 
   final AppHeadingFontFamily headingFontFamily;
   final AppContentFontFamily contentFontFamily;
   final AppCodeFontFamily codeFontFamily;
+  final AppFontSize contentFontSize;
 
   TextStyle codeTextStyle({
     double fontSize = 14,
@@ -72,10 +91,12 @@ class AppFontTheme extends ThemeExtension<AppFontTheme> {
     AppHeadingFontFamily? headingFontFamily,
     AppContentFontFamily? contentFontFamily,
     AppCodeFontFamily? codeFontFamily,
+    AppFontSize? contentFontSize,
   }) => AppFontTheme(
     headingFontFamily: headingFontFamily ?? this.headingFontFamily,
     contentFontFamily: contentFontFamily ?? this.contentFontFamily,
     codeFontFamily: codeFontFamily ?? this.codeFontFamily,
+    contentFontSize: contentFontSize ?? this.contentFontSize,
   );
 
   @override
@@ -296,7 +317,10 @@ class AppTypography {
     Color? captionColor,
     AppHeadingFontFamily headingFontFamily = AppHeadingFontFamily.lora,
     AppContentFontFamily contentFontFamily = AppContentFontFamily.googleSans,
+    AppFontSize contentFontSize = AppFontSize.normal,
   }) {
+    final bodyFontSize = contentFontSize.value;
+
     return TextTheme(
       displayLarge: heading(
         headingFontFamily,
@@ -327,42 +351,42 @@ class AppTypography {
       ),
       bodyLarge: content(
         contentFontFamily,
-        fontSize: 16,
+        fontSize: bodyFontSize,
         fontWeight: FontWeight.w400,
         color: bodyColor,
         letterSpacing: 0.5,
       ),
       bodyMedium: content(
         contentFontFamily,
-        fontSize: 14,
+        fontSize: bodyFontSize - 2,
         fontWeight: FontWeight.w400,
         color: bodyColor,
         letterSpacing: 0.25,
       ),
       bodySmall: content(
         contentFontFamily,
-        fontSize: 12,
+        fontSize: bodyFontSize - 4,
         fontWeight: FontWeight.w400,
         color: captionColor,
         letterSpacing: 0.4,
       ),
       labelLarge: content(
         contentFontFamily,
-        fontSize: 14,
+        fontSize: bodyFontSize - 2,
         fontWeight: FontWeight.w500,
         color: bodyColor,
         letterSpacing: 0.1,
       ),
       labelMedium: content(
         contentFontFamily,
-        fontSize: 12,
+        fontSize: bodyFontSize - 4,
         fontWeight: FontWeight.w500,
         color: bodyColor,
         letterSpacing: 0.5,
       ),
       labelSmall: content(
         contentFontFamily,
-        fontSize: 12,
+        fontSize: bodyFontSize - 4,
         fontWeight: FontWeight.w500,
         color: captionColor,
         letterSpacing: 0.5,
@@ -375,6 +399,7 @@ class AppTypography {
     required AppHeadingFontFamily headingFontFamily,
     required AppContentFontFamily contentFontFamily,
     required AppCodeFontFamily codeFontFamily,
+    required AppFontSize contentFontSize,
   }) {
     final bodyColor = theme.textTheme.bodyMedium?.color ?? theme.colorScheme.onSurface;
     final headlineColor = theme.textTheme.headlineMedium?.color ?? theme.colorScheme.onSurface;
@@ -385,11 +410,13 @@ class AppTypography {
       captionColor: captionColor,
       headingFontFamily: headingFontFamily,
       contentFontFamily: contentFontFamily,
+      contentFontSize: contentFontSize,
     );
     final fontTheme = AppFontTheme(
       headingFontFamily: headingFontFamily,
       contentFontFamily: contentFontFamily,
       codeFontFamily: codeFontFamily,
+      contentFontSize: contentFontSize,
     );
 
     return theme.copyWith(
@@ -406,13 +433,13 @@ class AppTypography {
       listTileTheme: theme.listTileTheme.copyWith(
         titleTextStyle: content(
           contentFontFamily,
-          fontSize: 16,
+          fontSize: contentFontSize.value,
           fontWeight: FontWeight.w500,
           color: theme.listTileTheme.titleTextStyle?.color ?? theme.listTileTheme.textColor,
         ),
         subtitleTextStyle: content(
           contentFontFamily,
-          fontSize: 14,
+          fontSize: contentFontSize.value - 2,
           color: theme.listTileTheme.subtitleTextStyle?.color ?? theme.colorScheme.onSurfaceVariant,
         ),
       ),
@@ -450,6 +477,9 @@ class AppTypography {
     (fontFamily) => fontFamily.key == value,
     orElse: () => AppCodeFontFamily.googleSansCode,
   );
+
+  static AppFontSize parseFontSize(String? value) =>
+      AppFontSize.values.firstWhere((fontSize) => fontSize.key == value, orElse: () => AppFontSize.normal);
 
   static TextStyle _font(
     TextStyle Function({

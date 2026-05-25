@@ -283,6 +283,19 @@ class SettingsScreen extends StatelessWidget {
               },
             ),
             const Divider(height: 1),
+            SettingsDropdownTile<AppFontSize>(
+              title: 'Font Size',
+              value: state.contentFontSize,
+              options: AppFontSize.values,
+              labelBuilder: (fontSize) => fontSize.label,
+              optionBuilder: _fontSizeOption,
+              onChanged: (value) {
+                if (value != null) {
+                  settingsCubit.setContentFontSize(value);
+                }
+              },
+            ),
+            const Divider(height: 1),
             SettingsDropdownTile<AppCodeFontFamily>(
               title: 'Code Font',
               value: state.codeFontFamily,
@@ -314,6 +327,16 @@ class SettingsScreen extends StatelessWidget {
     style: AppTypography.content(fontFamily, color: context.colorScheme.onSurface),
   );
 
+  Widget _fontSizeOption(BuildContext context, AppFontSize fontSize) => Text(
+    '${fontSize.label} (${fontSize.value.toInt()})',
+    textAlign: TextAlign.right,
+    style: AppTypography.content(
+      context.fontTheme.contentFontFamily,
+      fontSize: fontSize.value,
+      color: context.colorScheme.onSurface,
+    ),
+  );
+
   Widget _codeFontOption(BuildContext context, AppCodeFontFamily fontFamily) => Text(
     fontFamily.label,
     textAlign: TextAlign.right,
@@ -340,7 +363,7 @@ class SettingsScreen extends StatelessWidget {
                     value: state.feedLayout,
                     options: FeedLayout.values,
                     labelBuilder: (layout) => switch (layout) {
-                      FeedLayout.card => l10n.messageFeedLayoutCard,
+                      FeedLayout.comfortable => l10n.messageFeedLayoutComfortable,
                       FeedLayout.compact => l10n.messageFeedLayoutCompact,
                     },
                     onChanged: (value) {

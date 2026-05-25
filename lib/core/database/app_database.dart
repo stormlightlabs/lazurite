@@ -41,7 +41,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _serializedWriteTail = Future.value();
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 24;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -175,6 +175,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 23) {
         await migrator.addColumn(accounts, accounts.oauthClientId);
+      }
+      if (from < 24) {
+        await customStatement("UPDATE settings SET value = 'comfortable' WHERE key = 'feed_layout' AND value = 'card'");
       }
     },
   );

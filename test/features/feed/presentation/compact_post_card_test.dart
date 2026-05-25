@@ -100,7 +100,7 @@ void main() {
     final theme = AppTheme.getTheme(AppThemePalette.oxocarbon, AppThemeVariant.dark);
 
     expect(style?.fontFamily, theme.textTheme.titleSmall?.fontFamily);
-    expect(style?.fontSize, theme.textTheme.bodySmall?.fontSize);
+    expect(style?.fontSize, 16);
   });
 
   testWidgets('renders quoted post context in compact layout', (tester) async {
@@ -117,7 +117,7 @@ void main() {
     final richText = tester.widget<RichText>(quotedText);
     final theme = AppTheme.getTheme(AppThemePalette.oxocarbon, AppThemeVariant.dark);
     final style = (richText.text as TextSpan).style;
-    expect(style?.fontSize, theme.textTheme.bodySmall?.fontSize);
+    expect(style?.fontSize, 14);
     expect(style?.fontFamily, theme.textTheme.titleSmall?.fontFamily);
     expect(richText.maxLines, 6);
   });

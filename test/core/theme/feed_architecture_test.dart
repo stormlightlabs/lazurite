@@ -5,19 +5,19 @@ void main() {
   group('FeedLayout', () {
     group('fromString', () {
       test('parses grid', () {
-        expect(FeedLayout.fromString('grid'), FeedLayout.card);
+        expect(FeedLayout.fromString('grid'), FeedLayout.comfortable);
       });
 
       test('parses linear', () {
         expect(FeedLayout.fromString('linear'), FeedLayout.compact);
       });
 
-      test('null returns grid', () {
-        expect(FeedLayout.fromString(null), FeedLayout.card);
+      test('null returns comfortable', () {
+        expect(FeedLayout.fromString(null), FeedLayout.comfortable);
       });
 
-      test('unknown value returns grid', () {
-        expect(FeedLayout.fromString('unknown'), FeedLayout.card);
+      test('unknown value returns comfortable', () {
+        expect(FeedLayout.fromString('unknown'), FeedLayout.comfortable);
       });
 
       test('round-trips all values via name', () {

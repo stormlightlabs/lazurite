@@ -93,7 +93,7 @@ void main() {
         themePalette: AppThemePalette.oxocarbon,
         themeVariant: AppThemeVariant.dark,
         useSystemTheme: false,
-        feedLayout: FeedLayout.card,
+        feedLayout: FeedLayout.comfortable,
       ),
     );
     whenListen(
@@ -103,7 +103,7 @@ void main() {
         themePalette: AppThemePalette.oxocarbon,
         themeVariant: AppThemeVariant.dark,
         useSystemTheme: false,
-        feedLayout: FeedLayout.card,
+        feedLayout: FeedLayout.comfortable,
       ),
     );
     when(() => settingsCubit.setAppViewProvider(any())).thenAnswer((_) async {});
@@ -218,10 +218,12 @@ void main() {
     expect(find.text('System'), findsOneWidget);
     expect(find.text('Heading Font'), findsOneWidget);
     expect(find.text('Content Font'), findsOneWidget);
+    expect(find.text('Font Size'), findsOneWidget);
     expect(find.text('Code Font'), findsOneWidget);
     expect(find.text('Lora'), findsOneWidget);
     expect(find.text('Google Sans'), findsWidgets);
     expect(find.text('Google Sans Code'), findsOneWidget);
+    expect(find.text('Normal (16)'), findsOneWidget);
 
     await tester.scrollUntilVisible(find.text('Feed Layout'), 300);
     await tester.pumpAndSettle();
@@ -547,7 +549,7 @@ void main() {
         themePalette: AppThemePalette.oxocarbon,
         themeVariant: AppThemeVariant.dark,
         useSystemTheme: false,
-        feedLayout: FeedLayout.card,
+        feedLayout: FeedLayout.comfortable,
         appViewProvider: AppViewProviders.blueskyKey,
       ),
     );
@@ -558,7 +560,7 @@ void main() {
         themePalette: AppThemePalette.oxocarbon,
         themeVariant: AppThemeVariant.dark,
         useSystemTheme: false,
-        feedLayout: FeedLayout.card,
+        feedLayout: FeedLayout.comfortable,
         appViewProvider: AppViewProviders.blueskyKey,
       ),
     );
@@ -585,7 +587,7 @@ void main() {
         themePalette: AppThemePalette.oxocarbon,
         themeVariant: AppThemeVariant.dark,
         useSystemTheme: false,
-        feedLayout: FeedLayout.card,
+        feedLayout: FeedLayout.comfortable,
         appViewProvider: AppViewProviders.blueskyKey,
       ),
     );
@@ -596,7 +598,7 @@ void main() {
         themePalette: AppThemePalette.oxocarbon,
         themeVariant: AppThemeVariant.dark,
         useSystemTheme: false,
-        feedLayout: FeedLayout.card,
+        feedLayout: FeedLayout.comfortable,
         appViewProvider: AppViewProviders.blueskyKey,
       ),
     );

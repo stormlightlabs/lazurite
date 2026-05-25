@@ -30,7 +30,8 @@ void main() {
       expect(cubit.state.headingFontFamily, AppHeadingFontFamily.lora);
       expect(cubit.state.contentFontFamily, AppContentFontFamily.googleSans);
       expect(cubit.state.codeFontFamily, AppCodeFontFamily.googleSansCode);
-      expect(cubit.state.feedLayout, FeedLayout.card);
+      expect(cubit.state.contentFontSize, AppFontSize.normal);
+      expect(cubit.state.feedLayout, FeedLayout.comfortable);
       expect(cubit.state.animationsEnabled, true);
       expect(cubit.state.simulateOffline, false);
       expect(cubit.state.threadAutoCollapseDepth, isNull);
@@ -51,6 +52,7 @@ void main() {
         initialHeadingFontFamily: AppHeadingFontFamily.merriweather,
         initialContentFontFamily: AppContentFontFamily.publicSans,
         initialCodeFontFamily: AppCodeFontFamily.firaCode,
+        initialContentFontSize: AppFontSize.large,
         initialFeedLayout: FeedLayout.compact,
         initialAnimationsEnabled: false,
         initialSimulateOffline: true,
@@ -62,6 +64,7 @@ void main() {
       expect(cubit.state.headingFontFamily, AppHeadingFontFamily.merriweather);
       expect(cubit.state.contentFontFamily, AppContentFontFamily.publicSans);
       expect(cubit.state.codeFontFamily, AppCodeFontFamily.firaCode);
+      expect(cubit.state.contentFontSize, AppFontSize.large);
       expect(cubit.state.feedLayout, FeedLayout.compact);
       expect(cubit.state.animationsEnabled, false);
       expect(cubit.state.simulateOffline, true);
@@ -78,6 +81,7 @@ void main() {
         await database.setSetting('heading_font_family', 'crimsonPro');
         await database.setSetting('content_font_family', 'dmSans');
         await database.setSetting('code_font_family', 'sourceCodePro');
+        await database.setSetting('content_font_size', 'small');
         await database.setSetting('feed_architecture', 'linear');
         await database.setSetting('animations_enabled', 'false');
         await database.setSetting('simulate_offline', 'true');
@@ -92,6 +96,7 @@ void main() {
             .having((s) => s.headingFontFamily, 'headingFontFamily', AppHeadingFontFamily.crimsonPro)
             .having((s) => s.contentFontFamily, 'contentFontFamily', AppContentFontFamily.dmSans)
             .having((s) => s.codeFontFamily, 'codeFontFamily', AppCodeFontFamily.sourceCodePro)
+            .having((s) => s.contentFontSize, 'contentFontSize', AppFontSize.small)
             .having((s) => s.feedLayout, 'feedLayout', FeedLayout.compact)
             .having((s) => s.animationsEnabled, 'animationsEnabled', false)
             .having((s) => s.simulateOffline, 'simulateOffline', true)
@@ -111,7 +116,8 @@ void main() {
             .having((s) => s.headingFontFamily, 'headingFontFamily', AppHeadingFontFamily.lora)
             .having((s) => s.contentFontFamily, 'contentFontFamily', AppContentFontFamily.googleSans)
             .having((s) => s.codeFontFamily, 'codeFontFamily', AppCodeFontFamily.googleSansCode)
-            .having((s) => s.feedLayout, 'feedLayout', FeedLayout.card)
+            .having((s) => s.contentFontSize, 'contentFontSize', AppFontSize.normal)
+            .having((s) => s.feedLayout, 'feedLayout', FeedLayout.comfortable)
             .having((s) => s.animationsEnabled, 'animationsEnabled', true)
             .having((s) => s.simulateOffline, 'simulateOffline', false)
             .having((s) => s.threadAutoCollapseDepth, 'threadAutoCollapseDepth', isNull)
@@ -216,6 +222,17 @@ void main() {
     );
 
     blocTest<SettingsCubit, SettingsState>(
+      'setContentFontSize updates state and persists to database',
+      build: () => SettingsCubit(database: database),
+      act: (cubit) => cubit.setContentFontSize(AppFontSize.large),
+      expect: () => [isA<SettingsState>().having((s) => s.contentFontSize, 'contentFontSize', AppFontSize.large)],
+      verify: (cubit) async {
+        final value = await database.getSetting('content_font_size');
+        expect(value, 'large');
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
       'setFeedLayout updates state and persists to database',
       build: () => SettingsCubit(database: database),
       act: (cubit) => cubit.setFeedLayout(FeedLayout.compact),
@@ -229,11 +246,11 @@ void main() {
     blocTest<SettingsCubit, SettingsState>(
       'setFeedLayout card updates state and persists to database',
       build: () => SettingsCubit(database: database, initialFeedLayout: FeedLayout.compact),
-      act: (cubit) => cubit.setFeedLayout(FeedLayout.card),
-      expect: () => [isA<SettingsState>().having((s) => s.feedLayout, 'feedLayout', FeedLayout.card)],
+      act: (cubit) => cubit.setFeedLayout(FeedLayout.comfortable),
+      expect: () => [isA<SettingsState>().having((s) => s.feedLayout, 'feedLayout', FeedLayout.comfortable)],
       verify: (cubit) async {
         final value = await database.getSetting('feed_layout');
-        expect(value, 'card');
+        expect(value, 'comfortable');
       },
     );
 

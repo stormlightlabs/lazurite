@@ -14,7 +14,8 @@ class SettingsState extends Equatable {
     this.headingFontFamily = AppHeadingFontFamily.lora,
     this.contentFontFamily = AppContentFontFamily.googleSans,
     this.codeFontFamily = AppCodeFontFamily.googleSansCode,
-    this.feedLayout = FeedLayout.card,
+    this.contentFontSize = AppFontSize.normal,
+    this.feedLayout = FeedLayout.comfortable,
     this.animationsEnabled = true,
     this.simulateOffline = false,
     this.threadAutoCollapseDepth,
@@ -42,6 +43,7 @@ class SettingsState extends Equatable {
   final AppHeadingFontFamily headingFontFamily;
   final AppContentFontFamily contentFontFamily;
   final AppCodeFontFamily codeFontFamily;
+  final AppFontSize contentFontSize;
   final FeedLayout feedLayout;
   final bool animationsEnabled;
   final bool simulateOffline;
@@ -100,6 +102,7 @@ class SettingsState extends Equatable {
     AppHeadingFontFamily? headingFontFamily,
     AppContentFontFamily? contentFontFamily,
     AppCodeFontFamily? codeFontFamily,
+    AppFontSize? contentFontSize,
     FeedLayout? feedLayout,
     bool? animationsEnabled,
     bool? simulateOffline,
@@ -128,6 +131,7 @@ class SettingsState extends Equatable {
       headingFontFamily: headingFontFamily ?? this.headingFontFamily,
       contentFontFamily: contentFontFamily ?? this.contentFontFamily,
       codeFontFamily: codeFontFamily ?? this.codeFontFamily,
+      contentFontSize: contentFontSize ?? this.contentFontSize,
       feedLayout: feedLayout ?? this.feedLayout,
       animationsEnabled: animationsEnabled ?? this.animationsEnabled,
       simulateOffline: simulateOffline ?? this.simulateOffline,
@@ -169,6 +173,7 @@ class SettingsState extends Equatable {
     headingFontFamily,
     contentFontFamily,
     codeFontFamily,
+    contentFontSize,
     feedLayout,
     animationsEnabled,
     simulateOffline,

@@ -1633,11 +1633,11 @@ abstract class AppLocalizations {
   /// **'Turn off online connectivity'**
   String get messageDeveloperGoOfflineSubtitle;
 
-  /// Feed layout card option
+  /// Feed layout comfortable option
   ///
   /// In en, this message translates to:
-  /// **'Card'**
-  String get messageFeedLayoutCard;
+  /// **'Comfortable'**
+  String get messageFeedLayoutComfortable;
 
   /// Loading message while saved accounts load
   ///

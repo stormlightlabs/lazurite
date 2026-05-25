@@ -1217,9 +1217,9 @@
   "@messageDeveloperGoOfflineSubtitle": {
     "description": "Developer setting subtitle for simulated offline"
   },
-  "messageFeedLayoutCard": "Card",
-  "@messageFeedLayoutCard": {
-    "description": "Feed layout card option"
+  "messageFeedLayoutComfortable": "Comfortable",
+  "@messageFeedLayoutComfortable": {
+    "description": "Feed layout comfortable option"
   },
   "messageLoadingSavedAccounts": "Loading saved accounts...",
   "@messageLoadingSavedAccounts": {

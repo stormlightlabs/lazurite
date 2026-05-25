@@ -22,7 +22,7 @@ SettingsState _baseSettings({bool semanticSearchEnabled = false, int maxResults 
   themePalette: AppThemePalette.oxocarbon,
   themeVariant: AppThemeVariant.dark,
   useSystemTheme: false,
-  feedLayout: FeedLayout.card,
+  feedLayout: FeedLayout.comfortable,
   semanticSearchEnabled: semanticSearchEnabled,
   semanticSearchMaxResults: maxResults,
 );

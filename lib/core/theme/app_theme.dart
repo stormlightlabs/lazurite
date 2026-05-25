@@ -6,6 +6,7 @@ import 'package:lazurite/core/theme/oxocarbon_theme.dart';
 import 'package:lazurite/core/theme/purple_theme.dart';
 import 'package:lazurite/core/theme/rose_pine_theme.dart';
 import 'package:lazurite/core/theme/typography.dart';
+import 'package:lazurite/features/settings/bloc/settings_state.dart';
 
 enum AppThemePalette { lazurite, oxocarbon, catppuccin, nord, rosePine, purple }
 
@@ -20,6 +21,7 @@ class AppTheme {
     AppHeadingFontFamily headingFontFamily = AppHeadingFontFamily.lora,
     AppContentFontFamily contentFontFamily = AppContentFontFamily.googleSans,
     AppCodeFontFamily codeFontFamily = AppCodeFontFamily.googleSansCode,
+    AppFontSize contentFontSize = AppFontSize.normal,
   }) {
     final theme = switch (palette) {
       AppThemePalette.lazurite => variant == AppThemeVariant.light ? LazuriteTheme.light() : LazuriteTheme.dark(),
@@ -35,8 +37,18 @@ class AppTheme {
       headingFontFamily: headingFontFamily,
       contentFontFamily: contentFontFamily,
       codeFontFamily: codeFontFamily,
+      contentFontSize: contentFontSize,
     );
   }
+
+  static ThemeData getThemeFromState(AppThemeVariant variant, SettingsState settings) => getTheme(
+    settings.themePalette,
+    variant,
+    headingFontFamily: settings.headingFontFamily,
+    contentFontFamily: settings.contentFontFamily,
+    codeFontFamily: settings.codeFontFamily,
+    contentFontSize: settings.contentFontSize,
+  );
 
   static String getPaletteName(AppThemePalette palette) {
     switch (palette) {

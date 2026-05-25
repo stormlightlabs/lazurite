@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
+import 'package:lazurite/core/theme/typography.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 
 void main() {
@@ -65,12 +66,29 @@ void main() {
       expect(state1, isNot(equals(state2)));
     });
 
+    test('inequality when contentFontSize differs', () {
+      const state1 = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+        contentFontSize: AppFontSize.normal,
+      );
+      const state2 = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+        contentFontSize: AppFontSize.large,
+      );
+
+      expect(state1, isNot(equals(state2)));
+    });
+
     test('inequality when feedLayout differs', () {
       const state1 = SettingsState(
         themePalette: AppThemePalette.oxocarbon,
         themeVariant: AppThemeVariant.dark,
         useSystemTheme: false,
-        feedLayout: FeedLayout.card,
+        feedLayout: FeedLayout.comfortable,
       );
       const state2 = SettingsState(
         themePalette: AppThemePalette.oxocarbon,
@@ -144,6 +162,7 @@ void main() {
         themePalette: AppThemePalette.nord,
         themeVariant: AppThemeVariant.light,
         useSystemTheme: true,
+        contentFontSize: AppFontSize.large,
         feedLayout: FeedLayout.compact,
         animationsEnabled: false,
         simulateOffline: true,
@@ -158,6 +177,7 @@ void main() {
       expect(updated.themePalette, AppThemePalette.nord);
       expect(updated.themeVariant, AppThemeVariant.light);
       expect(updated.useSystemTheme, true);
+      expect(updated.contentFontSize, AppFontSize.large);
       expect(updated.feedLayout, FeedLayout.compact);
       expect(updated.animationsEnabled, false);
       expect(updated.simulateOffline, true);
@@ -175,6 +195,7 @@ void main() {
         themePalette: AppThemePalette.catppuccin,
         themeVariant: AppThemeVariant.light,
         useSystemTheme: true,
+        contentFontSize: AppFontSize.large,
         feedLayout: FeedLayout.compact,
         animationsEnabled: false,
         simulateOffline: true,
@@ -186,6 +207,7 @@ void main() {
       expect(updated.themePalette, AppThemePalette.catppuccin);
       expect(updated.themeVariant, AppThemeVariant.light);
       expect(updated.useSystemTheme, true);
+      expect(updated.contentFontSize, AppFontSize.large);
       expect(updated.feedLayout, FeedLayout.compact);
       expect(updated.animationsEnabled, false);
       expect(updated.simulateOffline, true);
@@ -224,6 +246,7 @@ void main() {
       expect(state.props, contains(AppThemePalette.rosePine));
       expect(state.props, contains(AppThemeVariant.light));
       expect(state.props, contains(true));
+      expect(state.props, contains(AppFontSize.normal));
       expect(state.props, contains(FeedLayout.compact));
       expect(state.props, contains(false));
       expect(state.props, contains(true));
@@ -233,13 +256,22 @@ void main() {
       expect(state.props, contains(false));
     });
 
-    test('defaults feedLayout to card', () {
+    test('defaults contentFontSize to normal', () {
       const state = SettingsState(
         themePalette: AppThemePalette.oxocarbon,
         themeVariant: AppThemeVariant.dark,
         useSystemTheme: false,
       );
-      expect(state.feedLayout, FeedLayout.card);
+      expect(state.contentFontSize, AppFontSize.normal);
+    });
+
+    test('defaults feedLayout to comfortable', () {
+      const state = SettingsState(
+        themePalette: AppThemePalette.oxocarbon,
+        themeVariant: AppThemeVariant.dark,
+        useSystemTheme: false,
+      );
+      expect(state.feedLayout, FeedLayout.comfortable);
     });
 
     test('defaults simulateOffline to false', () {

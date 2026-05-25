@@ -1,5 +1,5 @@
 enum FeedLayout {
-  card,
+  comfortable,
   compact;
 
   static FeedLayout fromString(String? value) {
@@ -9,9 +9,10 @@ enum FeedLayout {
         return FeedLayout.compact;
       case 'grid':
       case 'card':
-        return FeedLayout.card;
+      case 'comfortable':
+        return FeedLayout.comfortable;
       default:
-        return FeedLayout.card;
+        return FeedLayout.comfortable;
     }
   }
 }

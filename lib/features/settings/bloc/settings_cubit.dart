@@ -18,6 +18,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     AppHeadingFontFamily? initialHeadingFontFamily,
     AppContentFontFamily? initialContentFontFamily,
     AppCodeFontFamily? initialCodeFontFamily,
+    AppFontSize? initialContentFontSize,
     FeedLayout? initialFeedLayout,
     bool? initialAnimationsEnabled,
     bool? initialSimulateOffline,
@@ -33,7 +34,8 @@ class SettingsCubit extends Cubit<SettingsState> {
            headingFontFamily: initialHeadingFontFamily ?? AppHeadingFontFamily.lora,
            contentFontFamily: initialContentFontFamily ?? AppContentFontFamily.googleSans,
            codeFontFamily: initialCodeFontFamily ?? AppCodeFontFamily.googleSansCode,
-           feedLayout: initialFeedLayout ?? FeedLayout.card,
+           contentFontSize: initialContentFontSize ?? AppFontSize.normal,
+           feedLayout: initialFeedLayout ?? FeedLayout.comfortable,
            animationsEnabled: initialAnimationsEnabled ?? true,
            simulateOffline: initialSimulateOffline ?? false,
            threadAutoCollapseDepth: initialThreadAutoCollapseDepth,
@@ -50,6 +52,7 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const String _keyHeadingFontFamily = 'heading_font_family';
   static const String _keyContentFontFamily = 'content_font_family';
   static const String _keyCodeFontFamily = 'code_font_family';
+  static const String _keyContentFontSize = 'content_font_size';
   static const String _keyFeedLayout = 'feed_layout';
   static const String _legacyKeyFeedArchitecture = 'feed_architecture';
   static const String _keyAnimationsEnabled = 'animations_enabled';
@@ -76,6 +79,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     final headingFontFamilyStr = await database.getSetting(_keyHeadingFontFamily);
     final contentFontFamilyStr = await database.getSetting(_keyContentFontFamily);
     final codeFontFamilyStr = await database.getSetting(_keyCodeFontFamily);
+    final contentFontSizeStr = await database.getSetting(_keyContentFontSize);
     final feedLayoutStr =
         await database.getSetting(_keyFeedLayout) ?? await database.getSetting(_legacyKeyFeedArchitecture);
     final animationsEnabledStr = await database.getSetting(_keyAnimationsEnabled);
@@ -104,6 +108,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         headingFontFamily: AppTypography.parseHeadingFontFamily(headingFontFamilyStr),
         contentFontFamily: AppTypography.parseContentFontFamily(contentFontFamilyStr),
         codeFontFamily: AppTypography.parseCodeFontFamily(codeFontFamilyStr),
+        contentFontSize: AppTypography.parseFontSize(contentFontSizeStr),
         feedLayout: FeedLayout.fromString(feedLayoutStr),
         animationsEnabled: animationsEnabledStr != 'false',
         simulateOffline: simulateOfflineStr == 'true',
@@ -156,6 +161,11 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setCodeFontFamily(AppCodeFontFamily fontFamily) async {
     await database.setSetting(_keyCodeFontFamily, fontFamily.key);
     emit(state.copyWith(codeFontFamily: fontFamily));
+  }
+
+  Future<void> setContentFontSize(AppFontSize fontSize) async {
+    await database.setSetting(_keyContentFontSize, fontSize.key);
+    emit(state.copyWith(contentFontSize: fontSize));
   }
 
   Future<void> setFeedLayout(FeedLayout layout) async {

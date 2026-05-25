@@ -48,6 +48,7 @@ void main() {
           headingFontFamily: AppHeadingFontFamily.playfairDisplay,
           contentFontFamily: AppContentFontFamily.openSans,
           codeFontFamily: AppCodeFontFamily.sourceCodePro,
+          contentFontSize: AppFontSize.large,
         );
 
         final fontTheme = theme.extension<AppFontTheme>();
@@ -55,6 +56,8 @@ void main() {
         expect(fontTheme!.headingFontFamily, AppHeadingFontFamily.playfairDisplay);
         expect(fontTheme.contentFontFamily, AppContentFontFamily.openSans);
         expect(fontTheme.codeFontFamily, AppCodeFontFamily.sourceCodePro);
+        expect(fontTheme.contentFontSize, AppFontSize.large);
+        expect(theme.textTheme.bodyLarge?.fontSize, 18);
       });
     });
 
@@ -67,6 +70,8 @@ void main() {
         expect(AppTypography.parseContentFontFamily('unknown'), AppContentFontFamily.googleSans);
         expect(AppTypography.parseCodeFontFamily('firaCode'), AppCodeFontFamily.firaCode);
         expect(AppTypography.parseCodeFontFamily('unknown'), AppCodeFontFamily.googleSansCode);
+        expect(AppTypography.parseFontSize('small'), AppFontSize.small);
+        expect(AppTypography.parseFontSize('unknown'), AppFontSize.normal);
       });
     });
 

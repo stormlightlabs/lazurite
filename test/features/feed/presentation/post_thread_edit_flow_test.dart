@@ -113,7 +113,7 @@ ThreadViewPost _makeThread({
   );
 }
 
-SettingsState _settingsState({FeedLayout feedLayout = FeedLayout.card}) {
+SettingsState _settingsState({FeedLayout feedLayout = FeedLayout.comfortable}) {
   return SettingsState(
     themePalette: AppThemePalette.lazurite,
     themeVariant: AppThemeVariant.dark,

@@ -83,7 +83,7 @@ void main() {
     themePalette: AppThemePalette.oxocarbon,
     themeVariant: AppThemeVariant.dark,
     useSystemTheme: false,
-    feedLayout: FeedLayout.card,
+    feedLayout: FeedLayout.comfortable,
   );
 
   SettingsState settingsStateWith(FeedLayout architecture) => SettingsState(
@@ -920,8 +920,8 @@ void main() {
 
     testWidgets('card mode does not show compact feed keys or metadata info card', (tester) async {
       final cubit = MockSettingsCubit();
-      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.card));
-      whenListen(cubit, const Stream<SettingsState>.empty(), initialState: settingsStateWith(FeedLayout.card));
+      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.comfortable));
+      whenListen(cubit, const Stream<SettingsState>.empty(), initialState: settingsStateWith(FeedLayout.comfortable));
 
       await tester.pumpWidget(buildWithPosts(tester, cubit));
       await tester.pump();
@@ -944,8 +944,8 @@ void main() {
       expect(find.byKey(const ValueKey('profile_compact_feed')), findsOneWidget);
       expect(find.byKey(const ValueKey('profile_info_card')), findsNothing);
 
-      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.card));
-      streamCtrl.add(settingsStateWith(FeedLayout.card));
+      when(() => cubit.state).thenReturn(settingsStateWith(FeedLayout.comfortable));
+      streamCtrl.add(settingsStateWith(FeedLayout.comfortable));
       await tester.pumpAndSettle();
 
       expect(find.byKey(const ValueKey('profile_compact_feed')), findsNothing);

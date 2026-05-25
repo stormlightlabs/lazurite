@@ -83,8 +83,8 @@ void main() {
     final authBloc = MockAuthBloc();
     when(() => connectivityCubit.state).thenReturn(connectivityState);
     whenListen(connectivityCubit, const Stream<ConnectivityState>.empty(), initialState: connectivityState);
-    when(() => settingsCubit.state).thenReturn(_settingsState(FeedLayout.card));
-    whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: _settingsState(FeedLayout.card));
+    when(() => settingsCubit.state).thenReturn(_settingsState(FeedLayout.comfortable));
+    whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: _settingsState(FeedLayout.comfortable));
     when(() => authBloc.state).thenReturn(
       const AuthState.authenticated(AuthTokens(accessToken: 'access', did: 'did:plc:test', handle: 'test.bsky.social')),
     );
@@ -163,7 +163,7 @@ void main() {
 
   group('FeedLayoutView — card architecture', () {
     testWidgets('shows ListView when layout is card', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card));
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.comfortable));
 
       expect(find.byType(ListView), findsOneWidget);
       expect(find.byType(SliverGrid), findsNothing);
@@ -172,7 +172,7 @@ void main() {
     });
 
     testWidgets('uses card item builder in card mode', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card));
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.comfortable));
 
       expect(find.text('linear 0'), findsOneWidget);
       expect(find.text('linear 1'), findsOneWidget);
@@ -180,7 +180,7 @@ void main() {
     });
 
     testWidgets('uses tighter vertical spacing in card mode', (tester) async {
-      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.card));
+      await tester.pumpWidget(_buildSubject(architecture: FeedLayout.comfortable));
 
       final listView = tester.widget<ListView>(find.byType(ListView));
       expect(listView.padding, const EdgeInsets.symmetric(vertical: 4));
@@ -220,8 +220,8 @@ void main() {
 
       expect(find.byType(SliverList), findsOneWidget);
 
-      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.card));
-      streamController.add(_settingsState(FeedLayout.card));
+      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.comfortable));
+      streamController.add(_settingsState(FeedLayout.comfortable));
       await tester.pump();
 
       expect(find.byType(CustomScrollView), findsNothing);
@@ -261,7 +261,7 @@ void main() {
 
     testWidgets('loading indicator appears when isLoadingMore is true in card mode', (tester) async {
       final cubit = MockSettingsCubit();
-      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.card));
+      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.comfortable));
 
       await tester.pumpWidget(
         MediaQuery(
