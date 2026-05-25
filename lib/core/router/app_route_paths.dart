@@ -126,10 +126,7 @@ enum AppRoutePath {
     AppRoutePath.topic => '/topic',
     AppRoutePath.publicProfile => r'/profile/:actor(m|[^m][^/]*|m[^e][^/]*|me[^/]+)',
     AppRoutePath.profileMe => '/profile/me',
-    // TODO: consider refactoring/nesting this such that it doesn't require
-    //  query params, i.e. `/profile/:actor/context` over passing handle & did
-    //  in calls to context.push
-    AppRoutePath.profileContext => '/profile-context',
+    AppRoutePath.profileContext => '/profile/:actor/context',
     AppRoutePath.images => '/images',
     AppRoutePath.video => '/video',
     AppRoutePath.bookmarks => '/bookmarks',
@@ -161,4 +158,8 @@ enum AppRoutePath {
   /// For example, [settingsAbout] has the absolute [path] `/settings/about`
   /// but must be declared as `about` inside the `/settings` parent route.
   String get childPath => path.substring(path.lastIndexOf('/') + 1);
+
+  /// Canonical profile-context location for an actor DID or handle.
+  static String profileContextLocation({required String actor}) =>
+      '/${Uri(pathSegments: ['profile', actor, 'context'])}';
 }

@@ -316,7 +316,7 @@ class _ListDetailViewState extends State<_ListDetailView> with SingleTickerProvi
           return Center(child: Text(context.l10n.messageNoPostsYet));
         }
 
-        final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
+        final accountDid = context.read<AuthBloc>().state.tokens?.did;
 
         return RefreshIndicator(
           onRefresh: () async => context.read<ListFeedBloc>().add(const ListFeedRefreshed()),

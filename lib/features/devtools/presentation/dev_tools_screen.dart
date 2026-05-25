@@ -410,12 +410,7 @@ class _RepoOverview extends StatelessWidget {
                     style: context.textTheme.bodySmall!.copyWith(color: context.colorScheme.onSurface),
                   ),
                   Text(
-                    // FIXME: nested ternaries like this are bad
-                    state.totalRepoRecords == null
-                        ? (state.isCollectionCountsLoading
-                              ? context.l10n.messageRecordCountsLoading
-                              : context.l10n.messageRecordCountsUnavailable)
-                        : context.l10n.formatRecordsCount(state.totalRepoRecords!),
+                    _recordCountLabel(context),
                     style: context.textTheme.bodySmall!.copyWith(color: context.colorScheme.onSurfaceVariant),
                   ),
                 ],
@@ -433,6 +428,19 @@ class _RepoOverview extends StatelessWidget {
         ...state.collections.map((collection) => _CollectionItem(collection: collection)),
       ],
     );
+  }
+
+  String _recordCountLabel(BuildContext context) {
+    final totalRepoRecords = state.totalRepoRecords;
+    if (totalRepoRecords != null) {
+      return context.l10n.formatRecordsCount(totalRepoRecords);
+    }
+
+    if (state.isCollectionCountsLoading) {
+      return context.l10n.messageRecordCountsLoading;
+    }
+
+    return context.l10n.messageRecordCountsUnavailable;
   }
 }
 

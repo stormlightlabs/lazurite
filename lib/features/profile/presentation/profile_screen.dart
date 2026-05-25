@@ -10,6 +10,7 @@ import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/app_view_web_links.dart';
+import 'package:lazurite/core/router/app_route_paths.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/color_filters.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
@@ -1038,9 +1039,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         OptionsSheetItem(
           leading: const Icon(Icons.hub_outlined),
           title: context.l10n.labelProfileContext,
-          onTap: () => context.push(
-            '/profile-context?did=${Uri.encodeComponent(profile.did)}&handle=${Uri.encodeComponent(profile.handle)}',
-          ),
+          onTap: () => context.push(AppRoutePath.profileContextLocation(actor: profile.did), extra: profile.handle),
         ),
         OptionsSheetItem(
           leading: const Icon(Icons.cleaning_services_outlined),
@@ -1084,9 +1083,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         OptionsSheetItem(
           leading: const Icon(Icons.hub_outlined),
           title: context.l10n.labelProfileContext,
-          onTap: () => context.push(
-            '/profile-context?did=${Uri.encodeComponent(profile.did)}&handle=${Uri.encodeComponent(profile.handle)}',
-          ),
+          onTap: () => context.push(AppRoutePath.profileContextLocation(actor: profile.did), extra: profile.handle),
         ),
       ],
     );
@@ -1327,7 +1324,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   Widget _buildRepliesFeed(BuildContext context, FeedState feedState, {required FeedFilter requestFilter}) {
     final publicProviderKey = widget.publicProviderKey;
-    final accountDid = publicProviderKey == null ? context.read<AuthBloc>().state.tokens?.did ?? '' : '';
+    final accountDid = publicProviderKey == null ? context.read<AuthBloc>().state.tokens?.did : null;
     return RefreshIndicator(
       onRefresh: _refresh,
       child: NotificationListener<ScrollNotification>(
@@ -1393,7 +1390,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     required _ProfileFeedSlice slice,
   }) {
     final publicProviderKey = widget.publicProviderKey;
-    final accountDid = publicProviderKey == null ? context.read<AuthBloc>().state.tokens?.did ?? '' : '';
+    final accountDid = publicProviderKey == null ? context.read<AuthBloc>().state.tokens?.did : null;
     final scrollKey = slice == _ProfileFeedSlice.posts
         ? const ValueKey('profile_compact_feed')
         : PageStorageKey<String>('profile_compact_feed_${slice.name}');
@@ -1452,7 +1449,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     required _ProfileFeedSlice slice,
   }) {
     final publicProviderKey = widget.publicProviderKey;
-    final accountDid = publicProviderKey == null ? context.read<AuthBloc>().state.tokens?.did ?? '' : '';
+    final accountDid = publicProviderKey == null ? context.read<AuthBloc>().state.tokens?.did : null;
     return RefreshIndicator(
       onRefresh: _refresh,
       child: NotificationListener<ScrollNotification>(
@@ -1561,7 +1558,7 @@ class _ProfileReplyThreadItem extends StatelessWidget {
   const _ProfileReplyThreadItem({required this.feedViewPost, required this.accountDid, this.publicProviderKey});
 
   final FeedViewPost feedViewPost;
-  final String accountDid;
+  final String? accountDid;
   final String? publicProviderKey;
 
   @override

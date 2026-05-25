@@ -120,7 +120,7 @@ class _TopicScreenState extends State<TopicScreen> {
   Widget _buildBody(BuildContext context, TopicState state) {
     final timeline = state.currentTimeline;
     final publicProviderKey = widget.publicProviderKey;
-    final accountDid = publicProviderKey == null ? context.read<AuthBloc>().state.tokens?.did ?? '' : '';
+    final accountDid = publicProviderKey == null ? context.read<AuthBloc>().state.tokens?.did : null;
     if (timeline.isLoading && timeline.posts.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }

@@ -262,7 +262,7 @@ class _PostThreadContentState extends State<_PostThreadContent> {
 
   Widget _buildThread(BuildContext context, ThreadViewPost thread) {
     final publicProviderKey = widget.publicProviderKey;
-    final accountDid = publicProviderKey == null ? context.read<String>() : '';
+    final accountDid = publicProviderKey == null ? context.read<String>() : null;
     final parents = _getParentChain(thread);
     final replies = _threadRepliesOf(thread);
     final opDid = (parents.isNotEmpty ? parents.first : thread).post.author.did;
@@ -394,7 +394,7 @@ class ThreadReplyNode extends StatelessWidget {
 
   final ThreadViewPost thread;
   final int depth;
-  final String accountDid;
+  final String? accountDid;
   final String opDid;
   final String? publicProviderKey;
   final Set<String> collapsedUris;
@@ -478,7 +478,7 @@ class _ExpandedThreadReply extends StatelessWidget {
 
   final ThreadViewPost thread;
   final int depth;
-  final String accountDid;
+  final String? accountDid;
   final String opDid;
   final String? publicProviderKey;
   final Set<String> collapsedUris;
@@ -815,7 +815,7 @@ class _FocusedPostWithActions extends StatelessWidget {
   const _FocusedPostWithActions({required this.thread, required this.accountDid, this.onReplySubmitted});
 
   final ThreadViewPost thread;
-  final String accountDid;
+  final String? accountDid;
   final Future<void> Function(String replyParentUri)? onReplySubmitted;
 
   @override
@@ -852,7 +852,7 @@ class _FocusedPostContent extends StatelessWidget {
   const _FocusedPostContent({required this.thread, required this.accountDid, this.onReplySubmitted});
 
   final ThreadViewPost thread;
-  final String accountDid;
+  final String? accountDid;
   final Future<void> Function(String replyParentUri)? onReplySubmitted;
 
   @override

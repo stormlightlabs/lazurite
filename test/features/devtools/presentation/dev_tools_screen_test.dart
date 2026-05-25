@@ -116,6 +116,39 @@ void main() {
       expect(find.text('app.bsky.feed.like'), findsOneWidget);
     });
 
+    testWidgets('renders repo overview while record counts are loading', (tester) async {
+      const state = DevToolsState(
+        status: DevToolsStatus.repoLoaded,
+        did: 'did:plc:test',
+        handle: 'test.bsky.social',
+        collections: [CollectionSummary('app.bsky.feed.post')],
+        isCollectionCountsLoading: true,
+      );
+
+      when(() => mockDevToolsCubit.state).thenReturn(state);
+      whenListen(mockDevToolsCubit, const Stream<DevToolsState>.empty(), initialState: state);
+
+      await tester.pumpWidget(buildSubject());
+
+      expect(find.text('Counting records...'), findsOneWidget);
+    });
+
+    testWidgets('renders repo overview when record counts are unavailable', (tester) async {
+      const state = DevToolsState(
+        status: DevToolsStatus.repoLoaded,
+        did: 'did:plc:test',
+        handle: 'test.bsky.social',
+        collections: [CollectionSummary('app.bsky.feed.post')],
+      );
+
+      when(() => mockDevToolsCubit.state).thenReturn(state);
+      whenListen(mockDevToolsCubit, const Stream<DevToolsState>.empty(), initialState: state);
+
+      await tester.pumpWidget(buildSubject());
+
+      expect(find.text('Record counts unavailable'), findsOneWidget);
+    });
+
     testWidgets('submitting search calls cubit resolve', (tester) async {
       await tester.pumpWidget(buildSubject());
 

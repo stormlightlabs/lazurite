@@ -140,7 +140,7 @@ class _ProfileMentionsPaneState extends State<ProfileMentionsPane> {
       );
     }
 
-    final accountDid = context.select((AuthBloc bloc) => bloc.state.tokens?.did ?? '');
+    final accountDid = context.select((AuthBloc bloc) => bloc.state.tokens?.did);
     return RefreshIndicator(
       onRefresh: _loadInitial,
       child: NotificationListener<ScrollNotification>(

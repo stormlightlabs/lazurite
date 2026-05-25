@@ -17,7 +17,7 @@ import 'package:lazurite/shared/presentation/widgets/options_sheet.dart';
 Future<void> showPostOverflowMenu({
   required BuildContext context,
   required PostView post,
-  required String accountDid,
+  required String? accountDid,
   required PostActionRepository repository,
   required VoidCallback onQuote,
   required VoidCallback onShowReport,
@@ -69,9 +69,9 @@ Future<void> showPostOverflowMenu({
         title: context.l10n.labelReportPost,
         onTap: onShowReport,
       ),
-      if (post.author.did == accountDid && onEdit != null)
+      if (accountDid != null && post.author.did == accountDid && onEdit != null)
         OptionsSheetItem(leading: const Icon(Icons.edit_outlined), title: context.l10n.labelEditPost, onTap: onEdit),
-      if (post.author.did == accountDid && onDelete != null)
+      if (accountDid != null && post.author.did == accountDid && onDelete != null)
         OptionsSheetItem(
           leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
           title: context.l10n.labelDeletePost,

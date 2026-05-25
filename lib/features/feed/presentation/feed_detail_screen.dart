@@ -223,7 +223,7 @@ class _FeedDetailScreenState extends State<FeedDetailScreen> {
     }
 
     final publicProviderKey = widget.publicProviderKey;
-    final accountDid = publicProviderKey == null ? context.read<AuthBloc>().state.tokens?.did ?? '' : '';
+    final accountDid = publicProviderKey == null ? context.read<AuthBloc>().state.tokens?.did : null;
     Widget buildCard(int index, PostCardVariant variant) {
       final post = _posts[index];
       final postUri = post.post.uri.toString();

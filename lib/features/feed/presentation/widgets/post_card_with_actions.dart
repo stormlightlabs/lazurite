@@ -42,7 +42,7 @@ class PostCardWithActions extends StatefulWidget {
   });
 
   final FeedViewPost feedViewPost;
-  final String accountDid;
+  final String? accountDid;
   final PostCardVariant variant;
   final VoidCallback? onDeleted;
   final Future<void> Function(String replyParentUri)? onReplySubmitted;
@@ -132,7 +132,7 @@ class _PostCardWithActionsContent extends StatelessWidget {
   });
 
   final FeedViewPost feedViewPost;
-  final String accountDid;
+  final String? accountDid;
   final PostCardVariant variant;
   final VoidCallback? onDeleted;
   final Future<void> Function(String replyParentUri)? onReplySubmitted;

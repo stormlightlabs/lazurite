@@ -132,7 +132,7 @@ class _ProfileLikedPostsPaneState extends State<ProfileLikedPostsPane> {
       );
     }
 
-    final accountDid = context.select((AuthBloc bloc) => bloc.state.tokens?.did ?? '');
+    final accountDid = context.select((AuthBloc bloc) => bloc.state.tokens?.did);
     return RefreshIndicator(
       onRefresh: _refresh,
       child: NotificationListener<ScrollNotification>(

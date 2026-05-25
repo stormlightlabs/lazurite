@@ -65,7 +65,9 @@ class AppRedirectPolicy {
       AppRoutePath.oauthCallbackCompatibility.path,
     };
     final isPublicBrowsingPath = path == AppRoutePath.public.path || path.startsWith('${AppRoutePath.public.path}/');
-    final isPublicProfilePath = path.startsWith('/profile/') && path != AppRoutePath.profileMe.path;
+    final isProfileContextPath = path.startsWith('/profile/') && path.endsWith('/context');
+    final isPublicProfilePath =
+        path.startsWith('/profile/') && path != AppRoutePath.profileMe.path && !isProfileContextPath;
     return publicPaths.contains(path) || isPublicBrowsingPath || isPublicProfilePath;
   }
 }

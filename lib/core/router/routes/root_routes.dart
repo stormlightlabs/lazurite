@@ -234,10 +234,23 @@ List<RouteBase> buildRootRoutes({
       ],
     ),
     GoRoute(
+      path: _profileContextCompatibilityPath,
+      redirect: (_, state) {
+        final did = state.uri.queryParameters['did'];
+        if (did == null || did.isEmpty) {
+          return AppRoutePath.profileMe.path;
+        }
+        return AppRoutePath.profileContextLocation(actor: did);
+      },
+    ),
+    GoRoute(
       path: AppRoutePath.profileContext.path,
       pageBuilder: (context, state) {
-        final did = state.uri.queryParameters['did'] ?? '';
-        final handle = state.uri.queryParameters['handle'] ?? '';
+        final did = RouteQuery(state).decodedPathOrEmpty('actor');
+        final handle = switch (state.extra) {
+          final String value when value.isNotEmpty => value,
+          _ => did,
+        };
         final isOwnProfile = did == context.read<String>();
         final settingsState = context.read<SettingsCubit>().state;
         final constellationUrl = settingsState.constellationUrl;
@@ -265,7 +278,7 @@ List<RouteBase> buildRootRoutes({
   ];
 }
 
-
+const _profileContextCompatibilityPath = '/profile-context';
 const _listCollection = 'app.bsky.graph.list';
 const _starterPackCollection = 'app.bsky.graph.starterpack';
 
@@ -310,9 +323,7 @@ AtUri? _recordUriFromPath(GoRouterState state, String collection) {
   }
 
   try {
-    return AtUri.parse(
-      'at://${Uri.decodeComponent(actor)}/$collection/${Uri.decodeComponent(rkey)}',
-    );
+    return AtUri.parse('at://${Uri.decodeComponent(actor)}/$collection/${Uri.decodeComponent(rkey)}');
   } catch (error, stackTrace) {
     log.d('Invalid AT-URI record path params for route', error: error, stackTrace: stackTrace);
     return null;
