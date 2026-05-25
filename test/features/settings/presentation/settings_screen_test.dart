@@ -63,6 +63,7 @@ void main() {
     registerFallbackValue(AppHeadingFontFamily.lora);
     registerFallbackValue(AppContentFontFamily.googleSans);
     registerFallbackValue(AppCodeFontFamily.googleSansCode);
+    registerFallbackValue(AppFontSize.normal);
   });
 
   setUp(() {
@@ -110,6 +111,7 @@ void main() {
     when(() => settingsCubit.setHeadingFontFamily(any())).thenAnswer((_) async {});
     when(() => settingsCubit.setContentFontFamily(any())).thenAnswer((_) async {});
     when(() => settingsCubit.setCodeFontFamily(any())).thenAnswer((_) async {});
+    when(() => settingsCubit.setContentFontSize(any())).thenAnswer((_) async {});
     when(() => settingsCubit.refreshAppViewHealth()).thenAnswer((_) async {});
     when(() => settingsCubit.setCrashReportingEnabled(any())).thenAnswer((_) async {});
     when(() => settingsCubit.setCrashReportingConsentPrompted(any())).thenAnswer((_) async {});
@@ -241,6 +243,7 @@ void main() {
     final headingFinder = find.byType(DropdownButton<AppHeadingFontFamily>);
     final contentFinder = find.byType(DropdownButton<AppContentFontFamily>);
     final codeFinder = find.byType(DropdownButton<AppCodeFontFamily>);
+    final fontSizeFinder = find.byType(DropdownButton<AppFontSize>);
     final headingDropdown = tester.widget<DropdownButton<AppHeadingFontFamily>>(headingFinder);
     expect(headingDropdown.alignment, AlignmentDirectional.centerEnd);
     _expectRightAlignedSelectedFontLabel(
@@ -257,6 +260,14 @@ void main() {
     );
     contentDropdown.onChanged?.call(AppContentFontFamily.openSans);
 
+    final fontSizeDropdown = tester.widget<DropdownButton<AppFontSize>>(fontSizeFinder);
+    expect(fontSizeDropdown.alignment, AlignmentDirectional.centerEnd);
+    final fontSizeItems = fontSizeDropdown.selectedItemBuilder!(tester.element(fontSizeFinder));
+    _expectRightAlignedSelectedFontLabel(fontSizeItems[0], 'Small (14)');
+    _expectRightAlignedSelectedFontLabel(fontSizeItems[1], 'Normal (16)');
+    _expectRightAlignedSelectedFontLabel(fontSizeItems[2], 'Large (18)');
+    fontSizeDropdown.onChanged?.call(AppFontSize.large);
+
     final codeDropdown = tester.widget<DropdownButton<AppCodeFontFamily>>(codeFinder);
     expect(codeDropdown.alignment, AlignmentDirectional.centerEnd);
     _expectRightAlignedSelectedFontLabel(
@@ -267,6 +278,7 @@ void main() {
 
     verify(() => settingsCubit.setHeadingFontFamily(AppHeadingFontFamily.merriweather)).called(1);
     verify(() => settingsCubit.setContentFontFamily(AppContentFontFamily.openSans)).called(1);
+    verify(() => settingsCubit.setContentFontSize(AppFontSize.large)).called(1);
     verify(() => settingsCubit.setCodeFontFamily(AppCodeFontFamily.sourceCodePro)).called(1);
   });
 

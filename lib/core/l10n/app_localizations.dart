@@ -511,6 +511,12 @@ abstract class AppLocalizations {
   /// **'Depth {depth}'**
   String formatDepth(int depth);
 
+  /// Settings font size dropdown option with display label and numeric point size
+  ///
+  /// In en, this message translates to:
+  /// **'{label} ({size})'**
+  String formatFontSizeOption(String label, int size);
+
   /// Fallback liked-post card subtitle showing when a post was liked
   ///
   /// In en, this message translates to:
@@ -667,6 +673,12 @@ abstract class AppLocalizations {
   /// **'Account'**
   String get labelAccount;
 
+  /// Settings item for account-level preferences
+  ///
+  /// In en, this message translates to:
+  /// **'Account settings'**
+  String get labelAccountSettings;
+
   /// Settings section for account maintenance actions
   ///
   /// In en, this message translates to:
@@ -781,6 +793,12 @@ abstract class AppLocalizations {
   /// **'Bluesky'**
   String get labelBluesky;
 
+  /// Blacksky provider option label
+  ///
+  /// In en, this message translates to:
+  /// **'Blacksky'**
+  String get labelBlacksky;
+
   /// Short all-caps label for media alt text controls
   ///
   /// In en, this message translates to:
@@ -804,6 +822,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clean Follows'**
   String get labelCleanFollows;
+
+  /// Settings label for code font selection
+  ///
+  /// In en, this message translates to:
+  /// **'Code Font'**
+  String get labelCodeFont;
 
   /// Close button tooltip
   ///
@@ -834,6 +858,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Content Moderation'**
   String get labelContentModeration;
+
+  /// Settings label for content font selection
+  ///
+  /// In en, this message translates to:
+  /// **'Content Font'**
+  String get labelContentFont;
 
   /// Semantic label for continuing sign in
   ///
@@ -925,6 +955,30 @@ abstract class AppLocalizations {
   /// **'Force Next XRPC 401'**
   String get labelForceNextXrpc401;
 
+  /// Settings label for content font size selection
+  ///
+  /// In en, this message translates to:
+  /// **'Font Size'**
+  String get labelFontSize;
+
+  /// Small content font size option label
+  ///
+  /// In en, this message translates to:
+  /// **'Small'**
+  String get labelFontSizeSmall;
+
+  /// Normal content font size option label
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get labelFontSizeNormal;
+
+  /// Large content font size option label
+  ///
+  /// In en, this message translates to:
+  /// **'Large'**
+  String get labelFontSizeLarge;
+
   /// Developer setting to simulate offline mode
   ///
   /// In en, this message translates to:
@@ -936,6 +990,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Guest'**
   String get labelGuest;
+
+  /// Settings label for heading font selection
+  ///
+  /// In en, this message translates to:
+  /// **'Heading Font'**
+  String get labelHeadingFont;
 
   /// Provider diagnostics health label
   ///
@@ -1501,11 +1561,29 @@ abstract class AppLocalizations {
   /// **'Video Upload Limits'**
   String get labelVideoUploadLimits;
 
+  /// Settings subtitle for the about page
+  ///
+  /// In en, this message translates to:
+  /// **'Stormlight Labs'**
+  String get messageAboutSubtitle;
+
+  /// Settings subtitle for account-level preferences
+  ///
+  /// In en, this message translates to:
+  /// **'Feed display preferences and account defaults'**
+  String get messageAccountSettingsSubtitle;
+
   /// Debug app password help text
   ///
   /// In en, this message translates to:
   /// **'Can be generated via Bluesky\'\'s App Passwords section at bsky.app.'**
   String get messageAppPasswordGeneratedViaBluesky;
+
+  /// Settings subtitle for AT Explorer
+  ///
+  /// In en, this message translates to:
+  /// **'View PDS Records'**
+  String get messageAtExplorerSubtitle;
 
   /// Snackbar message after arming debug unauthorized response
   ///
@@ -1687,6 +1765,12 @@ abstract class AppLocalizations {
   /// **'Manage semantic search from Bookmarks & Likes -> Search'**
   String get messageManageSemanticSearchSubtitle;
 
+  /// Settings subtitle for opening app logs
+  ///
+  /// In en, this message translates to:
+  /// **'View app log files'**
+  String get messageLogsSubtitle;
+
   /// Trending banner shown when supplemental metadata cannot be loaded
   ///
   /// In en, this message translates to:
@@ -1710,6 +1794,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Moderation/ranking can differ by provider. Verify health and recent fallback state.'**
   String get messageProviderDiagnosticsSubtitle;
+
+  /// Settings subtitle for the privacy policy
+  ///
+  /// In en, this message translates to:
+  /// **'How Lazurite handles data'**
+  String get messagePrivacyPolicySubtitle;
 
   /// Message shown when liked posts dependencies are unavailable
   ///
@@ -2232,6 +2322,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Turn off non-essential motion effects'**
   String get messageTurnOffNonEssentialMotion;
+
+  /// Settings subtitle for the terms of service
+  ///
+  /// In en, this message translates to:
+  /// **'Usage rules and responsibilities'**
+  String get messageTermsOfServiceSubtitle;
 
   /// Settings subtitle for video upload limits
   ///

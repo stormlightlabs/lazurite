@@ -341,6 +341,20 @@
       }
     }
   },
+  "formatFontSizeOption": "{label} ({size})",
+  "@formatFontSizeOption": {
+    "description": "Settings font size dropdown option with display label and numeric point size",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Normal"
+      },
+      "size": {
+        "type": "int",
+        "example": "16"
+      }
+    }
+  },
   "formatLikedOn": "Liked on {date}",
   "@formatLikedOn": {
     "description": "Fallback liked-post card subtitle showing when a post was liked",
@@ -563,6 +577,10 @@
   "@labelAccount": {
     "description": "Account settings section label"
   },
+  "labelAccountSettings": "Account settings",
+  "@labelAccountSettings": {
+    "description": "Settings item for account-level preferences"
+  },
   "labelAccountMaintenance": "Account Maintenance",
   "@labelAccountMaintenance": {
     "description": "Settings section for account maintenance actions"
@@ -639,6 +657,10 @@
   "@labelBluesky": {
     "description": "Bluesky source tab label"
   },
+  "labelBlacksky": "Blacksky",
+  "@labelBlacksky": {
+    "description": "Blacksky provider option label"
+  },
   "labelAlt": "ALT",
   "@labelAlt": {
     "description": "Short all-caps label for media alt text controls"
@@ -654,6 +676,10 @@
   "labelCleanFollows": "Clean Follows",
   "@labelCleanFollows": {
     "description": "Settings item for follow audit feature"
+  },
+  "labelCodeFont": "Code Font",
+  "@labelCodeFont": {
+    "description": "Settings label for code font selection"
   },
   "labelClose": "Close",
   "@labelClose": {
@@ -674,6 +700,10 @@
   "labelContentModeration": "Content Moderation",
   "@labelContentModeration": {
     "description": "Content moderation settings label"
+  },
+  "labelContentFont": "Content Font",
+  "@labelContentFont": {
+    "description": "Settings label for content font selection"
   },
   "labelContinueSignIn": "Continue sign in",
   "@labelContinueSignIn": {
@@ -735,6 +765,22 @@
   "@labelForceNextXrpc401": {
     "description": "Developer setting to force the next XRPC request to return Unauthorized"
   },
+  "labelFontSize": "Font Size",
+  "@labelFontSize": {
+    "description": "Settings label for content font size selection"
+  },
+  "labelFontSizeSmall": "Small",
+  "@labelFontSizeSmall": {
+    "description": "Small content font size option label"
+  },
+  "labelFontSizeNormal": "Normal",
+  "@labelFontSizeNormal": {
+    "description": "Normal content font size option label"
+  },
+  "labelFontSizeLarge": "Large",
+  "@labelFontSizeLarge": {
+    "description": "Large content font size option label"
+  },
   "labelGoOffline": "Go Offline",
   "@labelGoOffline": {
     "description": "Developer setting to simulate offline mode"
@@ -742,6 +788,10 @@
   "labelGuest": "Guest",
   "@labelGuest": {
     "description": "Fallback account display name when no user is signed in"
+  },
+  "labelHeadingFont": "Heading Font",
+  "@labelHeadingFont": {
+    "description": "Settings label for heading font selection"
   },
   "labelHealth": "Health",
   "@labelHealth": {
@@ -1119,9 +1169,21 @@
   "@labelVideoUploadLimits": {
     "description": "Video upload limits settings label"
   },
+  "messageAboutSubtitle": "Stormlight Labs",
+  "@messageAboutSubtitle": {
+    "description": "Settings subtitle for the about page"
+  },
+  "messageAccountSettingsSubtitle": "Feed display preferences and account defaults",
+  "@messageAccountSettingsSubtitle": {
+    "description": "Settings subtitle for account-level preferences"
+  },
   "messageAppPasswordGeneratedViaBluesky": "Can be generated via Bluesky''s App Passwords section at bsky.app.",
   "@messageAppPasswordGeneratedViaBluesky": {
     "description": "Debug app password help text"
+  },
+  "messageAtExplorerSubtitle": "View PDS Records",
+  "@messageAtExplorerSubtitle": {
+    "description": "Settings subtitle for AT Explorer"
   },
   "messageAppViewDebug401Armed": "Armed: next XRPC request will return debug 401 Unauthorized",
   "@messageAppViewDebug401Armed": {
@@ -1253,6 +1315,10 @@
   "@messageManageSemanticSearchSubtitle": {
     "description": "Settings subtitle for semantic search management"
   },
+  "messageLogsSubtitle": "View app log files",
+  "@messageLogsSubtitle": {
+    "description": "Settings subtitle for opening app logs"
+  },
   "messageMetadataTemporarilyUnavailable": "Metadata temporarily unavailable",
   "@messageMetadataTemporarilyUnavailable": {
     "description": "Trending banner shown when supplemental metadata cannot be loaded"
@@ -1268,6 +1334,10 @@
   "messageProviderDiagnosticsSubtitle": "Moderation/ranking can differ by provider. Verify health and recent fallback state.",
   "@messageProviderDiagnosticsSubtitle": {
     "description": "Settings subtitle for provider diagnostics"
+  },
+  "messagePrivacyPolicySubtitle": "How Lazurite handles data",
+  "@messagePrivacyPolicySubtitle": {
+    "description": "Settings subtitle for the privacy policy"
   },
   "messageLikedPostsUnavailable": "Liked posts are unavailable right now.",
   "@messageLikedPostsUnavailable": {
@@ -1616,6 +1686,10 @@
   "messageTurnOffNonEssentialMotion": "Turn off non-essential motion effects",
   "@messageTurnOffNonEssentialMotion": {
     "description": "Settings subtitle for animations"
+  },
+  "messageTermsOfServiceSubtitle": "Usage rules and responsibilities",
+  "@messageTermsOfServiceSubtitle": {
+    "description": "Settings subtitle for the terms of service"
   },
   "messageVideoUploadLimitsSubtitle": "Check your daily video quota",
   "@messageVideoUploadLimitsSubtitle": {

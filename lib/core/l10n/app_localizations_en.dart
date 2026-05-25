@@ -257,6 +257,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String formatFontSizeOption(String label, int size) {
+    return '$label ($size)';
+  }
+
+  @override
   String formatLikedOn(String date) {
     return 'Liked on $date';
   }
@@ -377,6 +382,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get labelAccount => 'Account';
 
   @override
+  String get labelAccountSettings => 'Account settings';
+
+  @override
   String get labelAccountMaintenance => 'Account Maintenance';
 
   @override
@@ -434,6 +442,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get labelBluesky => 'Bluesky';
 
   @override
+  String get labelBlacksky => 'Blacksky';
+
+  @override
   String get labelAlt => 'ALT';
 
   @override
@@ -444,6 +455,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get labelCleanFollows => 'Clean Follows';
+
+  @override
+  String get labelCodeFont => 'Code Font';
 
   @override
   String get labelClose => 'Close';
@@ -459,6 +473,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get labelContentModeration => 'Content Moderation';
+
+  @override
+  String get labelContentFont => 'Content Font';
 
   @override
   String get labelContinueSignIn => 'Continue sign in';
@@ -506,10 +523,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get labelForceNextXrpc401 => 'Force Next XRPC 401';
 
   @override
+  String get labelFontSize => 'Font Size';
+
+  @override
+  String get labelFontSizeSmall => 'Small';
+
+  @override
+  String get labelFontSizeNormal => 'Normal';
+
+  @override
+  String get labelFontSizeLarge => 'Large';
+
+  @override
   String get labelGoOffline => 'Go Offline';
 
   @override
   String get labelGuest => 'Guest';
+
+  @override
+  String get labelHeadingFont => 'Heading Font';
 
   @override
   String get labelHealth => 'Health';
@@ -794,8 +826,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get labelVideoUploadLimits => 'Video Upload Limits';
 
   @override
+  String get messageAboutSubtitle => 'Stormlight Labs';
+
+  @override
+  String get messageAccountSettingsSubtitle => 'Feed display preferences and account defaults';
+
+  @override
   String get messageAppPasswordGeneratedViaBluesky =>
       'Can be generated via Bluesky\'s App Passwords section at bsky.app.';
+
+  @override
+  String get messageAtExplorerSubtitle => 'View PDS Records';
 
   @override
   String get messageAppViewDebug401Armed => 'Armed: next XRPC request will return debug 401 Unauthorized';
@@ -896,6 +937,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messageManageSemanticSearchSubtitle => 'Manage semantic search from Bookmarks & Likes -> Search';
 
   @override
+  String get messageLogsSubtitle => 'View app log files';
+
+  @override
   String get messageMetadataTemporarilyUnavailable => 'Metadata temporarily unavailable';
 
   @override
@@ -907,6 +951,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get messageProviderDiagnosticsSubtitle =>
       'Moderation/ranking can differ by provider. Verify health and recent fallback state.';
+
+  @override
+  String get messagePrivacyPolicySubtitle => 'How Lazurite handles data';
 
   @override
   String get messageLikedPostsUnavailable => 'Liked posts are unavailable right now.';
@@ -1174,6 +1221,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messageTurnOffNonEssentialMotion => 'Turn off non-essential motion effects';
+
+  @override
+  String get messageTermsOfServiceSubtitle => 'Usage rules and responsibilities';
 
   @override
   String get messageVideoUploadLimitsSubtitle => 'Check your daily video quota';

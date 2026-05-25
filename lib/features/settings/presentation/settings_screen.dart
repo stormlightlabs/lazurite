@@ -114,8 +114,8 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 12),
             SettingsTile(
               icon: Icons.manage_accounts_outlined,
-              title: 'Account settings',
-              subtitle: 'Feed display preferences and account defaults',
+              title: l10n.labelAccountSettings,
+              subtitle: l10n.messageAccountSettingsSubtitle,
               onTap: () => context.push('/settings/account'),
             ),
             SettingsTile(
@@ -161,25 +161,25 @@ class SettingsScreen extends StatelessWidget {
           SettingsTile(
             icon: Icons.explore_outlined,
             title: l10n.labelAtExplorer,
-            subtitle: 'View PDS Records',
+            subtitle: l10n.messageAtExplorerSubtitle,
             onTap: () => context.push('/settings/devtools'),
           ),
           SettingsTile(
             icon: Icons.info_outline,
             title: l10n.labelAbout,
-            subtitle: 'Stormlight Labs',
+            subtitle: l10n.messageAboutSubtitle,
             onTap: () => context.push('/settings/about'),
           ),
           SettingsTile(
             icon: Icons.gavel_outlined,
             title: l10n.labelTermsOfService,
-            subtitle: 'Usage rules and responsibilities',
+            subtitle: l10n.messageTermsOfServiceSubtitle,
             onTap: () => context.push('/terms'),
           ),
           SettingsTile(
             icon: Icons.privacy_tip_outlined,
             title: l10n.labelPrivacyPolicy,
-            subtitle: 'How Lazurite handles data',
+            subtitle: l10n.messagePrivacyPolicySubtitle,
             onTap: () => context.push('/privacy'),
           ),
           if (showAccountSettings) ...[
@@ -258,7 +258,7 @@ class SettingsScreen extends StatelessWidget {
               ),
             const Divider(height: 1),
             SettingsDropdownTile<AppHeadingFontFamily>(
-              title: 'Heading Font',
+              title: context.l10n.labelHeadingFont,
               value: state.headingFontFamily,
               options: AppHeadingFontFamily.values,
               labelBuilder: (fontFamily) => fontFamily.label,
@@ -271,7 +271,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             const Divider(height: 1),
             SettingsDropdownTile<AppContentFontFamily>(
-              title: 'Content Font',
+              title: context.l10n.labelContentFont,
               value: state.contentFontFamily,
               options: AppContentFontFamily.values,
               labelBuilder: (fontFamily) => fontFamily.label,
@@ -284,10 +284,10 @@ class SettingsScreen extends StatelessWidget {
             ),
             const Divider(height: 1),
             SettingsDropdownTile<AppFontSize>(
-              title: 'Font Size',
+              title: context.l10n.labelFontSize,
               value: state.contentFontSize,
               options: AppFontSize.values,
-              labelBuilder: (fontSize) => fontSize.label,
+              labelBuilder: (fontSize) => _fontSizeLabel(context, fontSize),
               optionBuilder: _fontSizeOption,
               onChanged: (value) {
                 if (value != null) {
@@ -297,7 +297,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             const Divider(height: 1),
             SettingsDropdownTile<AppCodeFontFamily>(
-              title: 'Code Font',
+              title: context.l10n.labelCodeFont,
               value: state.codeFontFamily,
               options: AppCodeFontFamily.values,
               labelBuilder: (fontFamily) => fontFamily.label,
@@ -328,7 +328,7 @@ class SettingsScreen extends StatelessWidget {
   );
 
   Widget _fontSizeOption(BuildContext context, AppFontSize fontSize) => Text(
-    '${fontSize.label} (${fontSize.value.toInt()})',
+    context.l10n.formatFontSizeOption(_fontSizeLabel(context, fontSize), fontSize.value.toInt()),
     textAlign: TextAlign.right,
     style: AppTypography.content(
       context.fontTheme.contentFontFamily,
@@ -336,6 +336,12 @@ class SettingsScreen extends StatelessWidget {
       color: context.colorScheme.onSurface,
     ),
   );
+
+  String _fontSizeLabel(BuildContext context, AppFontSize fontSize) => switch (fontSize) {
+    AppFontSize.small => context.l10n.labelFontSizeSmall,
+    AppFontSize.normal => context.l10n.labelFontSizeNormal,
+    AppFontSize.large => context.l10n.labelFontSizeLarge,
+  };
 
   Widget _codeFontOption(BuildContext context, AppCodeFontFamily fontFamily) => Text(
     fontFamily.label,
@@ -345,26 +351,23 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildLayoutSettings(BuildContext context) {
     final settingsCubit = context.read<SettingsCubit>();
-    final theme = Theme.of(context);
-    final l10n = context.l10n;
-
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Divider(height: 1, color: theme.dividerColor),
+            Divider(height: 1, color: context.theme.dividerColor),
             Material(
-              color: theme.cardColor,
+              color: context.theme.cardColor,
               child: Column(
                 children: [
                   SettingsDropdownTile<FeedLayout>(
-                    title: l10n.labelFeedLayout,
+                    title: context.l10n.labelFeedLayout,
                     value: state.feedLayout,
                     options: FeedLayout.values,
                     labelBuilder: (layout) => switch (layout) {
-                      FeedLayout.comfortable => l10n.messageFeedLayoutComfortable,
-                      FeedLayout.compact => l10n.messageFeedLayoutCompact,
+                      FeedLayout.comfortable => context.l10n.messageFeedLayoutComfortable,
+                      FeedLayout.compact => context.l10n.messageFeedLayoutCompact,
                     },
                     onChanged: (value) {
                       if (value != null) {
@@ -374,18 +377,18 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   const Divider(height: 1),
                   SettingsDropdownTile<int?>(
-                    title: l10n.labelThreadAutoCollapse,
-                    subtitle: l10n.messageThreadAutoCollapseSubtitle,
+                    title: context.l10n.labelThreadAutoCollapse,
+                    subtitle: context.l10n.messageThreadAutoCollapseSubtitle,
                     value: state.threadAutoCollapseDepth,
                     options: const <int?>[null, 1, 2, 3, 4, 5, 6],
-                    labelBuilder: (depth) => depth == null ? l10n.commonOff : l10n.formatDepth(depth),
+                    labelBuilder: (depth) => depth == null ? context.l10n.commonOff : context.l10n.formatDepth(depth),
                     onChanged: settingsCubit.setThreadAutoCollapseDepth,
                   ),
                   const Divider(height: 1),
                   SettingsTile(
                     icon: Icons.motion_photos_off_outlined,
-                    title: l10n.labelAnimations,
-                    subtitle: l10n.messageTurnOffNonEssentialMotion,
+                    title: context.l10n.labelAnimations,
+                    subtitle: context.l10n.messageTurnOffNonEssentialMotion,
                     trailing: Switch.adaptive(
                       value: state.animationsEnabled,
                       onChanged: settingsCubit.setAnimationsEnabled,
@@ -394,7 +397,7 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Divider(height: 1, color: theme.dividerColor),
+            Divider(height: 1, color: context.theme.dividerColor),
           ],
         );
       },
@@ -430,7 +433,7 @@ class SettingsScreen extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: SegmentedButton<String>(
                           segments: [
-                            const ButtonSegment<String>(value: 'bluesky', label: Text('Bluesky')),
+                            ButtonSegment<String>(value: 'bluesky', label: Text(context.l10n.labelBluesky)),
                             ButtonSegment<String>(value: 'community', label: Text(context.l10n.labelCommunity)),
                           ],
                           selected: {settingsState.typeaheadProvider},
@@ -538,8 +541,7 @@ class SettingsScreen extends StatelessWidget {
                   SettingsTile(
                     icon: Icons.description_outlined,
                     title: context.l10n.labelLogs,
-                    // TODO: l10n
-                    subtitle: 'View app log files',
+                    subtitle: context.l10n.messageLogsSubtitle,
                     onTap: () => context.push('/settings/logs'),
                   ),
                   const Divider(height: 1),
@@ -556,9 +558,15 @@ class SettingsScreen extends StatelessWidget {
                       alignment: Alignment.centerLeft,
                       child: SegmentedButton<String>(
                         key: const Key('appview-provider-segmented'),
-                        segments: const [
-                          ButtonSegment<String>(value: AppViewProviders.blueskyKey, label: Text('Bluesky')),
-                          ButtonSegment<String>(value: AppViewProviders.blackskyKey, label: Text('Blacksky')),
+                        segments: [
+                          ButtonSegment<String>(
+                            value: AppViewProviders.blueskyKey,
+                            label: Text(context.l10n.labelBluesky),
+                          ),
+                          ButtonSegment<String>(
+                            value: AppViewProviders.blackskyKey,
+                            label: Text(context.l10n.labelBlacksky),
+                          ),
                         ],
                         selected: {state.appViewProvider},
                         onSelectionChanged: (selection) async {
@@ -611,7 +619,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   ConnectionDetailRow(
                     label: context.l10n.labelActiveProvider,
-                    value: AppViewProviders.providerDisplayName(state.appViewProvider),
+                    value: _appViewProviderLabel(context, state.appViewProvider),
                   ),
                   const Divider(height: 1),
                   ConnectionDetailRow(
@@ -660,9 +668,14 @@ class SettingsScreen extends StatelessWidget {
   }
 
   String _appViewSubtitle(BuildContext context, String providerKey) {
-    final provider = AppViewProviders.providerDisplayName(providerKey);
+    final provider = _appViewProviderLabel(context, providerKey);
     return context.l10n.formatAppViewProviderSelected(provider);
   }
+
+  String _appViewProviderLabel(BuildContext context, String providerKey) => switch (providerKey) {
+    AppViewProviders.blackskyKey => context.l10n.labelBlacksky,
+    _ => context.l10n.labelBluesky,
+  };
 
   Future<void> _confirmAndApplyProviderChange(BuildContext context, String selectedProvider) async {
     final shouldApply = await showDialog<bool>(
@@ -815,7 +828,7 @@ class _ModerationSettingsPreviewState extends State<_ModerationSettingsPreview> 
       }
     } catch (error) {
       if (mounted) {
-        showAppSnackBar(context, 'Failed to update adult content: $error', isError: true);
+        showAppSnackBar(context, context.l10n.errorFailedToUpdateAdultContent(error), isError: true);
       }
     } finally {
       if (mounted) {
