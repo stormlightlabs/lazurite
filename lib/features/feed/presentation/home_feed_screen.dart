@@ -521,7 +521,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
       return const EmptyState(message: 'No posts yet', icon: Icons.article_outlined);
     }
 
-    final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
+    final accountDid = context.select((AuthBloc bloc) => bloc.state.tokens?.did ?? '');
 
     Widget buildCard(int index, PostCardVariant variant) {
       final post = _posts[index];

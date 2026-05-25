@@ -18,7 +18,6 @@ class AccountFeedDisplayPreferences extends StatelessWidget {
   @override
   Widget build(BuildContext context) => BlocBuilder<AccountSettingsCubit, AccountSettingsState>(
     builder: (context, state) {
-      final cubit = context.read<AccountSettingsCubit>();
       final preference = state.feedViewPref;
       final hideReplies = preference?.hideReplies ?? false;
       final hideRepliesByUnfollowed = preference?.hideRepliesByUnfollowed ?? true;
@@ -46,7 +45,12 @@ class AccountFeedDisplayPreferences extends StatelessWidget {
                 icon: Icons.reply_outlined,
                 title: 'Hide replies',
                 subtitle: 'Only show top-level posts in this feed.',
-                trailing: Switch.adaptive(value: hideReplies, onChanged: state.isBusy ? null : cubit.setHideReplies),
+                trailing: Switch.adaptive(
+                  value: hideReplies,
+                  onChanged: state.isBusy
+                      ? null
+                      : (value) => context.read<AccountSettingsCubit>().setHideReplies(value),
+                ),
               ),
               const Divider(height: 1),
               SettingsTile(
@@ -55,21 +59,28 @@ class AccountFeedDisplayPreferences extends StatelessWidget {
                 subtitle: 'Keep replies from people you follow or yourself.',
                 trailing: Switch.adaptive(
                   value: hideRepliesByUnfollowed,
-                  onChanged: state.isBusy ? null : cubit.setHideRepliesByUnfollowed,
+                  onChanged: state.isBusy
+                      ? null
+                      : (value) => context.read<AccountSettingsCubit>().setHideRepliesByUnfollowed(value),
                 ),
               ),
               const Divider(height: 1),
               _ReplyLikeThresholdTile(
                 value: likeThreshold,
                 enabled: !state.isBusy,
-                onChanged: cubit.setHideRepliesByLikeCount,
+                onChanged: (value) => context.read<AccountSettingsCubit>().setHideRepliesByLikeCount(value),
               ),
               const Divider(height: 1),
               SettingsTile(
                 icon: Icons.repeat_outlined,
                 title: 'Hide reposts',
                 subtitle: 'Hide posts shown because someone reposted them.',
-                trailing: Switch.adaptive(value: hideReposts, onChanged: state.isBusy ? null : cubit.setHideReposts),
+                trailing: Switch.adaptive(
+                  value: hideReposts,
+                  onChanged: state.isBusy
+                      ? null
+                      : (value) => context.read<AccountSettingsCubit>().setHideReposts(value),
+                ),
               ),
               const Divider(height: 1),
               SettingsTile(
@@ -78,7 +89,9 @@ class AccountFeedDisplayPreferences extends StatelessWidget {
                 subtitle: 'Hide posts that quote another post.',
                 trailing: Switch.adaptive(
                   value: hideQuotePosts,
-                  onChanged: state.isBusy ? null : cubit.setHideQuotePosts,
+                  onChanged: state.isBusy
+                      ? null
+                      : (value) => context.read<AccountSettingsCubit>().setHideQuotePosts(value),
                 ),
               ),
             ],

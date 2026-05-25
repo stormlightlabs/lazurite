@@ -36,10 +36,12 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authState = context.watch<AuthBloc>().state;
+    final authView = context.select(
+      (AuthBloc bloc) => (isAuthenticated: bloc.state.isAuthenticated, tokens: bloc.state.tokens),
+    );
     final l10n = context.l10n;
-    final tokens = authState.tokens;
-    final showAccountSettings = authState.isAuthenticated && tokens != null;
+    final tokens = authView.tokens;
+    final showAccountSettings = authView.isAuthenticated && tokens != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -205,7 +207,6 @@ class SettingsScreen extends StatelessWidget {
   Widget _title(BuildContext context) => Text(context.l10n.labelSettings, style: context.textTheme.titleLarge);
 
   Widget _buildThemeSelector(BuildContext context) {
-    final settingsCubit = context.read<SettingsCubit>();
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
         return SettingsGroup(
@@ -225,6 +226,7 @@ class SettingsScreen extends StatelessWidget {
                   ],
                   selected: {AppearanceMode.fromState(state)},
                   onSelectionChanged: (selected) {
+                    final settingsCubit = context.read<SettingsCubit>();
                     switch (selected.first) {
                       case AppearanceMode.system:
                         settingsCubit.setUseSystemTheme(true);
@@ -254,7 +256,7 @@ class SettingsScreen extends StatelessWidget {
               ThemePaletteRow(
                 palette: palette,
                 isSelected: state.themePalette == palette,
-                onTap: () => settingsCubit.setThemePalette(palette),
+                onTap: () => context.read<SettingsCubit>().setThemePalette(palette),
               ),
             const Divider(height: 1),
             SettingsDropdownTile<AppHeadingFontFamily>(
@@ -265,7 +267,7 @@ class SettingsScreen extends StatelessWidget {
               optionBuilder: _headingFontOption,
               onChanged: (value) {
                 if (value != null) {
-                  settingsCubit.setHeadingFontFamily(value);
+                  context.read<SettingsCubit>().setHeadingFontFamily(value);
                 }
               },
             ),
@@ -278,7 +280,7 @@ class SettingsScreen extends StatelessWidget {
               optionBuilder: _contentFontOption,
               onChanged: (value) {
                 if (value != null) {
-                  settingsCubit.setContentFontFamily(value);
+                  context.read<SettingsCubit>().setContentFontFamily(value);
                 }
               },
             ),
@@ -291,7 +293,7 @@ class SettingsScreen extends StatelessWidget {
               optionBuilder: _fontSizeOption,
               onChanged: (value) {
                 if (value != null) {
-                  settingsCubit.setContentFontSize(value);
+                  context.read<SettingsCubit>().setContentFontSize(value);
                 }
               },
             ),
@@ -304,7 +306,7 @@ class SettingsScreen extends StatelessWidget {
               optionBuilder: _codeFontOption,
               onChanged: (value) {
                 if (value != null) {
-                  settingsCubit.setCodeFontFamily(value);
+                  context.read<SettingsCubit>().setCodeFontFamily(value);
                 }
               },
             ),
@@ -349,60 +351,57 @@ class SettingsScreen extends StatelessWidget {
     style: AppTypography.code(fontFamily, color: context.colorScheme.onSurface),
   );
 
-  Widget _buildLayoutSettings(BuildContext context) {
-    final settingsCubit = context.read<SettingsCubit>();
-    return BlocBuilder<SettingsCubit, SettingsState>(
-      builder: (context, state) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Divider(height: 1, color: context.theme.dividerColor),
-            Material(
-              color: context.theme.cardColor,
-              child: Column(
-                children: [
-                  SettingsDropdownTile<FeedLayout>(
-                    title: context.l10n.labelFeedLayout,
-                    value: state.feedLayout,
-                    options: FeedLayout.values,
-                    labelBuilder: (layout) => switch (layout) {
-                      FeedLayout.comfortable => context.l10n.messageFeedLayoutComfortable,
-                      FeedLayout.compact => context.l10n.messageFeedLayoutCompact,
-                    },
-                    onChanged: (value) {
-                      if (value != null) {
-                        settingsCubit.setFeedLayout(value);
-                      }
-                    },
+  Widget _buildLayoutSettings(BuildContext context) => BlocBuilder<SettingsCubit, SettingsState>(
+    builder: (context, state) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Divider(height: 1, color: context.theme.dividerColor),
+          Material(
+            color: context.theme.cardColor,
+            child: Column(
+              children: [
+                SettingsDropdownTile<FeedLayout>(
+                  title: context.l10n.labelFeedLayout,
+                  value: state.feedLayout,
+                  options: FeedLayout.values,
+                  labelBuilder: (layout) => switch (layout) {
+                    FeedLayout.comfortable => context.l10n.messageFeedLayoutComfortable,
+                    FeedLayout.compact => context.l10n.messageFeedLayoutCompact,
+                  },
+                  onChanged: (value) {
+                    if (value != null) {
+                      context.read<SettingsCubit>().setFeedLayout(value);
+                    }
+                  },
+                ),
+                const Divider(height: 1),
+                SettingsDropdownTile<int?>(
+                  title: context.l10n.labelThreadAutoCollapse,
+                  subtitle: context.l10n.messageThreadAutoCollapseSubtitle,
+                  value: state.threadAutoCollapseDepth,
+                  options: const <int?>[null, 1, 2, 3, 4, 5, 6],
+                  labelBuilder: (depth) => depth == null ? context.l10n.commonOff : context.l10n.formatDepth(depth),
+                  onChanged: (depth) => context.read<SettingsCubit>().setThreadAutoCollapseDepth(depth),
+                ),
+                const Divider(height: 1),
+                SettingsTile(
+                  icon: Icons.motion_photos_off_outlined,
+                  title: context.l10n.labelAnimations,
+                  subtitle: context.l10n.messageTurnOffNonEssentialMotion,
+                  trailing: Switch.adaptive(
+                    value: state.animationsEnabled,
+                    onChanged: (enabled) => context.read<SettingsCubit>().setAnimationsEnabled(enabled),
                   ),
-                  const Divider(height: 1),
-                  SettingsDropdownTile<int?>(
-                    title: context.l10n.labelThreadAutoCollapse,
-                    subtitle: context.l10n.messageThreadAutoCollapseSubtitle,
-                    value: state.threadAutoCollapseDepth,
-                    options: const <int?>[null, 1, 2, 3, 4, 5, 6],
-                    labelBuilder: (depth) => depth == null ? context.l10n.commonOff : context.l10n.formatDepth(depth),
-                    onChanged: settingsCubit.setThreadAutoCollapseDepth,
-                  ),
-                  const Divider(height: 1),
-                  SettingsTile(
-                    icon: Icons.motion_photos_off_outlined,
-                    title: context.l10n.labelAnimations,
-                    subtitle: context.l10n.messageTurnOffNonEssentialMotion,
-                    trailing: Switch.adaptive(
-                      value: state.animationsEnabled,
-                      onChanged: settingsCubit.setAnimationsEnabled,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Divider(height: 1, color: context.theme.dividerColor),
-          ],
-        );
-      },
-    );
-  }
+          ),
+          Divider(height: 1, color: context.theme.dividerColor),
+        ],
+      );
+    },
+  );
 
   Widget _buildSearchSettings(BuildContext context, {required bool showTypeaheadSettings}) =>
       BlocBuilder<SettingsCubit, SettingsState>(
@@ -459,7 +458,6 @@ class SettingsScreen extends StatelessWidget {
       );
 
   Widget _buildDeveloperSettings(BuildContext context) {
-    final settingsCubit = context.read<SettingsCubit>();
     final crashReportingService = _readCrashReportingServiceOrNull(context);
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) => Column(
@@ -474,7 +472,10 @@ class SettingsScreen extends StatelessWidget {
                   icon: Icons.cloud_off_outlined,
                   title: context.l10n.labelGoOffline,
                   subtitle: context.l10n.messageDeveloperGoOfflineSubtitle,
-                  trailing: Switch.adaptive(value: state.simulateOffline, onChanged: settingsCubit.setSimulateOffline),
+                  trailing: Switch.adaptive(
+                    value: state.simulateOffline,
+                    onChanged: (enabled) => context.read<SettingsCubit>().setSimulateOffline(enabled),
+                  ),
                 ),
                 const Divider(height: 1),
                 SettingsTile(
@@ -526,146 +527,143 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  Widget _buildAdvancedSettings(BuildContext context) {
-    final settingsCubit = context.read<SettingsCubit>();
-    return BlocBuilder<SettingsCubit, SettingsState>(
-      builder: (context, state) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Divider(height: 1, color: context.colorScheme.outline),
-            Material(
-              color: context.colorScheme.surface,
-              child: Column(
-                children: [
-                  SettingsTile(
-                    icon: Icons.description_outlined,
-                    title: context.l10n.labelLogs,
-                    subtitle: context.l10n.messageLogsSubtitle,
-                    onTap: () => context.push('/settings/logs'),
+  Widget _buildAdvancedSettings(BuildContext context) => BlocBuilder<SettingsCubit, SettingsState>(
+    builder: (context, state) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Divider(height: 1, color: context.colorScheme.outline),
+          Material(
+            color: context.colorScheme.surface,
+            child: Column(
+              children: [
+                SettingsTile(
+                  icon: Icons.description_outlined,
+                  title: context.l10n.labelLogs,
+                  subtitle: context.l10n.messageLogsSubtitle,
+                  onTap: () => context.push('/settings/logs'),
+                ),
+                const Divider(height: 1),
+                ConstellationUrlTile(currentUrl: state.constellationUrl),
+                const Divider(height: 1),
+                SettingsTile(
+                  icon: Icons.route_outlined,
+                  title: context.l10n.labelAppViewProvider,
+                  subtitle: _appViewSubtitle(context, state.appViewProvider),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: SegmentedButton<String>(
+                      key: const Key('appview-provider-segmented'),
+                      segments: [
+                        ButtonSegment<String>(
+                          value: AppViewProviders.blueskyKey,
+                          label: Text(context.l10n.labelBluesky),
+                        ),
+                        ButtonSegment<String>(
+                          value: AppViewProviders.blackskyKey,
+                          label: Text(context.l10n.labelBlacksky),
+                        ),
+                      ],
+                      selected: {state.appViewProvider},
+                      onSelectionChanged: (selection) async {
+                        final selectedProvider = selection.first;
+                        if (selectedProvider == state.appViewProvider) {
+                          return;
+                        }
+                        await _confirmAndApplyProviderChange(context, selectedProvider);
+                      },
+                    ),
                   ),
-                  const Divider(height: 1),
-                  ConstellationUrlTile(currentUrl: state.constellationUrl),
-                  const Divider(height: 1),
-                  SettingsTile(
-                    icon: Icons.route_outlined,
-                    title: context.l10n.labelAppViewProvider,
-                    subtitle: _appViewSubtitle(context, state.appViewProvider),
+                ),
+                const Divider(height: 1),
+                SettingsTile(
+                  icon: Icons.compare_arrows_outlined,
+                  title: context.l10n.labelCrossProviderFallback,
+                  subtitle: context.l10n.messageCrossProviderFallbackSubtitle,
+                  trailing: Switch.adaptive(
+                    value: state.crossProviderFallbackEnabled,
+                    onChanged: (enabled) => context.read<SettingsCubit>().setCrossProviderFallbackEnabled(enabled),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: SegmentedButton<String>(
-                        key: const Key('appview-provider-segmented'),
-                        segments: [
-                          ButtonSegment<String>(
-                            value: AppViewProviders.blueskyKey,
-                            label: Text(context.l10n.labelBluesky),
-                          ),
-                          ButtonSegment<String>(
-                            value: AppViewProviders.blackskyKey,
-                            label: Text(context.l10n.labelBlacksky),
-                          ),
-                        ],
-                        selected: {state.appViewProvider},
-                        onSelectionChanged: (selection) async {
-                          final selectedProvider = selection.first;
-                          if (selectedProvider == state.appViewProvider) {
-                            return;
-                          }
-                          await _confirmAndApplyProviderChange(context, selectedProvider);
+                ),
+                const Divider(height: 1),
+                SettingsTile(
+                  icon: Icons.alt_route_outlined,
+                  title: context.l10n.labelSlingshotIdentityFallback,
+                  subtitle: context.l10n.messageSlingshotIdentityFallbackSubtitle,
+                  trailing: Switch.adaptive(
+                    value: state.slingshotIdentityFallbackEnabled,
+                    onChanged: (enabled) => context.read<SettingsCubit>().setSlingshotIdentityFallbackEnabled(enabled),
+                  ),
+                ),
+                const Divider(height: 1),
+                SettingsTile(
+                  icon: Icons.bug_report_outlined,
+                  title: context.l10n.labelCrashReporting,
+                  subtitle: state.crashReportingEnabled
+                      ? context.l10n.messageCrashReportingEnabled
+                      : context.l10n.messageCrashReportingDisabled,
+                  trailing: Switch.adaptive(
+                    value: state.crashReportingEnabled,
+                    onChanged: (enabled) => unawaited(_handleCrashReportingToggle(context, enabled)),
+                  ),
+                ),
+                const Divider(height: 1),
+                SettingsTile(
+                  icon: Icons.monitor_heart_outlined,
+                  title: context.l10n.labelProviderDiagnostics,
+                  subtitle: context.l10n.messageProviderDiagnosticsSubtitle,
+                ),
+                ConnectionDetailRow(
+                  label: context.l10n.labelActiveProvider,
+                  value: _appViewProviderLabel(context, state.appViewProvider),
+                ),
+                const Divider(height: 1),
+                ConnectionDetailRow(
+                  label: context.l10n.labelHealth,
+                  value: state.appViewHealthSummary ?? context.l10n.commonNotCheckedYet,
+                ),
+                const Divider(height: 1),
+                ConnectionDetailRow(
+                  label: context.l10n.labelLastHealthCheck,
+                  value: state.appViewHealthCheckedAt == null
+                      ? context.l10n.commonNever
+                      : formatTimestamp(state.appViewHealthCheckedAt!.toLocal()),
+                ),
+                const Divider(height: 1),
+                ConnectionDetailRow(
+                  label: context.l10n.labelLastFallback,
+                  value: state.appViewLastFallback ?? context.l10n.commonNone,
+                ),
+                const Divider(height: 1),
+                ConnectionDetailRow(
+                  label: context.l10n.labelLastError,
+                  value: state.appViewLastError ?? context.l10n.commonNone,
+                ),
+                const Divider(height: 1),
+                SettingsTile(
+                  icon: Icons.medical_information_outlined,
+                  title: context.l10n.labelRefreshProviderHealth,
+                  subtitle: context.l10n.messageRefreshProviderHealthSubtitle,
+                  trailing: state.appViewHealthRefreshing
+                      ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.refresh_outlined),
+                  onTap: state.appViewHealthRefreshing
+                      ? null
+                      : () {
+                          unawaited(context.read<SettingsCubit>().refreshAppViewHealth());
                         },
-                      ),
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  SettingsTile(
-                    icon: Icons.compare_arrows_outlined,
-                    title: context.l10n.labelCrossProviderFallback,
-                    subtitle: context.l10n.messageCrossProviderFallbackSubtitle,
-                    trailing: Switch.adaptive(
-                      value: state.crossProviderFallbackEnabled,
-                      onChanged: settingsCubit.setCrossProviderFallbackEnabled,
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  SettingsTile(
-                    icon: Icons.alt_route_outlined,
-                    title: context.l10n.labelSlingshotIdentityFallback,
-                    subtitle: context.l10n.messageSlingshotIdentityFallbackSubtitle,
-                    trailing: Switch.adaptive(
-                      value: state.slingshotIdentityFallbackEnabled,
-                      onChanged: settingsCubit.setSlingshotIdentityFallbackEnabled,
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  SettingsTile(
-                    icon: Icons.bug_report_outlined,
-                    title: context.l10n.labelCrashReporting,
-                    subtitle: state.crashReportingEnabled
-                        ? context.l10n.messageCrashReportingEnabled
-                        : context.l10n.messageCrashReportingDisabled,
-                    trailing: Switch.adaptive(
-                      value: state.crashReportingEnabled,
-                      onChanged: (enabled) => unawaited(_handleCrashReportingToggle(context, enabled)),
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  SettingsTile(
-                    icon: Icons.monitor_heart_outlined,
-                    title: context.l10n.labelProviderDiagnostics,
-                    subtitle: context.l10n.messageProviderDiagnosticsSubtitle,
-                  ),
-                  ConnectionDetailRow(
-                    label: context.l10n.labelActiveProvider,
-                    value: _appViewProviderLabel(context, state.appViewProvider),
-                  ),
-                  const Divider(height: 1),
-                  ConnectionDetailRow(
-                    label: context.l10n.labelHealth,
-                    value: state.appViewHealthSummary ?? context.l10n.commonNotCheckedYet,
-                  ),
-                  const Divider(height: 1),
-                  ConnectionDetailRow(
-                    label: context.l10n.labelLastHealthCheck,
-                    value: state.appViewHealthCheckedAt == null
-                        ? context.l10n.commonNever
-                        : formatTimestamp(state.appViewHealthCheckedAt!.toLocal()),
-                  ),
-                  const Divider(height: 1),
-                  ConnectionDetailRow(
-                    label: context.l10n.labelLastFallback,
-                    value: state.appViewLastFallback ?? context.l10n.commonNone,
-                  ),
-                  const Divider(height: 1),
-                  ConnectionDetailRow(
-                    label: context.l10n.labelLastError,
-                    value: state.appViewLastError ?? context.l10n.commonNone,
-                  ),
-                  const Divider(height: 1),
-                  SettingsTile(
-                    icon: Icons.medical_information_outlined,
-                    title: context.l10n.labelRefreshProviderHealth,
-                    subtitle: context.l10n.messageRefreshProviderHealthSubtitle,
-                    trailing: state.appViewHealthRefreshing
-                        ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.refresh_outlined),
-                    onTap: state.appViewHealthRefreshing
-                        ? null
-                        : () {
-                            unawaited(settingsCubit.refreshAppViewHealth());
-                          },
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Divider(height: 1, color: context.theme.dividerColor),
-          ],
-        );
-      },
-    );
-  }
+          ),
+          Divider(height: 1, color: context.theme.dividerColor),
+        ],
+      );
+    },
+  );
 
   String _appViewSubtitle(BuildContext context, String providerKey) {
     final provider = _appViewProviderLabel(context, providerKey);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/router/app_shell.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 
@@ -25,26 +26,23 @@ class LazuriteAppBar extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => Size.fromHeight(_toolbarHeight + (bottom?.preferredSize.height ?? 0));
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return AppBar(
-      toolbarHeight: _toolbarHeight,
-      backgroundColor: theme.colorScheme.surfaceContainerLowest.withValues(alpha: 0.92),
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      leading: const AppShellMenuButton(),
-      title: Text(
-        sectionLabel.toUpperCase(),
-        style: theme.textTheme.labelSmall?.copyWith(letterSpacing: 3, color: theme.colorScheme.onSurfaceVariant),
-      ),
-      centerTitle: false,
-      titleSpacing: 0,
-      actions: [...?actions, const _AppBarOfflineIndicator()],
-      bottom: bottom,
-      shape: Border(bottom: BorderSide(color: theme.colorScheme.outlineVariant)),
-    );
-  }
+  Widget build(BuildContext context) => AppBar(
+    toolbarHeight: _toolbarHeight,
+    backgroundColor: context.colorScheme.surfaceContainerLowest.withValues(alpha: 0.92),
+    surfaceTintColor: Colors.transparent,
+    elevation: 0,
+    scrolledUnderElevation: 0,
+    leading: const AppShellMenuButton(),
+    title: Text(
+      sectionLabel.toUpperCase(),
+      style: context.textTheme.labelSmall?.copyWith(letterSpacing: 3, color: context.colorScheme.onSurfaceVariant),
+    ),
+    centerTitle: false,
+    titleSpacing: 0,
+    actions: [...?actions, const _AppBarOfflineIndicator()],
+    bottom: bottom,
+    shape: Border(bottom: BorderSide(color: context.colorScheme.outlineVariant)),
+  );
 }
 
 class _AppBarOfflineIndicator extends StatelessWidget {
@@ -69,12 +67,7 @@ class _AppBarOfflineIndicator extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
-        final theme = Theme.of(context);
-        SettingsCubit? settingsCubit;
-        try {
-          settingsCubit = context.read<SettingsCubit>();
-        } catch (_) {}
-        final canDisableSimulatedOffline = state.isSimulatedOffline && settingsCubit != null;
+        final canDisableSimulatedOffline = state.isSimulatedOffline && _hasSettingsCubit(context);
         final tooltip = canDisableSimulatedOffline ? 'Disable simulated offline mode' : 'You\'re offline';
 
         return Padding(
@@ -83,12 +76,24 @@ class _AppBarOfflineIndicator extends StatelessWidget {
             message: tooltip,
             child: IconButton(
               tooltip: tooltip,
-              onPressed: canDisableSimulatedOffline ? () => settingsCubit?.setSimulateOffline(false) : null,
-              icon: Icon(Icons.cloud_off_outlined, color: theme.colorScheme.error),
+              onPressed: canDisableSimulatedOffline
+                  ? () => context.read<SettingsCubit>().setSimulateOffline(false)
+                  : null,
+              icon: Icon(Icons.cloud_off_outlined, color: context.theme.colorScheme.error),
             ),
           ),
         );
       },
     );
+  }
+
+  bool _hasSettingsCubit(BuildContext context) {
+    try {
+      context.read<SettingsCubit>();
+      return true;
+    } catch (error, stackTrace) {
+      log.d('showing offline indicator without simulated-offline controls', error: error, stackTrace: stackTrace);
+      return false;
+    }
   }
 }

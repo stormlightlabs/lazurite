@@ -44,18 +44,16 @@ class DevToolsScreen extends StatelessWidget {
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(content: Text(message), behavior: SnackBarBehavior.floating));
       },
-      builder: (context, state) {
-        return Column(
-          children: [
-            _SearchInput(state: state, initialQuery: initialQuery),
-            if (state.status == DevToolsStatus.repoLoaded ||
-                state.status == DevToolsStatus.collectionLoaded ||
-                state.status == DevToolsStatus.recordLoaded)
-              _BreadcrumbBar(state: state),
-            Expanded(child: _Content(state: state)),
-          ],
-        );
-      },
+      builder: (context, state) => Column(
+        children: [
+          _SearchInput(state: state, initialQuery: initialQuery),
+          if (state.status == DevToolsStatus.repoLoaded ||
+              state.status == DevToolsStatus.collectionLoaded ||
+              state.status == DevToolsStatus.recordLoaded)
+            _BreadcrumbBar(state: state),
+          Expanded(child: _Content(state: state)),
+        ],
+      ),
     ),
   );
 }
@@ -192,41 +190,37 @@ class _TypeaheadResults extends StatelessWidget {
   final ValueChanged<ProfileViewBasic> onSelected;
 
   @override
-  Widget build(BuildContext context) {
-    final listHeight = (actors.length * 56.0).clamp(56.0, 220.0);
-
-    return Material(
-      color: context.colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: context.theme.dividerColor),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isLoading) const LinearProgressIndicator(minHeight: 2),
-          if (actors.isNotEmpty)
-            SizedBox(
-              height: listHeight,
-              child: ListView.separated(
-                itemCount: actors.length,
-                separatorBuilder: (_, _) => Divider(height: 1, color: context.theme.dividerColor),
-                itemBuilder: (context, index) {
-                  final actor = actors[index];
-                  return ListTile(
-                    dense: true,
-                    title: Text(actor.displayName ?? actor.handle),
-                    subtitle: Text('@${actor.handle}'),
-                    onTap: () => onSelected(actor),
-                  );
-                },
-              ),
+  Widget build(BuildContext context) => Material(
+    color: context.colorScheme.surface,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+      side: BorderSide(color: context.theme.dividerColor),
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (isLoading) const LinearProgressIndicator(minHeight: 2),
+        if (actors.isNotEmpty)
+          SizedBox(
+            height: (actors.length * 56.0).clamp(56.0, 220.0),
+            child: ListView.separated(
+              itemCount: actors.length,
+              separatorBuilder: (_, _) => Divider(height: 1, color: context.theme.dividerColor),
+              itemBuilder: (context, index) {
+                final actor = actors[index];
+                return ListTile(
+                  dense: true,
+                  title: Text(actor.displayName ?? actor.handle),
+                  subtitle: Text('@${actor.handle}'),
+                  onTap: () => onSelected(actor),
+                );
+              },
             ),
-        ],
-      ),
-    );
-  }
+          ),
+      ],
+    ),
+  );
 }
 
 class _BreadcrumbBar extends StatelessWidget {
@@ -240,15 +234,13 @@ class _BreadcrumbBar extends StatelessWidget {
   }
 
   List<AppBreadcrumbItem> _items(BuildContext context) {
-    final cubit = context.read<DevToolsCubit>();
-    final l10n = context.l10n;
-    final repoLabel = state.repoHandle ?? state.handle ?? state.did ?? l10n.labelRepository;
+    final repoLabel = state.repoHandle ?? state.handle ?? state.did ?? context.l10n.labelRepository;
     final items = <AppBreadcrumbItem>[
       AppBreadcrumbItem(
         label: repoLabel,
         tooltip: state.did == null ? repoLabel : '$repoLabel\n${state.did}',
         key: const ValueKey('dev-tools-breadcrumb-repo'),
-        onTap: state.status == DevToolsStatus.repoLoaded ? null : cubit.goBackToRepo,
+        onTap: state.status == DevToolsStatus.repoLoaded ? null : () => context.read<DevToolsCubit>().goBackToRepo(),
       ),
     ];
 
@@ -257,7 +249,9 @@ class _BreadcrumbBar extends StatelessWidget {
         AppBreadcrumbItem(
           label: state.selectedCollection!,
           key: const ValueKey('dev-tools-breadcrumb-collection'),
-          onTap: state.status == DevToolsStatus.collectionLoaded ? null : cubit.goBackToCollection,
+          onTap: state.status == DevToolsStatus.collectionLoaded
+              ? null
+              : () => context.read<DevToolsCubit>().goBackToCollection(),
         ),
       );
     }
@@ -265,7 +259,7 @@ class _BreadcrumbBar extends StatelessWidget {
     if (state.selectedRecord != null) {
       items.add(
         AppBreadcrumbItem(
-          label: state.selectedRecord!.rkey.isEmpty ? l10n.labelRecordJson : state.selectedRecord!.rkey,
+          label: state.selectedRecord!.rkey.isEmpty ? context.l10n.labelRecordJson : state.selectedRecord!.rkey,
           tooltip: state.selectedRecord!.uri,
           key: const ValueKey('dev-tools-breadcrumb-record'),
         ),
@@ -372,7 +366,6 @@ class _RepoOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final totalRepoRecords = state.totalRepoRecords;
     return ListView(
       children: [
         Container(
@@ -417,11 +410,12 @@ class _RepoOverview extends StatelessWidget {
                     style: context.textTheme.bodySmall!.copyWith(color: context.colorScheme.onSurface),
                   ),
                   Text(
-                    totalRepoRecords == null
+                    // FIXME: nested ternaries like this are bad
+                    state.totalRepoRecords == null
                         ? (state.isCollectionCountsLoading
                               ? context.l10n.messageRecordCountsLoading
                               : context.l10n.messageRecordCountsUnavailable)
-                        : context.l10n.formatRecordsCount(totalRepoRecords),
+                        : context.l10n.formatRecordsCount(state.totalRepoRecords!),
                     style: context.textTheme.bodySmall!.copyWith(color: context.colorScheme.onSurfaceVariant),
                   ),
                 ],
@@ -448,39 +442,37 @@ class _CollectionItem extends StatelessWidget {
   final CollectionSummary collection;
 
   @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(6),
-          color: context.colorScheme.surfaceContainerHighest,
-        ),
-        child: Icon(_getCollectionIcon(collection.name), size: 16, color: context.colorScheme.primary),
+  Widget build(BuildContext context) => ListTile(
+    leading: Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(6),
+        color: context.colorScheme.surfaceContainerHighest,
       ),
-      title: Text(collection.name, style: context.codeTextStyle(fontSize: 13)),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: context.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              collection.countLabel,
-              style: context.textTheme.labelSmall!.copyWith(color: context.colorScheme.onSurfaceVariant),
-            ),
+      child: Icon(_getCollectionIcon(collection.name), size: 16, color: context.colorScheme.primary),
+    ),
+    title: Text(collection.name, style: context.codeTextStyle(fontSize: 13)),
+    trailing: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: context.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(999),
           ),
-          const SizedBox(width: 4),
-          const Icon(Icons.chevron_right),
-        ],
-      ),
-      onTap: () => context.read<DevToolsCubit>().loadCollection(collection.name),
-    );
-  }
+          child: Text(
+            collection.countLabel,
+            style: context.textTheme.labelSmall!.copyWith(color: context.colorScheme.onSurfaceVariant),
+          ),
+        ),
+        const SizedBox(width: 4),
+        const Icon(Icons.chevron_right),
+      ],
+    ),
+    onTap: () => context.read<DevToolsCubit>().loadCollection(collection.name),
+  );
 
   /// NOTE: repost must come before post
   IconData _getCollectionIcon(String collection) {

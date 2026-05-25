@@ -1,4 +1,3 @@
-import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +6,7 @@ import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
+import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 
 class ProfileLikedPostsPane extends StatefulWidget {
   const ProfileLikedPostsPane({super.key, required this.actor, required this.profileRepository});
@@ -132,7 +132,7 @@ class _ProfileLikedPostsPaneState extends State<ProfileLikedPostsPane> {
       );
     }
 
-    final accountDid = context.read<AuthBloc>().state.tokens?.did ?? '';
+    final accountDid = context.select((AuthBloc bloc) => bloc.state.tokens?.did ?? '');
     return RefreshIndicator(
       onRefresh: _refresh,
       child: NotificationListener<ScrollNotification>(
@@ -179,19 +179,17 @@ class _UnavailableLikedPostCard extends StatelessWidget {
   final String reason;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: ListTile(
-        leading: const Icon(Icons.hide_source_outlined),
-        title: Text(context.l10n.labelUnavailableLikedPost),
-        subtitle: Text(reason),
-        trailing: IconButton(
-          icon: const Icon(Icons.open_in_new),
-          onPressed: () => context.push('/post?uri=${Uri.encodeQueryComponent(subjectUri)}'),
-          tooltip: context.l10n.buttonOpen,
-        ),
+  Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    child: ListTile(
+      leading: const Icon(Icons.hide_source_outlined),
+      title: Text(context.l10n.labelUnavailableLikedPost),
+      subtitle: Text(reason),
+      trailing: IconButton(
+        icon: const Icon(Icons.open_in_new),
+        onPressed: () => context.push('/post?uri=${Uri.encodeQueryComponent(subjectUri)}'),
+        tooltip: context.l10n.buttonOpen,
       ),
-    );
-  }
+    ),
+  );
 }
