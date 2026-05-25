@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lazurite/core/cache/lazurite_image_cache.dart';
-import 'package:photo_view/photo_view.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
 import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
+import 'package:lazurite/features/feed/presentation/media/media_alt_text_panel.dart';
+import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 
 /// Full-screen, zoomable gallery for one or more images in a post embed.
@@ -46,7 +48,8 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
   @override
   Widget build(BuildContext context) {
     final image = widget.args.images[_currentIndex];
-    final theme = Theme.of(context);
+    final altText = image.altText?.trim();
+    final hasAltText = altText?.isNotEmpty ?? false;
     final progressValue = _downloadProgress > 0 && _downloadProgress < 1 ? _downloadProgress : null;
     final backgroundOpacity = (1 - (_dragOffset.abs() / 240)).clamp(0.45, 1.0);
 
@@ -129,8 +132,9 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                     heroAttributes: PhotoViewHeroAttributes(tag: item.heroTag),
                     minScale: PhotoViewComputedScale.contained,
                     maxScale: PhotoViewComputedScale.covered * 2.6,
-                    errorBuilder: (context, error, stackTrace) =>
-                        Center(child: Icon(Icons.broken_image_outlined, color: theme.colorScheme.onSurface, size: 40)),
+                    errorBuilder: (context, error, stackTrace) => Center(
+                      child: Icon(Icons.broken_image_outlined, color: context.colorScheme.onSurface, size: 40),
+                    ),
                   );
                 },
               ),
@@ -151,24 +155,20 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                       ),
                       child: Text(
                         '${_currentIndex + 1} / ${widget.args.images.length}',
-                        style: theme.textTheme.labelLarge?.copyWith(color: Colors.white),
+                        style: context.textTheme.labelLarge?.copyWith(color: Colors.white),
                       ),
                     ),
-                  if ((image.altText?.trim().isNotEmpty ?? false)) ...[
+                  if (hasAltText) ...[
                     const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
+                    MediaAltTextPanel(
+                      text: altText!,
+                      maxHeightFraction: 0.28,
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Text(
-                        image.altText!,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white),
-                      ),
+                      textStyle: context.textTheme.bodyMedium?.copyWith(color: Colors.white),
                     ),
                   ],
                 ],

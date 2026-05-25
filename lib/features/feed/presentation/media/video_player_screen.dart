@@ -1,10 +1,12 @@
 import 'dart:io';
 
-import 'package:chewie/chewie.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:lazurite/core/cache/lazurite_image_cache.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
+import 'package:lazurite/features/feed/presentation/media/media_alt_text_panel.dart';
 import 'package:lazurite/features/feed/presentation/media/video_layout.dart';
 import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
 import 'package:video_player/video_player.dart';
@@ -52,7 +54,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final progressValue = _downloadProgress > 0 && _downloadProgress < 1 ? _downloadProgress : null;
     final altText = widget.args.altText?.trim();
     final hasAltText = altText?.isNotEmpty ?? false;
@@ -94,7 +95,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         height: videoSize.height,
                         child: switch ((_isInitializing, _initializationError, _chewieController)) {
                           (true, _, _) => _buildPlaceholder(showSpinner: true),
-                          (_, final Object error, _) => _buildErrorState(theme, error),
+                          (_, final Object error, _) => _buildErrorState(context, error),
                           (_, _, final ChewieController controller) => Chewie(controller: controller),
                           _ => _buildPlaceholder(),
                         },
@@ -104,20 +105,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 ),
               ),
               if (hasAltText)
-                Flexible(
-                  fit: FlexFit.loose,
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHigh,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(altText!, style: theme.textTheme.bodyMedium),
-                      ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: MediaAltTextPanel(
+                    text: altText!,
+                    decoration: BoxDecoration(
+                      color: context.colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(16),
                     ),
+                    textStyle: context.textTheme.bodyMedium,
                   ),
                 ),
             ],
@@ -127,45 +123,41 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     );
   }
 
-  Widget _buildPlaceholder({bool showSpinner = false}) {
-    return Stack(
-      fit: StackFit.expand,
-      alignment: Alignment.center,
-      children: [
-        if (widget.args.thumbnailUrl != null)
-          CachedNetworkImage(
-            imageUrl: widget.args.thumbnailUrl!,
-            cacheManager: LazuriteImageCacheManager.instance,
-            fit: BoxFit.cover,
-            errorWidget: (_, _, _) => const ColoredBox(color: Colors.black26),
-          )
-        else
-          const ColoredBox(color: Colors.black26),
-        if (showSpinner) const Center(child: CircularProgressIndicator()),
-        if (!showSpinner)
-          Center(
-            child: Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.65), shape: BoxShape.circle),
-              child: const Icon(Icons.play_arrow, color: Colors.white, size: 28),
-            ),
+  Widget _buildPlaceholder({bool showSpinner = false}) => Stack(
+    fit: StackFit.expand,
+    alignment: Alignment.center,
+    children: [
+      if (widget.args.thumbnailUrl != null)
+        CachedNetworkImage(
+          imageUrl: widget.args.thumbnailUrl!,
+          cacheManager: LazuriteImageCacheManager.instance,
+          fit: BoxFit.cover,
+          errorWidget: (_, _, _) => const ColoredBox(color: Colors.black26),
+        )
+      else
+        const ColoredBox(color: Colors.black26),
+      if (showSpinner) const Center(child: CircularProgressIndicator()),
+      if (!showSpinner)
+        Center(
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.65), shape: BoxShape.circle),
+            child: const Icon(Icons.play_arrow, color: Colors.white, size: 28),
           ),
-      ],
-    );
-  }
-
-  Widget _buildErrorState(ThemeData theme, Object error) {
-    return ColoredBox(
-      color: theme.colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text('Failed to load video.\n$error', textAlign: TextAlign.center, style: theme.textTheme.bodyMedium),
         ),
+    ],
+  );
+
+  Widget _buildErrorState(BuildContext context, Object error) => ColoredBox(
+    color: context.colorScheme.surfaceContainerHighest,
+    child: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text('Failed to load video.\n$error', textAlign: TextAlign.center, style: context.textTheme.bodyMedium),
       ),
-    );
-  }
+    ),
+  );
 
   Future<void> _initializePlayer() async {
     try {
