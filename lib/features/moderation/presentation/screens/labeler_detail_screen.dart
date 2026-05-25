@@ -31,6 +31,9 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
   }
 
   void _reload() {
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _loadFuture = _loadData();
     });

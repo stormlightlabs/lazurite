@@ -32,6 +32,9 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
   }
 
   void _reload() {
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _loadFuture = _loadData();
     });
@@ -128,9 +131,13 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
                   }
                 }
               } catch (error) {
-                setDialogState(() => errorText = '$error');
+                if (dialogContext.mounted) {
+                  setDialogState(() => errorText = '$error');
+                }
               } finally {
-                setDialogState(() => isSubmitting = false);
+                if (dialogContext.mounted) {
+                  setDialogState(() => isSubmitting = false);
+                }
               }
             }
 

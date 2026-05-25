@@ -670,7 +670,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             onPressed: () async {
                               FocusScope.of(sheetContext).unfocus();
                               final selected = await pickDateTime(since, isUntil: false);
-                              if (selected == null) {
+                              if (selected == null || !sheetContext.mounted) {
                                 return;
                               }
                               setState(() => since = selected);
@@ -685,7 +685,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             onPressed: () async {
                               FocusScope.of(sheetContext).unfocus();
                               final selected = await pickDateTime(until, isUntil: true);
-                              if (selected == null) {
+                              if (selected == null || !sheetContext.mounted) {
                                 return;
                               }
                               setState(() => until = selected);

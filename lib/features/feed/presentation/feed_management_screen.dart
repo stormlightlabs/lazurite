@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/cache/lazurite_image_cache.dart';
+import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
@@ -37,14 +38,21 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
   Future<void> _loadSuggestedFeeds() async {
     setState(() => _isLoadingSuggestions = true);
 
+    final feedRepository = context.read<FeedRepository>();
     try {
-      final feedRepository = context.read<FeedRepository>();
       final feeds = await feedRepository.getSuggestedFeeds(limit: 10);
+      if (!mounted) {
+        return;
+      }
       setState(() {
         _suggestedFeeds = feeds;
         _isLoadingSuggestions = false;
       });
-    } catch (e) {
+    } catch (error, stackTrace) {
+      log.w('Failed to load suggested feeds', error: error, stackTrace: stackTrace);
+      if (!mounted) {
+        return;
+      }
       setState(() => _isLoadingSuggestions = false);
     }
   }
