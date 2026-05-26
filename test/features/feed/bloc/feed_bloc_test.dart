@@ -4,7 +4,7 @@ import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../../helpers/feed_fixtures.dart';
+import '../../../helpers/fixtures/feed.dart';
 
 class MockFeedRepository extends Mock implements FeedRepository {}
 
@@ -16,7 +16,10 @@ void main() {
   });
 
   group('FeedBloc', () {
-    final samplePost = testFeedViewPost(cid: 'cid-123', record: testPostRecordJson(text: 'Hello world'));
+    final samplePost = testFeedViewPost(
+      cid: 'cid-123',
+      record: testPostRecordJson(text: 'Hello world'),
+    );
 
     blocTest<FeedBloc, FeedState>(
       'loads a feed for the requested actor and filter',

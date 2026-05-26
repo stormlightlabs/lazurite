@@ -15,6 +15,7 @@ import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:mocktail/mocktail.dart';
+import '../../../helpers/connectivity_helpers.dart';
 
 class MockComposeBloc extends MockBloc<ComposeEvent, ComposeState> implements ComposeBloc {}
 
@@ -76,12 +77,7 @@ void main() {
     connectivityCubit = MockConnectivityCubit();
     authBloc = MockAuthBloc();
     profileRepository = MockProfileRepository();
-    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
-    whenListen(
-      connectivityCubit,
-      const Stream<ConnectivityState>.empty(),
-      initialState: const ConnectivityState.online(),
-    );
+    stubConnectivityCubit(connectivityCubit, state: const ConnectivityState.online());
     when(() => authBloc.state).thenReturn(const AuthState.unauthenticated());
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.unauthenticated());
   });

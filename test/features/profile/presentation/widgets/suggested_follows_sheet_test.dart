@@ -1,13 +1,15 @@
 import 'package:bloc_test/bloc_test.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/profile/cubit/suggested_follows_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/suggested_follows_sheet.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../../helpers/assertion_helpers.dart';
 
 class MockSuggestedFollowsCubit extends MockCubit<SuggestedFollowsState> implements SuggestedFollowsCubit {}
 
@@ -58,7 +60,6 @@ void main() {
 
     await tester.pumpWidget(buildSubject());
     await tester.pump();
-
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
 
@@ -72,7 +73,6 @@ void main() {
 
     await tester.pumpWidget(buildSubject());
     await tester.pump();
-
     expect(find.text('Something went wrong'), findsOneWidget);
   });
 
@@ -86,7 +86,6 @@ void main() {
 
     await tester.pumpWidget(buildSubject());
     await tester.pump();
-
     expect(find.text('No suggestions found'), findsOneWidget);
   });
 
@@ -105,10 +104,8 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pump();
 
-    expect(find.text('Bob Builder'), findsOneWidget);
-    expect(find.text('@did:plc:bob.bsky.social'), findsOneWidget);
-    expect(find.text('Carol Danvers'), findsOneWidget);
-    expect(find.text('@did:plc:carol.bsky.social'), findsOneWidget);
+    expectAccountRow(displayName: 'Bob Builder', handle: 'did:plc:bob.bsky.social');
+    expectAccountRow(displayName: 'Carol Danvers', handle: 'did:plc:carol.bsky.social');
   });
 
   testWidgets('shows Follow button for unfollowed profiles', (tester) async {
@@ -123,7 +120,6 @@ void main() {
 
     await tester.pumpWidget(buildSubject());
     await tester.pump();
-
     expect(find.text('Follow'), findsOneWidget);
   });
 
@@ -175,7 +171,6 @@ void main() {
 
     await tester.pumpWidget(buildSubject());
     await tester.pump();
-
     expect(find.text('Suggested Follows'), findsOneWidget);
   });
 }

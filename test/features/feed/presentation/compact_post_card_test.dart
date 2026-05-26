@@ -9,6 +9,7 @@ import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/feed/presentation/widgets/compact_post_card.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:poptart_core/poptart_core.dart';
+import '../../../helpers/assertion_helpers.dart';
 
 FeedViewPost _makePost({UFeedViewPostReason? reason, UPostViewEmbed? embed}) {
   final record = FeedPostRecord(text: 'Compact post', createdAt: DateTime.utc(2026, 3, 16));
@@ -110,8 +111,7 @@ void main() {
       (widget) => widget is RichText && widget.text.toPlainText() == 'Quoted context',
     );
 
-    expect(find.text('Quoted User'), findsOneWidget);
-    expect(find.text('@quoted.bsky.social'), findsOneWidget);
+    expectAccountRow(displayName: 'Quoted User', handle: 'quoted.bsky.social');
     expect(quotedText, findsOneWidget);
 
     final richText = tester.widget<RichText>(quotedText);

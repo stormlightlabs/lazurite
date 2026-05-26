@@ -1,22 +1,24 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:lazurite/core/network/poptart_client_adapter.dart';
-import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/actor/search_actors_typeahead.dart';
-import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/get_list_feed.dart';
 import 'package:bluesky_poptart/app/bsky/graph/defs.dart';
 import 'package:bluesky_poptart/app/bsky/graph/get_list.dart';
 import 'package:bluesky_poptart/app/bsky/graph/get_lists.dart';
 import 'package:bluesky_poptart/app/bsky/graph/get_lists_with_membership.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:poptart_lex/com/atproto/repo/create_record.dart';
 import 'package:poptart_lex/com/atproto/repo/delete_record.dart';
 import 'package:poptart_lex/com/atproto/repo/put_record.dart';
 import 'package:poptart_lex/com/atproto/repo/upload_blob.dart';
+
+import '../../../helpers/fixtures/feed.dart';
+import '../../../helpers/fixtures/graph.dart';
 
 void main() {
   late _FakeXrpcTransport transport;
@@ -44,18 +46,12 @@ void main() {
       uri: listItemUri,
       subject: const ProfileView(did: 'did:plc:member-1', handle: 'member1.bsky.social'),
     );
-    final feedPost = FeedViewPost(
-      post: PostView(
-        uri: AtUri.parse('at://did:plc:member-1/app.bsky.feed.post/post-1'),
-        cid: 'cid-post',
-        author: const ProfileViewBasic(did: 'did:plc:member-1', handle: 'member1.bsky.social'),
-        record: {
-          r'$type': 'app.bsky.feed.post',
-          'text': 'Hello from a list',
-          'createdAt': DateTime.utc(2026, 3, 21).toIso8601String(),
-        },
-        indexedAt: DateTime.utc(2026, 3, 21),
-      ),
+    final feedPost = testFeedViewPost(
+      uri: 'at://did:plc:member-1/app.bsky.feed.post/post-1',
+      cid: 'cid-post',
+      author: testProfileViewBasic(did: 'did:plc:member-1', handle: 'member1.bsky.social'),
+      record: testPostRecordJson(text: 'Hello from a list', createdAt: DateTime.utc(2026, 3, 21)),
+      indexedAt: DateTime.utc(2026, 3, 21),
     );
 
     test('getLists requests curation and moderation lists by default', () async {
@@ -72,9 +68,7 @@ void main() {
 
     test('getList returns the hydrated list and members', () async {
       transport.getListResult = GraphGetListOutput(list: listView, items: [listItem]);
-
       final result = await repository.getList(listUri: listUri);
-
       expect(result.list, listView);
       expect(result.items, [listItem]);
       expect(transport.lastGetListUri, listUri);
@@ -82,9 +76,7 @@ void main() {
 
     test('getListFeed returns feed posts and cursor', () async {
       transport.getListFeedResult = FeedGetListFeedOutput(feed: [feedPost], cursor: 'cursor-2');
-
       final result = await repository.getListFeed(listUri: listUri);
-
       expect(result.posts, [feedPost]);
       expect(result.cursor, 'cursor-2');
       expect(transport.lastListUri, listUri);
@@ -96,7 +88,6 @@ void main() {
       );
 
       final result = await repository.getListsWithMembership(actor: 'did:plc:member-1');
-
       expect(result.lists.length, 1);
       expect(result.lists.single.listItem, listItem);
       expect(transport.lastGetListsWithMembershipPurposes?.map((purpose) => purpose.toJson()).toList(), [
@@ -111,7 +102,6 @@ void main() {
       );
 
       final result = await repository.searchActorsTypeahead(query: 'member', limit: 5);
-
       expect(result.single.did, 'did:plc:member-1');
       expect(transport.lastQuery, 'member');
       expect(transport.lastLimit, 5);
@@ -122,7 +112,6 @@ void main() {
 
       final createdUri = await repository.addListItem(listUri: listUri, subjectDid: 'did:plc:member-1');
       await repository.removeListItem(listItemUri: listItemUri);
-
       expect(createdUri, listItemUri.toString());
       expect(transport.lastCreateCollection, 'app.bsky.graph.listitem');
       expect(transport.lastCreateRecord?['list'], listUri.toString());
@@ -134,17 +123,14 @@ void main() {
     test('mute and unmute list call graph endpoints', () async {
       await repository.muteList(listUri: listUri);
       await repository.unmuteList(listUri: listUri);
-
       expect(transport.lastMutedList, listUri);
       expect(transport.lastUnmutedList, listUri);
     });
 
     test('block and unblock list call listblock accessors', () async {
       transport.createdBlockUri = blockUri;
-
       final createdUri = await repository.blockList(listUri: listUri);
       await repository.unblockList(blockUri: blockUri);
-
       expect(createdUri, blockUri.toString());
       expect(transport.lastCreateCollection, 'app.bsky.graph.listblock');
       expect(transport.lastCreateRecord?['subject'], listUri.toString());
@@ -155,7 +141,6 @@ void main() {
     test('uploadListAvatar uploads bytes and returns Blob', () async {
       final bytes = [1, 2, 3, 4];
       final blob = await repository.uploadListAvatar(bytes: bytes, mimeType: 'image/png');
-
       expect(blob, transport.uploadedBlob);
       expect(transport.lastUploadedBytes, Uint8List.fromList(bytes));
       expect(transport.lastUploadHeaders, containsPair('Content-Type', 'image/png'));
@@ -191,7 +176,6 @@ void main() {
         purpose: 'app.bsky.graph.defs#modlist',
         avatarBlob: avatarBlob,
       );
-
       expect(transport.lastCreateRecord?['avatar'], avatarBlob.toJson());
     });
 
@@ -203,7 +187,6 @@ void main() {
         purpose: 'app.bsky.graph.defs#curatelist',
         description: 'Updated description',
       );
-
       expect(transport.lastPutRepo, 'did:plc:creator');
       expect(transport.lastPutCollection, 'app.bsky.graph.list');
       expect(transport.lastPutRkey, listUri.rkey);
@@ -213,7 +196,6 @@ void main() {
 
     test('deleteList deletes the record by rkey', () async {
       await repository.deleteList(listUri: listUri, userDid: 'did:plc:creator');
-
       expect(transport.lastDeleteRepo, 'did:plc:creator');
       expect(transport.lastDeleteCollection, 'app.bsky.graph.list');
       expect(transport.lastDeleteRkey, listUri.rkey);
@@ -228,16 +210,12 @@ const _session = Session(
   refreshJwt: 'refresh-token',
 );
 
-ListView _buildListView(AtUri uri) {
-  return ListView(
-    uri: uri,
-    cid: 'cid-${uri.rkey}',
-    creator: const ProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
-    name: 'Core List',
-    purpose: const ListPurpose.knownValue(data: KnownListPurpose.appBskyGraphDefsCuratelist),
-    indexedAt: DateTime.utc(2026, 3, 21),
-  );
-}
+ListView _buildListView(AtUri uri) => testListView(
+  uri: uri,
+  cid: 'cid-${uri.rkey}',
+  creator: testProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
+  name: 'Core List',
+);
 
 class _FakeXrpcTransport {
   GraphGetListsOutput? getListsResult;
@@ -357,14 +335,12 @@ class _FakeXrpcTransport {
     }
   }
 
-  AtUri _createdUriFor(String? collection) {
-    return switch (collection) {
-      'app.bsky.graph.list' => createdListUri,
-      'app.bsky.graph.listitem' => createdListItemUri,
-      'app.bsky.graph.listblock' => createdBlockUri,
-      _ => AtUri.parse('at://did:plc:creator/${collection ?? 'unknown'}/created'),
-    };
-  }
+  AtUri _createdUriFor(String? collection) => switch (collection) {
+    'app.bsky.graph.list' => createdListUri,
+    'app.bsky.graph.listitem' => createdListItemUri,
+    'app.bsky.graph.listblock' => createdBlockUri,
+    _ => AtUri.parse('at://did:plc:creator/${collection ?? 'unknown'}/created'),
+  };
 
   List<GraphGetListsPurposes> _getListPurposes(List<String> values) {
     return values.map((value) => GraphGetListsPurposes.valueOf(value)!).toList(growable: false);
@@ -386,12 +362,10 @@ class _FakeXrpcTransport {
     throw ArgumentError.value(body, 'body', 'Expected a JSON string body.');
   }
 
-  http.Response _jsonResponse(Uri url, String method, Map<String, dynamic> body) {
-    return http.Response(
-      jsonEncode(body),
-      200,
-      headers: {'content-type': 'application/json; charset=utf-8'},
-      request: http.Request(method, url),
-    );
-  }
+  http.Response _jsonResponse(Uri url, String method, Map<String, dynamic> body) => http.Response(
+    jsonEncode(body),
+    200,
+    headers: {'content-type': 'application/json; charset=utf-8'},
+    request: http.Request(method, url),
+  );
 }

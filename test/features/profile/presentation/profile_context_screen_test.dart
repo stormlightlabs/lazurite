@@ -10,6 +10,7 @@ import 'package:lazurite/features/profile/cubit/profile_context_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_context_repository.dart';
 import 'package:lazurite/features/profile/presentation/profile_context_screen.dart';
 import 'package:mocktail/mocktail.dart';
+import '../../../helpers/assertion_helpers.dart';
 
 class MockProfileContextCubit extends MockCubit<ProfileContextState> implements ProfileContextCubit {}
 
@@ -244,8 +245,7 @@ void main() {
         );
         await tester.pumpWidget(buildSubject(state: state));
 
-        expect(find.text('Something went wrong'), findsOneWidget);
-        expect(find.text('Retry'), findsOneWidget);
+        expectErrorState('Something went wrong');
       });
 
       testWidgets('retry calls loadBlockedBy on cubit', (tester) async {
@@ -334,8 +334,7 @@ void main() {
         await tester.tap(find.text('Blocking'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Block error'), findsOneWidget);
-        expect(find.text('Retry'), findsOneWidget);
+        expectErrorState('Block error');
       });
 
       testWidgets('retry calls loadBlocking on cubit', (tester) async {
@@ -456,8 +455,7 @@ void main() {
         await tester.tap(find.text('Lists'));
         await tester.pumpAndSettle();
 
-        expect(find.text('List load error'), findsOneWidget);
-        expect(find.text('Retry'), findsOneWidget);
+        expectErrorState('List load error');
       });
 
       testWidgets('retry calls loadListsOn on cubit', (tester) async {

@@ -2,7 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
 import 'package:poptart_core/poptart_core.dart' show UnauthorizedException;
 
-import '../../helpers/test_utils.dart';
+import '../../helpers/fixtures/auth.dart';
+import '../../helpers/fixtures/network.dart';
 
 void main() {
   group('UnauthorizedRecoveryRunner', () {

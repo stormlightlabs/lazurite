@@ -7,7 +7,7 @@ import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/feed/presentation/widgets/public_post_card.dart';
 
-import '../../../helpers/feed_fixtures.dart';
+import '../../../helpers/fixtures/feed.dart';
 
 void main() {
   testWidgets('renders passive public counts and share action', (tester) async {

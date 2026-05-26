@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/get_actor_likes.dart';
 import 'package:drift/drift.dart' show Value;
@@ -13,6 +12,7 @@ import 'package:lazurite/features/feed/data/liked_posts_repository.dart';
 import 'package:lazurite/features/search/data/semantic_indexer.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../helpers/fixtures/feed.dart';
 import '../../../helpers/test_bluesky_client.dart';
 
 class MockSemanticIndexer extends Mock implements SemanticIndexer {}
@@ -458,7 +458,6 @@ void main() {
         );
 
         await repo.removeLike(_accountDid, postUri);
-
         final result = await database.getLikedPosts(_otherAccountDid);
         expect(result, hasLength(1));
       });
@@ -490,7 +489,6 @@ void main() {
       );
 
       await repo.syncLikes(_accountDid);
-
       verify(() => mockIndexer.queueIndexPost(postUri, any(), _accountDid, 'liked')).called(1);
     });
 
@@ -541,7 +539,6 @@ void main() {
       );
 
       await repo.removeLike(_accountDid, postUri);
-
       verify(() => mockIndexer.removePost(postUri)).called(1);
     });
   });
@@ -646,22 +643,12 @@ void main() {
   });
 }
 
-FeedViewPost _makeFeedViewPost(String uriStr, {DateTime? indexedAt, DateTime? createdAt}) {
-  final resolvedCreatedAt = createdAt ?? DateTime.utc(2026, 1, 1);
-  return FeedViewPost(
-    post: PostView(
-      uri: AtUri.parse(uriStr),
-      cid: 'cid-${uriStr.hashCode}',
-      author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social'),
-      record: {
-        r'$type': 'app.bsky.feed.post',
-        'text': 'Test post',
-        'createdAt': resolvedCreatedAt.toUtc().toIso8601String(),
-      },
-      indexedAt: indexedAt ?? DateTime.utc(2026, 1, 1),
-    ),
-  );
-}
+FeedViewPost _makeFeedViewPost(String uriStr, {DateTime? indexedAt, DateTime? createdAt}) => testFeedViewPost(
+  uri: uriStr,
+  cid: 'cid-${uriStr.hashCode}',
+  record: testPostRecordJson(text: 'Test post', createdAt: createdAt ?? DateTime.utc(2026, 1, 1)),
+  indexedAt: indexedAt ?? DateTime.utc(2026, 1, 1),
+);
 
 Bluesky _testBluesky({required _FakeFeedService feed}) => testBluesky(getClient: feed.get);
 

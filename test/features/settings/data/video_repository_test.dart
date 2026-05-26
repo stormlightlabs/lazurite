@@ -1,7 +1,9 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:bluesky_poptart/app/bsky/video/get_upload_limits.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/settings/data/video_repository.dart';
-import '../../../helpers/test_utils.dart';
+
+import '../../../helpers/fixtures/auth.dart';
+import '../../../helpers/fixtures/network.dart';
 
 class FakeVideoUploadLimitsApi implements VideoUploadLimitsApi {
   FakeVideoUploadLimitsApi({
@@ -110,7 +112,6 @@ void main() {
       );
 
       final result = await repository.getUploadLimits();
-
       expect(result.canUpload, isTrue);
       expect(result.remainingDailyVideos, 8);
       expect(initialCalls, 1);
@@ -124,7 +125,6 @@ void main() {
         getUploadLimitsAuthTokenHandler: () async => throw Exception('service auth unavailable'),
       );
       final repository = VideoRepository(api: api);
-
       await expectLater(repository.getUploadLimits(), throwsA(isA<Exception>()));
     });
   });

@@ -13,7 +13,8 @@ import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actio
 import 'package:mocktail/mocktail.dart';
 import 'package:poptart_core/poptart_core.dart';
 
-import '../../../helpers/feed_fixtures.dart';
+import '../../../helpers/fixtures/feed.dart';
+import '../../../helpers/connectivity_helpers.dart';
 
 class MockPostActionRepository extends Mock implements PostActionRepository {}
 
@@ -44,12 +45,7 @@ void main() {
     when(() => savedPostsCubit.state).thenReturn(const SavedPostsState());
     whenListen(savedPostsCubit, const Stream<SavedPostsState>.empty(), initialState: const SavedPostsState());
 
-    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
-    whenListen(
-      connectivityCubit,
-      const Stream<ConnectivityState>.empty(),
-      initialState: const ConnectivityState.online(),
-    );
+    stubConnectivityCubit(connectivityCubit, state: const ConnectivityState.online());
   });
 
   testWidgets('keeps optimistic like loading state across parent rebuilds', (tester) async {

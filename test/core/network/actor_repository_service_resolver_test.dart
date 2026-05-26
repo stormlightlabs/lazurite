@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:lazurite/core/network/actor_repository_service_resolver.dart';
 
+import '../../helpers/fixtures/network.dart';
+
 void main() {
   group('ActorRepositoryServiceResolver', () {
     test('resolves handle through public identity host and then DID doc', () async {
@@ -18,15 +20,7 @@ void main() {
           }
           if (request.url.host == 'plc.directory' && request.url.path == '/did:plc:alice') {
             return http.Response(
-              jsonEncode({
-                'service': [
-                  {
-                    'id': '#atproto_pds',
-                    'type': 'AtprotoPersonalDataServer',
-                    'serviceEndpoint': 'https://alice.us-east.host.bsky.network',
-                  },
-                ],
-              }),
+              jsonEncode(testDidDocument(serviceEndpoint: 'https://alice.us-east.host.bsky.network')),
               200,
             );
           }
@@ -50,18 +44,7 @@ void main() {
         httpClient: MockClient((request) async {
           requestedUris.add(request.url);
           if (request.url.host == 'example.com' && request.url.path == '/users/alice/did.json') {
-            return http.Response(
-              jsonEncode({
-                'service': [
-                  {
-                    'id': '#atproto_pds',
-                    'type': 'AtprotoPersonalDataServer',
-                    'serviceEndpoint': 'https://pds.example.com',
-                  },
-                ],
-              }),
-              200,
-            );
+            return http.Response(jsonEncode(testDidDocument(serviceEndpoint: 'https://pds.example.com')), 200);
           }
           return http.Response('not found', 404);
         }),
@@ -89,18 +72,7 @@ void main() {
             return http.Response(jsonEncode({'did': 'did:plc:fallback'}), 200);
           }
           if (request.url.host == 'plc.directory' && request.url.path == '/did:plc:fallback') {
-            return http.Response(
-              jsonEncode({
-                'service': [
-                  {
-                    'id': '#atproto_pds',
-                    'type': 'AtprotoPersonalDataServer',
-                    'serviceEndpoint': 'https://fallback.host',
-                  },
-                ],
-              }),
-              200,
-            );
+            return http.Response(jsonEncode(testDidDocument(serviceEndpoint: 'https://fallback.host')), 200);
           }
           return http.Response('not found', 404);
         }),
@@ -123,14 +95,7 @@ void main() {
             return http.Response(jsonEncode({'did': 'did:plc:cache'}), 200);
           }
           if (request.url.host == 'plc.directory') {
-            return http.Response(
-              jsonEncode({
-                'service': [
-                  {'id': '#atproto_pds', 'type': 'AtprotoPersonalDataServer', 'serviceEndpoint': 'https://cache.host'},
-                ],
-              }),
-              200,
-            );
+            return http.Response(jsonEncode(testDidDocument(serviceEndpoint: 'https://cache.host')), 200);
           }
           return http.Response('not found', 404);
         }),

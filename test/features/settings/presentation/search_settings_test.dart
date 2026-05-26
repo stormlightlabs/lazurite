@@ -4,13 +4,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
-import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../../helpers/settings_fixtures.dart';
+import '../../../helpers/fixtures/auth.dart';
+import '../../../helpers/fixtures/settings.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
@@ -22,13 +22,7 @@ SettingsState _baseSettings({bool semanticSearchEnabled = false, int maxResults 
     testSettingsState(semanticSearchEnabled: semanticSearchEnabled, semanticSearchMaxResults: maxResults);
 
 void main() {
-  const tokens = AuthTokens(
-    accessToken: 'access',
-    refreshToken: 'refresh',
-    did: 'did:plc:test',
-    handle: 'test.bsky.social',
-    displayName: 'Test User',
-  );
+  final tokens = testAuthTokens(accessToken: 'access', refreshToken: 'refresh', displayName: 'Test User');
 
   late MockAuthBloc authBloc;
   late MockAccountSwitcherCubit accountSwitcherCubit;
@@ -72,7 +66,7 @@ void main() {
     });
 
     testWidgets('shows typeahead provider selector', (tester) async {
-      const authenticatedState = AuthState.authenticated(tokens);
+      final authenticatedState = AuthState.authenticated(tokens);
       when(() => authBloc.state).thenReturn(authenticatedState);
       whenListen(authBloc, const Stream<AuthState>.empty(), initialState: authenticatedState);
 
@@ -90,7 +84,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(800, 2400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      const authenticatedState = AuthState.authenticated(tokens);
+      final authenticatedState = AuthState.authenticated(tokens);
       when(() => authBloc.state).thenReturn(authenticatedState);
       whenListen(authBloc, const Stream<AuthState>.empty(), initialState: authenticatedState);
 

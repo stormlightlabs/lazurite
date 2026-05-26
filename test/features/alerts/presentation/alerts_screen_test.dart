@@ -1,9 +1,7 @@
-import 'package:poptart_core/poptart_core.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart' as app_actor;
-import 'package:bluesky_poptart/app/bsky/notification/list_notifications.dart' as bsky;
 import 'package:bluesky_poptart/chat/bsky/actor/defs.dart' as chat_actor;
 import 'package:bluesky_poptart/chat/bsky/convo/defs.dart';
-import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +15,9 @@ import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/fixtures/notification.dart';
+import '../../../helpers/connectivity_helpers.dart';
 
 class MockNotificationRepository extends Mock implements NotificationRepository {}
 
@@ -33,12 +34,7 @@ void main() {
     notificationRepository = MockNotificationRepository();
     convoRepository = MockConvoRepository();
     connectivityCubit = MockConnectivityCubit();
-    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
-    whenListen(
-      connectivityCubit,
-      const Stream<ConnectivityState>.empty(),
-      initialState: const ConnectivityState.online(),
-    );
+    stubConnectivityCubit(connectivityCubit, state: const ConnectivityState.online());
 
     when(
       () => notificationRepository.listNotifications(
@@ -48,13 +44,10 @@ void main() {
     ).thenAnswer(
       (_) async => NotificationListResult(
         notifications: [
-          bsky.Notification(
-            uri: AtUri.parse('at://did:plc:alice/app.bsky.feed.post/abc'),
-            cid: 'cid-123',
+          testNotification(
+            uri: 'at://did:plc:alice/app.bsky.feed.post/abc',
             author: const app_actor.ProfileView(did: 'did:plc:alice', handle: 'alice.bsky.social'),
-            reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.like),
-            record: {'text': 'Test post'},
-            isRead: false,
+            record: const {'text': 'Test post'},
             indexedAt: DateTime.now(),
           ),
         ],
@@ -177,7 +170,6 @@ void main() {
   testWidgets('shows notifications, messages, and requests tabs', (tester) async {
     await tester.pumpWidget(buildSubject('/alerts'));
     await tester.pumpAndSettle();
-
     expect(find.byType(AppScreenEntrance), findsOneWidget);
     expect(find.text('Notifications'), findsOneWidget);
     expect(find.text('Messages'), findsOneWidget);
@@ -188,7 +180,6 @@ void main() {
   testWidgets('shows unread badges for notifications and messages tabs', (tester) async {
     await tester.pumpWidget(buildSubject('/alerts'));
     await tester.pumpAndSettle();
-
     expect(find.byKey(const ValueKey('alerts-tab-unread-notifications')), findsOneWidget);
     expect(find.byKey(const ValueKey('alerts-tab-unread-messages')), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
@@ -198,7 +189,6 @@ void main() {
   testWidgets('opens messages tab from deep link', (tester) async {
     await tester.pumpWidget(buildSubject('/alerts/messages'));
     await tester.pumpAndSettle();
-
     expect(find.text('other.bsky.social'), findsOneWidget);
     expect(find.text('Mark All Read'), findsNothing);
   });
@@ -206,7 +196,6 @@ void main() {
   testWidgets('opens requests tab from deep link', (tester) async {
     await tester.pumpWidget(buildSubject('/alerts/requests'));
     await tester.pumpAndSettle();
-
     expect(find.text('requester.bsky.social'), findsOneWidget);
     expect(find.text('No message requests'), findsNothing);
   });

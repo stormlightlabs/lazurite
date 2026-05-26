@@ -1,12 +1,12 @@
 import 'package:poptart_core/poptart_core.dart' show AtUri;
 import 'package:bloc_test/bloc_test.dart';
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
-import 'package:bluesky_poptart/app/bsky/graph/defs.dart';
 import 'package:bluesky_poptart/app/bsky/graph/get_lists_with_membership.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/lists/cubit/add_to_list_cubit.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/fixtures/graph.dart';
 
 class MockListRepository extends Mock implements ListRepository {}
 
@@ -16,18 +16,16 @@ void main() {
   final listUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.list/list-1');
   final listItemUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.listitem/item-1');
 
-  final listView = ListView(
+  final listView = testListView(
     uri: listUri,
     cid: 'cid-list',
-    creator: const ProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
+    creator: testProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
     name: 'My Feed',
-    purpose: const ListPurpose.knownValue(data: KnownListPurpose.appBskyGraphDefsCuratelist),
-    indexedAt: DateTime.utc(2026, 3, 21),
   );
 
-  final listItem = ListItemView(
+  final listItem = testListItemView(
     uri: listItemUri,
-    subject: const ProfileView(did: 'did:plc:target', handle: 'target.bsky.social'),
+    subject: testProfileView(did: 'did:plc:target', handle: 'target.bsky.social'),
   );
 
   final entryWithMember = ListWithMembership(list: listView, listItem: listItem);

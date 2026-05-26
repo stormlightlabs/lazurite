@@ -14,7 +14,6 @@ import 'package:lazurite/core/router/app_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
-import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/auth/presentation/oauth_callback_screen.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
@@ -36,6 +35,10 @@ import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:poptart_core/poptart_core.dart' as atcore;
+
+import '../../helpers/fixtures/feed.dart';
+import '../../helpers/fixtures/auth.dart';
+import '../../helpers/connectivity_helpers.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
@@ -128,13 +131,7 @@ void main() {
   late StreamController<AuthState> authController;
   late AuthState currentAuthState;
 
-  const tokens = AuthTokens(
-    accessToken: 'access',
-    refreshToken: 'refresh',
-    did: 'did:plc:me',
-    handle: 'me.bsky.social',
-    displayName: 'River Tam',
-  );
+  final tokens = testRiverTokens();
 
   final profile = ProfileViewDetailed(
     did: 'did:plc:me',
@@ -170,7 +167,7 @@ void main() {
     typeaheadRepository = MockTypeaheadRepository();
     database = MockAppDatabase();
     authController = StreamController<AuthState>.broadcast();
-    currentAuthState = const AuthState.authenticated(tokens);
+    currentAuthState = AuthState.authenticated(tokens);
 
     when(() => authBloc.state).thenAnswer((_) => currentAuthState);
     when(() => authBloc.handleOAuthRedirectUri(any())).thenAnswer((_) async => false);
@@ -187,7 +184,7 @@ void main() {
       ),
     );
     when(() => settingsCubit.setAppViewProvider(any())).thenAnswer((_) async {});
-    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
+    stubConnectivityCubit(connectivityCubit);
     when(() => accountSwitcherCubit.state).thenReturn(const AccountSwitcherState.ready(accounts: []));
     when(() => accountSwitcherCubit.loadAccounts()).thenAnswer((_) async {});
     when(() => unreadCountCubit.state).thenReturn(const UnreadCountState(0));
@@ -568,7 +565,7 @@ void main() {
   });
 
   testWidgets('authenticated root remains on the home feed', (tester) async {
-    currentAuthState = const AuthState.authenticated(tokens);
+    currentAuthState = AuthState.authenticated(tokens);
     when(() => authBloc.state).thenReturn(currentAuthState);
     whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
 
@@ -1320,7 +1317,7 @@ void main() {
   });
 
   testWidgets('authenticated settings back button falls back to home when there is no stack to pop', (tester) async {
-    currentAuthState = const AuthState.authenticated(tokens);
+    currentAuthState = AuthState.authenticated(tokens);
     when(() => authBloc.state).thenReturn(currentAuthState);
     whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
 
@@ -1335,15 +1332,13 @@ void main() {
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
-
     expect(find.text('HOME'), findsAtLeastNWidgets(1));
     expect(find.text('APPEARANCE'), findsNothing);
-
     router.dispose();
   });
 
   testWidgets('authenticated settings back button returns to profile when opened from profile', (tester) async {
-    currentAuthState = const AuthState.authenticated(tokens);
+    currentAuthState = AuthState.authenticated(tokens);
     when(() => authBloc.state).thenReturn(currentAuthState);
     whenListen(authBloc, Stream<AuthState>.value(currentAuthState), initialState: currentAuthState);
 
@@ -1361,10 +1356,8 @@ void main() {
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
-
     expect(find.text('RIVER TAM'), findsOneWidget);
     expect(find.text('APPEARANCE'), findsNothing);
-
     router.dispose();
   });
 
@@ -1391,7 +1384,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('No feeds pinned'), findsOneWidget);
-
     router.dispose();
   });
 
@@ -1407,7 +1399,6 @@ void main() {
 
     expect(find.byType(CupertinoPageTransition), findsWidgets);
     expect(router.canPop(), isTrue);
-
     router.dispose();
   });
 
@@ -1433,7 +1424,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey<String>('login-continue-button')), findsOneWidget);
-
     router.dispose();
   });
 
@@ -1448,7 +1438,6 @@ void main() {
 
     expect(find.byKey(const ValueKey<String>('login-continue-button')), findsOneWidget);
     expect(find.byKey(const ValueKey<String>('unauthenticated-navigation-bar')), findsNothing);
-
     router.dispose();
   });
 
@@ -1490,7 +1479,6 @@ void main() {
 
     expect(router.routeInformationProvider.value.uri.path, isNot(equals(OAuthCallbackScreen.routePath)));
     expect(find.text('No feeds pinned'), findsOneWidget);
-
     router.dispose();
   });
 
@@ -1524,7 +1512,6 @@ void main() {
 
     expect(router.routeInformationProvider.value.uri.path, isNot(equals(OAuthCallbackScreen.routePath)));
     expect(find.text('No feeds pinned'), findsOneWidget);
-
     router.dispose();
   });
 
@@ -1555,22 +1542,14 @@ void main() {
   });
 }
 
-FeedViewPost _publicFeedPost() {
-  final record = FeedPostRecord(text: 'Public route post', createdAt: DateTime.utc(2026, 5, 18));
-  return FeedViewPost(
-    post: PostView(
-      uri: atcore.AtUri.parse('at://did:plc:author/app.bsky.feed.post/route'),
-      cid: 'cid-route',
-      author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social'),
-      record: record.toJson(),
-      indexedAt: DateTime.utc(2026, 5, 18),
-      replyCount: 1,
-      repostCount: 2,
-      likeCount: 3,
-    ),
-  );
-}
+FeedViewPost _publicFeedPost() => testFeedViewPost(
+  uri: 'at://did:plc:author/app.bsky.feed.post/route',
+  cid: 'cid-route',
+  record: FeedPostRecord(text: 'Public route post', createdAt: DateTime.utc(2026, 5, 18)).toJson(),
+  indexedAt: DateTime.utc(2026, 5, 18),
+  replyCount: 1,
+  repostCount: 2,
+  likeCount: 3,
+);
 
-ThreadViewPost _publicThread() {
-  return ThreadViewPost(post: _publicFeedPost().post);
-}
+ThreadViewPost _publicThread() => ThreadViewPost(post: _publicFeedPost().post);

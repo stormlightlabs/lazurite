@@ -10,8 +10,9 @@ import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../helpers/settings_fixtures.dart';
-import '../../helpers/test_utils.dart';
+import '../../helpers/fixtures/settings.dart';
+import '../../helpers/fixtures/auth.dart';
+import '../../helpers/connectivity_helpers.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
@@ -24,11 +25,7 @@ void main() {
   late MockConnectivityCubit connectivityCubit;
   late MockSettingsCubit settingsCubit;
 
-  final tokens = testAuthTokens(
-    accessToken: 'access',
-    refreshToken: 'refresh',
-    displayName: 'River Tam',
-  );
+  final tokens = testAuthTokens(accessToken: 'access', refreshToken: 'refresh', displayName: 'River Tam');
 
   setUp(() {
     authBloc = MockAuthBloc();
@@ -36,12 +33,7 @@ void main() {
     settingsCubit = MockSettingsCubit();
     when(() => authBloc.state).thenReturn(AuthState.authenticated(tokens));
     whenListen(authBloc, const Stream<AuthState>.empty(), initialState: AuthState.authenticated(tokens));
-    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
-    whenListen(
-      connectivityCubit,
-      const Stream<ConnectivityState>.empty(),
-      initialState: const ConnectivityState.online(),
-    );
+    stubConnectivityCubit(connectivityCubit, state: const ConnectivityState.online());
     when(() => settingsCubit.state).thenReturn(testSettingsState());
     whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: testSettingsState());
     when(() => settingsCubit.setSimulateOffline(any())).thenAnswer((_) async {});
@@ -88,12 +80,7 @@ void main() {
   });
 
   testWidgets('shows simulated offline indicator and lets the user disable it', (tester) async {
-    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online(isSimulatedOffline: true));
-    whenListen(
-      connectivityCubit,
-      const Stream<ConnectivityState>.empty(),
-      initialState: const ConnectivityState.online(isSimulatedOffline: true),
-    );
+    stubConnectivityCubit(connectivityCubit, state: const ConnectivityState.online(isSimulatedOffline: true));
 
     await tester.pumpWidget(buildSubject(sectionLabel: 'Home'));
     await tester.pumpAndSettle();

@@ -3,7 +3,7 @@ import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 
-import '../../helpers/feed_fixtures.dart';
+import '../../helpers/fixtures/feed.dart';
 
 void main() {
   group('PoptartCacheCodecs', () {

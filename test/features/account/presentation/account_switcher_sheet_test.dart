@@ -11,6 +11,7 @@ import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:mocktail/mocktail.dart';
+import '../../../helpers/assertion_helpers.dart';
 
 class MockAccountSwitcherCubit extends MockCubit<AccountSwitcherState> implements AccountSwitcherCubit {}
 
@@ -144,10 +145,8 @@ void main() {
 
       await openSheet(tester);
 
-      expect(find.text('Alice'), findsOneWidget);
-      expect(find.text('@alice.bsky.social'), findsOneWidget);
-      expect(find.text('bob.bsky.social'), findsOneWidget);
-      expect(find.text('@bob.bsky.social'), findsOneWidget);
+      expectAccountRow(displayName: 'Alice', handle: 'alice.bsky.social');
+      expectAccountRow(displayName: 'bob.bsky.social', handle: 'bob.bsky.social');
     });
 
     testWidgets('shows checkmark only on active account', (tester) async {

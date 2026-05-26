@@ -16,6 +16,7 @@ import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/presentation/saved_posts_screen.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:mocktail/mocktail.dart';
+import '../../../helpers/connectivity_helpers.dart';
 
 class MockAppDatabase extends Mock implements AppDatabase {}
 
@@ -64,12 +65,7 @@ void main() {
     mockDatabase = MockAppDatabase();
     mockPostActionRepository = MockPostActionRepository();
     connectivityCubit = MockConnectivityCubit();
-    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
-    whenListen(
-      connectivityCubit,
-      const Stream<ConnectivityState>.empty(),
-      initialState: const ConnectivityState.online(),
-    );
+    stubConnectivityCubit(connectivityCubit, state: const ConnectivityState.online());
 
     when(() => mockDatabase.watchSavedPostsWithType(testAccountDid)).thenAnswer((_) => Stream.value({}));
     when(() => mockDatabase.getSavedPosts(testAccountDid)).thenAnswer((_) => Future.value([]));

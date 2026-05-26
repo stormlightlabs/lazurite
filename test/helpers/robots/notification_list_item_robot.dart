@@ -6,7 +6,7 @@ import 'package:poptart_core/poptart_core.dart';
 
 import '../router_harness.dart';
 
-export '../notification_fixtures.dart';
+export '../fixtures/notification.dart';
 
 class NotificationListItemRobot {
   NotificationListItemRobot(this.tester);

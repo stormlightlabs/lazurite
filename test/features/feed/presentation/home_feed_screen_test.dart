@@ -19,6 +19,7 @@ import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.dart';
 import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 import 'package:mocktail/mocktail.dart';
+import '../../../helpers/connectivity_helpers.dart';
 
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
@@ -81,8 +82,7 @@ void main() {
     final connectivityCubit = MockConnectivityCubit();
     final settingsCubit = MockSettingsCubit();
     final authBloc = MockAuthBloc();
-    when(() => connectivityCubit.state).thenReturn(connectivityState);
-    whenListen(connectivityCubit, const Stream<ConnectivityState>.empty(), initialState: connectivityState);
+    stubConnectivityCubit(connectivityCubit, state: connectivityState);
     when(() => settingsCubit.state).thenReturn(_settingsState(FeedLayout.comfortable));
     whenListen(
       settingsCubit,

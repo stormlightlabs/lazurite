@@ -1,6 +1,5 @@
 import 'package:poptart_core/poptart_core.dart' show AtUri;
 import 'package:bloc_test/bloc_test.dart';
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/graph/defs.dart' as bsky_graph;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,6 +12,9 @@ import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/list_detail_screen.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/fixtures/graph.dart';
+import '../../../helpers/assertion_helpers.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
@@ -37,20 +39,18 @@ void main() {
 
   final listUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.list/list-1');
 
-  final curationList = bsky_graph.ListView(
+  final curationList = testListView(
     uri: listUri,
     cid: 'cid-1',
-    creator: const ProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
+    creator: testProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
     name: 'Awesome Feed',
     description: 'A curated list of posts',
-    purpose: const bsky_graph.ListPurpose.knownValue(data: bsky_graph.KnownListPurpose.appBskyGraphDefsCuratelist),
     listItemCount: 5,
-    indexedAt: DateTime.utc(2026, 3, 21),
   );
 
-  final member = bsky_graph.ListItemView(
+  final member = testListItemView(
     uri: AtUri.parse('at://did:plc:creator/app.bsky.graph.listitem/item-1'),
-    subject: const ProfileView(did: 'did:plc:member', handle: 'member.bsky.social', displayName: 'A Member'),
+    subject: testProfileView(did: 'did:plc:member', handle: 'member.bsky.social', displayName: 'A Member'),
   );
 
   setUp(() {
@@ -139,18 +139,16 @@ void main() {
     await tester.tap(find.text('MEMBERS'));
     await tester.pumpAndSettle();
 
-    expect(find.text('A Member'), findsOneWidget);
-    expect(find.text('@member.bsky.social'), findsOneWidget);
+    expectListMember(displayName: 'A Member', handle: 'member.bsky.social');
   });
 
   testWidgets('shows feed unavailable message for moderation list in FEED tab', (tester) async {
-    final modList = bsky_graph.ListView(
+    final modList = testListView(
       uri: listUri,
       cid: 'cid-1',
-      creator: const ProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
+      creator: testProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
       name: 'Mod List',
       purpose: const bsky_graph.ListPurpose.knownValue(data: bsky_graph.KnownListPurpose.appBskyGraphDefsModlist),
-      indexedAt: DateTime.utc(2026, 3, 21),
     );
 
     when(

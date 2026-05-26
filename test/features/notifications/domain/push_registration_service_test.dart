@@ -5,7 +5,7 @@ import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/notifications/domain/push_registration_service.dart';
 import 'package:lazurite/features/notifications/domain/push_token_provider.dart';
-import '../../../helpers/test_utils.dart';
+import '../../../helpers/fixtures/network.dart';
 import 'package:poptart_core/poptart_core.dart' show HttpMethod;
 import 'package:mocktail/mocktail.dart';
 

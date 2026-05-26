@@ -10,6 +10,9 @@ import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/messages/presentation/convo_list_screen.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../helpers/assertion_helpers.dart';
+import '../../../helpers/connectivity_helpers.dart';
+
 class MockConvoRepository extends Mock implements ConvoRepository {}
 
 class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
@@ -23,12 +26,7 @@ void main() {
   setUp(() {
     mockRepository = MockConvoRepository();
     connectivityCubit = MockConnectivityCubit();
-    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
-    whenListen(
-      connectivityCubit,
-      const Stream<ConnectivityState>.empty(),
-      initialState: const ConnectivityState.online(),
-    );
+    stubConnectivityCubit(connectivityCubit);
   });
 
   ProfileViewBasic makeProfile({String did = 'did:plc:other', String handle = 'other.bsky.social'}) =>
@@ -117,12 +115,7 @@ void main() {
     });
 
     testWidgets('shows offline empty state when offline with no conversations', (tester) async {
-      when(() => connectivityCubit.state).thenReturn(const ConnectivityState.offline());
-      whenListen(
-        connectivityCubit,
-        const Stream<ConnectivityState>.empty(),
-        initialState: const ConnectivityState.offline(),
-      );
+      stubConnectivityCubit(connectivityCubit, state: const ConnectivityState.offline());
       when(
         () => mockRepository.listConvos(
           cursor: any(named: 'cursor'),
@@ -133,8 +126,7 @@ void main() {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
 
-      expect(find.text('No connection'), findsOneWidget);
-      expect(find.text('Reconnect to load messages.'), findsOneWidget);
+      expectOfflineState('No connection', message: 'Reconnect to load messages.');
     });
 
     testWidgets('shows error state on failure', (tester) async {
@@ -148,8 +140,7 @@ void main() {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
 
-      expect(find.text('Failed to load messages'), findsOneWidget);
-      expect(find.text('Retry'), findsOneWidget);
+      expectErrorState('Failed to load messages');
     });
 
     testWidgets('retry button reloads conversations', (tester) async {

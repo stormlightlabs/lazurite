@@ -1,10 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 
+import '../../../../helpers/fixtures/auth.dart';
+
 void main() {
   group('AuthTokens', () {
     test('should create AuthTokens with all fields', () {
-      const tokens = AuthTokens(
+      final tokens = testAuthTokens(
         accessToken: 'access_token',
         refreshToken: 'refresh_token',
         did: 'did:plc:abc123',
@@ -26,7 +28,14 @@ void main() {
     });
 
     test('should create AuthTokens without optional fields', () {
-      const tokens = AuthTokens(accessToken: 'access_token', did: 'did:plc:abc123', handle: 'user.bsky.social');
+      final tokens = testAuthTokens(
+        accessToken: 'access_token',
+        refreshToken: null,
+        did: 'did:plc:abc123',
+        handle: 'user.bsky.social',
+        service: null,
+        expiresAt: null,
+      );
 
       expect(tokens.accessToken, equals('access_token'));
       expect(tokens.refreshToken, isNull);
@@ -36,7 +45,14 @@ void main() {
     });
 
     test('should copy with new values', () {
-      const tokens = AuthTokens(accessToken: 'old_token', did: 'did:plc:abc123', handle: 'user.bsky.social');
+      final tokens = testAuthTokens(
+        accessToken: 'old_token',
+        refreshToken: null,
+        did: 'did:plc:abc123',
+        handle: 'user.bsky.social',
+        service: null,
+        expiresAt: null,
+      );
 
       final newTokens = tokens.copyWith(
         accessToken: 'new_token',
@@ -53,7 +69,7 @@ void main() {
     });
 
     test('should identify oauth-backed sessions', () {
-      const tokens = AuthTokens(
+      final tokens = testAuthTokens(
         accessToken: 'access_token',
         refreshToken: 'refresh_token',
         did: 'did:plc:abc123',
@@ -68,10 +84,12 @@ void main() {
 
     test('should check if tokens are expired', () {
       final expiredDate = DateTime.now().subtract(const Duration(hours: 1));
-      final tokens = AuthTokens(
+      final tokens = testAuthTokens(
         accessToken: 'token',
+        refreshToken: null,
         did: 'did:plc:abc123',
         handle: 'user.bsky.social',
+        service: null,
         expiresAt: expiredDate,
       );
 
@@ -80,10 +98,12 @@ void main() {
 
     test('should check if tokens are not expired', () {
       final futureDate = DateTime.now().add(const Duration(hours: 1));
-      final tokens = AuthTokens(
+      final tokens = testAuthTokens(
         accessToken: 'token',
+        refreshToken: null,
         did: 'did:plc:abc123',
         handle: 'user.bsky.social',
+        service: null,
         expiresAt: futureDate,
       );
 
@@ -91,14 +111,35 @@ void main() {
     });
 
     test('should check if tokens without expiry are not expired', () {
-      const tokens = AuthTokens(accessToken: 'token', did: 'did:plc:abc123', handle: 'user.bsky.social');
+      final tokens = testAuthTokens(
+        accessToken: 'token',
+        refreshToken: null,
+        did: 'did:plc:abc123',
+        handle: 'user.bsky.social',
+        service: null,
+        expiresAt: null,
+      );
 
       expect(tokens.isExpired, isFalse);
     });
 
     test('should support value equality', () {
-      const tokens1 = AuthTokens(accessToken: 'token', did: 'did:plc:abc123', handle: 'user.bsky.social');
-      const tokens2 = AuthTokens(accessToken: 'token', did: 'did:plc:abc123', handle: 'user.bsky.social');
+      final tokens1 = testAuthTokens(
+        accessToken: 'token',
+        refreshToken: null,
+        did: 'did:plc:abc123',
+        handle: 'user.bsky.social',
+        service: null,
+        expiresAt: null,
+      );
+      final tokens2 = testAuthTokens(
+        accessToken: 'token',
+        refreshToken: null,
+        did: 'did:plc:abc123',
+        handle: 'user.bsky.social',
+        service: null,
+        expiresAt: null,
+      );
 
       expect(tokens1, equals(tokens2));
     });
@@ -123,7 +164,6 @@ void main() {
 
     test('should create User without optional fields', () {
       const user = User(did: 'did:plc:abc123', handle: 'user.bsky.social');
-
       expect(user.did, equals('did:plc:abc123'));
       expect(user.handle, equals('user.bsky.social'));
       expect(user.displayName, isNull);
@@ -133,9 +173,7 @@ void main() {
 
     test('should copy with new values', () {
       const user = User(did: 'did:plc:abc123', handle: 'user.bsky.social');
-
       final newUser = user.copyWith(displayName: 'New Name', avatar: 'https://example.com/new-avatar.jpg');
-
       expect(newUser.did, equals('did:plc:abc123'));
       expect(newUser.displayName, equals('New Name'));
       expect(newUser.avatar, equals('https://example.com/new-avatar.jpg'));
@@ -144,7 +182,6 @@ void main() {
     test('should support value equality', () {
       const user1 = User(did: 'did:plc:abc123', handle: 'user.bsky.social');
       const user2 = User(did: 'did:plc:abc123', handle: 'user.bsky.social');
-
       expect(user1, equals(user2));
     });
   });

@@ -8,7 +8,7 @@ import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:poptart_core/poptart_core.dart' as atcore;
 
-import '../../../helpers/feed_fixtures.dart';
+import '../../../helpers/fixtures/feed.dart';
 
 class MockFeedRepository extends Mock implements FeedRepository {}
 

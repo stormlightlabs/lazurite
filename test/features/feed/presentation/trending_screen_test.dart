@@ -12,7 +12,8 @@ import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../../helpers/settings_fixtures.dart';
+import '../../../helpers/fixtures/settings.dart';
+import '../../../helpers/assertion_helpers.dart';
 
 class MockFeedRepository extends Mock implements FeedRepository {}
 
@@ -94,8 +95,7 @@ void main() {
 
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
-    expect(find.text('Failed to load trending'), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
+    expectErrorState('Failed to load trending');
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
     verify(() => feedRepository.getTrendingScreenData(limit: 10)).called(greaterThanOrEqualTo(2));

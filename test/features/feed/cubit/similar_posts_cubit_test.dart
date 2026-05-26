@@ -1,5 +1,5 @@
-import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
@@ -7,7 +7,7 @@ import 'package:lazurite/features/feed/cubit/similar_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/similar_posts_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../../helpers/feed_fixtures.dart';
+import '../../../helpers/fixtures/feed.dart';
 
 class MockBluesky extends Mock implements Bluesky {}
 

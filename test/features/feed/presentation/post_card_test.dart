@@ -21,6 +21,9 @@ import 'package:poptart_core/poptart_core.dart';
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
+import '../../../helpers/assertion_helpers.dart';
+import '../../../helpers/fixtures/feed.dart';
+
 class _FakeUrlLauncher extends Fake with MockPlatformInterfaceMixin implements UrlLauncherPlatform {
   final List<String> launchedUrls = [];
 
@@ -40,19 +43,14 @@ class _FakeUrlLauncher extends Fake with MockPlatformInterfaceMixin implements U
   Future<bool> canLaunch(String url) async => true;
 }
 
-FeedViewPost _makePost({String text = 'Hello', UFeedViewPostReason? reason}) {
-  final record = FeedPostRecord(text: text, createdAt: DateTime.utc(2026, 3, 16));
-  return FeedViewPost(
-    reason: reason,
-    post: PostView(
-      uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
-      cid: 'cid-xyz',
-      author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
-      record: record.toJson(),
-      indexedAt: DateTime.utc(2026, 3, 16),
-    ),
-  );
-}
+FeedViewPost _makePost({String text = 'Hello', UFeedViewPostReason? reason}) => testFeedViewPost(
+  uri: 'at://did:plc:test/app.bsky.feed.post/xyz',
+  cid: 'cid-xyz',
+  author: testProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+  record: FeedPostRecord(text: text, createdAt: DateTime.utc(2026, 3, 16)).toJson(),
+  indexedAt: DateTime.utc(2026, 3, 16),
+  reason: reason,
+);
 
 UFeedViewPostReason _makeRepostReason() {
   return UFeedViewPostReason.reasonRepost(
@@ -98,14 +96,12 @@ FeedViewPost _makeReplyPost({String handle = 'test.bsky.social'}) {
     'createdAt': DateTime.utc(2026, 3, 16).toIso8601String(),
   };
 
-  return FeedViewPost(
-    post: PostView(
-      uri: const AtUri('at://did:plc:test/app.bsky.feed.post/reply'),
-      cid: 'cid-reply',
-      author: ProfileViewBasic(did: 'did:plc:test', handle: handle),
-      record: record,
-      indexedAt: DateTime.utc(2026, 3, 16),
-    ),
+  return testFeedViewPost(
+    uri: 'at://did:plc:test/app.bsky.feed.post/reply',
+    cid: 'cid-reply',
+    author: testProfileViewBasic(did: 'did:plc:test', handle: handle),
+    record: record,
+    indexedAt: DateTime.utc(2026, 3, 16),
   );
 }
 
@@ -143,14 +139,12 @@ void main() {
       ],
     );
 
-    final post = FeedViewPost(
-      post: PostView(
-        uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
-        cid: 'cid-xyz',
-        author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
-        record: record.toJson(),
-        indexedAt: DateTime.utc(2026, 3, 16),
-      ),
+    final post = testFeedViewPost(
+      uri: 'at://did:plc:test/app.bsky.feed.post/xyz',
+      cid: 'cid-xyz',
+      author: testProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+      record: record.toJson(),
+      indexedAt: DateTime.utc(2026, 3, 16),
     );
 
     await tester.pumpWidget(buildSubject(post));
@@ -164,20 +158,18 @@ void main() {
 
   testWidgets('renders external link card embeds', (tester) async {
     final record = FeedPostRecord(text: 'Read this', createdAt: DateTime.utc(2026, 3, 16));
-    final post = FeedViewPost(
-      post: PostView(
-        uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
-        cid: 'cid-xyz',
-        author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
-        record: record.toJson(),
-        indexedAt: DateTime.utc(2026, 3, 16),
-        embed: const UPostViewEmbed.embedExternalView(
-          data: EmbedExternalView(
-            external: EmbedExternalViewExternal(
-              uri: 'https://example.com/article',
-              title: 'Example Article',
-              description: 'A useful external card',
-            ),
+    final post = testFeedViewPost(
+      uri: 'at://did:plc:test/app.bsky.feed.post/xyz',
+      cid: 'cid-xyz',
+      author: testProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+      record: record.toJson(),
+      indexedAt: DateTime.utc(2026, 3, 16),
+      embed: const UPostViewEmbed.embedExternalView(
+        data: EmbedExternalView(
+          external: EmbedExternalViewExternal(
+            uri: 'https://example.com/article',
+            title: 'Example Article',
+            description: 'A useful external card',
           ),
         ),
       ),
@@ -193,20 +185,18 @@ void main() {
   testWidgets('tapping bsky external embed routes to profile in app', (tester) async {
     String? pushedRoute;
     final record = FeedPostRecord(text: 'Read this', createdAt: DateTime.utc(2026, 3, 16));
-    final post = FeedViewPost(
-      post: PostView(
-        uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
-        cid: 'cid-xyz',
-        author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
-        record: record.toJson(),
-        indexedAt: DateTime.utc(2026, 3, 16),
-        embed: const UPostViewEmbed.embedExternalView(
-          data: EmbedExternalView(
-            external: EmbedExternalViewExternal(
-              uri: 'https://bsky.app/profile/alice.bsky.social',
-              title: 'Alice',
-              description: 'Profile link',
-            ),
+    final post = testFeedViewPost(
+      uri: 'at://did:plc:test/app.bsky.feed.post/xyz',
+      cid: 'cid-xyz',
+      author: testProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+      record: record.toJson(),
+      indexedAt: DateTime.utc(2026, 3, 16),
+      embed: const UPostViewEmbed.embedExternalView(
+        data: EmbedExternalView(
+          external: EmbedExternalViewExternal(
+            uri: 'https://bsky.app/profile/alice.bsky.social',
+            title: 'Alice',
+            description: 'Profile link',
           ),
         ),
       ),
@@ -241,20 +231,18 @@ void main() {
 
   testWidgets('tapping non-matching external embed launches browser', (tester) async {
     final record = FeedPostRecord(text: 'Read this', createdAt: DateTime.utc(2026, 3, 16));
-    final post = FeedViewPost(
-      post: PostView(
-        uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
-        cid: 'cid-xyz',
-        author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
-        record: record.toJson(),
-        indexedAt: DateTime.utc(2026, 3, 16),
-        embed: const UPostViewEmbed.embedExternalView(
-          data: EmbedExternalView(
-            external: EmbedExternalViewExternal(
-              uri: 'https://example.com/article',
-              title: 'External Article',
-              description: 'External card',
-            ),
+    final post = testFeedViewPost(
+      uri: 'at://did:plc:test/app.bsky.feed.post/xyz',
+      cid: 'cid-xyz',
+      author: testProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+      record: record.toJson(),
+      indexedAt: DateTime.utc(2026, 3, 16),
+      embed: const UPostViewEmbed.embedExternalView(
+        data: EmbedExternalView(
+          external: EmbedExternalViewExternal(
+            uri: 'https://example.com/article',
+            title: 'External Article',
+            description: 'External card',
           ),
         ),
       ),
@@ -385,23 +373,21 @@ void main() {
     final quotedUri = AtUri.parse('at://did:plc:quoted/app.bsky.feed.post/quoted123');
     final record = FeedPostRecord(text: 'Main post', createdAt: DateTime.utc(2026, 3, 16));
     final quotedRecord = FeedPostRecord(text: 'Quoted text', createdAt: DateTime.utc(2026, 3, 15));
-    final post = FeedViewPost(
-      post: PostView(
-        uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
-        cid: 'cid-xyz',
-        author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
-        record: record.toJson(),
-        indexedAt: DateTime.utc(2026, 3, 16),
-        embed: UPostViewEmbed.embedRecordView(
-          data: EmbedRecordView(
-            record: UEmbedRecordViewRecord.embedRecordViewRecord(
-              data: EmbedRecordViewRecord(
-                uri: quotedUri,
-                cid: 'cid-quoted',
-                author: const ProfileViewBasic(did: 'did:plc:quoted', handle: 'quoted.bsky.social'),
-                value: quotedRecord.toJson(),
-                indexedAt: DateTime.utc(2026, 3, 15),
-              ),
+    final post = testFeedViewPost(
+      uri: 'at://did:plc:test/app.bsky.feed.post/xyz',
+      cid: 'cid-xyz',
+      author: testProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+      record: record.toJson(),
+      indexedAt: DateTime.utc(2026, 3, 16),
+      embed: UPostViewEmbed.embedRecordView(
+        data: EmbedRecordView(
+          record: UEmbedRecordViewRecord.embedRecordViewRecord(
+            data: EmbedRecordViewRecord(
+              uri: quotedUri,
+              cid: 'cid-quoted',
+              author: const ProfileViewBasic(did: 'did:plc:quoted', handle: 'quoted.bsky.social'),
+              value: quotedRecord.toJson(),
+              indexedAt: DateTime.utc(2026, 3, 15),
             ),
           ),
         ),
@@ -441,23 +427,21 @@ void main() {
       text: 'Quoted text that should fully expand inside the embed card',
       createdAt: DateTime.utc(2026, 3, 15),
     );
-    final post = FeedViewPost(
-      post: PostView(
-        uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
-        cid: 'cid-xyz',
-        author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
-        record: FeedPostRecord(text: 'Main post', createdAt: DateTime.utc(2026, 3, 16)).toJson(),
-        indexedAt: DateTime.utc(2026, 3, 16),
-        embed: UPostViewEmbed.embedRecordView(
-          data: EmbedRecordView(
-            record: UEmbedRecordViewRecord.embedRecordViewRecord(
-              data: EmbedRecordViewRecord(
-                uri: AtUri.parse('at://did:plc:quoted/app.bsky.feed.post/quoted123'),
-                cid: 'cid-quoted',
-                author: const ProfileViewBasic(did: 'did:plc:quoted', handle: 'quoted.bsky.social'),
-                value: quotedRecord.toJson(),
-                indexedAt: DateTime.utc(2026, 3, 15),
-              ),
+    final post = testFeedViewPost(
+      uri: 'at://did:plc:test/app.bsky.feed.post/xyz',
+      cid: 'cid-xyz',
+      author: testProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+      record: FeedPostRecord(text: 'Main post', createdAt: DateTime.utc(2026, 3, 16)).toJson(),
+      indexedAt: DateTime.utc(2026, 3, 16),
+      embed: UPostViewEmbed.embedRecordView(
+        data: EmbedRecordView(
+          record: UEmbedRecordViewRecord.embedRecordViewRecord(
+            data: EmbedRecordViewRecord(
+              uri: AtUri.parse('at://did:plc:quoted/app.bsky.feed.post/quoted123'),
+              cid: 'cid-quoted',
+              author: const ProfileViewBasic(did: 'did:plc:quoted', handle: 'quoted.bsky.social'),
+              value: quotedRecord.toJson(),
+              indexedAt: DateTime.utc(2026, 3, 15),
             ),
           ),
         ),
@@ -502,24 +486,22 @@ void main() {
       embeds: [deepest],
     );
     final firstRecord = FeedPostRecord(text: 'First level quote', createdAt: DateTime.utc(2026, 3, 15));
-    final post = FeedViewPost(
-      post: PostView(
-        uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
-        cid: 'cid-xyz',
-        author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
-        record: FeedPostRecord(text: 'Main post', createdAt: DateTime.utc(2026, 3, 16)).toJson(),
-        indexedAt: DateTime.utc(2026, 3, 16),
-        embed: UPostViewEmbed.embedRecordView(
-          data: EmbedRecordView(
-            record: UEmbedRecordViewRecord.embedRecordViewRecord(
-              data: EmbedRecordViewRecord(
-                uri: AtUri.parse('at://did:plc:first/app.bsky.feed.post/first'),
-                cid: 'cid-first',
-                author: const ProfileViewBasic(did: 'did:plc:first', handle: 'first.bsky.social', displayName: 'first'),
-                value: firstRecord.toJson(),
-                embeds: [second],
-                indexedAt: DateTime.utc(2026, 3, 15),
-              ),
+    final post = testFeedViewPost(
+      uri: 'at://did:plc:test/app.bsky.feed.post/xyz',
+      cid: 'cid-xyz',
+      author: testProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+      record: FeedPostRecord(text: 'Main post', createdAt: DateTime.utc(2026, 3, 16)).toJson(),
+      indexedAt: DateTime.utc(2026, 3, 16),
+      embed: UPostViewEmbed.embedRecordView(
+        data: EmbedRecordView(
+          record: UEmbedRecordViewRecord.embedRecordViewRecord(
+            data: EmbedRecordViewRecord(
+              uri: AtUri.parse('at://did:plc:first/app.bsky.feed.post/first'),
+              cid: 'cid-first',
+              author: const ProfileViewBasic(did: 'did:plc:first', handle: 'first.bsky.social', displayName: 'first'),
+              value: firstRecord.toJson(),
+              embeds: [second],
+              indexedAt: DateTime.utc(2026, 3, 15),
             ),
           ),
         ),
@@ -566,48 +548,46 @@ void main() {
 
   testWidgets('uses unique image hero tags across record-with-media and quoted embeds', (tester) async {
     final quotedRecord = FeedPostRecord(text: 'Quoted with image', createdAt: DateTime.utc(2026, 3, 15));
-    final post = FeedViewPost(
-      post: PostView(
-        uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
-        cid: 'cid-xyz',
-        author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
-        record: FeedPostRecord(text: 'Main post with media quote', createdAt: DateTime.utc(2026, 3, 16)).toJson(),
-        indexedAt: DateTime.utc(2026, 3, 16),
-        embed: UPostViewEmbed.embedRecordWithMediaView(
-          data: EmbedRecordWithMediaView(
-            media: const UEmbedRecordWithMediaViewMedia.embedImagesView(
-              data: EmbedImagesView(
-                images: [
-                  EmbedImagesViewImage(
-                    thumb: 'https://example.com/main-thumb.jpg',
-                    fullsize: 'https://example.com/main-full.jpg',
-                    alt: 'main image',
+    final post = testFeedViewPost(
+      uri: 'at://did:plc:test/app.bsky.feed.post/xyz',
+      cid: 'cid-xyz',
+      author: testProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+      record: FeedPostRecord(text: 'Main post with media quote', createdAt: DateTime.utc(2026, 3, 16)).toJson(),
+      indexedAt: DateTime.utc(2026, 3, 16),
+      embed: UPostViewEmbed.embedRecordWithMediaView(
+        data: EmbedRecordWithMediaView(
+          media: const UEmbedRecordWithMediaViewMedia.embedImagesView(
+            data: EmbedImagesView(
+              images: [
+                EmbedImagesViewImage(
+                  thumb: 'https://example.com/main-thumb.jpg',
+                  fullsize: 'https://example.com/main-full.jpg',
+                  alt: 'main image',
+                ),
+              ],
+            ),
+          ),
+          record: EmbedRecordView(
+            record: UEmbedRecordViewRecord.embedRecordViewRecord(
+              data: EmbedRecordViewRecord(
+                uri: AtUri.parse('at://did:plc:quoted/app.bsky.feed.post/quoted123'),
+                cid: 'cid-quoted',
+                author: const ProfileViewBasic(did: 'did:plc:quoted', handle: 'quoted.bsky.social'),
+                value: quotedRecord.toJson(),
+                embeds: [
+                  const UEmbedRecordViewRecordEmbeds.embedImagesView(
+                    data: EmbedImagesView(
+                      images: [
+                        EmbedImagesViewImage(
+                          thumb: 'https://example.com/quoted-thumb.jpg',
+                          fullsize: 'https://example.com/quoted-full.jpg',
+                          alt: 'quoted image',
+                        ),
+                      ],
+                    ),
                   ),
                 ],
-              ),
-            ),
-            record: EmbedRecordView(
-              record: UEmbedRecordViewRecord.embedRecordViewRecord(
-                data: EmbedRecordViewRecord(
-                  uri: AtUri.parse('at://did:plc:quoted/app.bsky.feed.post/quoted123'),
-                  cid: 'cid-quoted',
-                  author: const ProfileViewBasic(did: 'did:plc:quoted', handle: 'quoted.bsky.social'),
-                  value: quotedRecord.toJson(),
-                  embeds: [
-                    const UEmbedRecordViewRecordEmbeds.embedImagesView(
-                      data: EmbedImagesView(
-                        images: [
-                          EmbedImagesViewImage(
-                            thumb: 'https://example.com/quoted-thumb.jpg',
-                            fullsize: 'https://example.com/quoted-full.jpg',
-                            alt: 'quoted image',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  indexedAt: DateTime.utc(2026, 3, 15),
-                ),
+                indexedAt: DateTime.utc(2026, 3, 15),
               ),
             ),
           ),
@@ -666,7 +646,6 @@ void main() {
 
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.pumpAndSettle();
-
     expect(find.text('STARTER PACK'), findsOneWidget);
     expect(find.text('Starter Pack Picks'), findsOneWidget);
     expect(find.text('People worth following'), findsOneWidget);
@@ -674,7 +653,6 @@ void main() {
 
     await tester.tap(find.text('Starter Pack Picks'));
     await tester.pumpAndSettle();
-
     expect(pushedRoute, isNotNull);
     expect(Uri.parse(pushedRoute!).path, '/starter-pack');
     expect(Uri.decodeComponent(Uri.parse(pushedRoute!).queryParameters['uri']!), packUri.toString());
@@ -682,7 +660,6 @@ void main() {
 
   testWidgets('renders feed, list, labeler, and unknown record embeds', (tester) async {
     const creator = ProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social', displayName: 'Creator');
-
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -756,12 +733,8 @@ void main() {
       ),
     );
 
-    expect(find.text('FEED'), findsOneWidget);
-    expect(find.text('News Feed'), findsOneWidget);
-    expect(find.text('Fresh posts'), findsOneWidget);
-    expect(find.text('1.2K likes'), findsOneWidget);
-    expect(find.text('LIST'), findsOneWidget);
-    expect(find.text('Good Accounts'), findsOneWidget);
+    expectFeedEmbed(name: 'News Feed', description: 'Fresh posts', likeCount: '1.2K likes');
+    expectListEmbed(name: 'Good Accounts');
     expect(find.text('42 members'), findsOneWidget);
     expect(find.text('LABELER'), findsOneWidget);
     expect(find.text('Labeler Service'), findsOneWidget);
@@ -850,16 +823,13 @@ void main() {
 
     await tester.tap(find.text('Labeler Service'));
     await tester.pumpAndSettle();
-
     expect(Uri.parse(pushedRoute!).path, '/settings/moderation/detail');
     expect(Uri.parse(pushedRoute!).queryParameters['did'], 'did:plc:labeler');
   });
 
   testWidgets('renders unknown top-level embed fallback', (tester) async {
     final post = _makePostWithEmbed(const UPostViewEmbed.unknown(data: {r'$type': 'com.example.embed'}));
-
     await tester.pumpWidget(buildSubject(post));
-
     expect(find.text('UNKNOWN'), findsOneWidget);
   });
 }
@@ -869,15 +839,13 @@ FeedViewPost _makePostWithRecordEmbed(UEmbedRecordViewRecord record, {String rke
   rkey: rkey,
 );
 
-FeedViewPost _makePostWithEmbed(UPostViewEmbed embed, {String rkey = 'record'}) => FeedViewPost(
-  post: PostView(
-    uri: AtUri.parse('at://did:plc:test/app.bsky.feed.post/$rkey'),
-    cid: 'cid-$rkey',
-    author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
-    record: FeedPostRecord(text: 'Main post', createdAt: DateTime.utc(2026, 3, 16)).toJson(),
-    indexedAt: DateTime.utc(2026, 3, 16),
-    embed: embed,
-  ),
+FeedViewPost _makePostWithEmbed(UPostViewEmbed embed, {String rkey = 'record'}) => testFeedViewPost(
+  uri: 'at://did:plc:test/app.bsky.feed.post/$rkey',
+  cid: 'cid-$rkey',
+  author: testProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+  record: FeedPostRecord(text: 'Main post', createdAt: DateTime.utc(2026, 3, 16)).toJson(),
+  indexedAt: DateTime.utc(2026, 3, 16),
+  embed: embed,
 );
 
 Future<void> _pumpRecordEmbedRouter(

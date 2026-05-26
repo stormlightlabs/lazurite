@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_quote_repost_sheet.dart';
+import '../../../helpers/assertion_helpers.dart';
 
 class _FakeRepository implements PostActionRepository {
   _FakeRepository({this.quotes = const [], this.reposters = const []});
@@ -116,8 +117,7 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('alice'), findsOneWidget);
-      expect(find.text('@alice.bsky.social'), findsOneWidget);
+      expectAccountRow(displayName: 'alice', handle: 'alice.bsky.social');
     });
   });
 }

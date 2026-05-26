@@ -1,6 +1,3 @@
-import 'package:poptart_core/poptart_core.dart';
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
-import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +8,9 @@ import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/search/presentation/search_screen.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/fixtures/feed.dart';
+import '../../../helpers/search_helpers.dart';
 
 class MockSearchRepository extends Mock implements SearchRepository {}
 
@@ -32,22 +32,15 @@ void main() {
     typeaheadRepository = MockTypeaheadRepository();
     database = MockAppDatabase();
 
-    when(
-      () => searchRepository.searchPosts(
-        query: any(named: 'query'),
-        sort: any(named: 'sort'),
-        filters: any(named: 'filters'),
-        cursor: any(named: 'cursor'),
-        limit: any(named: 'limit'),
-      ),
-    ).thenAnswer(
-      (_) async => SearchPostsResult(
+    stubSearchPosts(
+      searchRepository,
+      result: SearchPostsResult(
         posts: [
-          PostView(
-            uri: AtUri.parse('at://did:plc:test/app.bsky.feed.post/1'),
+          testPostView(
+            uri: 'at://did:plc:test/app.bsky.feed.post/1',
             cid: 'cid1',
-            author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
-            record: const {r'$type': 'app.bsky.feed.post', 'text': 'hello', 'createdAt': '2026-01-01T00:00:00.000Z'},
+            author: testProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+            record: testPostRecordJson(text: 'hello', createdAt: DateTime.utc(2026, 1, 1)),
             indexedAt: DateTime.utc(2026, 1, 1),
           ),
         ],
@@ -101,17 +94,7 @@ void main() {
     await tester.tap(find.text('Apply'));
     await tester.pumpAndSettle();
 
-    final captured = verify(
-      () => searchRepository.searchPosts(
-        query: any(named: 'query'),
-        sort: any(named: 'sort'),
-        filters: captureAny(named: 'filters'),
-        cursor: any(named: 'cursor'),
-        limit: any(named: 'limit'),
-      ),
-    ).captured;
-
-    final PostSearchFilters filters = captured.last as PostSearchFilters;
+    final filters = captureSearchFilters(searchRepository).last;
     expect(filters.author, 'did:plc:fixed-author');
     expect(filters.domain, 'example.com');
   });

@@ -17,8 +17,8 @@ import 'package:lazurite/features/settings/presentation/settings_screen.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-import '../../../helpers/settings_fixtures.dart';
-import '../../../helpers/test_utils.dart';
+import '../../../helpers/fixtures/auth.dart';
+import '../../../helpers/fixtures/settings.dart';
 
 class MockAccountSwitcherCubit extends MockCubit<AccountSwitcherState> implements AccountSwitcherCubit {}
 
@@ -102,22 +102,20 @@ void main() {
     when(() => cacheMaintenanceService.clearCaches()).thenAnswer((_) async {});
   });
 
-  Widget buildSubject() {
-    return MultiRepositoryProvider(
+  Widget buildSubject() => MultiRepositoryProvider(
+    providers: [
+      RepositoryProvider<CrashReportingService>.value(value: crashReportingService),
+      RepositoryProvider<LocalCacheMaintenanceService>.value(value: cacheMaintenanceService),
+    ],
+    child: MultiBlocProvider(
       providers: [
-        RepositoryProvider<CrashReportingService>.value(value: crashReportingService),
-        RepositoryProvider<LocalCacheMaintenanceService>.value(value: cacheMaintenanceService),
+        BlocProvider<AuthBloc>.value(value: authBloc),
+        BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
+        BlocProvider<SettingsCubit>.value(value: settingsCubit),
       ],
-      child: MultiBlocProvider(
-        providers: [
-          BlocProvider<AuthBloc>.value(value: authBloc),
-          BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
-          BlocProvider<SettingsCubit>.value(value: settingsCubit),
-        ],
-        child: const MaterialApp(home: SettingsScreen()),
-      ),
-    );
-  }
+      child: const MaterialApp(home: SettingsScreen()),
+    ),
+  );
 
   Widget buildRoutedSubject() {
     final router = GoRouter(
@@ -277,7 +275,7 @@ void main() {
   });
 
   testWidgets('shows the AT Protocol connection card for the authenticated account', (tester) async {
-    final tokens = AuthTokens(
+    final tokens = testAuthTokens(
       accessToken: buildJwt(
         aud: 'shaggymane.us-west.host.bsky.network',
         sub: 'did:plc:lazurite123',
@@ -333,7 +331,7 @@ void main() {
   });
 
   testWidgets('tapping the DID row opens Dev Tools with the DID query', (tester) async {
-    final tokens = AuthTokens(
+    final tokens = testAuthTokens(
       accessToken: buildJwt(
         aud: 'shaggymane.us-west.host.bsky.network',
         sub: 'did:plc:lazurite123',
@@ -752,7 +750,7 @@ void main() {
   });
 }
 
-AuthTokens _authenticatedTokens() => const AuthTokens(
+AuthTokens _authenticatedTokens() => testAuthTokens(
   accessToken: 'access-token',
   refreshToken: 'refresh-token',
   did: 'did:plc:test',

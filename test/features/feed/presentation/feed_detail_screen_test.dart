@@ -15,8 +15,9 @@ import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:poptart_core/poptart_core.dart';
 
-import '../../../helpers/feed_fixtures.dart';
-import '../../../helpers/settings_fixtures.dart';
+import '../../../helpers/fixtures/feed.dart';
+import '../../../helpers/fixtures/settings.dart';
+import '../../../helpers/assertion_helpers.dart';
 
 class MockFeedRepository extends Mock implements FeedRepository {}
 
@@ -134,8 +135,7 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    expect(find.text('Failed to load feed'), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
+    expectErrorState('Failed to load feed');
 
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();

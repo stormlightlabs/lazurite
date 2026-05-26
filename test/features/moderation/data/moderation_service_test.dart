@@ -1,10 +1,8 @@
 import 'dart:convert';
 
-import 'package:poptart_lex/com/atproto/label/defs.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/actor/get_preferences.dart';
 import 'package:bluesky_poptart/app/bsky/actor/put_preferences.dart';
-import 'package:bluesky_poptart/app/bsky/feed/defs.dart' hide ViewerState;
 import 'package:bluesky_poptart/app/bsky/labeler/defs.dart';
 import 'package:bluesky_poptart/app/bsky/labeler/get_services.dart';
 import 'package:drift/native.dart';
@@ -14,7 +12,9 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as moderation;
+import 'package:poptart_lex/com/atproto/label/defs.dart';
 
+import '../../../helpers/fixtures/feed.dart';
 import '../../../helpers/test_bluesky_client.dart';
 
 const _customLabelerDid = 'did:plc:custom-labeler';
@@ -75,16 +75,9 @@ void main() {
 
       await service.ensureInitialized();
 
-      final labeledPost = PostView(
-        uri: AtUri.parse('at://did:plc:author/app.bsky.feed.post/abc'),
+      final labeledPost = testPostView(
         cid: 'cid-123',
-        author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social'),
-        record: {
-          r'$type': 'app.bsky.feed.post',
-          'text': 'sensitive',
-          'createdAt': DateTime.utc(2026, 3, 15).toIso8601String(),
-        },
-        indexedAt: DateTime.utc(2026, 3, 15),
+        record: testPostRecordJson(text: 'sensitive'),
         labels: [
           Label(
             src: 'did:plc:ar7c4by46qjdydhdevvrndac',
@@ -212,7 +205,6 @@ void main() {
 
       expect(fallbackService.currentPrefs, isNotNull);
       expect(fallbackService.currentHeaders['atproto-accept-labelers'], contains(_customLabelerDid));
-
       fallbackService.dispose();
     });
 
@@ -239,7 +231,6 @@ void main() {
         contains(_customLabelerDid),
       );
       expect(service.currentHeaders['atproto-accept-labelers'], contains(_customLabelerDid));
-
       service.dispose();
     });
 
@@ -259,7 +250,6 @@ void main() {
       await service.subscribeToLabeler(_customLabelerDid);
       expect(actor.lastPutPreferencesHeaders?['atproto-proxy'], isNull);
       expect(actor.lastPutPreferencesHeaders?['atproto-accept-labelers'], contains(_customLabelerDid));
-
       service.dispose();
     });
 
@@ -290,7 +280,6 @@ void main() {
       await service.subscribeToLabeler(_customLabelerDid);
       expect(actor.putPreferencesCallCount, 1);
       expect(actor.lastPutPreferencesHeaders?['atproto-proxy'], isNull);
-
       service.dispose();
     });
 
@@ -318,13 +307,11 @@ void main() {
       expect(contentPref.label, 'porn');
       expect(contentPref.labelerDid, _customLabelerDid);
       expect(contentPref.visibility.toJson(), 'hide');
-
       service.dispose();
     });
 
     test('dispose is idempotent', () {
       final service = ModerationService(bluesky: _testBlueskyClient());
-
       expect(() => service.dispose(), returnsNormally);
       expect(() => service.dispose(), returnsNormally);
     });
@@ -413,21 +400,19 @@ Bluesky _testBlueskyClient({_FakeActorService? actor, _FakeLabelerService? label
   return testBluesky(getClient: transport.get, postClient: transport.post);
 }
 
-ProfileViewDetailed _authGatedProfile() {
-  return ProfileViewDetailed(
-    did: _accountDid,
-    handle: 'test.bsky.social',
-    indexedAt: DateTime.utc(2026, 5, 16),
-    labels: [
-      Label(
-        src: 'did:plc:ar7c4by46qjdydhdevvrndac',
-        uri: 'at://$_accountDid/app.bsky.actor.profile/self',
-        val: '!no-unauthenticated',
-        cts: DateTime.utc(2026, 5, 16),
-      ),
-    ],
-  );
-}
+ProfileViewDetailed _authGatedProfile() => ProfileViewDetailed(
+  did: _accountDid,
+  handle: 'test.bsky.social',
+  indexedAt: DateTime.utc(2026, 5, 16),
+  labels: [
+    Label(
+      src: 'did:plc:ar7c4by46qjdydhdevvrndac',
+      uri: 'at://$_accountDid/app.bsky.actor.profile/self',
+      val: '!no-unauthenticated',
+      cts: DateTime.utc(2026, 5, 16),
+    ),
+  ],
+);
 
 class _FakeModerationTransport {
   _FakeModerationTransport({_FakeActorService? actor, _FakeLabelerService? labeler})
@@ -573,32 +558,30 @@ LabelerViewDetailed _buildLabeler({
   required String description,
   required String definitionIdentifier,
   required String definitionName,
-}) {
-  return LabelerViewDetailed(
-    uri: AtUri.parse('at://$did/app.bsky.labeler.service/self'),
-    cid: 'cid-$did',
-    creator: ProfileView(
-      did: did,
-      handle: handle,
-      displayName: displayName,
-      description: description,
-      avatar: 'https://example.com/$handle.png',
-    ),
-    policies: LabelerPolicies(
-      labelValues: [LabelValue.unknown(data: definitionIdentifier)],
-      labelValueDefinitions: [
-        LabelValueDefinition(
-          identifier: definitionIdentifier,
-          severity: const LabelValueDefinitionSeverity.knownValue(data: KnownLabelValueDefinitionSeverity.alert),
-          blurs: const LabelValueDefinitionBlurs.knownValue(data: KnownLabelValueDefinitionBlurs.content),
-          defaultSetting: const LabelValueDefinitionDefaultSetting.knownValue(
-            data: KnownLabelValueDefinitionDefaultSetting.warn,
-          ),
-          adultOnly: false,
-          locales: [LabelValueDefinitionStrings(lang: 'en', name: definitionName, description: 'Example description')],
+}) => LabelerViewDetailed(
+  uri: AtUri.parse('at://$did/app.bsky.labeler.service/self'),
+  cid: 'cid-$did',
+  creator: ProfileView(
+    did: did,
+    handle: handle,
+    displayName: displayName,
+    description: description,
+    avatar: 'https://example.com/$handle.png',
+  ),
+  policies: LabelerPolicies(
+    labelValues: [LabelValue.unknown(data: definitionIdentifier)],
+    labelValueDefinitions: [
+      LabelValueDefinition(
+        identifier: definitionIdentifier,
+        severity: const LabelValueDefinitionSeverity.knownValue(data: KnownLabelValueDefinitionSeverity.alert),
+        blurs: const LabelValueDefinitionBlurs.knownValue(data: KnownLabelValueDefinitionBlurs.content),
+        defaultSetting: const LabelValueDefinitionDefaultSetting.knownValue(
+          data: KnownLabelValueDefinitionDefaultSetting.warn,
         ),
-      ],
-    ),
-    indexedAt: DateTime.utc(2026, 4, 30),
-  );
-}
+        adultOnly: false,
+        locales: [LabelValueDefinitionStrings(lang: 'en', name: definitionName, description: 'Example description')],
+      ),
+    ],
+  ),
+  indexedAt: DateTime.utc(2026, 4, 30),
+);

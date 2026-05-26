@@ -11,7 +11,6 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
-import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/compose/presentation/compose_route_args.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
@@ -27,7 +26,11 @@ import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:poptart_core/poptart_core.dart';
+
+import '../../../helpers/fixtures/feed.dart';
+import '../../../helpers/fixtures/auth.dart';
+import '../../../helpers/connectivity_helpers.dart';
+import '../../../helpers/assertion_helpers.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
@@ -59,7 +62,7 @@ void main() {
   late MockConnectivityCubit connectivityCubit;
   late MockProfileRepository profileRepository;
 
-  const tokens = AuthTokens(
+  final tokens = testAuthTokens(
     accessToken: 'access',
     refreshToken: 'refresh',
     did: 'did:plc:me',
@@ -101,15 +104,15 @@ void main() {
     connectivityCubit = MockConnectivityCubit();
     profileRepository = MockProfileRepository();
 
-    when(() => authBloc.state).thenReturn(const AuthState.authenticated(tokens));
+    when(() => authBloc.state).thenReturn(AuthState.authenticated(tokens));
     when(() => profileBloc.state).thenReturn(ProfileState.loaded(profile: profile));
     when(() => feedBloc.state).thenReturn(
       const FeedState.loaded(actor: 'did:plc:me', posts: [], filter: FeedFilter.postsNoReplies, hasMore: false),
     );
     when(() => settingsCubit.state).thenReturn(defaultSettingsState());
-    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
+    stubConnectivityCubit(connectivityCubit);
 
-    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.authenticated(tokens));
+    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: AuthState.authenticated(tokens));
     whenListen(profileBloc, const Stream<ProfileState>.empty(), initialState: ProfileState.loaded(profile: profile));
     whenListen(
       feedBloc,
@@ -129,20 +132,18 @@ void main() {
     );
   });
 
-  Widget buildSubject({String? publicProviderKey, String? actor}) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<AuthBloc>.value(value: authBloc),
-        BlocProvider<ProfileBloc>.value(value: profileBloc),
-        BlocProvider<FeedBloc>.value(value: feedBloc),
-        BlocProvider<SettingsCubit>.value(value: settingsCubit),
-        BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
-      ],
-      child: MaterialApp(
-        home: ProfileScreen(actor: actor, publicProviderKey: publicProviderKey),
-      ),
-    );
-  }
+  Widget buildSubject({String? publicProviderKey, String? actor}) => MultiBlocProvider(
+    providers: [
+      BlocProvider<AuthBloc>.value(value: authBloc),
+      BlocProvider<ProfileBloc>.value(value: profileBloc),
+      BlocProvider<FeedBloc>.value(value: feedBloc),
+      BlocProvider<SettingsCubit>.value(value: settingsCubit),
+      BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+    ],
+    child: MaterialApp(
+      home: ProfileScreen(actor: actor, publicProviderKey: publicProviderKey),
+    ),
+  );
 
   /// Sets the test viewport to a tall size so that the full profile header
   /// (cover + summary + tab bar) fits within the viewport.
@@ -162,8 +163,7 @@ void main() {
       () => feedBloc.add(const FeedLoadRequested(actor: 'did:plc:me', filter: FeedFilter.postsNoReplies)),
     ).called(1);
 
-    expect(find.text('RIVER TAM'), findsOneWidget);
-    expect(find.text('@me.bsky.social'), findsOneWidget);
+    expectAccountRow(displayName: 'RIVER TAM', handle: 'me.bsky.social');
     expect(
       find.byWidgetPredicate(
         (widget) => widget is RichText && widget.text.toPlainText().contains('Signal and signal boost.'),
@@ -383,9 +383,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('profile_known_followers_link')));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-
     expect(find.text('known-followers other.bsky.social'), findsOneWidget);
-
     router.dispose();
   });
 
@@ -403,7 +401,6 @@ void main() {
 
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
-
     expect(find.text('You know 2 followers'), findsNothing);
     expect(find.byKey(const ValueKey('profile_known_followers_link')), findsNothing);
   });
@@ -439,7 +436,6 @@ void main() {
     );
 
     await tester.pumpWidget(widget);
-
     expect(find.byKey(const Key('profile_edit_header_button')), findsNothing);
     expect(find.text('Edit Profile'), findsNothing);
     expect(find.text('Bookmarks'), findsNothing);
@@ -819,18 +815,13 @@ void main() {
   });
 
   group('Feed layout switching', () {
-    FeedViewPost makePost(String id) {
-      final record = FeedPostRecord(text: 'Post $id', createdAt: DateTime.utc(2026, 3, 1));
-      return FeedViewPost(
-        post: PostView(
-          uri: AtUri('at://did:plc:me/app.bsky.feed.post/$id'),
-          cid: 'cid-$id',
-          author: const ProfileViewBasic(did: 'did:plc:me', handle: 'me.bsky.social', displayName: 'River Tam'),
-          record: record.toJson(),
-          indexedAt: DateTime.utc(2026, 3, 1),
-        ),
-      );
-    }
+    FeedViewPost makePost(String id) => testFeedViewPost(
+      uri: 'at://did:plc:me/app.bsky.feed.post/$id',
+      cid: 'cid-$id',
+      author: testProfileViewBasic(did: 'did:plc:me', handle: 'me.bsky.social', displayName: 'River Tam'),
+      record: FeedPostRecord(text: 'Post $id', createdAt: DateTime.utc(2026, 3, 1)).toJson(),
+      indexedAt: DateTime.utc(2026, 3, 1),
+    );
 
     final posts = List.generate(3, (i) => makePost('$i'));
 
@@ -839,30 +830,28 @@ void main() {
 
     FeedViewPost makeReplyWithParent(String id) {
       final parentRecord = FeedPostRecord(text: 'Parent $id', createdAt: DateTime.utc(2026, 3, 1));
-      final parentPost = PostView(
-        uri: AtUri('at://did:plc:parent/app.bsky.feed.post/parent-$id'),
+      final parentPost = testPostView(
+        uri: 'at://did:plc:parent/app.bsky.feed.post/parent-$id',
         cid: 'cid-parent-$id',
-        author: const ProfileViewBasic(did: 'did:plc:parent', handle: 'parent.bsky.social', displayName: 'Parent User'),
+        author: testProfileViewBasic(did: 'did:plc:parent', handle: 'parent.bsky.social', displayName: 'Parent User'),
         record: parentRecord.toJson(),
         indexedAt: DateTime.utc(2026, 3, 1),
       );
       final replyRecord = FeedPostRecord(text: 'Reply $id', createdAt: DateTime.utc(2026, 3, 1, 0, 5), reply: null);
 
-      return FeedViewPost(
-        post: PostView(
-          uri: AtUri('at://did:plc:me/app.bsky.feed.post/reply-$id'),
-          cid: 'cid-reply-$id',
-          author: const ProfileViewBasic(did: 'did:plc:me', handle: 'me.bsky.social', displayName: 'River Tam'),
-          record: {
-            ...replyRecord.toJson(),
-            'reply': {
-              r'$type': 'app.bsky.feed.post#replyRef',
-              'root': {'uri': parentPost.uri.toString(), 'cid': parentPost.cid},
-              'parent': {'uri': parentPost.uri.toString(), 'cid': parentPost.cid},
-            },
+      return testFeedViewPost(
+        uri: 'at://did:plc:me/app.bsky.feed.post/reply-$id',
+        cid: 'cid-reply-$id',
+        author: testProfileViewBasic(did: 'did:plc:me', handle: 'me.bsky.social', displayName: 'River Tam'),
+        record: {
+          ...replyRecord.toJson(),
+          'reply': {
+            r'$type': 'app.bsky.feed.post#replyRef',
+            'root': {'uri': parentPost.uri.toString(), 'cid': parentPost.cid},
+            'parent': {'uri': parentPost.uri.toString(), 'cid': parentPost.cid},
           },
-          indexedAt: DateTime.utc(2026, 3, 1, 0, 5),
-        ),
+        },
+        indexedAt: DateTime.utc(2026, 3, 1, 0, 5),
         reply: ReplyRef(
           root: UReplyRefRoot.postView(data: parentPost),
           parent: UReplyRefParent.postView(data: parentPost),
@@ -1216,9 +1205,7 @@ void main() {
 
       await tester.tap(find.text('Clean Follows'));
       await tester.pumpAndSettle();
-
       expect(find.text('clean'), findsOneWidget);
-
       router.dispose();
     });
   });
@@ -1281,26 +1268,19 @@ void main() {
 
       await tester.tap(find.byKey(const Key('profile_search_posts_button')));
       await tester.pumpAndSettle();
-
       expect(find.text('search:other.bsky.social'), findsOneWidget);
-
       router.dispose();
     });
   });
 }
 
-FeedViewPost _publicProfilePost() {
-  final record = FeedPostRecord(text: 'Public profile post', createdAt: DateTime.utc(2026, 5, 18));
-  return FeedViewPost(
-    post: PostView(
-      uri: const AtUri('at://did:plc:public/app.bsky.feed.post/public'),
-      cid: 'cid-public',
-      author: const ProfileViewBasic(did: 'did:plc:public', handle: 'public.bsky.social', displayName: 'Public User'),
-      record: record.toJson(),
-      indexedAt: DateTime.utc(2026, 5, 18),
-      replyCount: 1,
-      repostCount: 2,
-      likeCount: 3,
-    ),
-  );
-}
+FeedViewPost _publicProfilePost() => testFeedViewPost(
+  uri: 'at://did:plc:public/app.bsky.feed.post/public',
+  cid: 'cid-public',
+  author: testProfileViewBasic(did: 'did:plc:public', handle: 'public.bsky.social', displayName: 'Public User'),
+  record: FeedPostRecord(text: 'Public profile post', createdAt: DateTime.utc(2026, 5, 18)).toJson(),
+  indexedAt: DateTime.utc(2026, 5, 18),
+  replyCount: 1,
+  repostCount: 2,
+  likeCount: 3,
+);

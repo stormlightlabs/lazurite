@@ -1,4 +1,3 @@
-import 'package:poptart_core/poptart_core.dart' show AtUri;
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bluesky_poptart/app/bsky/graph/defs.dart';
@@ -9,6 +8,9 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dart';
 import 'package:lazurite/features/starter_packs/presentation/starter_pack_detail_screen.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:poptart_core/poptart_core.dart' show AtUri;
+
+import '../../../helpers/assertion_helpers.dart';
 
 class MockStarterPackRepository extends Mock implements StarterPackRepository {}
 
@@ -115,8 +117,7 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    expect(find.text('The Creator'), findsOneWidget);
-    expect(find.text('@creator.bsky.social'), findsOneWidget);
+    expectAccountRow(displayName: 'The Creator', handle: 'creator.bsky.social');
   });
 
   testWidgets('shows join stats', (tester) async {

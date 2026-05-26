@@ -1,4 +1,3 @@
-import 'package:poptart_core/poptart_core.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
@@ -17,6 +16,10 @@ import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:poptart_core/poptart_core.dart';
+
+import '../../../helpers/connectivity_helpers.dart';
+import '../../../helpers/search_helpers.dart';
 
 class MockSearchRepository extends Mock implements SearchRepository {}
 
@@ -47,12 +50,7 @@ void main() {
       mockDatabase = MockAppDatabase();
       connectivityCubit = MockConnectivityCubit();
       feedPreferencesCubit = MockFeedPreferencesCubit();
-      when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
-      whenListen(
-        connectivityCubit,
-        const Stream<ConnectivityState>.empty(),
-        initialState: const ConnectivityState.online(),
-      );
+      stubConnectivityCubit(connectivityCubit, state: const ConnectivityState.online());
       when(() => feedPreferencesCubit.state).thenReturn(const FeedPreferencesState.loaded(feeds: []));
       whenListen(
         feedPreferencesCubit,
@@ -67,15 +65,7 @@ void main() {
         ),
       ).thenAnswer((_) async {});
       when(() => mockDatabase.getSearchHistory(any(), limit: any(named: 'limit'))).thenAnswer((_) async => []);
-      when(
-        () => mockSearchRepository.searchPosts(
-          query: any(named: 'query'),
-          sort: any(named: 'sort'),
-          filters: any(named: 'filters'),
-          cursor: any(named: 'cursor'),
-          limit: any(named: 'limit'),
-        ),
-      ).thenAnswer((_) async => SearchPostsResult(posts: []));
+      stubSearchPosts(mockSearchRepository);
       when(
         () => mockSearchRepository.searchActors(
           query: any(named: 'query'),
@@ -195,7 +185,6 @@ void main() {
     testWidgets('shows tab-aware empty state when no search history', (tester) async {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
-
       expect(find.text('Search posts'), findsWidgets);
       expect(find.textContaining('Find conversations and keywords across posts'), findsOneWidget);
     });
@@ -310,7 +299,6 @@ void main() {
 
       await tester.testTextInput.receiveAction(TextInputAction.search);
       await tester.pumpAndSettle();
-
       expect(find.text('Top'), findsOneWidget);
       expect(find.text('Latest'), findsOneWidget);
     });
@@ -389,7 +377,6 @@ void main() {
 
       await tester.tap(find.text('Jump to profile'));
       await tester.pumpAndSettle();
-
       expect(find.text('Jump to profile'), findsNWidgets(2));
       expect(find.text('Handle'), findsOneWidget);
     });
@@ -397,15 +384,12 @@ void main() {
     testWidgets('jump to profile dialog hides typing hint after more than 3 characters', (tester) async {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
-
       await tester.tap(find.text('Jump to profile'));
       await tester.pumpAndSettle();
-
       expect(find.text('Start typing to search handles.'), findsOneWidget);
 
       await tester.enterText(find.byType(TextFormField), 'rive');
       await tester.pumpAndSettle();
-
       expect(find.text('Start typing to search handles.'), findsNothing);
     });
 
@@ -430,12 +414,10 @@ void main() {
       await tester.enterText(find.byType(TextFormField), 'river');
       await tester.pump(const Duration(milliseconds: 350));
       await tester.pumpAndSettle();
-
       expect(find.text('River Tam'), findsOneWidget);
 
       await tester.tap(find.text('River Tam'));
       await tester.pumpAndSettle();
-
       expect(find.text('profile:did:plc:river'), findsOneWidget);
     });
 
@@ -457,7 +439,6 @@ void main() {
       await tester.enterText(find.byType(TextField).first, '@river');
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
-
       expect(find.text('River Tam'), findsNothing);
     });
 
@@ -471,14 +452,12 @@ void main() {
       await tester.enterText(find.byType(TextFormField), 'custom.bsky.social');
       await tester.testTextInput.receiveAction(TextInputAction.search);
       await tester.pumpAndSettle();
-
       expect(find.text('profile:custom.bsky.social'), findsOneWidget);
     });
 
     testWidgets('third Starter Packs tab renders', (tester) async {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
-
       expect(find.text('Starter Packs'), findsOneWidget);
     });
 
@@ -605,17 +584,14 @@ void main() {
       await tester.enterText(find.byType(TextField).first, 'fallback');
       await tester.testTextInput.receiveAction(TextInputAction.search);
       await tester.pumpAndSettle();
-
       expect(find.text('fallback-name'), findsOneWidget);
     });
 
     testWidgets('starter packs tab shows Bluesky issue link text', (tester) async {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
-
       await tester.tap(find.text('Starter Packs'));
       await tester.pumpAndSettle();
-
       expect(find.text('Track API progress'), findsOneWidget);
       expect(find.textContaining('https://github.com/bluesky-social/bsky-docs/issues/306'), findsNothing);
     });

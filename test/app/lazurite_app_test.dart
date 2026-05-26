@@ -21,6 +21,7 @@ import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/app/lazurite_app.dart';
 import 'package:mocktail/mocktail.dart';
+import '../helpers/connectivity_helpers.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
@@ -75,12 +76,7 @@ void main() {
     when(() => settingsCubit.state).thenReturn(settingsState);
     whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: settingsState);
     when(() => settingsCubit.refreshAppViewHealth()).thenAnswer((_) async {});
-    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
-    whenListen(
-      connectivityCubit,
-      const Stream<ConnectivityState>.empty(),
-      initialState: const ConnectivityState.online(),
-    );
+    stubConnectivityCubit(connectivityCubit, state: const ConnectivityState.online());
     when(() => connectivityCubit.setSimulatedOffline(any())).thenReturn(null);
     when(() => connectivityCubit.close()).thenAnswer((_) async {});
     when(() => accountSwitcherCubit.state).thenReturn(const AccountSwitcherState.ready(accounts: []));

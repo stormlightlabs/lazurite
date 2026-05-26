@@ -6,11 +6,13 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/slingshot_client.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
-import '../../../helpers/test_utils.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:poptart_core/poptart_core.dart' as atcore;
 import 'package:poptart_oauth/poptart_oauth.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../../helpers/fixtures/auth.dart';
+import '../../../helpers/fixtures/network.dart';
 
 class MockAppDatabase extends Mock implements AppDatabase {}
 
@@ -143,7 +145,7 @@ void main() {
 
     group('saveSession', () {
       test('should save session to database', () async {
-        const tokens = AuthTokens(
+        final tokens = testAuthTokens(
           accessToken: 'access_token',
           refreshToken: 'refresh_token',
           did: 'did:plc:abc123',
@@ -161,7 +163,7 @@ void main() {
       });
 
       test('persists OAuth restore metadata when saving an OAuth session', () async {
-        final tokens = AuthTokens(
+        final tokens = testAuthTokens(
           accessToken: 'opaque-access-token',
           refreshToken: 'refresh-token',
           expiresAt: DateTime.utc(2030),
@@ -187,7 +189,7 @@ void main() {
       });
 
       test('should mark the saved session active when requested', () async {
-        const tokens = AuthTokens(accessToken: 'access_token', did: 'did:plc:abc123', handle: 'user.bsky.social');
+        final tokens = testAuthTokens(accessToken: 'access_token', did: 'did:plc:abc123', handle: 'user.bsky.social');
 
         when(() => mockDatabase.insertAccount(any())).thenAnswer((_) async => 1);
         when(
@@ -222,7 +224,6 @@ void main() {
         when(() => mockDatabase.getActiveAccount()).thenAnswer((_) async => account);
 
         final restored = await authRepository.restoreSession();
-
         expect(restored, isNotNull);
         expect(restored!.handle, equals('user.bsky.social'));
       });
@@ -253,7 +254,6 @@ void main() {
         when(() => mockDatabase.getActiveAccount()).thenAnswer((_) async => account);
 
         final restored = await authRepository.restoreSession();
-
         expect(restored, isNotNull);
         expect(restored!.did, equals(account.did));
         expect(restored.isExpired, isTrue);
@@ -288,7 +288,7 @@ void main() {
           },
         );
 
-        const currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: 'expired-access-token',
           refreshToken: 'refresh-token',
           did: 'did:plc:abc123',
@@ -327,7 +327,6 @@ void main() {
         allowRefreshToComplete.complete();
 
         final refreshed = await Future.wait([firstRefresh, secondRefresh]);
-
         expect(refreshCalls, equals(1));
         expect(refreshed.map((tokens) => tokens?.refreshToken), everyElement('new-refresh-token'));
       });
@@ -339,7 +338,7 @@ void main() {
               throw StateError('stale refresh token should not be used'),
         );
 
-        const currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: 'expired-access-token',
           refreshToken: 'stale-refresh-token',
           did: 'did:plc:abc123',
@@ -347,7 +346,7 @@ void main() {
           service: 'bsky.social',
           authMethod: AuthMethod.appPassword,
         );
-        final newerSession = AuthTokens(
+        final newerSession = testAuthTokens(
           accessToken: 'new-access-token',
           refreshToken: 'new-refresh-token',
           expiresAt: DateTime.now().add(const Duration(hours: 1)),
@@ -405,7 +404,7 @@ void main() {
           },
         );
 
-        const currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: 'expired-access-token',
           refreshToken: 'old-refresh-token',
           did: 'did:plc:abc123',
@@ -413,7 +412,7 @@ void main() {
           service: 'bsky.social',
           authMethod: AuthMethod.appPassword,
         );
-        final newerSession = AuthTokens(
+        final newerSession = testAuthTokens(
           accessToken: 'newer-access-token',
           refreshToken: 'newer-refresh-token',
           expiresAt: DateTime.now().add(const Duration(hours: 1)),
@@ -451,7 +450,6 @@ void main() {
         ).thenAnswer((_) async => false);
 
         final refreshed = await authRepository.refreshSession(currentSession);
-
         expect(refreshed, isNotNull);
         expect(refreshed!.refreshToken, equals('newer-refresh-token'));
         verifyNever(() => mockDatabase.insertAccount(any()));
@@ -476,7 +474,7 @@ void main() {
           },
         );
 
-        const currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: 'expired-access-token',
           refreshToken: 'old-refresh-token',
           did: 'did:plc:abc123',
@@ -525,7 +523,7 @@ void main() {
               throw StateError('refresh should be handled by the lock holder'),
         );
 
-        const currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: 'expired-access-token',
           refreshToken: 'old-refresh-token',
           did: 'did:plc:abc123',
@@ -534,7 +532,7 @@ void main() {
           authMethod: AuthMethod.appPassword,
         );
 
-        final newerSession = AuthTokens(
+        final newerSession = testAuthTokens(
           accessToken: 'new-access-token',
           refreshToken: 'new-refresh-token',
           expiresAt: DateTime.now().add(const Duration(hours: 1)),
@@ -586,7 +584,7 @@ void main() {
               throw Exception('refresh service unavailable'),
         );
 
-        const currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: 'expired-access-token',
           refreshToken: 'refresh-token',
           did: 'did:plc:abc123',
@@ -608,7 +606,7 @@ void main() {
               throw _unauthorizedRefreshException(),
         );
 
-        const currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: 'expired-access-token',
           refreshToken: 'refresh-token',
           did: 'did:plc:abc123',
@@ -627,7 +625,6 @@ void main() {
         when(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).thenAnswer((_) async => 1);
 
         await expectLater(authRepository.refreshSession(currentSession), throwsA(isA<Exception>()));
-
         verify(() => mockDatabase.deleteAccount(currentSession.did)).called(1);
         verify(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).called(1);
       });
@@ -639,7 +636,7 @@ void main() {
               throw _unauthorizedRefreshException(),
         );
 
-        const currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: 'expired-access-token',
           refreshToken: 'stale-refresh-token',
           did: 'did:plc:abc123',
@@ -647,7 +644,7 @@ void main() {
           service: 'bsky.social',
           authMethod: AuthMethod.appPassword,
         );
-        const newerSession = AuthTokens(
+        final newerSession = testAuthTokens(
           accessToken: 'new-access-token',
           refreshToken: 'new-refresh-token',
           did: 'did:plc:abc123',
@@ -684,7 +681,6 @@ void main() {
           storedAuthService: 'https://oauth.custom.example',
           issuer: null,
         );
-
         expect(candidates, equals(['oauth.custom.example', 'bsky.social']));
       });
 
@@ -715,7 +711,7 @@ void main() {
                 );
               },
         );
-        final currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: 'opaque-access-token',
           refreshToken: 'refresh-token',
           expiresAt: DateTime.utc(2029),
@@ -755,7 +751,6 @@ void main() {
         ).thenAnswer((_) async => true);
 
         final refreshed = await authRepository.refreshSession(currentSession);
-
         expect(restoredSession.accessToken, 'opaque-access-token');
         expect(restoredSession.sub, currentSession.did);
         expect(restoredSession.scope, currentSession.oauthScope);
@@ -806,7 +801,7 @@ void main() {
               },
         );
 
-        const currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: 'REPLACE_ME',
           refreshToken: 'refresh-token',
           did: 'did:plc:abc123',
@@ -889,7 +884,7 @@ void main() {
               },
         );
 
-        final currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: expiredAccessToken,
           refreshToken: 'refresh-token',
           did: 'did:plc:abc123',
@@ -978,7 +973,7 @@ void main() {
               },
         );
 
-        const currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: 'REPLACE_ME',
           refreshToken: 'refresh-token',
           did: 'did:plc:abc123',
@@ -1062,7 +1057,7 @@ void main() {
               },
         );
 
-        const currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: 'REPLACE_ME',
           refreshToken: 'refresh-token',
           did: 'did:plc:abc123',
@@ -1101,7 +1096,6 @@ void main() {
         ).thenAnswer((_) async => true);
 
         final refreshed = await authRepository.refreshSession(sessionWithJwt);
-
         expect(refreshed, isNotNull);
         expect(requestedClientIds, equals([AuthRepository.kClientId]));
       });
@@ -1125,7 +1119,7 @@ void main() {
               },
         );
 
-        final currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: expiredAccessToken,
           refreshToken: 'refresh-token',
           did: 'did:plc:abc123',
@@ -1164,7 +1158,7 @@ void main() {
               },
         );
 
-        final currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: expiredAccessToken,
           refreshToken: 'refresh-token',
           did: 'did:plc:abc123',
@@ -1188,7 +1182,6 @@ void main() {
         when(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).thenAnswer((_) async => 1);
 
         await expectLater(authRepository.refreshSession(currentSession), throwsA(isA<Exception>()));
-
         verify(() => mockDatabase.deleteAccount(currentSession.did)).called(1);
         verify(() => mockDatabase.deleteSetting(AppDatabase.activeAccountDidSettingKey)).called(1);
       });
@@ -1219,7 +1212,7 @@ void main() {
               },
         );
 
-        final currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: expiredAccessToken,
           refreshToken: 'stale-refresh-token',
           did: 'did:plc:abc123',
@@ -1243,7 +1236,6 @@ void main() {
         ).thenAnswer((_) async => _accountForTokens(newerSession));
 
         final refreshed = await authRepository.refreshSession(currentSession);
-
         expect(refreshed, isNotNull);
         expect(refreshed!.refreshToken, equals('new-refresh-token'));
         verifyNever(() => mockDatabase.deleteAccount(any()));
@@ -1274,7 +1266,7 @@ void main() {
               },
         );
 
-        final currentSession = AuthTokens(
+        final currentSession = testAuthTokens(
           accessToken: expiredAccessToken,
           refreshToken: 'refresh-token',
           did: 'did:plc:abc123',
@@ -1303,7 +1295,6 @@ void main() {
           resolvedPdsHost: 'https://porcini.us-east.host.bsky.network',
           resolvedAuthService: 'https://bsky.social',
         );
-
         expect(candidates, equals(['bsky.social', 'blacksky.community', 'porcini.us-east.host.bsky.network']));
       });
 
@@ -1313,7 +1304,6 @@ void main() {
           resolvedPdsHost: 'bsky.social',
           resolvedAuthService: 'bsky.social',
         );
-
         expect(candidates, equals(['bsky.social']));
       });
     });
@@ -1349,15 +1339,8 @@ void main() {
           loadClientMetadata: (_) async => _testClientMetadata(),
           oauthServiceResolver: () => 'pending-auth.example',
           resolveHandleDid: (_) async => 'did:plc:alice',
-          resolveDidDocument: (_) async => const {
-            'service': [
-              {
-                'id': '#atproto_pds',
-                'type': 'AtprotoPersonalDataServer',
-                'serviceEndpoint': 'https://porcini.us-east.host.bsky.network',
-              },
-            ],
-          },
+          resolveDidDocument: (_) async =>
+              testDidDocument(serviceEndpoint: 'https://porcini.us-east.host.bsky.network'),
           resolveAuthorizationServiceForPdsHost: (_) async => null,
           launchUrlWithMode: (url, _) async {
             launchedUrls.add(url);
@@ -1394,7 +1377,7 @@ void main() {
                 required fallbackPdsHost,
                 required oauthService,
                 oauthClientId,
-              }) async => AuthTokens(
+              }) async => testAuthTokens(
                 accessToken: session.accessToken,
                 refreshToken: session.refreshToken,
                 expiresAt: session.expiresAt,
@@ -1512,9 +1495,7 @@ void main() {
         authRepository = AuthRepository(
           database: mockDatabase,
           resolveDidDocument: (_) async => {
-            'service': [
-              {'id': '#atproto_pds', 'type': 'AtprotoPersonalDataServer', 'serviceEndpoint': 'https://pds.example'},
-            ],
+            'service': [testPdsService(serviceEndpoint: 'https://pds.example')],
           },
         );
 
@@ -1625,7 +1606,7 @@ void main() {
 
     group('oauth callback exchange coordination', () {
       test('joins duplicate callback deliveries to one token exchange', () async {
-        const tokens = AuthTokens(accessToken: 'access', did: 'did:plc:abc123', handle: 'user.bsky.social');
+        final tokens = testAuthTokens(accessToken: 'access', did: 'did:plc:abc123', handle: 'user.bsky.social');
         final exchangeCompleter = Completer<AuthTokens>();
         var exchangeCalls = 0;
 
@@ -1664,10 +1645,8 @@ void main() {
           loadClientMetadata: (_) async => _testClientMetadata(),
           oauthServiceResolver: () => 'bsky.social',
           resolveHandleDid: (_) async => 'did:plc:alice',
-          resolveDidDocument: (_) async => const {
-            'service': [
-              {'id': '#atproto_pds', 'type': 'AtprotoPersonalDataServer', 'serviceEndpoint': 'https://bsky.social'},
-            ],
+          resolveDidDocument: (_) async => {
+            'service': [testPdsService(serviceEndpoint: 'https://bsky.social')],
           },
           resolveAuthorizationServiceForPdsHost: (_) async => null,
           oauthAuthorizeSession: (client, identity) async {
@@ -1876,7 +1855,6 @@ void main() {
         );
 
         await authRepository.dismissOAuthBrowserForLaunchMode(LaunchMode.inAppBrowserView);
-
         expect(supportChecks, equals(1));
         expect(closeCalls, equals(1));
       });
@@ -1897,7 +1875,6 @@ void main() {
         );
 
         await authRepository.dismissOAuthBrowserForLaunchMode(LaunchMode.externalApplication);
-
         expect(supportChecks, equals(0));
         expect(closeCalls, equals(0));
       });

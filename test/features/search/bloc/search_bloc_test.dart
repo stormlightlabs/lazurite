@@ -1,8 +1,6 @@
-import 'package:poptart_core/poptart_core.dart' show AtUri;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
-import 'package:bluesky_poptart/app/bsky/graph/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
@@ -11,8 +9,11 @@ import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:poptart_core/poptart_core.dart' show AtUri;
 
-import '../../../helpers/feed_fixtures.dart';
+import '../../../helpers/fixtures/feed.dart';
+import '../../../helpers/fixtures/graph.dart';
+import '../../../helpers/search_helpers.dart';
 
 class MockSearchRepository extends Mock implements SearchRepository {}
 
@@ -50,8 +51,7 @@ void main() {
     indexedAt: DateTime.utc(2026, 1, 1),
   );
 
-  final sampleStarterPack = StarterPackViewBasic(
-    uri: AtUri.parse('at://did:plc:creator/app.bsky.graph.starterpack/pack-1'),
+  final sampleStarterPack = testStarterPackViewBasic(
     cid: 'cid-pack-1',
     record: const {
       r'$type': 'app.bsky.graph.starterpack',
@@ -59,7 +59,6 @@ void main() {
       'list': 'at://did:plc:creator/app.bsky.graph.list/list-1',
       'createdAt': '2026-01-01T00:00:00.000Z',
     },
-    creator: const ProfileViewBasic(did: 'did:plc:creator', handle: 'creator.bsky.social'),
     indexedAt: DateTime.utc(2026, 1, 1),
   );
 
@@ -80,15 +79,7 @@ void main() {
         accountDid: any(named: 'accountDid'),
       ),
     ).thenAnswer((_) async {});
-    when(
-      () => mockRepository.searchPosts(
-        query: any(named: 'query'),
-        sort: any(named: 'sort'),
-        filters: any(named: 'filters'),
-        cursor: any(named: 'cursor'),
-        limit: any(named: 'limit'),
-      ),
-    ).thenAnswer((_) async => SearchPostsResult(posts: []));
+    stubSearchPosts(mockRepository);
     when(
       () => mockRepository.searchActors(
         query: any(named: 'query'),
@@ -479,16 +470,8 @@ void main() {
       build: buildBloc,
       act: (bloc) => bloc.add(const PostFiltersChanged(filters: PostSearchFilters(domain: 'example.com'))),
       verify: (_) {
-        final captured = verify(
-          () => mockRepository.searchPosts(
-            query: any(named: 'query'),
-            sort: any(named: 'sort'),
-            filters: captureAny(named: 'filters'),
-            cursor: any(named: 'cursor'),
-            limit: any(named: 'limit'),
-          ),
-        ).captured;
-        final filters = captured.last as PostSearchFilters;
+        final captured = captureSearchFilters(mockRepository);
+        final filters = captured.last;
         expect(filters.domain, 'example.com');
       },
     );
@@ -527,7 +510,7 @@ void main() {
             limit: 50,
           ),
         ).captured;
-        final filters = captured.last as PostSearchFilters;
+        final filters = captured.last;
         expect(filters.domain, 'example.com');
       },
     );
@@ -537,16 +520,8 @@ void main() {
       build: buildScopedBloc,
       act: (bloc) => bloc.add(const PostFiltersChanged(filters: PostSearchFilters(author: 'did:plc:other'))),
       verify: (_) {
-        final captured = verify(
-          () => mockRepository.searchPosts(
-            query: any(named: 'query'),
-            sort: any(named: 'sort'),
-            filters: captureAny(named: 'filters'),
-            cursor: any(named: 'cursor'),
-            limit: any(named: 'limit'),
-          ),
-        ).captured;
-        final filters = captured.last as PostSearchFilters;
+        final captured = captureSearchFilters(mockRepository);
+        final filters = captured.last;
         expect(filters.author, 'did:plc:scoped');
       },
     );

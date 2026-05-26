@@ -17,6 +17,7 @@ import 'package:lazurite/features/auth/presentation/login_screen.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:mocktail/mocktail.dart';
+import '../../../helpers/assertion_helpers.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
@@ -341,8 +342,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Saved accounts'), findsOneWidget);
-    expect(find.text('Alice'), findsOneWidget);
-    expect(find.text('@alice.bsky.social'), findsOneWidget);
+    expectAccountRow(displayName: 'Alice', handle: 'alice.bsky.social');
 
     await tester.tap(find.byKey(const ValueKey<String>('saved-account-did:plc:alice')));
     await tester.pumpAndSettle();

@@ -26,6 +26,7 @@ import 'package:lazurite/features/search/data/search_scope.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:mocktail/mocktail.dart';
+import '../../../helpers/connectivity_helpers.dart';
 
 class MockPostThreadRepository extends Mock implements PostThreadRepository {}
 
@@ -148,12 +149,7 @@ void main() {
     when(() => savedPostsCubit.state).thenReturn(savedState);
     whenListen(savedPostsCubit, const Stream<SavedPostsState>.empty(), initialState: savedState);
 
-    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
-    whenListen(
-      connectivityCubit,
-      const Stream<ConnectivityState>.empty(),
-      initialState: const ConnectivityState.online(),
-    );
+    stubConnectivityCubit(connectivityCubit, state: const ConnectivityState.online());
 
     final settingsState = _settingsState();
     when(() => settingsCubit.state).thenReturn(settingsState);

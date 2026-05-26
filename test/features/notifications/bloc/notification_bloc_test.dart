@@ -6,7 +6,7 @@ import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../../helpers/notification_fixtures.dart';
+import '../../../helpers/fixtures/notification.dart';
 
 class MockNotificationRepository extends Mock implements NotificationRepository {}
 

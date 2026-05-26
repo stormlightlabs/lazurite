@@ -87,7 +87,44 @@ GoRoute postCaptureRoute({
   Widget child = const Scaffold(body: Text('post')),
 }) => capturedRoute(path: '/post', onRoute: onRoute, child: child);
 
-GoRoute loginRoute({Widget child = const Scaffold(body: Text('login'))}) => GoRoute(
-  path: '/login',
-  builder: (context, state) => child,
-);
+GoRoute loginRoute({Widget child = const Scaffold(body: Text('login'))}) =>
+    GoRoute(path: '/login', builder: (context, state) => child);
+
+GoRoute settingsRoute({Widget child = const Scaffold(body: Text('settings-route'))}) =>
+    GoRoute(path: '/settings', builder: (context, state) => child);
+
+GoRoute termsRoute({Widget child = const Scaffold(body: Text('terms-route'))}) =>
+    GoRoute(path: '/terms', builder: (context, state) => child);
+
+GoRoute privacyRoute({Widget child = const Scaffold(body: Text('privacy-route'))}) =>
+    GoRoute(path: '/privacy', builder: (context, state) => child);
+
+GoRoute alertsRoute({Widget child = const Scaffold(body: Text('alerts-route'))}) =>
+    GoRoute(path: '/alerts', builder: (context, state) => child);
+
+GoRoute listCaptureRoute({
+  required void Function(Uri uri) onRoute,
+  Widget child = const Scaffold(body: Text('list')),
+}) => capturedRoute(path: '/lists/:list', onRoute: onRoute, child: child);
+
+GoRoute starterPackCaptureRoute({
+  required void Function(Uri uri) onRoute,
+  Widget child = const Scaffold(body: Text('starter-pack')),
+}) => capturedRoute(path: '/starter-pack/:actor/:rkey', onRoute: onRoute, child: child);
+
+GoRoute feedCaptureRoute({
+  required void Function(Uri uri) onRoute,
+  Widget child = const Scaffold(body: Text('feed')),
+}) => capturedRoute(path: '/feed/:feed', onRoute: onRoute, child: child);
+
+Future<TestRouterHarness> pumpRouteHarness(
+  WidgetTester tester, {
+  required Widget home,
+  String initialLocation = '/',
+  List<GoRoute> routes = const [],
+  bool settle = true,
+}) async {
+  final harness = TestRouterHarness(home: home, initialLocation: initialLocation, routes: routes);
+  await harness.pump(tester, settle: settle);
+  return harness;
+}

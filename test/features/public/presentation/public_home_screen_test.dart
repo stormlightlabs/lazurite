@@ -14,7 +14,7 @@ import 'package:lazurite/features/public/presentation/public_route_state.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:poptart_core/poptart_core.dart' as atcore;
 
-import '../../../helpers/feed_fixtures.dart';
+import '../../../helpers/fixtures/feed.dart';
 
 class MockPublicContentRepository extends Mock implements PublicContentRepository {}
 

@@ -10,6 +10,7 @@ import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/profile/presentation/profile_connections_screen.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:poptart_core/poptart_core.dart';
+import '../../../helpers/connectivity_helpers.dart';
 
 class MockProfileRepository extends Mock implements ProfileRepository {}
 
@@ -44,12 +45,7 @@ void main() {
     profileActionRepository = MockProfileActionRepository();
     connectivityCubit = MockConnectivityCubit();
 
-    when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
-    whenListen(
-      connectivityCubit,
-      const Stream<ConnectivityState>.empty(),
-      initialState: const ConnectivityState.online(),
-    );
+    stubConnectivityCubit(connectivityCubit, state: const ConnectivityState.online());
   });
 
   Widget buildSubject({ProfileConnectionsTab initialTab = ProfileConnectionsTab.following}) {

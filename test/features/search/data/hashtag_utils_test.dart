@@ -4,7 +4,7 @@ import 'package:bluesky_poptart/app/bsky/richtext/facet.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/search/data/hashtag_utils.dart';
 
-import '../../../helpers/feed_fixtures.dart';
+import '../../../helpers/fixtures/feed.dart';
 
 PostView _post(String uri, Map<String, dynamic> record) =>
     testPostView(uri: uri, record: record, indexedAt: DateTime.utc(2026, 1, 1));

@@ -9,7 +9,7 @@ import 'package:lazurite/features/feed/data/similar_posts_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/similar_posts_section.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../../helpers/feed_fixtures.dart';
+import '../../../helpers/fixtures/feed.dart';
 
 class MockBluesky extends Mock implements Bluesky {}
 

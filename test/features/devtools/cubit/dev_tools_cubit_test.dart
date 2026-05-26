@@ -7,6 +7,7 @@ import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/devtools/cubit/dev_tools_cubit.dart';
+import '../../../helpers/fixtures/network.dart';
 
 class FakeDevToolsRepository implements DevToolsRepository {
   FakeDevToolsRepository({
@@ -157,13 +158,11 @@ void main() {
               expect(serviceHost, 'alice.host');
             }
             describeRepoCalls++;
-            return const RepoDescribeRepoOutput(
+            return RepoDescribeRepoOutput(
               handle: 'alice.bsky.social',
               did: 'did:plc:alice',
               didDoc: {
-                'service': [
-                  {'id': '#atproto_pds', 'type': 'AtprotoPersonalDataServer', 'serviceEndpoint': 'https://alice.host'},
-                ],
+                'service': [testPdsService(serviceEndpoint: 'https://alice.host')],
               },
               collections: ['app.bsky.feed.post'],
               handleIsCorrect: true,
@@ -229,13 +228,11 @@ void main() {
               expect(serviceHost, 'alice.host');
             }
             describeRepoCalls++;
-            return const RepoDescribeRepoOutput(
+            return RepoDescribeRepoOutput(
               handle: 'alice.bsky.social',
               did: 'did:plc:alice',
               didDoc: {
-                'service': [
-                  {'id': '#atproto_pds', 'type': 'AtprotoPersonalDataServer', 'serviceEndpoint': 'https://alice.host'},
-                ],
+                'service': [testPdsService(serviceEndpoint: 'https://alice.host')],
               },
               collections: ['app.bsky.feed.post'],
               handleIsCorrect: true,

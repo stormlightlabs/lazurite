@@ -1,6 +1,5 @@
 import 'package:poptart_core/poptart_core.dart' show AtUri;
 import 'package:bloc_test/bloc_test.dart';
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/graph/defs.dart' as bsky_graph;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,6 +10,8 @@ import 'package:lazurite/features/lists/cubit/my_lists_cubit.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/my_lists_screen.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/fixtures/graph.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
@@ -32,22 +33,19 @@ void main() {
   final listUri = AtUri.parse('at://did:plc:me/app.bsky.graph.list/list-1');
   final modUri = AtUri.parse('at://did:plc:me/app.bsky.graph.list/mod-1');
 
-  final curationList = bsky_graph.ListView(
+  final curationList = testListView(
     uri: listUri,
     cid: 'cid-1',
-    creator: const ProfileView(did: 'did:plc:me', handle: 'me.bsky.social'),
+    creator: testProfileView(did: 'did:plc:me', handle: 'me.bsky.social'),
     name: 'My Feed List',
-    purpose: const bsky_graph.ListPurpose.knownValue(data: bsky_graph.KnownListPurpose.appBskyGraphDefsCuratelist),
-    indexedAt: DateTime.utc(2026, 3, 21),
   );
 
-  final moderationList = bsky_graph.ListView(
+  final moderationList = testListView(
     uri: modUri,
     cid: 'cid-2',
-    creator: const ProfileView(did: 'did:plc:me', handle: 'me.bsky.social'),
+    creator: testProfileView(did: 'did:plc:me', handle: 'me.bsky.social'),
     name: 'My Mod List',
     purpose: const bsky_graph.ListPurpose.knownValue(data: bsky_graph.KnownListPurpose.appBskyGraphDefsModlist),
-    indexedAt: DateTime.utc(2026, 3, 21),
   );
 
   setUp(() {

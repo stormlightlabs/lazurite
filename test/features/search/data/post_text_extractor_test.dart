@@ -7,7 +7,7 @@ import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/search/data/post_text_extractor.dart';
 
-import '../../../helpers/feed_fixtures.dart';
+import '../../../helpers/fixtures/feed.dart';
 
 PostView _post({String text = '', UPostViewEmbed? embed}) => testPostView(
   uri: 'at://did:plc:test/app.bsky.feed.post/xyz',

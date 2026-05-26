@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../../helpers/feed_fixtures.dart';
+import '../../../helpers/fixtures/feed.dart';
 
 class MockPostThreadRepository extends Mock implements PostThreadRepository {}
 

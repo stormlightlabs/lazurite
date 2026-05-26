@@ -1,13 +1,13 @@
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/app/bsky/notification/list_notifications.dart' as bsky;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
-import 'package:bluesky_poptart/app/bsky/notification/list_notifications.dart' as bsky;
 
-import '../../../helpers/notification_fixtures.dart';
-import '../../../helpers/test_utils.dart';
+import '../../../helpers/fixtures/notification.dart';
+import '../../../helpers/fixtures/auth.dart';
 
 class MockNotificationRepository extends Mock implements NotificationRepository {}
 

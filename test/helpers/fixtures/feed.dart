@@ -1,6 +1,7 @@
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart' hide ViewerState;
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:poptart_core/poptart_core.dart';
+import 'package:poptart_lex/com/atproto/label/defs.dart';
 
 const testAuthorDid = 'did:plc:author';
 const testAuthorHandle = 'author.bsky.social';
@@ -35,6 +36,7 @@ PostView testPostView({
   int? likeCount,
   int? quoteCount,
   UPostViewEmbed? embed,
+  List<Label>? labels,
 }) => PostView(
   uri: AtUri.parse(uri),
   cid: cid ?? 'cid-${uri.hashCode}',
@@ -46,10 +48,13 @@ PostView testPostView({
   likeCount: likeCount,
   quoteCount: quoteCount,
   embed: embed,
+  labels: labels,
 );
 
 FeedViewPost testFeedViewPost({
   String uri = testPostUri,
+  UFeedViewPostReason? reason,
+  ReplyRef? reply,
   String? cid,
   ProfileViewBasic? author,
   Map<String, Object?>? record,
@@ -59,7 +64,10 @@ FeedViewPost testFeedViewPost({
   int? likeCount,
   int? quoteCount,
   UPostViewEmbed? embed,
+  List<Label>? labels,
 }) => FeedViewPost(
+  reason: reason,
+  reply: reply,
   post: testPostView(
     uri: uri,
     cid: cid,
@@ -71,5 +79,6 @@ FeedViewPost testFeedViewPost({
     likeCount: likeCount,
     quoteCount: quoteCount,
     embed: embed,
+    labels: labels,
   ),
 );

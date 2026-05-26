@@ -7,6 +7,8 @@ import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:lazurite/features/typeahead/presentation/typeahead_text_field.dart';
 import 'package:lazurite/shared/presentation/widgets/global_tap_outside_unfocus.dart';
 
+import '../../../helpers/assertion_helpers.dart';
+
 void main() {
   group('TypeaheadTextField', () {
     testWidgets('overlay appears after typing and renders results', (tester) async {
@@ -25,8 +27,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 20));
       await tester.pumpAndSettle();
 
-      expect(find.text('Alice'), findsOneWidget);
-      expect(find.text('@alice.bsky.social'), findsOneWidget);
+      expectAccountRow(displayName: 'Alice', handle: 'alice.bsky.social');
       expect(find.byType(CircleAvatar), findsOneWidget);
     });
 
@@ -155,12 +156,10 @@ void main() {
 
       await tester.enterText(find.byType(TextFormField), 'alice');
       await tester.pump(const Duration(milliseconds: 5));
-
       expect(find.byKey(const ValueKey('typeahead-input-loading-spinner')), findsOneWidget);
 
       completer.complete(const [TypeaheadResult(did: 'did:plc:alice', handle: 'alice.bsky.social')]);
       await tester.pumpAndSettle();
-
       expect(find.byKey(const ValueKey('typeahead-input-loading-spinner')), findsNothing);
     });
   });

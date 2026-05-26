@@ -1,7 +1,6 @@
 import 'package:poptart_core/poptart_core.dart' show AtUri;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
-import 'package:bluesky_poptart/app/bsky/graph/defs.dart' as bsky_graph;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +12,8 @@ import 'package:lazurite/features/lists/presentation/list_members_screen.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:mocktail/mocktail.dart';
+import '../../../helpers/assertion_helpers.dart';
+import '../../../helpers/fixtures/graph.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
@@ -34,18 +35,16 @@ void main() {
 
   final listUri = AtUri.parse('at://did:plc:creator/app.bsky.graph.list/list-1');
 
-  final curationList = bsky_graph.ListView(
+  final curationList = testListView(
     uri: listUri,
     cid: 'cid-1',
-    creator: const ProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
+    creator: testProfileView(did: 'did:plc:creator', handle: 'creator.bsky.social'),
     name: 'My List',
-    purpose: const bsky_graph.ListPurpose.knownValue(data: bsky_graph.KnownListPurpose.appBskyGraphDefsCuratelist),
-    indexedAt: DateTime.utc(2026, 3, 21),
   );
 
-  final member = bsky_graph.ListItemView(
+  final member = testListItemView(
     uri: AtUri.parse('at://did:plc:creator/app.bsky.graph.listitem/item-1'),
-    subject: const ProfileView(did: 'did:plc:member', handle: 'member.bsky.social', displayName: 'Alice Member'),
+    subject: testProfileView(did: 'did:plc:member', handle: 'member.bsky.social', displayName: 'Alice Member'),
   );
 
   setUp(() {
@@ -108,8 +107,7 @@ void main() {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
 
-    expect(find.text('Alice Member'), findsOneWidget);
-    expect(find.text('@member.bsky.social'), findsOneWidget);
+    expectListMember(displayName: 'Alice Member', handle: 'member.bsky.social');
   });
 
   testWidgets('shows CURRENT MEMBERS heading', (tester) async {
@@ -157,7 +155,6 @@ void main() {
     await tester.enterText(find.byType(TextField), 'newuser');
     await tester.pumpAndSettle();
 
-    expect(find.text('New User'), findsOneWidget);
-    expect(find.text('@newuser.bsky.social'), findsOneWidget);
+    expectListMember(displayName: 'New User', handle: 'newuser.bsky.social');
   });
 }

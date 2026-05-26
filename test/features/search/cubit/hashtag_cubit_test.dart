@@ -4,7 +4,7 @@ import 'package:lazurite/features/search/cubit/hashtag_cubit.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../../helpers/feed_fixtures.dart';
+import '../../../helpers/fixtures/feed.dart';
 
 class MockSearchRepository extends Mock implements SearchRepository {}
 

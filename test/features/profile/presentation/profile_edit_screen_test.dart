@@ -6,13 +6,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
-import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
 import 'package:lazurite/features/profile/data/profile_repository.dart';
 import 'package:lazurite/features/profile/presentation/profile_edit_screen.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/fixtures/auth.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
@@ -30,7 +31,7 @@ void main() {
   late MockProfileRepository profileRepository;
   late MockSettingsCubit settingsCubit;
 
-  const tokens = AuthTokens(
+  final tokens = testAuthTokens(
     accessToken: 'access',
     refreshToken: 'refresh',
     did: 'did:plc:me',
@@ -64,7 +65,7 @@ void main() {
     profileRepository = MockProfileRepository();
     settingsCubit = MockSettingsCubit();
 
-    when(() => authBloc.state).thenReturn(const AuthState.authenticated(tokens));
+    when(() => authBloc.state).thenReturn(AuthState.authenticated(tokens));
     when(() => profileBloc.state).thenReturn(const ProfileState.loaded(profile: profile));
     when(() => settingsCubit.state).thenReturn(settingsState);
     when(
@@ -74,7 +75,7 @@ void main() {
       ),
     ).thenAnswer((_) async {});
 
-    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.authenticated(tokens));
+    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: AuthState.authenticated(tokens));
     whenListen(
       profileBloc,
       const Stream<ProfileState>.empty(),
@@ -97,18 +98,16 @@ void main() {
     );
   }
 
-  GoRouter buildRouter() {
-    return GoRouter(
-      initialLocation: '/profile/me/edit',
-      routes: [
-        GoRoute(
-          path: '/profile/me',
-          builder: (_, _) => const Scaffold(body: Text('profile-me')),
-        ),
-        GoRoute(path: '/profile/me/edit', builder: (_, _) => const ProfileEditScreen()),
-      ],
-    );
-  }
+  GoRouter buildRouter() => GoRouter(
+    initialLocation: '/profile/me/edit',
+    routes: [
+      GoRoute(
+        path: '/profile/me',
+        builder: (_, _) => const Scaffold(body: Text('profile-me')),
+      ),
+      GoRoute(path: '/profile/me/edit', builder: (_, _) => const ProfileEditScreen()),
+    ],
+  );
 
   testWidgets('hydrates the profile edit form from the loaded profile', (tester) async {
     final router = buildRouter();

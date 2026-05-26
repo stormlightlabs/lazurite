@@ -8,6 +8,7 @@ import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_screen.dart';
 import 'package:lazurite/features/messages/presentation/widgets/message_bubble.dart';
 import 'package:mocktail/mocktail.dart';
+import '../../../helpers/assertion_helpers.dart';
 
 class MockConvoRepository extends Mock implements ConvoRepository {}
 
@@ -108,8 +109,7 @@ void main() {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
 
-      expect(find.text('Failed to load messages'), findsOneWidget);
-      expect(find.text('Retry'), findsOneWidget);
+      expectErrorState('Failed to load messages');
     });
 
     testWidgets('renders messages as bubbles', (tester) async {
