@@ -1,4 +1,3 @@
-import 'package:poptart_core/poptart_core.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart' hide ViewerState;
 import 'package:bluesky_poptart/app/bsky/actor/defs/viewer_state.dart' as actor_defs;
 import 'package:bluesky_poptart/app/bsky/embed/record.dart';
@@ -6,6 +5,9 @@ import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:poptart_core/poptart_core.dart';
+
+import '../../../helpers/feed_fixtures.dart';
 
 class MockFeedRepository extends Mock implements FeedRepository {}
 
@@ -17,18 +19,9 @@ void main() {
   });
 
   group('FeedRepository contract', () {
-    final samplePost = FeedViewPost(
-      post: PostView(
-        uri: const AtUri('at://did:plc:author/app.bsky.feed.post/abc'),
-        cid: 'cid-123',
-        author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social'),
-        record: {
-          r'$type': 'app.bsky.feed.post',
-          'text': 'Hello world',
-          'createdAt': DateTime.utc(2026, 3, 15).toIso8601String(),
-        },
-        indexedAt: DateTime.utc(2026, 3, 15),
-      ),
+    final samplePost = testFeedViewPost(
+      cid: 'cid-123',
+      record: testPostRecordJson(text: 'Hello world'),
     );
 
     test('getTimeline returns FeedResult with posts and cursor', () async {
@@ -69,23 +62,18 @@ void main() {
       ).thenAnswer((_) async => FeedResult(posts: [samplePost], cursor: 'next-cursor'));
 
       final result = await mockRepository.getFeed(feedUri: feedUri);
-
       expect(result.posts.length, 1);
     });
 
     test('getPreferences returns preferences list', () async {
       when(() => mockRepository.getPreferences()).thenAnswer((_) async => PreferencesResult(preferences: []));
-
       final result = await mockRepository.getPreferences();
-
       expect(result.preferences, isEmpty);
     });
 
     test('putPreferences calls with correct parameters', () async {
       when(() => mockRepository.putPreferences(preferences: any(named: 'preferences'))).thenAnswer((_) async {});
-
       await mockRepository.putPreferences(preferences: []);
-
       verify(() => mockRepository.putPreferences(preferences: [])).called(1);
     });
 
@@ -107,7 +95,6 @@ void main() {
       ).thenAnswer((_) async => [generator]);
 
       final result = await mockRepository.getSuggestedFeeds();
-
       expect(result.length, 1);
       expect(result.first.displayName, 'Discover');
     });
@@ -124,9 +111,7 @@ void main() {
       );
 
       when(() => mockRepository.getFeedGenerator(feedUri)).thenAnswer((_) async => generator);
-
       final result = await mockRepository.getFeedGenerator(feedUri);
-
       expect(result.displayName, 'Discover');
     });
 
@@ -142,9 +127,7 @@ void main() {
       );
 
       when(() => mockRepository.getFeedGenerators([feedUri])).thenAnswer((_) async => [generator]);
-
       final result = await mockRepository.getFeedGenerators([feedUri]);
-
       expect(result.length, 1);
     });
 
@@ -160,9 +143,7 @@ void main() {
       );
 
       when(() => mockRepository.getFeedGenerator(feedUri)).thenAnswer((_) async => generator);
-
       final result = await mockRepository.getFeedGenerator(feedUri);
-
       expect(result.displayName, 'Discover');
     });
 
@@ -178,17 +159,13 @@ void main() {
       );
 
       when(() => mockRepository.getFeedGenerators([feedUri])).thenAnswer((_) async => [generator]);
-
       final result = await mockRepository.getFeedGenerators([feedUri]);
-
       expect(result.length, 1);
     });
 
     test('getFeedGenerators returns empty list for empty input', () async {
       when(() => mockRepository.getFeedGenerators([])).thenAnswer((_) async => []);
-
       final result = await mockRepository.getFeedGenerators([]);
-
       expect(result, isEmpty);
     });
   });
@@ -206,14 +183,12 @@ void main() {
       );
 
       final result = FeedResult(posts: [post], cursor: 'cursor-1');
-
       expect(result.posts.length, 1);
       expect(result.cursor, 'cursor-1');
     });
 
     test('allows null cursor', () {
       final result = FeedResult(posts: const [], cursor: null);
-
       expect(result.posts, isEmpty);
       expect(result.cursor, isNull);
     });
@@ -222,7 +197,6 @@ void main() {
   group('PreferencesResult', () {
     test('stores preferences list', () {
       final result = PreferencesResult(preferences: []);
-
       expect(result.preferences, isEmpty);
     });
   });

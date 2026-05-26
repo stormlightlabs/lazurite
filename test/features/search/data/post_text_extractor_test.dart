@@ -1,5 +1,3 @@
-import 'package:poptart_core/poptart_core.dart';
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/embed/external.dart';
 import 'package:bluesky_poptart/app/bsky/embed/images.dart';
 import 'package:bluesky_poptart/app/bsky/embed/record.dart';
@@ -9,20 +7,16 @@ import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/search/data/post_text_extractor.dart';
 
-const _author = ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social');
-final _uri = AtUri.parse('at://did:plc:test/app.bsky.feed.post/xyz');
+import '../../../helpers/feed_fixtures.dart';
 
-PostView _post({String text = '', UPostViewEmbed? embed}) {
-  final record = FeedPostRecord(text: text, createdAt: DateTime.utc(2026, 1, 1));
-  return PostView(
-    uri: _uri,
-    cid: 'cid-test',
-    author: _author,
-    record: record.toJson(),
-    indexedAt: DateTime.utc(2026, 1, 1),
-    embed: embed,
-  );
-}
+PostView _post({String text = '', UPostViewEmbed? embed}) => testPostView(
+  uri: 'at://did:plc:test/app.bsky.feed.post/xyz',
+  cid: 'cid-test',
+  author: testProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+  record: FeedPostRecord(text: text, createdAt: DateTime.utc(2026, 1, 1)).toJson(),
+  indexedAt: DateTime.utc(2026, 1, 1),
+  embed: embed,
+);
 
 UPostViewEmbed _imagesEmbed(List<String> altTexts) {
   final images = altTexts
@@ -42,13 +36,11 @@ UPostViewEmbed _externalEmbed({
   required String title,
   required String description,
   String uri = 'https://example.com',
-}) {
-  return UPostViewEmbed.embedExternalView(
-    data: EmbedExternalView(
-      external: EmbedExternalViewExternal(uri: uri, title: title, description: description),
-    ),
-  );
-}
+}) => UPostViewEmbed.embedExternalView(
+  data: EmbedExternalView(
+    external: EmbedExternalViewExternal(uri: uri, title: title, description: description),
+  ),
+);
 
 UPostViewEmbed _recordWithImagesEmbed(String postText, List<String> altTexts) {
   return UPostViewEmbed.embedRecordWithMediaView(

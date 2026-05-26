@@ -12,6 +12,8 @@ import 'package:lazurite/features/typeahead/data/typeahead_repository.dart';
 import 'package:lazurite/features/typeahead/data/typeahead_result.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../helpers/feed_fixtures.dart';
+
 class MockSearchRepository extends Mock implements SearchRepository {}
 
 class MockTypeaheadRepository extends Mock implements TypeaheadRepository {}
@@ -23,11 +25,9 @@ void main() {
   late MockTypeaheadRepository mockTypeaheadRepository;
   late MockAppDatabase mockDatabase;
 
-  final samplePost = PostView(
-    uri: const AtUri('at://did:plc:author/app.bsky.feed.post/abc'),
+  final samplePost = testPostView(
     cid: 'cid-post',
-    author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social'),
-    record: const {r'$type': 'app.bsky.feed.post', 'text': 'Hello world', 'createdAt': '2026-01-01T00:00:00.000Z'},
+    record: testPostRecordJson(text: 'Hello world', createdAt: DateTime.utc(2026, 1, 1)),
     indexedAt: DateTime.utc(2026, 1, 1),
   );
 

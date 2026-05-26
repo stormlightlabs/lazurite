@@ -1,14 +1,11 @@
 import 'dart:async';
 
-import 'package:poptart_core/poptart_core.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
-import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
@@ -16,6 +13,10 @@ import 'package:lazurite/features/feed/presentation/feed_detail_screen.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:poptart_core/poptart_core.dart';
+
+import '../../../helpers/feed_fixtures.dart';
+import '../../../helpers/settings_fixtures.dart';
 
 class MockFeedRepository extends Mock implements FeedRepository {}
 
@@ -44,22 +45,8 @@ void main() {
         AuthTokens(accessToken: 'access', did: 'did:plc:me', handle: 'me.bsky.social'),
       ),
     );
-    when(() => settingsCubit.state).thenReturn(
-      const SettingsState(
-        themePalette: AppThemePalette.oxocarbon,
-        themeVariant: AppThemeVariant.dark,
-        useSystemTheme: false,
-      ),
-    );
-    whenListen(
-      settingsCubit,
-      const Stream<SettingsState>.empty(),
-      initialState: const SettingsState(
-        themePalette: AppThemePalette.oxocarbon,
-        themeVariant: AppThemeVariant.dark,
-        useSystemTheme: false,
-      ),
-    );
+    when(() => settingsCubit.state).thenReturn(testSettingsState());
+    whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: testSettingsState());
   });
 
   Widget buildSubject({String? publicProviderKey}) {
@@ -235,18 +222,13 @@ GeneratorView _generatorView({required String displayName, String? description})
   );
 }
 
-FeedViewPost _feedViewPost() {
-  final record = FeedPostRecord(text: 'Public post body', createdAt: DateTime.utc(2026, 3, 16));
-  return FeedViewPost(
-    post: PostView(
-      uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
-      cid: 'cid-xyz',
-      author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social', displayName: 'Test User'),
-      record: record.toJson(),
-      indexedAt: DateTime.utc(2026, 3, 16),
-      replyCount: 2,
-      repostCount: 3,
-      likeCount: 5,
-    ),
-  );
-}
+FeedViewPost _feedViewPost() => testFeedViewPost(
+  uri: 'at://did:plc:test/app.bsky.feed.post/xyz',
+  cid: 'cid-xyz',
+  author: testProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social', displayName: 'Test User'),
+  record: testPostRecordJson(text: 'Public post body', createdAt: DateTime.utc(2026, 3, 16)),
+  indexedAt: DateTime.utc(2026, 3, 16),
+  replyCount: 2,
+  repostCount: 3,
+  likeCount: 5,
+);

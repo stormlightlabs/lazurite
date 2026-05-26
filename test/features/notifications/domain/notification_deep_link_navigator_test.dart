@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/features/notifications/domain/notification_deep_link_navigator.dart';
 import 'package:lazurite/features/notifications/domain/notification_local_models.dart';
 
+import '../../../helpers/widget_harness.dart';
+
 void main() {
   testWidgets('go navigation opens profile route from notification deep link', (tester) async {
     final router = GoRouter(
@@ -19,15 +21,13 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-    await tester.pumpAndSettle();
+    await pumpTestRouterApp(tester, router);
 
     NotificationDeepLinkNavigator.navigate(
       router,
       const NotificationDeepLink(route: '/profile/did%3Aplc%3Aalice', navigationMode: NotificationTapNavigationMode.go),
     );
     await tester.pumpAndSettle();
-
     expect(find.text('profile:did:plc:alice'), findsOneWidget);
   });
 
@@ -45,9 +45,7 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-    await tester.pumpAndSettle();
-
+    await pumpTestRouterApp(tester, router);
     NotificationDeepLinkNavigator.navigate(
       router,
       const NotificationDeepLink(
@@ -55,8 +53,8 @@ void main() {
         navigationMode: NotificationTapNavigationMode.push,
       ),
     );
-    await tester.pumpAndSettle();
 
+    await tester.pumpAndSettle();
     expect(find.text('post:at://did:plc:test/app.bsky.feed.post/1'), findsOneWidget);
   });
 }

@@ -1,8 +1,9 @@
-import 'package:poptart_core/poptart_core.dart' as atp_core;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
-import 'package:lazurite/shared/utils/test_utils.dart';
+import 'package:poptart_core/poptart_core.dart' as atp_core;
+
+import '../../helpers/test_utils.dart';
 
 void main() {
   group('xrpc_client_factory', () {

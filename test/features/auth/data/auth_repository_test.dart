@@ -6,7 +6,7 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/slingshot_client.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
-import 'package:lazurite/shared/utils/test_utils.dart';
+import '../../../helpers/test_utils.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:poptart_core/poptart_core.dart' as atcore;
 import 'package:poptart_oauth/poptart_oauth.dart';
@@ -1666,11 +1666,7 @@ void main() {
           resolveHandleDid: (_) async => 'did:plc:alice',
           resolveDidDocument: (_) async => const {
             'service': [
-              {
-                'id': '#atproto_pds',
-                'type': 'AtprotoPersonalDataServer',
-                'serviceEndpoint': 'https://bsky.social',
-              },
+              {'id': '#atproto_pds', 'type': 'AtprotoPersonalDataServer', 'serviceEndpoint': 'https://bsky.social'},
             ],
           },
           resolveAuthorizationServiceForPdsHost: (_) async => null,

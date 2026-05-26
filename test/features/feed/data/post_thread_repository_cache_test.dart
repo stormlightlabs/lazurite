@@ -10,7 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:lazurite/core/cache/offline_cache_policy.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
-import 'package:lazurite/shared/utils/test_utils.dart';
+import '../../../helpers/test_utils.dart';
 
 import '../../../helpers/test_bluesky_client.dart';
 

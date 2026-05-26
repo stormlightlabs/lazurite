@@ -8,6 +8,8 @@ import 'package:lazurite/features/public/data/public_provider_context.dart';
 import 'package:lazurite/features/public/presentation/public_navigation.dart';
 import 'package:poptart_core/poptart_core.dart' as atcore;
 
+import '../../../helpers/widget_harness.dart';
+
 void main() {
   testWidgets('public navigation helpers append provider query context', (tester) async {
     const context = PublicProviderContext(providerKey: AppViewProviders.blackskyKey);
@@ -36,8 +38,7 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-    await tester.pumpAndSettle();
+    await pumpTestRouterApp(tester, router);
 
     navigateToPublicFeed(buttonContext, _feed(), context);
     await tester.pumpAndSettle();

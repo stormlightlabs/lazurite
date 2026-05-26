@@ -1,6 +1,4 @@
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
-import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -8,7 +6,8 @@ import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:lazurite/features/feed/presentation/widgets/public_post_card.dart';
-import 'package:poptart_core/poptart_core.dart';
+
+import '../../../helpers/feed_fixtures.dart';
 
 void main() {
   testWidgets('renders passive public counts and share action', (tester) async {
@@ -116,18 +115,13 @@ Widget _buildSubject(FeedViewPost post, {required PostCardVariant variant}) => M
   ),
 );
 
-FeedViewPost _makePost() {
-  final record = FeedPostRecord(text: 'Public post', createdAt: DateTime.utc(2026, 3, 16));
-  return FeedViewPost(
-    post: PostView(
-      uri: const AtUri('at://did:plc:test/app.bsky.feed.post/xyz'),
-      cid: 'cid-xyz',
-      author: const ProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social', displayName: 'Test User'),
-      record: record.toJson(),
-      indexedAt: DateTime.utc(2026, 3, 16),
-      replyCount: 2,
-      repostCount: 3,
-      likeCount: 5,
-    ),
-  );
-}
+FeedViewPost _makePost() => testFeedViewPost(
+  uri: 'at://did:plc:test/app.bsky.feed.post/xyz',
+  cid: 'cid-xyz',
+  author: testProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social', displayName: 'Test User'),
+  record: testPostRecordJson(text: 'Public post', createdAt: DateTime.utc(2026, 3, 16)),
+  indexedAt: DateTime.utc(2026, 3, 16),
+  replyCount: 2,
+  repostCount: 3,
+  likeCount: 5,
+);

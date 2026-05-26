@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
-import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 import 'package:bluesky_poptart/app/bsky/unspecced/defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,6 +13,8 @@ import 'package:lazurite/features/public/presentation/public_home_screen.dart';
 import 'package:lazurite/features/public/presentation/public_route_state.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:poptart_core/poptart_core.dart' as atcore;
+
+import '../../../helpers/feed_fixtures.dart';
 
 class MockPublicContentRepository extends Mock implements PublicContentRepository {}
 
@@ -209,12 +210,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-
     expect(find.byKey(const ValueKey('public_post_card_footer')), findsOneWidget);
 
     await tester.tap(find.text('BlackSky'));
     await tester.pumpAndSettle();
-
     expect(find.text('BlackSky Trending'), findsOneWidget);
     expect(find.text('Black Topic'), findsOneWidget);
     verify(() => blueskyRepository.loadDiscover(cursor: null, limit: 25)).called(1);
@@ -233,30 +232,23 @@ GeneratorView _feed(String rkey) {
   );
 }
 
-TrendView _trend(String topic) {
-  return TrendView(
-    topic: topic,
-    displayName: topic,
-    link: '/topic/1972',
-    startedAt: DateTime.utc(2026, 5, 18),
-    postCount: 212,
-    category: 'culture',
-    actors: const [],
-  );
-}
+TrendView _trend(String topic) => TrendView(
+  topic: topic,
+  displayName: topic,
+  link: '/topic/1972',
+  startedAt: DateTime.utc(2026, 5, 18),
+  postCount: 212,
+  category: 'culture',
+  actors: const [],
+);
 
-FeedViewPost _post(String rkey) {
-  final record = FeedPostRecord(text: 'Post $rkey', createdAt: DateTime.utc(2026, 5, 20));
-  return FeedViewPost(
-    post: PostView(
-      uri: atcore.AtUri.parse('at://did:plc:author/app.bsky.feed.post/$rkey'),
-      cid: 'cid-$rkey',
-      author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social', displayName: 'Author'),
-      record: record.toJson(),
-      indexedAt: DateTime.utc(2026, 5, 20),
-      replyCount: 1,
-      repostCount: 2,
-      likeCount: 3,
-    ),
-  );
-}
+FeedViewPost _post(String rkey) => testFeedViewPost(
+  uri: 'at://did:plc:author/app.bsky.feed.post/$rkey',
+  cid: 'cid-$rkey',
+  author: testProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social', displayName: 'Author'),
+  record: testPostRecordJson(text: 'Post $rkey', createdAt: DateTime.utc(2026, 5, 20)),
+  indexedAt: DateTime.utc(2026, 5, 20),
+  replyCount: 1,
+  repostCount: 2,
+  likeCount: 3,
+);

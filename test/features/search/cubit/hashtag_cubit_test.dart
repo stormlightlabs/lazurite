@@ -1,22 +1,18 @@
-import 'package:poptart_core/poptart_core.dart';
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/search/cubit/hashtag_cubit.dart';
 import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../helpers/feed_fixtures.dart';
+
 class MockSearchRepository extends Mock implements SearchRepository {}
 
-PostView _post(String uri, String text) {
-  return PostView(
-    uri: AtUri.parse(uri),
-    cid: 'cid-${uri.hashCode}',
-    author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social'),
-    record: {r'$type': 'app.bsky.feed.post', 'text': text, 'createdAt': '2026-01-01T00:00:00.000Z'},
-    indexedAt: DateTime.utc(2026, 1, 1),
-  );
-}
+PostView _post(String uri, String text) => testPostView(
+  uri: uri,
+  record: testPostRecordJson(text: text, createdAt: DateTime.utc(2026, 1, 1)),
+  indexedAt: DateTime.utc(2026, 1, 1),
+);
 
 void main() {
   late MockSearchRepository searchRepository;
@@ -83,7 +79,6 @@ void main() {
 
       await cubit.initialize();
       await cubit.switchSort(HashtagSort.latest);
-
       expect(cubit.state.currentSort, HashtagSort.latest);
       expect(cubit.state.topTimeline.posts, [topPost]);
       expect(cubit.state.latestTimeline.posts, [latestPost]);
@@ -113,7 +108,6 @@ void main() {
 
       await cubit.initialize();
       await cubit.loadMoreCurrent();
-
       expect(cubit.state.topTimeline.posts, [firstPost, secondPost]);
       expect(cubit.state.topTimeline.cursor, isNull);
     });
@@ -143,7 +137,6 @@ void main() {
 
       await cubit.initialize();
       await cubit.refreshCurrent();
-
       expect(cubit.state.topTimeline.posts, [refreshedPost]);
     });
 
@@ -180,7 +173,6 @@ void main() {
       addTearDown(cubit.close);
 
       await cubit.initialize();
-
       expect(cubit.state.topTimeline.status, HashtagTimelineStatus.error);
       expect(cubit.state.topTimeline.errorMessage, isNotNull);
     });

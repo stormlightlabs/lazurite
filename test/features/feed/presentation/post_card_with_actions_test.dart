@@ -1,9 +1,7 @@
 import 'dart:async';
 
-import 'package:poptart_core/poptart_core.dart';
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
-import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +11,9 @@ import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_with_actions.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:poptart_core/poptart_core.dart';
+
+import '../../../helpers/feed_fixtures.dart';
 
 class MockPostActionRepository extends Mock implements PostActionRepository {}
 
@@ -20,21 +21,11 @@ class MockSavedPostsCubit extends MockCubit<SavedPostsState> implements SavedPos
 
 class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
 
-FeedViewPost _makePostView() {
-  return FeedViewPost(
-    post: PostView(
-      uri: const AtUri('at://did:plc:author/app.bsky.feed.post/abc123'),
-      cid: 'cid-abc123',
-      author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social'),
-      record: {
-        r'$type': 'app.bsky.feed.post',
-        'text': 'Hello world',
-        'createdAt': DateTime.utc(2026, 3, 15).toIso8601String(),
-      },
-      indexedAt: DateTime.utc(2026, 3, 15),
-    ),
-  );
-}
+FeedViewPost _makePostView() => testFeedViewPost(
+  uri: 'at://did:plc:author/app.bsky.feed.post/abc123',
+  cid: 'cid-abc123',
+  record: testPostRecordJson(text: 'Hello world'),
+);
 
 void main() {
   setUpAll(() {

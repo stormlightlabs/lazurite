@@ -1,20 +1,13 @@
-import 'package:poptart_core/poptart_core.dart';
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 import 'package:bluesky_poptart/app/bsky/richtext/facet.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/search/data/hashtag_utils.dart';
 
-PostView _post(String uri, Map<String, dynamic> record) {
-  return PostView(
-    uri: AtUri.parse(uri),
-    cid: 'cid-${uri.hashCode}',
-    author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social'),
-    record: record,
-    indexedAt: DateTime.utc(2026, 1, 1),
-  );
-}
+import '../../../helpers/feed_fixtures.dart';
+
+PostView _post(String uri, Map<String, dynamic> record) =>
+    testPostView(uri: uri, record: record, indexedAt: DateTime.utc(2026, 1, 1));
 
 void main() {
   group('normalizeHashtag', () {
@@ -44,7 +37,6 @@ void main() {
       );
 
       final textRecord = FeedPostRecord(text: 'another #openweb #decentralized', createdAt: DateTime.utc(2026, 1, 1));
-
       final tags = extractRelatedHashtags([
         _post('at://did:plc:author/app.bsky.feed.post/1', facetRecord.toJson()),
         _post('at://did:plc:author/app.bsky.feed.post/2', textRecord.toJson()),

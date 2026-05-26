@@ -13,7 +13,7 @@ import 'package:http/http.dart' as http;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart' show Bluesky;
 import 'package:lazurite/features/profile/data/profile_repository.dart';
-import 'package:lazurite/shared/utils/test_utils.dart';
+import '../../../helpers/test_utils.dart';
 import 'package:poptart_core/poptart_core.dart' as atp_core;
 import 'package:poptart_lex/com/atproto/repo/get_record.dart';
 import 'package:poptart_lex/com/atproto/repo/put_record.dart';

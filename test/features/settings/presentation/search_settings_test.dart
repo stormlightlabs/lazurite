@@ -2,8 +2,6 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lazurite/core/theme/app_theme.dart';
-import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
@@ -12,20 +10,16 @@ import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../helpers/settings_fixtures.dart';
+
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
 class MockAccountSwitcherCubit extends MockCubit<AccountSwitcherState> implements AccountSwitcherCubit {}
 
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
-SettingsState _baseSettings({bool semanticSearchEnabled = false, int maxResults = 20}) => SettingsState(
-  themePalette: AppThemePalette.oxocarbon,
-  themeVariant: AppThemeVariant.dark,
-  useSystemTheme: false,
-  feedLayout: FeedLayout.comfortable,
-  semanticSearchEnabled: semanticSearchEnabled,
-  semanticSearchMaxResults: maxResults,
-);
+SettingsState _baseSettings({bool semanticSearchEnabled = false, int maxResults = 20}) =>
+    testSettingsState(semanticSearchEnabled: semanticSearchEnabled, semanticSearchMaxResults: maxResults);
 
 void main() {
   const tokens = AuthTokens(
@@ -60,16 +54,14 @@ void main() {
     when(() => settingsCubit.setTypeaheadProvider(any())).thenAnswer((_) async {});
   });
 
-  Widget buildSubject() {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<AuthBloc>.value(value: authBloc),
-        BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
-        BlocProvider<SettingsCubit>.value(value: settingsCubit),
-      ],
-      child: const MaterialApp(home: SettingsScreen()),
-    );
-  }
+  Widget buildSubject() => MultiBlocProvider(
+    providers: [
+      BlocProvider<AuthBloc>.value(value: authBloc),
+      BlocProvider<AccountSwitcherCubit>.value(value: accountSwitcherCubit),
+      BlocProvider<SettingsCubit>.value(value: settingsCubit),
+    ],
+    child: const MaterialApp(home: SettingsScreen()),
+  );
 
   group('Settings – Search section', () {
     testWidgets('shows Search section header', (tester) async {

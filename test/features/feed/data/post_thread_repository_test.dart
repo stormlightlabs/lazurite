@@ -1,9 +1,9 @@
-import 'package:poptart_core/poptart_core.dart';
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/feed_fixtures.dart';
 
 class MockPostThreadRepository extends Mock implements PostThreadRepository {}
 
@@ -15,16 +15,9 @@ void main() {
   });
 
   final sampleThreadViewPost = ThreadViewPost(
-    post: PostView(
-      uri: const AtUri('at://did:plc:author/app.bsky.feed.post/abc'),
+    post: testPostView(
       cid: 'cid-123',
-      author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social'),
-      record: {
-        r'$type': 'app.bsky.feed.post',
-        'text': 'Hello world',
-        'createdAt': DateTime.utc(2026, 3, 15).toIso8601String(),
-      },
-      indexedAt: DateTime.utc(2026, 3, 15),
+      record: testPostRecordJson(text: 'Hello world'),
     ),
   );
 
@@ -42,15 +35,11 @@ void main() {
 
     test('getPostThread returns thread with parent', () async {
       const testUri = 'at://did:plc:author/app.bsky.feed.post/abc';
-      final parentPost = PostView(
-        uri: const AtUri('at://did:plc:parent/app.bsky.feed.post/root'),
+      final parentPost = testPostView(
+        uri: 'at://did:plc:parent/app.bsky.feed.post/root',
         cid: 'cid-root',
-        author: const ProfileViewBasic(did: 'did:plc:parent', handle: 'parent.bsky.social'),
-        record: {
-          r'$type': 'app.bsky.feed.post',
-          'text': 'Root post',
-          'createdAt': DateTime.utc(2026, 3, 14).toIso8601String(),
-        },
+        author: testProfileViewBasic(did: 'did:plc:parent', handle: 'parent.bsky.social'),
+        record: testPostRecordJson(text: 'Root post', createdAt: DateTime.utc(2026, 3, 14)),
         indexedAt: DateTime.utc(2026, 3, 14),
       );
       final threadWithParent = ThreadViewPost(
@@ -69,15 +58,11 @@ void main() {
 
     test('getPostThread returns thread with replies', () async {
       const testUri = 'at://did:plc:author/app.bsky.feed.post/abc';
-      final replyPost = PostView(
-        uri: const AtUri('at://did:plc:reply/app.bsky.feed.post/reply1'),
+      final replyPost = testPostView(
+        uri: 'at://did:plc:reply/app.bsky.feed.post/reply1',
         cid: 'cid-reply',
-        author: const ProfileViewBasic(did: 'did:plc:reply', handle: 'reply.bsky.social'),
-        record: {
-          r'$type': 'app.bsky.feed.post',
-          'text': 'Reply post',
-          'createdAt': DateTime.utc(2026, 3, 15, 1).toIso8601String(),
-        },
+        author: testProfileViewBasic(did: 'did:plc:reply', handle: 'reply.bsky.social'),
+        record: testPostRecordJson(text: 'Reply post', createdAt: DateTime.utc(2026, 3, 15, 1)),
         indexedAt: DateTime.utc(2026, 3, 15, 1),
       );
       final threadWithReplies = ThreadViewPost(
@@ -115,11 +100,9 @@ void main() {
     test('getPostThread with no parent returns thread without parent', () async {
       const testUri = 'at://did:plc:author/app.bsky.feed.post/abc';
       final threadNoParent = ThreadViewPost(post: sampleThreadViewPost.post);
-
       when(() => mockRepository.getPostThread(testUri)).thenAnswer((_) async => threadNoParent);
 
       final result = await mockRepository.getPostThread(testUri);
-
       expect(result.parent, isNull);
       expect(result.replies, isNull);
     });

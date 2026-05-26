@@ -1,11 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
-import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/notification/list_notifications.dart' as bsky;
+
+import '../../../helpers/notification_fixtures.dart';
+import '../../../helpers/test_utils.dart';
 
 class MockNotificationRepository extends Mock implements NotificationRepository {}
 
@@ -17,15 +19,7 @@ void main() {
   });
 
   group('NotificationRepository contract', () {
-    final sampleNotification = bsky.Notification(
-      uri: AtUri.parse('at://did:plc:author/app.bsky.feed.post/abc'),
-      cid: 'cid-123',
-      author: const ProfileView(did: 'did:plc:author', handle: 'author.bsky.social'),
-      reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.like),
-      record: {r'$type': 'app.bsky.feed.post', 'text': 'Hello world'},
-      isRead: false,
-      indexedAt: DateTime.utc(2026, 3, 15),
-    );
+    final sampleNotification = testNotification();
 
     test('listNotifications returns NotificationListResult with notifications and cursor', () async {
       when(
@@ -119,12 +113,7 @@ void main() {
         bluesky: initialClient,
         onUnauthorized: () async {
           recoveryCalls += 1;
-          return const AuthTokens(
-            accessToken: 'fresh-access',
-            refreshToken: 'fresh-refresh',
-            did: 'did:plc:test',
-            handle: 'test.bsky.social',
-          );
+          return testAuthTokens(accessToken: 'fresh-access', refreshToken: 'fresh-refresh');
         },
         blueskyClientFactory: (_) => refreshedClient,
       );
@@ -140,12 +129,12 @@ void main() {
 
   group('NotificationListResult', () {
     test('stores notifications and cursor', () {
-      final notification = bsky.Notification(
-        uri: AtUri.parse('at://did:plc:test/app.bsky.notification/1'),
+      final notification = testNotification(
+        uri: 'at://did:plc:test/app.bsky.notification/1',
         cid: 'cid',
         author: const ProfileView(did: 'did:plc:test', handle: 'test.bsky.social'),
-        reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.follow),
-        record: {},
+        reason: bsky.KnownNotificationReason.follow,
+        record: const {},
         isRead: true,
         indexedAt: DateTime.now(),
       );

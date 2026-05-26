@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/shared/presentation/widgets/error_state.dart';
 
+import '../../../helpers/widget_harness.dart';
+
 void main() {
-  Widget buildSubject(Widget child) {
-    return MaterialApp(home: Scaffold(body: child));
-  }
+  Widget buildSubject(Widget child) => testScaffoldApp(child);
 
   testWidgets('renders title and message', (tester) async {
     await tester.pumpWidget(
@@ -19,12 +19,8 @@ void main() {
 
   testWidgets('invokes retry callback', (tester) async {
     var retried = false;
-
     await tester.pumpWidget(buildSubject(ErrorState(message: 'Failed', onRetry: () => retried = true)));
-
-    await tester.tap(find.text('Retry'));
-    await tester.pump();
-
+    await tapAndSettle(tester, find.text('Retry'));
     expect(retried, isTrue);
   });
 }

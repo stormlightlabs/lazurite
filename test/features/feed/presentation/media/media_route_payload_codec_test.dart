@@ -8,22 +8,14 @@ void main() {
     test('round-trips payload through URL-safe route location', () {
       final location = MediaRoutePayloadCodec.location(
         path: '/video',
-        payload: {
-          'playlistUrl': 'https://example.com/video.m3u8',
-          'isGif': true,
-          'aspectRatio': 16 / 9,
-        },
+        payload: {'playlistUrl': 'https://example.com/video.m3u8', 'isGif': true, 'aspectRatio': 16 / 9},
       );
 
       final uri = Uri.parse(location);
       final decoded = MediaRoutePayloadCodec.tryDecode(uri);
 
       expect(uri.path, '/video');
-      expect(decoded, {
-        'playlistUrl': 'https://example.com/video.m3u8',
-        'isGif': true,
-        'aspectRatio': 16 / 9,
-      });
+      expect(decoded, {'playlistUrl': 'https://example.com/video.m3u8', 'isGif': true, 'aspectRatio': 16 / 9});
     });
 
     test('returns null for missing or malformed payloads', () {

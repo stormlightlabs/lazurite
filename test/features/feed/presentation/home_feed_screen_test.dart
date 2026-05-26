@@ -84,7 +84,11 @@ void main() {
     when(() => connectivityCubit.state).thenReturn(connectivityState);
     whenListen(connectivityCubit, const Stream<ConnectivityState>.empty(), initialState: connectivityState);
     when(() => settingsCubit.state).thenReturn(_settingsState(FeedLayout.comfortable));
-    whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: _settingsState(FeedLayout.comfortable));
+    whenListen(
+      settingsCubit,
+      const Stream<SettingsState>.empty(),
+      initialState: _settingsState(FeedLayout.comfortable),
+    );
     when(() => authBloc.state).thenReturn(
       const AuthState.authenticated(AuthTokens(accessToken: 'access', did: 'did:plc:test', handle: 'test.bsky.social')),
     );

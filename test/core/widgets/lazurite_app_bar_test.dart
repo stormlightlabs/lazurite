@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/router/app_shell.dart';
-import 'package:lazurite/core/theme/app_theme.dart';
 import 'package:lazurite/core/widgets/lazurite_app_bar.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
-import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../helpers/settings_fixtures.dart';
+import '../../helpers/test_utils.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
@@ -23,11 +24,9 @@ void main() {
   late MockConnectivityCubit connectivityCubit;
   late MockSettingsCubit settingsCubit;
 
-  const tokens = AuthTokens(
+  final tokens = testAuthTokens(
     accessToken: 'access',
     refreshToken: 'refresh',
-    did: 'did:plc:test',
-    handle: 'test.bsky.social',
     displayName: 'River Tam',
   );
 
@@ -35,30 +34,16 @@ void main() {
     authBloc = MockAuthBloc();
     connectivityCubit = MockConnectivityCubit();
     settingsCubit = MockSettingsCubit();
-    when(() => authBloc.state).thenReturn(const AuthState.authenticated(tokens));
-    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.authenticated(tokens));
+    when(() => authBloc.state).thenReturn(AuthState.authenticated(tokens));
+    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: AuthState.authenticated(tokens));
     when(() => connectivityCubit.state).thenReturn(const ConnectivityState.online());
     whenListen(
       connectivityCubit,
       const Stream<ConnectivityState>.empty(),
       initialState: const ConnectivityState.online(),
     );
-    when(() => settingsCubit.state).thenReturn(
-      const SettingsState(
-        themePalette: AppThemePalette.oxocarbon,
-        themeVariant: AppThemeVariant.dark,
-        useSystemTheme: false,
-      ),
-    );
-    whenListen(
-      settingsCubit,
-      const Stream<SettingsState>.empty(),
-      initialState: const SettingsState(
-        themePalette: AppThemePalette.oxocarbon,
-        themeVariant: AppThemeVariant.dark,
-        useSystemTheme: false,
-      ),
-    );
+    when(() => settingsCubit.state).thenReturn(testSettingsState());
+    whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: testSettingsState());
     when(() => settingsCubit.setSimulateOffline(any())).thenAnswer((_) async {});
   });
 
@@ -92,15 +77,9 @@ void main() {
 
   testWidgets('renders app bar when displayName is absent', (tester) async {
     authBloc = MockAuthBloc();
-    const noDisplayName = AuthTokens(
-      accessToken: 'access',
-      refreshToken: 'refresh',
-      did: 'did:plc:test',
-      handle: 'alice.bsky.social',
-      displayName: null,
-    );
-    when(() => authBloc.state).thenReturn(const AuthState.authenticated(noDisplayName));
-    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: const AuthState.authenticated(noDisplayName));
+    final noDisplayName = testAuthTokens(accessToken: 'access', refreshToken: 'refresh', handle: 'alice.bsky.social');
+    when(() => authBloc.state).thenReturn(AuthState.authenticated(noDisplayName));
+    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: AuthState.authenticated(noDisplayName));
 
     await tester.pumpWidget(buildSubject(sectionLabel: 'Home'));
     await tester.pumpAndSettle();

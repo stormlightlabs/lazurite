@@ -1,20 +1,17 @@
 import 'package:poptart_core/poptart_core.dart';
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/notification/list_notifications.dart' as bsky;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/notifications/domain/notification_local_mappers.dart';
 import 'package:lazurite/features/notifications/domain/notification_local_models.dart';
 
+import '../../../helpers/notification_fixtures.dart';
+
 void main() {
   group('NotificationLocalMapper', () {
     test('maps follow notifications to profile route with go navigation', () {
-      final notification = bsky.Notification(
-        uri: AtUri.parse('at://did:plc:author/app.bsky.feed.post/abc'),
-        cid: 'cid-123',
-        author: const ProfileView(did: 'did:plc:author', handle: 'author.bsky.social'),
-        reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.follow),
+      final notification = testNotification(
+        reason: bsky.KnownNotificationReason.follow,
         record: const {},
-        isRead: false,
         indexedAt: DateTime.utc(2026, 5, 1, 12),
       );
 
@@ -28,14 +25,11 @@ void main() {
 
     test('maps like notifications to post route using reasonSubject', () {
       final reasonSubject = AtUri.parse('at://did:plc:target/app.bsky.feed.post/xyz');
-      final notification = bsky.Notification(
-        uri: AtUri.parse('at://did:plc:author/app.bsky.feed.like/abc'),
-        cid: 'cid-123',
-        author: const ProfileView(did: 'did:plc:author', handle: 'author.bsky.social'),
-        reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.like),
+      final notification = testNotification(
+        uri: 'at://did:plc:author/app.bsky.feed.like/abc',
+        reason: bsky.KnownNotificationReason.like,
         reasonSubject: reasonSubject,
         record: const {},
-        isRead: false,
         indexedAt: DateTime.utc(2026, 5, 1, 12),
       );
 
@@ -49,14 +43,11 @@ void main() {
 
     test('maps like-via-repost notifications to post route using reasonSubject', () {
       final reasonSubject = AtUri.parse('at://did:plc:target/app.bsky.feed.post/reposted-post');
-      final notification = bsky.Notification(
-        uri: AtUri.parse('at://did:plc:author/app.bsky.feed.like/def'),
-        cid: 'cid-123',
-        author: const ProfileView(did: 'did:plc:author', handle: 'author.bsky.social'),
-        reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.likeViaRepost),
+      final notification = testNotification(
+        uri: 'at://did:plc:author/app.bsky.feed.like/def',
+        reason: bsky.KnownNotificationReason.likeViaRepost,
         reasonSubject: reasonSubject,
         record: const {},
-        isRead: false,
         indexedAt: DateTime.utc(2026, 5, 1, 12),
       );
 
@@ -71,14 +62,11 @@ void main() {
 
     test('maps starterpack-joined notifications to starter pack detail route', () {
       final starterPackUri = AtUri.parse('at://did:plc:author/app.bsky.graph.starterpack/sp1');
-      final notification = bsky.Notification(
-        uri: AtUri.parse('at://did:plc:author/app.bsky.graph.starterpackjoin/abc'),
-        cid: 'cid-123',
-        author: const ProfileView(did: 'did:plc:author', handle: 'author.bsky.social'),
-        reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.starterpackJoined),
+      final notification = testNotification(
+        uri: 'at://did:plc:author/app.bsky.graph.starterpackjoin/abc',
+        reason: bsky.KnownNotificationReason.starterpackJoined,
         reasonSubject: starterPackUri,
         record: const {},
-        isRead: false,
         indexedAt: DateTime.utc(2026, 5, 1, 12),
       );
 

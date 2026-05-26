@@ -1,11 +1,10 @@
-import 'package:poptart_core/poptart_core.dart';
 import 'package:bloc_test/bloc_test.dart';
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
-import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/feed/bloc/feed_bloc.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/feed_fixtures.dart';
 
 class MockFeedRepository extends Mock implements FeedRepository {}
 
@@ -17,19 +16,7 @@ void main() {
   });
 
   group('FeedBloc', () {
-    final samplePost = FeedViewPost(
-      post: PostView(
-        uri: const AtUri('at://did:plc:author/app.bsky.feed.post/abc'),
-        cid: 'cid-123',
-        author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social'),
-        record: {
-          r'$type': 'app.bsky.feed.post',
-          'text': 'Hello world',
-          'createdAt': DateTime.utc(2026, 3, 15).toIso8601String(),
-        },
-        indexedAt: DateTime.utc(2026, 3, 15),
-      ),
-    );
+    final samplePost = testFeedViewPost(cid: 'cid-123', record: testPostRecordJson(text: 'Hello world'));
 
     blocTest<FeedBloc, FeedState>(
       'loads a feed for the requested actor and filter',

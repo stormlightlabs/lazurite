@@ -1,8 +1,9 @@
-import 'package:poptart_core/poptart_core.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
+
+import '../../helpers/feed_fixtures.dart';
 
 void main() {
   group('PoptartCacheCodecs', () {
@@ -47,18 +48,8 @@ void main() {
   });
 }
 
-FeedViewPost _feedViewPost() {
-  return FeedViewPost(
-    post: PostView(
-      uri: const AtUri('at://did:plc:author/app.bsky.feed.post/abc'),
-      cid: 'cid-123',
-      author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social'),
-      record: {
-        r'$type': 'app.bsky.feed.post',
-        'text': 'Hello typed cache',
-        'createdAt': DateTime.utc(2026, 5, 12).toIso8601String(),
-      },
-      indexedAt: DateTime.utc(2026, 5, 12),
-    ),
-  );
-}
+FeedViewPost _feedViewPost() => testFeedViewPost(
+  cid: 'cid-123',
+  record: testPostRecordJson(text: 'Hello typed cache', createdAt: DateTime.utc(2026, 5, 12)),
+  indexedAt: DateTime.utc(2026, 5, 12),
+);

@@ -1,11 +1,11 @@
-import 'package:poptart_core/poptart_core.dart';
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/feed/cubit/post_thread_cubit.dart';
 import 'package:lazurite/features/feed/data/post_thread_repository.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/feed_fixtures.dart';
 
 class MockPostThreadRepository extends Mock implements PostThreadRepository {}
 
@@ -19,17 +19,7 @@ void main() {
   const testUri = 'at://did:plc:author/app.bsky.feed.post/abc';
 
   final sampleThread = ThreadViewPost(
-    post: PostView(
-      uri: const AtUri('at://did:plc:author/app.bsky.feed.post/abc'),
-      cid: 'cid-123',
-      author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social'),
-      record: {
-        r'$type': 'app.bsky.feed.post',
-        'text': 'Test post',
-        'createdAt': DateTime.utc(2026, 3, 15).toIso8601String(),
-      },
-      indexedAt: DateTime.utc(2026, 3, 15),
-    ),
+    post: testPostView(cid: 'cid-123'),
   );
 
   group('PostThreadCubit', () {

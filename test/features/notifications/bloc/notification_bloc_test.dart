@@ -1,4 +1,3 @@
-import 'package:poptart_core/poptart_core.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/notification/list_notifications.dart' as bsky;
@@ -6,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/notifications/bloc/notification_bloc.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/notification_fixtures.dart';
 
 class MockNotificationRepository extends Mock implements NotificationRepository {}
 
@@ -17,15 +18,7 @@ void main() {
   });
 
   group('NotificationBloc', () {
-    final sampleNotification = bsky.Notification(
-      uri: AtUri.parse('at://did:plc:author/app.bsky.feed.post/abc'),
-      cid: 'cid-123',
-      author: const ProfileView(did: 'did:plc:author', handle: 'author.bsky.social'),
-      reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.like),
-      record: {r'$type': 'app.bsky.feed.post', 'text': 'Hello world'},
-      isRead: false,
-      indexedAt: DateTime.utc(2026, 3, 15),
-    );
+    final sampleNotification = testNotification();
 
     blocTest<NotificationBloc, NotificationState>(
       'emits loading and loaded when NotificationsRequested succeeds',
@@ -74,12 +67,12 @@ void main() {
       build: () => NotificationBloc(notificationRepository: mockNotificationRepository),
       seed: () => NotificationState.loaded(notifications: [sampleNotification], cursor: 'cursor-1', hasMore: true),
       setUp: () {
-        final secondNotification = bsky.Notification(
-          uri: AtUri.parse('at://did:plc:author2/app.bsky.feed.post/def'),
+        final secondNotification = testNotification(
+          uri: 'at://did:plc:author2/app.bsky.feed.post/def',
           cid: 'cid-456',
           author: const ProfileView(did: 'did:plc:author2', handle: 'author2.bsky.social'),
-          reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.follow),
-          record: {},
+          reason: bsky.KnownNotificationReason.follow,
+          record: const {},
           isRead: true,
           indexedAt: DateTime.utc(2026, 3, 14),
         );
@@ -152,13 +145,12 @@ void main() {
       build: () => NotificationBloc(notificationRepository: mockNotificationRepository),
       seed: () => NotificationState.loaded(notifications: [sampleNotification], cursor: 'old-cursor', hasMore: true),
       setUp: () {
-        final newNotification = bsky.Notification(
-          uri: AtUri.parse('at://did:plc:new/app.bsky.feed.post/new'),
+        final newNotification = testNotification(
+          uri: 'at://did:plc:new/app.bsky.feed.post/new',
           cid: 'cid-new',
           author: const ProfileView(did: 'did:plc:new', handle: 'new.bsky.social'),
-          reason: const bsky.NotificationReason.knownValue(data: bsky.KnownNotificationReason.repost),
-          record: {},
-          isRead: false,
+          reason: bsky.KnownNotificationReason.repost,
+          record: const {},
           indexedAt: DateTime.utc(2026, 3, 16),
         );
         when(

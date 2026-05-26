@@ -7,8 +7,6 @@ import 'package:lazurite/core/cache/local_cache_maintenance_service.dart';
 import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
-import 'package:lazurite/core/theme/app_theme.dart';
-import 'package:lazurite/core/theme/feed_layout.dart';
 import 'package:lazurite/core/theme/typography.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
 import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
@@ -16,9 +14,11 @@ import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
-import 'package:lazurite/shared/utils/test_utils.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+
+import '../../../helpers/settings_fixtures.dart';
+import '../../../helpers/test_utils.dart';
 
 class MockAccountSwitcherCubit extends MockCubit<AccountSwitcherState> implements AccountSwitcherCubit {}
 
@@ -89,24 +89,8 @@ void main() {
       initialState: const AccountSwitcherState.ready(accounts: []),
     );
 
-    when(() => settingsCubit.state).thenReturn(
-      const SettingsState(
-        themePalette: AppThemePalette.oxocarbon,
-        themeVariant: AppThemeVariant.dark,
-        useSystemTheme: false,
-        feedLayout: FeedLayout.comfortable,
-      ),
-    );
-    whenListen(
-      settingsCubit,
-      const Stream<SettingsState>.empty(),
-      initialState: const SettingsState(
-        themePalette: AppThemePalette.oxocarbon,
-        themeVariant: AppThemeVariant.dark,
-        useSystemTheme: false,
-        feedLayout: FeedLayout.comfortable,
-      ),
-    );
+    when(() => settingsCubit.state).thenReturn(testSettingsState());
+    whenListen(settingsCubit, const Stream<SettingsState>.empty(), initialState: testSettingsState());
     when(() => settingsCubit.setAppViewProvider(any())).thenAnswer((_) async {});
     when(() => settingsCubit.setHeadingFontFamily(any())).thenAnswer((_) async {});
     when(() => settingsCubit.setContentFontFamily(any())).thenAnswer((_) async {});
@@ -556,25 +540,11 @@ void main() {
   });
 
   testWidgets('provider change confirmation can be cancelled', (tester) async {
-    when(() => settingsCubit.state).thenReturn(
-      const SettingsState(
-        themePalette: AppThemePalette.oxocarbon,
-        themeVariant: AppThemeVariant.dark,
-        useSystemTheme: false,
-        feedLayout: FeedLayout.comfortable,
-        appViewProvider: AppViewProviders.blueskyKey,
-      ),
-    );
+    when(() => settingsCubit.state).thenReturn(testSettingsState(appViewProvider: AppViewProviders.blueskyKey));
     whenListen(
       settingsCubit,
       const Stream<SettingsState>.empty(),
-      initialState: const SettingsState(
-        themePalette: AppThemePalette.oxocarbon,
-        themeVariant: AppThemeVariant.dark,
-        useSystemTheme: false,
-        feedLayout: FeedLayout.comfortable,
-        appViewProvider: AppViewProviders.blueskyKey,
-      ),
+      initialState: testSettingsState(appViewProvider: AppViewProviders.blueskyKey),
     );
 
     await tester.pumpWidget(buildSubject());
@@ -594,25 +564,11 @@ void main() {
   });
 
   testWidgets('provider change confirmation applies selection when confirmed', (tester) async {
-    when(() => settingsCubit.state).thenReturn(
-      const SettingsState(
-        themePalette: AppThemePalette.oxocarbon,
-        themeVariant: AppThemeVariant.dark,
-        useSystemTheme: false,
-        feedLayout: FeedLayout.comfortable,
-        appViewProvider: AppViewProviders.blueskyKey,
-      ),
-    );
+    when(() => settingsCubit.state).thenReturn(testSettingsState(appViewProvider: AppViewProviders.blueskyKey));
     whenListen(
       settingsCubit,
       const Stream<SettingsState>.empty(),
-      initialState: const SettingsState(
-        themePalette: AppThemePalette.oxocarbon,
-        themeVariant: AppThemeVariant.dark,
-        useSystemTheme: false,
-        feedLayout: FeedLayout.comfortable,
-        appViewProvider: AppViewProviders.blueskyKey,
-      ),
+      initialState: testSettingsState(appViewProvider: AppViewProviders.blueskyKey),
     );
 
     await tester.pumpWidget(buildSubject());
@@ -653,7 +609,6 @@ void main() {
 
     await tester.scrollUntilVisible(find.text('ACCOUNT MAINTENANCE'), 300);
     await tester.pumpAndSettle();
-
     expect(find.text('ACCOUNT MAINTENANCE'), findsOneWidget);
     expect(find.text('Clean Follows'), findsOneWidget);
     expect(find.text('Audit and unfollow problematic accounts in bulk'), findsOneWidget);
@@ -665,7 +620,6 @@ void main() {
 
     await tester.scrollUntilVisible(find.text('Terms of Service'), 300);
     await tester.pumpAndSettle();
-
     expect(find.text('Terms of Service'), findsOneWidget);
     expect(find.text('Privacy Policy'), findsOneWidget);
   });
@@ -673,7 +627,6 @@ void main() {
   testWidgets('hides back button when unauthenticated', (tester) async {
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
-
     expect(find.byTooltip('Back'), findsNothing);
     expect(find.byTooltip('Open menu'), findsNothing);
   });
@@ -686,7 +639,6 @@ void main() {
 
     await tester.pumpWidget(buildSubject());
     await tester.pumpAndSettle();
-
     expect(find.byTooltip('Back'), findsOneWidget);
     expect(find.byTooltip('Open menu'), findsNothing);
   });
@@ -784,7 +736,6 @@ void main() {
 
     await tester.tap(find.text('Terms of Service'));
     await tester.pumpAndSettle();
-
     expect(find.text('terms-screen'), findsOneWidget);
   });
 
@@ -797,20 +748,17 @@ void main() {
 
     await tester.tap(find.text('Privacy Policy'));
     await tester.pumpAndSettle();
-
     expect(find.text('privacy-screen'), findsOneWidget);
   });
 }
 
-AuthTokens _authenticatedTokens() {
-  return const AuthTokens(
-    accessToken: 'access-token',
-    refreshToken: 'refresh-token',
-    did: 'did:plc:test',
-    handle: 'test.bsky.social',
-    displayName: 'Test User',
-  );
-}
+AuthTokens _authenticatedTokens() => const AuthTokens(
+  accessToken: 'access-token',
+  refreshToken: 'refresh-token',
+  did: 'did:plc:test',
+  handle: 'test.bsky.social',
+  displayName: 'Test User',
+);
 
 void _expectRightAlignedSelectedFontLabel(Widget widget, String label) {
   expect(widget, isA<Align>());

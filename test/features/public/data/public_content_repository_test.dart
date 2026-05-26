@@ -8,6 +8,8 @@ import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:poptart_core/poptart_core.dart' as atcore;
 
+import '../../../helpers/feed_fixtures.dart';
+
 class MockFeedRepository extends Mock implements FeedRepository {}
 
 class MockSearchRepository extends Mock implements SearchRepository {}
@@ -77,7 +79,6 @@ void main() {
     );
 
     final discover = await repository.loadDiscover();
-
     expect(discover.posts.single.post.uri.toString(), 'at://did:plc:author/app.bsky.feed.post/blacksky-trending');
     expect(discover.cursor, 'next-blacksky');
     verify(
@@ -99,7 +100,6 @@ void main() {
     );
 
     final result = await repository.loadFeeds();
-
     expect(result.feeds.single.displayName, 'Feed blacksky');
     final captured = verify(() => feedRepository.getFeedGenerators(captureAny())).captured.single as List<atcore.AtUri>;
     expect(captured.map((uri) => uri.toString()), [
@@ -134,35 +134,28 @@ void main() {
     );
 
     final result = await repository.searchFeeds(query: 'news');
-
     expect(result.feeds.single.displayName, 'Feed news');
     expect(result.cursor, 'next');
     verify(() => searchRepository.searchFeedGenerators(query: 'news', cursor: null, limit: 25)).called(1);
   });
 }
 
-GeneratorView _feed(String rkey) {
-  return GeneratorView(
-    uri: atcore.AtUri.parse('at://did:plc:feed/app.bsky.feed.generator/$rkey'),
-    cid: 'cid-$rkey',
-    did: 'did:web:feeds.example',
-    creator: const ProfileView(did: 'did:plc:feed', handle: 'feeds.example'),
-    displayName: 'Feed $rkey',
-    indexedAt: DateTime.utc(2026, 5, 18),
-  );
-}
+GeneratorView _feed(String rkey) => GeneratorView(
+  uri: atcore.AtUri.parse('at://did:plc:feed/app.bsky.feed.generator/$rkey'),
+  cid: 'cid-$rkey',
+  did: 'did:web:feeds.example',
+  creator: const ProfileView(did: 'did:plc:feed', handle: 'feeds.example'),
+  displayName: 'Feed $rkey',
+  indexedAt: DateTime.utc(2026, 5, 18),
+);
 
-FeedViewPost _post(String rkey) {
-  return FeedViewPost(
-    post: PostView(
-      uri: atcore.AtUri.parse('at://did:plc:author/app.bsky.feed.post/$rkey'),
-      cid: 'cid-$rkey',
-      author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social', displayName: 'Author'),
-      record: {r'$type': 'app.bsky.feed.post', 'text': 'Post $rkey', 'createdAt': '2026-05-20T12:00:00.000Z'},
-      indexedAt: DateTime.utc(2026, 5, 20),
-      replyCount: 0,
-      repostCount: 0,
-      likeCount: 0,
-    ),
-  );
-}
+FeedViewPost _post(String rkey) => testFeedViewPost(
+  uri: 'at://did:plc:author/app.bsky.feed.post/$rkey',
+  cid: 'cid-$rkey',
+  author: testProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social', displayName: 'Author'),
+  record: testPostRecordJson(text: 'Post $rkey', createdAt: DateTime.utc(2026, 5, 20, 12)),
+  indexedAt: DateTime.utc(2026, 5, 20),
+  replyCount: 0,
+  repostCount: 0,
+  likeCount: 0,
+);

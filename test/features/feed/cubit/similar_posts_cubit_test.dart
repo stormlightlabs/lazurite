@@ -1,4 +1,3 @@
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +6,8 @@ import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/features/feed/cubit/similar_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/similar_posts_repository.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/feed_fixtures.dart';
 
 class MockBluesky extends Mock implements Bluesky {}
 
@@ -82,14 +83,10 @@ ManyToManyItem _item(String otherSubject) => ManyToManyItem(
   otherSubject: otherSubject,
 );
 
-PostView _post(String uri) => PostView(
-  uri: AtUri(uri),
+PostView _post(String uri) => testPostView(
+  uri: uri,
   cid: 'cid-$uri',
-  author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.example'),
-  record: {
-    r'$type': 'app.bsky.feed.post',
-    'text': 'similar post',
-    'createdAt': DateTime.utc(2026, 5, 23).toIso8601String(),
-  },
+  author: testProfileViewBasic(handle: 'author.example'),
+  record: testPostRecordJson(text: 'similar post', createdAt: DateTime.utc(2026, 5, 23)),
   indexedAt: DateTime.utc(2026, 5, 23),
 );

@@ -96,7 +96,6 @@ void main() {
       expect(tokens.isExpired, isFalse);
     });
 
-
     test('should support value equality', () {
       const tokens1 = AuthTokens(accessToken: 'token', did: 'did:plc:abc123', handle: 'user.bsky.social');
       const tokens2 = AuthTokens(accessToken: 'token', did: 'did:plc:abc123', handle: 'user.bsky.social');

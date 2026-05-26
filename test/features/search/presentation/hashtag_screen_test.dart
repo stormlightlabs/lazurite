@@ -1,5 +1,3 @@
-import 'package:poptart_core/poptart_core.dart';
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,17 +9,16 @@ import 'package:lazurite/features/search/data/search_repository.dart';
 import 'package:lazurite/features/search/presentation/hashtag_screen.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../helpers/feed_fixtures.dart';
+
 class MockSearchRepository extends Mock implements SearchRepository {}
 
-PostView _post({required String uri, required String text}) {
-  return PostView(
-    uri: AtUri.parse(uri),
-    cid: 'cid-${uri.hashCode}',
-    author: const ProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social', displayName: 'Author'),
-    record: {r'$type': 'app.bsky.feed.post', 'text': text, 'createdAt': DateTime.utc(2026, 1, 1).toIso8601String()},
-    indexedAt: DateTime.utc(2026, 1, 1),
-  );
-}
+PostView _post({required String uri, required String text}) => testPostView(
+  uri: uri,
+  author: testProfileViewBasic(did: 'did:plc:author', handle: 'author.bsky.social', displayName: 'Author'),
+  record: testPostRecordJson(text: text, createdAt: DateTime.utc(2026, 1, 1)),
+  indexedAt: DateTime.utc(2026, 1, 1),
+);
 
 void main() {
   late MockSearchRepository searchRepository;
@@ -205,13 +202,11 @@ void main() {
 
     await tester.tap(find.text('Jump to hashtag'));
     await tester.pumpAndSettle();
-
     expect(find.text('Jump to hashtag'), findsAtLeastNWidgets(1));
     expect(find.text('#openweb'), findsOneWidget);
 
     await tester.tap(find.text('#openweb'));
     await tester.pumpAndSettle();
-
     expect(find.text('#openweb'), findsOneWidget);
     expect(router.canPop(), isFalse);
   });
