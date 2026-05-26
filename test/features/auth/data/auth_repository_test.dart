@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,6 +38,9 @@ void main() {
     mockDatabase = MockAppDatabase();
     mockSlingshotClient = MockSlingshotClient();
     when(() => mockDatabase.getAccount(any())).thenAnswer((_) async => null);
+    when(() => mockDatabase.getSetting(any())).thenAnswer((_) async => null);
+    when(() => mockDatabase.setSetting(any(), any())).thenAnswer((_) async => 1);
+    when(() => mockDatabase.deleteSetting(any())).thenAnswer((_) async => 1);
     when(
       () => mockDatabase.acquireAuthRefreshLock(
         any(),
@@ -1327,6 +1331,73 @@ void main() {
         );
 
         expect(service, equals('auth.example.com'));
+      });
+
+      test('restores persisted pending OAuth state before redeeming a cold-start callback', () async {
+        final callbackServices = <String>[];
+        final pendingState = jsonEncode({
+          'handle': 'alice.bsky.social',
+          'service': 'bsky.social',
+          'redirectUri': 'org.stormlightlabs.lazurite:/oauth/callback',
+          'createdAt': DateTime.now().toUtc().toIso8601String(),
+          'clientId': AuthRepository.kClientId,
+          'context': {'codeVerifier': 'verifier', 'state': 'state', 'dpopNonce': 'nonce'},
+        });
+        when(() => mockDatabase.getSetting('auth_pending_oauth_state')).thenAnswer((_) async => pendingState);
+        when(() => mockDatabase.insertAccount(any())).thenAnswer((_) async => 1);
+
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          loadClientMetadata: (_) async => _testClientMetadata(),
+          oauthCallbackSession: (client, callbackUrl, context) async {
+            callbackServices.add(client.service);
+            expect(context.codeVerifier, equals('verifier'));
+            expect(context.state, equals('state'));
+            expect(context.dpopNonce, equals('nonce'));
+            expect(Uri.parse(callbackUrl).queryParameters['code'], equals('abc'));
+            return OAuthSession(
+              accessToken: 'access',
+              refreshToken: 'refresh',
+              tokenType: 'DPoP',
+              scope: 'atproto',
+              expiresAt: DateTime.now().add(const Duration(hours: 1)),
+              sub: 'did:plc:alice',
+              $dPoPNonce: 'next-nonce',
+              $publicKey: 'public-key',
+              $privateKey: 'private-key',
+            );
+          },
+          oauthTokenBuilder:
+              (
+                session, {
+                required fallbackHandle,
+                required fallbackPdsHost,
+                required oauthService,
+                oauthClientId,
+              }) async => testAuthTokens(
+                accessToken: session.accessToken,
+                refreshToken: session.refreshToken,
+                expiresAt: session.expiresAt,
+                did: session.sub,
+                handle: fallbackHandle,
+                service: fallbackPdsHost,
+                oauthService: oauthService,
+                oauthClientId: oauthClientId,
+                dpopNonce: session.$dPoPNonce,
+                dpopPublicKey: session.$publicKey,
+                dpopPrivateKey: session.$privateKey,
+                authMethod: AuthMethod.oauth,
+              ),
+        );
+
+        final handled = await authRepository.completeOAuthCallbackFromUri(
+          Uri.parse('org.stormlightlabs.lazurite:/oauth/callback?code=abc&state=state'),
+        );
+
+        expect(handled, isTrue);
+        expect(callbackServices, equals(['bsky.social']));
+        verify(() => mockDatabase.insertAccount(any())).called(1);
+        verify(() => mockDatabase.deleteSetting('auth_pending_oauth_state')).called(1);
       });
 
       test('redeems callback with issuer host when it differs from launched auth service', () async {

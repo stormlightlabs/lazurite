@@ -38,12 +38,20 @@ void main() {
     DateTime? expiresAt,
     String? dpopPrivateKey,
     String? dpopPublicKey,
+    String? oauthService,
+    String? oauthClientId,
+    String? oauthTokenType,
+    String? oauthScope,
   }) {
     return Account(
       did: did,
       handle: handle,
       displayName: null,
       service: null,
+      oauthService: oauthService,
+      oauthClientId: oauthClientId,
+      oauthTokenType: oauthTokenType,
+      oauthScope: oauthScope,
       accessToken: accessToken,
       refreshToken: refreshToken,
       dpopPublicKey: dpopPublicKey,
@@ -156,6 +164,32 @@ void main() {
         expect(tokens, isNotNull);
         expect(tokens!.did, 'did:plc:user1');
         verifyNever(() => mockAuthRepository.refreshSession(any()));
+      });
+
+      test('preserves complete OAuth metadata when switching accounts', () async {
+        final account = makeAccount(
+          did: 'did:plc:user1',
+          oauthService: 'bsky.social',
+          oauthClientId: 'client-id',
+          oauthTokenType: 'DPoP',
+          oauthScope: 'atproto transition:generic',
+          dpopPublicKey: 'public-key',
+          dpopPrivateKey: 'private-key',
+        );
+        when(() => mockDatabase.setSetting(any(), any())).thenAnswer((_) async => 1);
+        when(() => mockDatabase.getAccount('did:plc:user1')).thenAnswer((_) async => account);
+
+        final cubit = buildCubit();
+        cubit.emit(AccountSwitcherState.ready(accounts: [account], activeDid: 'did:plc:user1'));
+
+        final tokens = await cubit.switchAccount('did:plc:user1');
+
+        expect(tokens, isNotNull);
+        expect(tokens!.authMethod, AuthMethod.oauth);
+        expect(tokens.oauthService, 'bsky.social');
+        expect(tokens.oauthClientId, 'client-id');
+        expect(tokens.oauthTokenType, 'DPoP');
+        expect(tokens.oauthScope, 'atproto transition:generic');
       });
 
       test('calls refreshSession when account is expired with refresh token', () async {
@@ -289,13 +323,16 @@ void main() {
         },
       );
 
-      test('persists OAuth private keys when adding an account', () async {
+      test('persists complete OAuth metadata when adding an account', () async {
         final captured = <AccountsCompanion>[];
         const tokens = AuthTokens(
           accessToken: 'token',
           did: 'did:plc:newuser',
           handle: 'new.bsky.social',
           oauthService: 'bsky.social',
+          oauthClientId: 'client-id',
+          oauthTokenType: 'DPoP',
+          oauthScope: 'atproto transition:generic',
           dpopPublicKey: 'public-key',
           dpopPrivateKey: 'private-key',
           authMethod: AuthMethod.oauth,
@@ -320,6 +357,9 @@ void main() {
         expect(captured.single.dpopPublicKey.value, 'public-key');
         expect(captured.single.dpopPrivateKey.value, 'private-key');
         expect(captured.single.oauthService.value, 'bsky.social');
+        expect(captured.single.oauthClientId.value, 'client-id');
+        expect(captured.single.oauthTokenType.value, 'DPoP');
+        expect(captured.single.oauthScope.value, 'atproto transition:generic');
       });
 
       blocTest<AccountSwitcherCubit, AccountSwitcherState>(

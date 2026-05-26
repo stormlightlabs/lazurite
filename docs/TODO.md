@@ -23,6 +23,26 @@ updated: 2026-05-23
 
 ## UX
 
+### Authentication
+
+- Coalesce app-level auth recovery and restore paths so repeated refresh failures do not
+  cause noisy auth state transitions.
+- Make the OAuth callback screen distinguish success from failure instead of always
+  returning through the login screen.
+- Replace raw auth exception snackbars with better user-facing messages for invalid
+  identifiers, denied authorization, network/provider failures, and timeouts; keep
+  detailed errors in logs.
+
+---
+
+- Add a lightweight OAuth cancel/retry state while waiting for browser authorization.
+  - Show "Cancel sign in" during the pending OAuth flow.
+  - After timeout, cancellation, or callback failure, show a concise retry message.
+- Do not block sign-in if persisting the selected AppView provider fails; continue with
+  the current/default provider and show a non-blocking warning.
+- Represent expired sessions that could not refresh at startup as a degraded/retrying
+  auth state instead of normal authenticated state.
+
 ### Notifications
 
 - Foreground push messages are processed through the standalone background notification

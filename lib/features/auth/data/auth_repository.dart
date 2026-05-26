@@ -69,6 +69,67 @@ final class _OAuthRefreshAttemptFailure {
   final String? oauthErrorCode;
 }
 
+final class _PendingOAuthState {
+  const _PendingOAuthState({
+    required this.handle,
+    required this.service,
+    required this.redirectUri,
+    required this.context,
+    required this.createdAt,
+    required this.clientId,
+  });
+
+  final String handle;
+  final String service;
+  final String redirectUri;
+  final OAuthContext context;
+  final DateTime createdAt;
+  final String clientId;
+
+  Map<String, dynamic> toJson() => {
+    'handle': handle,
+    'service': service,
+    'redirectUri': redirectUri,
+    'createdAt': createdAt.toUtc().toIso8601String(),
+    'clientId': clientId,
+    'context': {'codeVerifier': context.codeVerifier, 'state': context.state, 'dpopNonce': context.dpopNonce},
+  };
+
+  static _PendingOAuthState? fromJson(Map<String, dynamic> json) {
+    final contextJson = json['context'];
+    final handle = json['handle'];
+    final service = json['service'];
+    final redirectUri = json['redirectUri'];
+    final createdAtRaw = json['createdAt'];
+    final clientId = json['clientId'];
+    if (contextJson is! Map ||
+        handle is! String ||
+        service is! String ||
+        redirectUri is! String ||
+        createdAtRaw is! String ||
+        clientId is! String) {
+      return null;
+    }
+
+    final codeVerifier = contextJson['codeVerifier'];
+    final state = contextJson['state'];
+    final dpopNonce = contextJson['dpopNonce'];
+    final createdAt = DateTime.tryParse(createdAtRaw);
+    if (codeVerifier is! String || state is! String || dpopNonce is! String || createdAt == null) {
+      return null;
+    }
+
+    return _PendingOAuthState(
+      handle: handle,
+      service: service,
+      redirectUri: redirectUri,
+      context: OAuthContext(codeVerifier: codeVerifier, state: state, dpopNonce: dpopNonce),
+      createdAt: createdAt.toUtc(),
+      clientId: clientId,
+    );
+  }
+}
+
 class AuthRepository {
   AuthRepository({
     required AppDatabase database,
@@ -123,6 +184,8 @@ class AuthRepository {
   static const Duration _refreshLockLease = Duration(seconds: 30);
   static const Duration _refreshLockPollInterval = Duration(milliseconds: 100);
   static const Duration _refreshLockWait = Duration(seconds: 5);
+  static const Duration _pendingOAuthStateTtl = Duration(minutes: 10);
+  static const String _pendingOAuthStateSettingKey = 'auth_pending_oauth_state';
   static final Uri _mobileOAuthRedirectUri = Uri.parse('$_mobileOAuthRedirectScheme:$_mobileOAuthRedirectPath');
   static final Uri _httpsOAuthRedirectUri = Uri.https(_httpsOAuthRedirectHost, _httpsOAuthRedirectPath);
 
@@ -312,9 +375,20 @@ class AuthRepository {
           _pendingOAuthClient = oauthClient;
           _pendingOAuthContext = context;
           callbackCompleter = _oauthCompleter!;
+          await _persistPendingOAuthState(
+            _PendingOAuthState(
+              handle: _pendingHandle!,
+              service: oauthService,
+              redirectUri: redirectUri.toString(),
+              context: context,
+              createdAt: DateTime.now().toUtc(),
+              clientId: oauthClient.metadata.clientId,
+            ),
+          );
           log.i('AuthRepository: OAuth PAR completed, launching browser to ${_sanitizeUriForLog(authorizationUrl)}');
           await _launchUrl(authorizationUrl);
         } catch (error, stackTrace) {
+          await _clearPersistedPendingOAuthState();
           _resetPendingOAuthAttemptState(clearHandle: false);
           lastAttemptError = error;
           lastAttemptStackTrace = stackTrace;
@@ -345,6 +419,7 @@ class AuthRepository {
       rethrow;
     } catch (error, stackTrace) {
       log.e('AuthRepository: OAuth login failed', error: error, stackTrace: stackTrace);
+      await _clearPersistedPendingOAuthState();
       _resetPendingOAuthState();
       throw Exception('Failed to login with OAuth: $error');
     } finally {
@@ -672,11 +747,12 @@ class AuthRepository {
   /// Entry point for app links/routes that deliver OAuth callbacks. Duplicate
   /// deliveries are joined so a single-use authorization code is redeemed once.
   Future<bool> completeOAuthCallbackFromUri(Uri callbackUri) async {
-    final pendingOAuthFlow =
-        _pendingOAuthClient != null &&
-        _pendingOAuthContext != null &&
-        _pendingHandle != null &&
-        _pendingService != null;
+    var pendingOAuthFlow = _hasPendingOAuthFlow;
+    if (!pendingOAuthFlow) {
+      await _restorePendingOAuthStateFromStorage();
+      pendingOAuthFlow = _hasPendingOAuthFlow;
+    }
+
     if (!pendingOAuthFlow) {
       log.w(
         'AuthRepository: Ignoring OAuth callback without active flow '
@@ -707,10 +783,72 @@ class AuthRepository {
       return false;
     } finally {
       if (!joiningInFlightExchange) {
+        await _clearPersistedPendingOAuthState();
         _resetPendingOAuthState(clearLaunchMode: false);
       }
     }
   }
+
+  bool get _hasPendingOAuthFlow =>
+      _pendingOAuthClient != null && _pendingOAuthContext != null && _pendingHandle != null && _pendingService != null;
+
+  Future<void> _persistPendingOAuthState(_PendingOAuthState state) async {
+    await _database.setSetting(_pendingOAuthStateSettingKey, jsonEncode(state.toJson()));
+  }
+
+  Future<void> _clearPersistedPendingOAuthState() async {
+    await _database.deleteSetting(_pendingOAuthStateSettingKey);
+  }
+
+  Future<void> _restorePendingOAuthStateFromStorage() async {
+    final raw = await _database.getSetting(_pendingOAuthStateSettingKey);
+    if (raw == null) {
+      return;
+    }
+
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) {
+        await _clearPersistedPendingOAuthState();
+        return;
+      }
+
+      final state = _PendingOAuthState.fromJson(decoded);
+      if (state == null) {
+        await _clearPersistedPendingOAuthState();
+        return;
+      }
+
+      final age = DateTime.now().toUtc().difference(state.createdAt);
+      if (age.isNegative || age > _pendingOAuthStateTtl) {
+        log.w('AuthRepository: Ignoring stale persisted OAuth state for ${state.handle}');
+        await _clearPersistedPendingOAuthState();
+        return;
+      }
+
+      final metadata = _pendingOAuthClientMetadata(state);
+      _pendingHandle = state.handle;
+      _pendingService = state.service;
+      _pendingOAuthContext = state.context;
+      _pendingOAuthClient = OAuthClient(metadata, service: state.service);
+      log.i('AuthRepository: Restored pending OAuth state for ${state.handle}');
+    } catch (error, stackTrace) {
+      log.w('AuthRepository: Failed to restore pending OAuth state', error: error, stackTrace: stackTrace);
+      await _clearPersistedPendingOAuthState();
+    }
+  }
+
+  OAuthClientMetadata _pendingOAuthClientMetadata(_PendingOAuthState state) => OAuthClientMetadata(
+    clientId: _resolveOauthClientId(state.clientId),
+    applicationType: 'native',
+    clientName: 'Lazurite',
+    clientUri: 'https://lazurite.stormlightlabs.org',
+    redirectUris: [state.redirectUri],
+    responseTypes: const ['code'],
+    grantTypes: const ['authorization_code', 'refresh_token'],
+    scope: 'atproto transition:generic transition:chat.bsky',
+    tokenEndpointAuthMethod: 'none',
+  );
 
   /// Joins concurrent callback deliveries to the first exchange future. This is
   /// intentionally not a retry: OAuth authorization codes are single-use.

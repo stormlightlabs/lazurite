@@ -45,6 +45,7 @@ class _OAuthCallbackScreenState extends State<OAuthCallbackScreen> {
       return;
     }
 
+    context.read<AuthBloc>().add(const CheckSessionRequested());
     _submitted = true;
     context.go('/login');
   }
