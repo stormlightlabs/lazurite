@@ -9,6 +9,7 @@ import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_provider.dart';
 import 'package:lazurite/core/network/atproto_host_resolver.dart';
+import 'package:lazurite/core/network/oauth_session_restorer.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart' as atp;
 import 'package:lazurite/core/network/slingshot_client.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
@@ -204,6 +205,8 @@ class AuthRepository {
         service: tokens.service != null ? Value(tokens.service) : const Value.absent(),
         oauthService: tokens.oauthService != null ? Value(tokens.oauthService) : const Value.absent(),
         oauthClientId: tokens.oauthClientId != null ? Value(tokens.oauthClientId) : const Value.absent(),
+        oauthTokenType: tokens.oauthTokenType != null ? Value(tokens.oauthTokenType) : const Value.absent(),
+        oauthScope: tokens.oauthScope != null ? Value(tokens.oauthScope) : const Value.absent(),
         accessToken: Value(tokens.accessToken),
         refreshToken: tokens.refreshToken != null ? Value(tokens.refreshToken) : const Value.absent(),
         dpopPublicKey: tokens.dpopPublicKey != null ? Value(tokens.dpopPublicKey) : const Value.absent(),
@@ -487,14 +490,8 @@ class AuthRepository {
       try {
         final metadataClientId = _resolveOauthClientId(session.oauthClientId);
         final metadata = await _loadClientMetadata(metadataClientId);
-        final restoredSession = atcore.restoreOAuthSession(
-          accessToken: session.accessToken,
-          refreshToken: session.refreshToken!,
-          dPoPNonce: session.dpopNonce,
-          publicKey: publicKey,
-          privateKey: privateKey,
-        );
-        final issuerHost = normalizeAtprotoServiceHost(restoredSession.accessTokenJwt.iss);
+        final restoredSession = restoreOAuthSessionFromTokens(session);
+        final issuerHost = _oauthAccessTokenIssuerHost(restoredSession);
         final storedAuthHost = normalizeAtprotoServiceHost(session.oauthService);
         final oauthServices = oauthRefreshServiceCandidates(
           storedAuthService: session.oauthService,
@@ -513,13 +510,7 @@ class AuthRepository {
             refreshedSession = await _oauthRefreshSession(
               metadata: metadata,
               service: oauthService,
-              session: atcore.restoreOAuthSession(
-                accessToken: session.accessToken,
-                refreshToken: session.refreshToken!,
-                dPoPNonce: session.dpopNonce,
-                publicKey: publicKey,
-                privateKey: privateKey,
-              ),
+              session: restoreOAuthSessionFromTokens(session),
             );
             successfulOauthService = oauthService;
             break;
@@ -760,9 +751,7 @@ class AuthRepository {
     );
     final pdsHost = normalizeAtprotoServiceHost(session.atprotoPdsEndpoint) ?? fallbackPdsHost;
     final normalizedOauthService =
-        normalizeAtprotoServiceHost(session.accessTokenJwt.iss) ??
-        normalizeAtprotoServiceHost(oauthService) ??
-        _oauthService;
+        _oauthAccessTokenIssuerHost(session) ?? normalizeAtprotoServiceHost(oauthService) ?? _oauthService;
     final candidateOauthClientId = oauthClientId?.trim();
     final normalizedOauthClientId = candidateOauthClientId != null && candidateOauthClientId.isNotEmpty
         ? candidateOauthClientId
@@ -796,6 +785,8 @@ class AuthRepository {
       service: pdsHost,
       oauthService: normalizedOauthService,
       oauthClientId: normalizedOauthClientId,
+      oauthTokenType: session.tokenType,
+      oauthScope: session.scope,
       dpopNonce: session.$dPoPNonce,
       dpopPublicKey: session.$publicKey,
       dpopPrivateKey: session.$privateKey,
@@ -1189,6 +1180,8 @@ class AuthRepository {
       service: mergedSession.service,
       oauthService: mergedSession.oauthService,
       oauthClientId: mergedSession.oauthClientId,
+      oauthTokenType: mergedSession.oauthTokenType,
+      oauthScope: mergedSession.oauthScope,
       dpopNonce: mergedSession.dpopNonce,
       dpopPublicKey: mergedSession.dpopPublicKey,
       dpopPrivateKey: mergedSession.dpopPrivateKey,
@@ -1224,6 +1217,8 @@ class AuthRepository {
       service: refreshedSession.service ?? previousSession.service,
       oauthService: refreshedSession.oauthService ?? previousSession.oauthService,
       oauthClientId: refreshedSession.oauthClientId ?? previousSession.oauthClientId,
+      oauthTokenType: refreshedSession.oauthTokenType ?? previousSession.oauthTokenType,
+      oauthScope: refreshedSession.oauthScope ?? previousSession.oauthScope,
       dpopNonce: refreshedSession.dpopNonce ?? previousSession.dpopNonce,
       dpopPublicKey: refreshedSession.dpopPublicKey ?? previousSession.dpopPublicKey,
       dpopPrivateKey: refreshedSession.dpopPrivateKey ?? previousSession.dpopPrivateKey,
@@ -1274,6 +1269,8 @@ class AuthRepository {
       service: account.service,
       oauthService: authMethod == AuthMethod.oauth ? normalizeAtprotoServiceHost(account.oauthService) : null,
       oauthClientId: authMethod == AuthMethod.oauth ? account.oauthClientId : null,
+      oauthTokenType: authMethod == AuthMethod.oauth ? account.oauthTokenType : null,
+      oauthScope: authMethod == AuthMethod.oauth ? account.oauthScope : null,
       dpopNonce: account.dpopNonce,
       dpopPublicKey: account.dpopPublicKey,
       dpopPrivateKey: account.dpopPrivateKey,
@@ -1311,6 +1308,19 @@ class AuthRepository {
     }
 
     return null;
+  }
+
+  String? _oauthAccessTokenIssuerHost(OAuthSession session) {
+    try {
+      return normalizeAtprotoServiceHost(session.accessTokenJwt.iss);
+    } catch (error, stackTrace) {
+      log.d(
+        'AuthRepository: OAuth access token issuer is unavailable from token claims; using stored auth service candidates',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
   }
 
   /// Treat invalid_grant as terminal only when every candidate rejects the token

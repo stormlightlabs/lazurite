@@ -221,6 +221,8 @@ void main() {
           service: const Value('porcini.us-east.host.bsky.network'),
           oauthService: const Value('bsky.social'),
           oauthClientId: const Value('https://lazurite.stormlightlabs.org/client-metadata.json'),
+          oauthTokenType: const Value('DPoP'),
+          oauthScope: const Value('atproto transition:generic'),
           dpopNonce: const Value('old-nonce'),
           dpopPublicKey: const Value('public-key'),
           dpopPrivateKey: const Value('private-key'),
@@ -246,6 +248,8 @@ void main() {
         expect(retrieved.service, equals('porcini.us-east.host.bsky.network'));
         expect(retrieved.oauthService, equals('bsky.social'));
         expect(retrieved.oauthClientId, equals('https://lazurite.stormlightlabs.org/client-metadata.json'));
+        expect(retrieved.oauthTokenType, equals('DPoP'));
+        expect(retrieved.oauthScope, equals('atproto transition:generic'));
         expect(retrieved.dpopNonce, equals('old-nonce'));
         expect(retrieved.dpopPublicKey, equals('public-key'));
         expect(retrieved.dpopPrivateKey, equals('private-key'));
@@ -267,6 +271,23 @@ void main() {
         expect(retrieved, isNotNull);
         expect(retrieved!.service, equals('porcini.us-east.host.bsky.network'));
         expect(retrieved.oauthService, equals('bsky.social'));
+      });
+
+      test('should persist oauth token restore metadata for opaque-token accounts', () async {
+        final account = AccountsCompanion.insert(
+          did: 'did:plc:opaquemetadata123',
+          handle: 'opaque-user.bsky.social',
+          accessToken: 'opaque-access-token',
+          oauthTokenType: const Value('DPoP'),
+          oauthScope: const Value('atproto transition:generic'),
+        );
+
+        await database.insertAccount(account);
+        final retrieved = await database.getAccount('did:plc:opaquemetadata123');
+
+        expect(retrieved, isNotNull);
+        expect(retrieved!.oauthTokenType, equals('DPoP'));
+        expect(retrieved.oauthScope, equals('atproto transition:generic'));
       });
 
       test('should persist oauth client id for oauth-backed accounts', () async {

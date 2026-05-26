@@ -56,6 +56,8 @@ void main() {
         service: any(named: 'service'),
         oauthService: any(named: 'oauthService'),
         oauthClientId: any(named: 'oauthClientId'),
+        oauthTokenType: any(named: 'oauthTokenType'),
+        oauthScope: any(named: 'oauthScope'),
         dpopNonce: any(named: 'dpopNonce'),
         dpopPublicKey: any(named: 'dpopPublicKey'),
         dpopPrivateKey: any(named: 'dpopPrivateKey'),
@@ -113,6 +115,8 @@ void main() {
           service: 'porcini.us-east.host.bsky.network',
           oauthService: 'bsky.social',
           oauthClientId: 'https://lazurite.stormlightlabs.org/client-metadata.json',
+          oauthTokenType: 'DPoP',
+          oauthScope: 'atproto transition:generic',
           accessToken: 'access_token',
           refreshToken: 'refresh_token',
           dpopPublicKey: 'public-key',
@@ -132,6 +136,8 @@ void main() {
         expect(result!.usesOAuth, isTrue);
         expect(result.oauthService, equals('bsky.social'));
         expect(result.oauthClientId, equals('https://lazurite.stormlightlabs.org/client-metadata.json'));
+        expect(result.oauthTokenType, equals('DPoP'));
+        expect(result.oauthScope, equals('atproto transition:generic'));
       });
     });
 
@@ -152,6 +158,32 @@ void main() {
         await authRepository.saveSession(tokens);
 
         verify(() => mockDatabase.insertAccount(any())).called(1);
+      });
+
+      test('persists OAuth restore metadata when saving an OAuth session', () async {
+        final tokens = AuthTokens(
+          accessToken: 'opaque-access-token',
+          refreshToken: 'refresh-token',
+          expiresAt: DateTime.utc(2030),
+          did: 'did:plc:oauth123',
+          handle: 'oauth-user.bsky.social',
+          service: 'porcini.us-east.host.bsky.network',
+          oauthService: 'bsky.social',
+          oauthClientId: 'https://lazurite.stormlightlabs.org/client-metadata.json',
+          oauthTokenType: 'DPoP',
+          oauthScope: 'atproto transition:generic',
+          dpopNonce: 'nonce',
+          dpopPublicKey: 'public-key',
+          dpopPrivateKey: 'private-key',
+          authMethod: AuthMethod.oauth,
+        );
+        when(() => mockDatabase.insertAccount(any())).thenAnswer((_) async => 1);
+
+        await authRepository.saveSession(tokens);
+
+        final captured = verify(() => mockDatabase.insertAccount(captureAny())).captured.single as AccountsCompanion;
+        expect(captured.oauthTokenType.value, equals('DPoP'));
+        expect(captured.oauthScope.value, equals('atproto transition:generic'));
       });
 
       test('should mark the saved session active when requested', () async {
@@ -345,6 +377,8 @@ void main() {
             service: any(named: 'service'),
             oauthService: any(named: 'oauthService'),
             oauthClientId: any(named: 'oauthClientId'),
+            oauthTokenType: any(named: 'oauthTokenType'),
+            oauthScope: any(named: 'oauthScope'),
             dpopNonce: any(named: 'dpopNonce'),
             dpopPublicKey: any(named: 'dpopPublicKey'),
             dpopPrivateKey: any(named: 'dpopPrivateKey'),
@@ -408,6 +442,8 @@ void main() {
             service: any(named: 'service'),
             oauthService: any(named: 'oauthService'),
             oauthClientId: any(named: 'oauthClientId'),
+            oauthTokenType: any(named: 'oauthTokenType'),
+            oauthScope: any(named: 'oauthScope'),
             dpopNonce: any(named: 'dpopNonce'),
             dpopPublicKey: any(named: 'dpopPublicKey'),
             dpopPrivateKey: any(named: 'dpopPrivateKey'),
@@ -468,6 +504,8 @@ void main() {
             service: any(named: 'service'),
             oauthService: any(named: 'oauthService'),
             oauthClientId: any(named: 'oauthClientId'),
+            oauthTokenType: any(named: 'oauthTokenType'),
+            oauthScope: any(named: 'oauthScope'),
             dpopNonce: any(named: 'dpopNonce'),
             dpopPublicKey: any(named: 'dpopPublicKey'),
             dpopPrivateKey: any(named: 'dpopPrivateKey'),
@@ -532,6 +570,8 @@ void main() {
             service: any(named: 'service'),
             oauthService: any(named: 'oauthService'),
             oauthClientId: any(named: 'oauthClientId'),
+            oauthTokenType: any(named: 'oauthTokenType'),
+            oauthScope: any(named: 'oauthScope'),
             dpopNonce: any(named: 'dpopNonce'),
             dpopPublicKey: any(named: 'dpopPublicKey'),
             dpopPrivateKey: any(named: 'dpopPrivateKey'),
@@ -648,6 +688,82 @@ void main() {
         expect(candidates, equals(['oauth.custom.example', 'bsky.social']));
       });
 
+      test('restores opaque OAuth token refresh session from persisted metadata', () async {
+        late OAuthSession restoredSession;
+        final refreshedAccessToken = buildJwt(
+          sub: 'did:plc:abc123',
+          expEpochSeconds: DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000 + 3600,
+          aud: 'did:web:porcini.us-east.host.bsky.network',
+          iss: 'https://bsky.social',
+        );
+        authRepository = AuthRepository(
+          database: mockDatabase,
+          loadClientMetadata: (_) async => _testClientMetadata(),
+          oauthRefreshSession:
+              ({required OAuthClientMetadata metadata, required String service, required OAuthSession session}) async {
+                restoredSession = session;
+                return OAuthSession(
+                  accessToken: refreshedAccessToken,
+                  refreshToken: session.refreshToken,
+                  tokenType: 'DPoP',
+                  scope: session.scope,
+                  expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+                  sub: session.sub,
+                  $dPoPNonce: 'new-nonce',
+                  $publicKey: session.$publicKey,
+                  $privateKey: session.$privateKey,
+                );
+              },
+        );
+        final currentSession = AuthTokens(
+          accessToken: 'opaque-access-token',
+          refreshToken: 'refresh-token',
+          expiresAt: DateTime.utc(2029),
+          did: 'did:plc:abc123',
+          handle: 'user.bsky.social',
+          service: 'porcini.us-east.host.bsky.network',
+          oauthService: 'bsky.social',
+          oauthClientId: AuthRepository.kClientId,
+          oauthTokenType: 'DPoP',
+          oauthScope: 'atproto transition:generic',
+          dpopNonce: 'nonce',
+          dpopPublicKey: 'public-key',
+          dpopPrivateKey: 'private-key',
+          authMethod: AuthMethod.oauth,
+        );
+        when(
+          () => mockDatabase.getSetting(AppDatabase.activeAccountDidSettingKey),
+        ).thenAnswer((_) async => currentSession.did);
+        when(
+          () => mockDatabase.updateAccountSessionIfRefreshTokenMatches(
+            any(),
+            expectedRefreshToken: any(named: 'expectedRefreshToken'),
+            handle: any(named: 'handle'),
+            accessToken: any(named: 'accessToken'),
+            refreshToken: any(named: 'refreshToken'),
+            expiresAt: any(named: 'expiresAt'),
+            displayName: any(named: 'displayName'),
+            service: any(named: 'service'),
+            oauthService: any(named: 'oauthService'),
+            oauthClientId: any(named: 'oauthClientId'),
+            oauthTokenType: any(named: 'oauthTokenType'),
+            oauthScope: any(named: 'oauthScope'),
+            dpopNonce: any(named: 'dpopNonce'),
+            dpopPublicKey: any(named: 'dpopPublicKey'),
+            dpopPrivateKey: any(named: 'dpopPrivateKey'),
+          ),
+        ).thenAnswer((_) async => true);
+
+        final refreshed = await authRepository.refreshSession(currentSession);
+
+        expect(restoredSession.accessToken, 'opaque-access-token');
+        expect(restoredSession.sub, currentSession.did);
+        expect(restoredSession.scope, currentSession.oauthScope);
+        expect(restoredSession.atprotoPdsEndpoint, currentSession.service);
+        expect(refreshed, isNotNull);
+        expect(refreshed!.oauthScope, currentSession.oauthScope);
+      });
+
       test('retries OAuth refresh against fallback auth service hosts', () async {
         final attemptedServices = <String>[];
         final nowEpochSeconds = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
@@ -719,6 +835,8 @@ void main() {
             service: any(named: 'service'),
             oauthService: any(named: 'oauthService'),
             oauthClientId: any(named: 'oauthClientId'),
+            oauthTokenType: any(named: 'oauthTokenType'),
+            oauthScope: any(named: 'oauthScope'),
             dpopNonce: any(named: 'dpopNonce'),
             dpopPublicKey: any(named: 'dpopPublicKey'),
             dpopPrivateKey: any(named: 'dpopPrivateKey'),
@@ -801,6 +919,8 @@ void main() {
             service: currentSession.service,
             oauthService: currentSession.oauthService,
             oauthClientId: currentSession.oauthClientId,
+            oauthTokenType: 'DPoP',
+            oauthScope: 'atproto',
             dpopNonce: 'new-nonce',
             dpopPublicKey: currentSession.dpopPublicKey,
             dpopPrivateKey: currentSession.dpopPrivateKey,
@@ -888,6 +1008,8 @@ void main() {
             service: any(named: 'service'),
             oauthService: any(named: 'oauthService'),
             oauthClientId: any(named: 'oauthClientId'),
+            oauthTokenType: any(named: 'oauthTokenType'),
+            oauthScope: any(named: 'oauthScope'),
             dpopNonce: any(named: 'dpopNonce'),
             dpopPublicKey: any(named: 'dpopPublicKey'),
             dpopPrivateKey: any(named: 'dpopPrivateKey'),
@@ -970,6 +1092,8 @@ void main() {
             service: any(named: 'service'),
             oauthService: any(named: 'oauthService'),
             oauthClientId: any(named: 'oauthClientId'),
+            oauthTokenType: any(named: 'oauthTokenType'),
+            oauthScope: any(named: 'oauthScope'),
             dpopNonce: any(named: 'dpopNonce'),
             dpopPublicKey: any(named: 'dpopPublicKey'),
             dpopPrivateKey: any(named: 'dpopPrivateKey'),
@@ -1845,6 +1969,8 @@ Account _accountForTokens(AuthTokens tokens) => Account(
   service: tokens.service,
   oauthService: tokens.oauthService,
   oauthClientId: tokens.oauthClientId,
+  oauthTokenType: tokens.oauthTokenType,
+  oauthScope: tokens.oauthScope,
   accessToken: tokens.accessToken,
   refreshToken: tokens.refreshToken,
   dpopPublicKey: tokens.dpopPublicKey,

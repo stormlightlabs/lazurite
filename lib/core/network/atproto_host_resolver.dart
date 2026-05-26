@@ -1,5 +1,7 @@
-import 'package:poptart_core/poptart_core.dart' as atp_core;
+import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/network/oauth_session_restorer.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:poptart_core/poptart_core.dart';
 
 String resolvePdsHost(AuthTokens tokens) {
   final oauthHost = _resolveOAuthPdsHost(tokens);
@@ -59,15 +61,10 @@ String? _resolveOAuthPdsHost(AuthTokens tokens) {
   }
 
   try {
-    final session = atp_core.restoreOAuthSession(
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken!,
-      dPoPNonce: tokens.dpopNonce,
-      publicKey: tokens.dpopPublicKey!,
-      privateKey: tokens.dpopPrivateKey!,
-    );
+    final session = restoreOAuthSessionFromTokens(tokens);
     return normalizeAtprotoServiceHost(session.atprotoPdsEndpoint);
-  } catch (_) {
+  } catch (error, stackTrace) {
+    log.d('Failed to resolve OAuth PDS host from restored session', error: error, stackTrace: stackTrace);
     return null;
   }
 }

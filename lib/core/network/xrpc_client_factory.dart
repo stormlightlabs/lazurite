@@ -1,3 +1,4 @@
+import 'package:lazurite/core/network/oauth_session_restorer.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart' as atp;
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/xrpc_network_interceptor.dart';
@@ -19,13 +20,7 @@ Bluesky? createBlueskyClient(AuthTokens? tokens) {
       return null;
     }
 
-    final oauthSession = atp_core.restoreOAuthSession(
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken!,
-      dPoPNonce: tokens.dpopNonce,
-      publicKey: tokens.dpopPublicKey!,
-      privateKey: tokens.dpopPrivateKey!,
-    );
+    final oauthSession = restoreOAuthSessionFromTokens(tokens);
 
     return Bluesky.fromOAuthSession(oauthSession, getClient: _wrappedGetClient(), postClient: _wrappedPostClient());
   }
@@ -57,13 +52,7 @@ BlueskyChat? createBlueSkyChatClient(AuthTokens? tokens) {
       return null;
     }
 
-    final oauthSession = atp_core.restoreOAuthSession(
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken!,
-      dPoPNonce: tokens.dpopNonce,
-      publicKey: tokens.dpopPublicKey!,
-      privateKey: tokens.dpopPrivateKey!,
-    );
+    final oauthSession = restoreOAuthSessionFromTokens(tokens);
 
     return BlueskyChat.fromOAuthSession(oauthSession, getClient: _wrappedGetClient(), postClient: _wrappedPostClient());
   }

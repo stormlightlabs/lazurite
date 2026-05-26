@@ -18,7 +18,7 @@ void main() {
         refreshToken: 'refresh-token',
         did: 'did:plc:alice',
         handle: 'alice.bsky.social',
-        service: 'bsky.social',
+        service: pdsHost,
         dpopPublicKey: 'public-key',
         dpopPrivateKey: 'private-key',
         authMethod: AuthMethod.oauth,
@@ -29,6 +29,59 @@ void main() {
       expect(client, isNotNull);
       expect(client!.service, pdsHost);
       expect(client.oAuthSession, isNotNull);
+      expect(client.oAuthSession!.atprotoPdsEndpoint, pdsHost);
+    });
+
+    test('creates an OAuth Bluesky client from opaque token metadata', () {
+      const pdsHost = 'porcini.us-east.host.bsky.network';
+      final tokens = AuthTokens(
+        accessToken: 'opaque-access-token',
+        refreshToken: 'refresh-token',
+        expiresAt: DateTime.utc(2030),
+        did: 'did:plc:alice',
+        handle: 'alice.bsky.social',
+        service: pdsHost,
+        oauthClientId: 'https://client.example/metadata.json',
+        oauthTokenType: 'DPoP',
+        oauthScope: 'atproto transition:generic',
+        dpopPublicKey: 'public-key',
+        dpopPrivateKey: 'private-key',
+        authMethod: AuthMethod.oauth,
+      );
+
+      final client = createBlueskyClient(tokens);
+
+      expect(client, isNotNull);
+      expect(client!.service, pdsHost);
+      expect(client.oAuthSession, isNotNull);
+      expect(client.oAuthSession!.accessToken, 'opaque-access-token');
+      expect(client.oAuthSession!.sub, 'did:plc:alice');
+      expect(client.oAuthSession!.scope, 'atproto transition:generic');
+      expect(client.oAuthSession!.atprotoPdsEndpoint, pdsHost);
+    });
+
+    test('normalizes URL-shaped JWT audience with the stored PDS host', () {
+      const pdsHost = 'tranquil.farm';
+      final tokens = AuthTokens(
+        accessToken: buildJwt(
+          aud: 'https://tranquil.farm',
+          sub: 'did:plc:alice',
+          clientId: 'https://client.example/metadata.json',
+          iss: 'https://tranquil.farm',
+        ),
+        refreshToken: 'refresh-token',
+        did: 'did:plc:alice',
+        handle: 'alice.tranquil.farm',
+        service: pdsHost,
+        dpopPublicKey: 'public-key',
+        dpopPrivateKey: 'private-key',
+        authMethod: AuthMethod.oauth,
+      );
+
+      final client = createBlueskyClient(tokens);
+
+      expect(client, isNotNull);
+      expect(client!.service, pdsHost);
       expect(client.oAuthSession!.atprotoPdsEndpoint, pdsHost);
     });
 

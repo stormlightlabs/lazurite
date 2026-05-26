@@ -303,7 +303,7 @@ void main() {
       refreshToken: 'refresh-token',
       did: 'did:plc:lazurite123',
       handle: 'owais.bsky.social',
-      service: 'bsky.social',
+      service: 'shaggymane.us-west.host.bsky.network',
       dpopPublicKey: 'public-key',
       dpopPrivateKey: 'private-key',
       authMethod: AuthMethod.oauth,

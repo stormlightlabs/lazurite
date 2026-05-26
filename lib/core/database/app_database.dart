@@ -41,7 +41,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _serializedWriteTail = Future.value();
 
   @override
-  int get schemaVersion => 24;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -179,6 +179,17 @@ class AppDatabase extends _$AppDatabase {
       if (from < 24) {
         await customStatement("UPDATE settings SET value = 'comfortable' WHERE key = 'feed_layout' AND value = 'card'");
       }
+      if (from < 25) {
+        await migrator.addColumn(accounts, accounts.oauthTokenType);
+        await migrator.addColumn(accounts, accounts.oauthScope);
+        await customStatement('''
+          UPDATE accounts
+          SET oauth_token_type = 'DPoP'
+          WHERE oauth_token_type IS NULL
+            AND dpop_public_key IS NOT NULL
+            AND dpop_private_key IS NOT NULL
+        ''');
+      }
     },
   );
 
@@ -257,6 +268,8 @@ class AppDatabase extends _$AppDatabase {
     String? service,
     String? oauthService,
     String? oauthClientId,
+    String? oauthTokenType,
+    String? oauthScope,
     String? dpopNonce,
     String? dpopPublicKey,
     String? dpopPrivateKey,
@@ -269,6 +282,8 @@ class AppDatabase extends _$AppDatabase {
         service: service != null ? Value(service) : const Value.absent(),
         oauthService: oauthService != null ? Value(oauthService) : const Value.absent(),
         oauthClientId: oauthClientId != null ? Value(oauthClientId) : const Value.absent(),
+        oauthTokenType: oauthTokenType != null ? Value(oauthTokenType) : const Value.absent(),
+        oauthScope: oauthScope != null ? Value(oauthScope) : const Value.absent(),
         accessToken: Value(accessToken),
         refreshToken: Value(refreshToken),
         dpopNonce: dpopNonce != null ? Value(dpopNonce) : const Value.absent(),

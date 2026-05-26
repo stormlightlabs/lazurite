@@ -8,6 +8,8 @@ class Accounts extends Table {
   TextColumn get service => text().nullable()();
   TextColumn get oauthService => text().nullable()();
   TextColumn get oauthClientId => text().nullable()();
+  TextColumn get oauthTokenType => text().nullable()();
+  TextColumn get oauthScope => text().nullable()();
   TextColumn get accessToken => text()();
   TextColumn get refreshToken => text().nullable()();
   TextColumn get dpopPublicKey => text().nullable()();

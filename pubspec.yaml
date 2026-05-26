@@ -12,9 +12,9 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  poptart: ^0.1.0
-  poptart_core: ^0.1.0
-  poptart_oauth: ^0.1.0
+  poptart: ^0.1.1
+  poptart_core: ^0.1.1
+  poptart_oauth: ^0.1.1
   poptart_lex: ^0.1.0
   bluesky_poptart: ^0.1.0
   ozone_poptart: ^0.1.0
