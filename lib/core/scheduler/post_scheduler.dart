@@ -1,24 +1,25 @@
 import 'dart:io';
-import 'dart:typed_data';
 
-import 'package:poptart_core/poptart_core.dart' show AtUri, Blob;
 import 'package:bluesky_poptart/app/bsky/embed/defs.dart' as embed_defs;
 import 'package:bluesky_poptart/app/bsky/embed/images.dart';
 import 'package:bluesky_poptart/app/bsky/embed/video.dart';
 import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 import 'package:bluesky_poptart/app/bsky/richtext/facet.dart';
 import 'package:bluesky_poptart/app/bsky/video/defs.dart';
-import 'package:poptart_lex/com/atproto/repo/strong_ref.dart';
-import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:lazurite/features/auth/data/session_recovery.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/data/draft_embed_payload.dart';
 import 'package:lazurite/features/notifications/background/notification_background_worker.dart';
+import 'package:lazurite/shared/utils/media_type_sniffer.dart';
+import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
+import 'package:poptart_core/poptart_core.dart' show AtUri, Blob;
+import 'package:poptart_lex/com/atproto/repo/strong_ref.dart';
 import 'package:workmanager/workmanager.dart';
 
 const _kTaskName = 'lazurite.scheduled_post';
@@ -70,18 +71,12 @@ Future<void> _submitScheduledDraft(int draftId) async {
     }
     final accountDid = tokens.did;
 
-    Future<AuthTokens?> recoverSession() async {
-      final currentTokens = tokens;
-      if (currentTokens == null) {
-        return null;
-      }
-      final refreshed = await authRepo.refreshSession(currentTokens);
-      if (refreshed == null || refreshed.did != accountDid) {
-        return null;
-      }
-      tokens = refreshed;
-      return refreshed;
-    }
+    Future<AuthTokens?> recoverSession() => refreshCurrentAccountSession(
+      currentTokens: tokens,
+      accountDid: accountDid,
+      refresh: authRepo.refreshSession,
+      onRefreshed: (refreshed) => tokens = refreshed,
+    );
 
     final bluesky = createBlueskyClient(tokens);
     if (bluesky == null) {
@@ -164,7 +159,7 @@ Future<UFeedPostEmbed?> _buildImageEmbed(ComposeRepository repo, DraftImagesEmbe
     }
 
     final bytes = await file.readAsBytes();
-    final mime = _detectMime(bytes);
+    final mime = detectImageMimeType(bytes);
     if (mime == null) {
       log.w('Scheduled post: unsupported image format at ${paths[i]}, skipping');
       continue;
@@ -244,24 +239,6 @@ Future<Blob?> _pollVideoJob(ComposeRepository repo, String jobId) async {
   }
 
   log.e('Scheduled post: video processing timed out for job $jobId');
-  return null;
-}
-
-/// Returns the MIME type from magic bytes, or null for unsupported formats.
-String? _detectMime(Uint8List bytes) {
-  if (bytes.length < 12) return null;
-  if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) return 'image/jpeg';
-  if (bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47) return 'image/png';
-  if (bytes[0] == 0x52 &&
-      bytes[1] == 0x49 &&
-      bytes[2] == 0x46 &&
-      bytes[3] == 0x46 &&
-      bytes[8] == 0x57 &&
-      bytes[9] == 0x45 &&
-      bytes[10] == 0x42 &&
-      bytes[11] == 0x50) {
-    return 'image/webp';
-  }
   return null;
 }
 

@@ -11,9 +11,6 @@ import 'package:bluesky_poptart/app/bsky/embed/video.dart';
 import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 import 'package:bluesky_poptart/app/bsky/richtext/facet.dart';
 import 'package:bluesky_poptart/app/bsky/video/defs.dart';
-import 'package:poptart_lex/com/atproto/repo/get_record.dart';
-import 'package:poptart_lex/com/atproto/repo/strong_ref.dart';
-import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
 import 'package:characters/characters.dart';
 import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
@@ -25,9 +22,13 @@ import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/core/scheduler/post_scheduler.dart';
-import 'package:lazurite/features/compose/data/draft_embed_payload.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:lazurite/features/compose/data/draft_embed_payload.dart';
 import 'package:lazurite/features/compose/data/link_preview_service.dart';
+import 'package:lazurite/shared/utils/media_type_sniffer.dart';
+import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
+import 'package:poptart_lex/com/atproto/repo/get_record.dart';
+import 'package:poptart_lex/com/atproto/repo/strong_ref.dart';
 
 part 'compose_event.dart';
 part 'compose_state.dart';
@@ -130,7 +131,6 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
 
   Future<void> _onAltTextUpdated(AltTextUpdated event, Emitter<ComposeState> emit) async {
     if (event.index < 0 || event.index >= state.mediaAttachments.length) return;
-
     final attachments = List<MediaAttachment>.from(state.mediaAttachments);
     attachments[event.index] = attachments[event.index].copyWith(altText: event.altText);
     emit(state.copyWith(mediaAttachments: attachments));
@@ -481,7 +481,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
             return;
           }
 
-          final mime = _detectImageMime(bytes);
+          final mime = detectImageMimeType(bytes);
           if (mime == null) {
             _emitError(emit, 'Unsupported image format. Use JPEG, PNG, or WebP.');
             return;
@@ -674,24 +674,6 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
     }
 
     return UEmbedRecordWithMediaMedia.unknown(data: embed.toJson());
-  }
-
-  /// Returns MIME type from magic bytes, or null if not an accepted image type.
-  static String? _detectImageMime(List<int> bytes) {
-    if (bytes.length < 12) return null;
-    if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) return 'image/jpeg';
-    if (bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47) return 'image/png';
-    if (bytes[0] == 0x52 &&
-        bytes[1] == 0x49 &&
-        bytes[2] == 0x46 &&
-        bytes[3] == 0x46 &&
-        bytes[8] == 0x57 &&
-        bytes[9] == 0x45 &&
-        bytes[10] == 0x42 &&
-        bytes[11] == 0x50) {
-      return 'image/webp';
-    }
-    return null;
   }
 }
 

@@ -67,9 +67,7 @@ StatefulShellRoute buildUnauthenticatedShellRoute({
       ),
       StatefulShellBranch(
         navigatorKey: settingsNavigatorKey,
-        routes: [
-          ...buildSettingsRoutes(onUnauthorized: onUnauthorized),
-        ],
+        routes: [...buildSettingsRoutes(onUnauthorized: onUnauthorized)],
       ),
       StatefulShellBranch(
         navigatorKey: loginNavigatorKey,

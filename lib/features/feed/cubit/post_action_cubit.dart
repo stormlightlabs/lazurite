@@ -144,91 +144,92 @@ class PostActionCubit extends Cubit<PostActionState> {
 
   void _persistToCache() => _cache?.write(state);
 
-  Future<void> toggleLike() async {
-    if (state.isLoadingLike) return;
+  Future<void> toggleLike() => _runOptimisticToggle(
+    isLoading: state.isLoadingLike,
+    wasActive: state.isLiked,
+    previousCount: state.likeCount,
+    previousUri: state.likeUri,
+    optimisticState: ({required wasActive, required previousCount}) => state.copyWith(
+      isLiked: !wasActive,
+      likeCount: wasActive ? previousCount - 1 : previousCount + 1,
+      isLoadingLike: true,
+      error: null,
+    ),
+    activate: () => _postActionRepository.likePost(uri: AtUri.parse(state.postUri), cid: _postCid),
+    deactivate: (uri) => _postActionRepository.unlikePost(likeUri: uri),
+    successState: (uri) => state.copyWith(likeUri: uri, isLoadingLike: false),
+    idleState: () => state.copyWith(isLoadingLike: false),
+    rollbackState: ({required wasActive, required previousCount, required previousUri}) => state.copyWith(
+      isLiked: wasActive,
+      likeCount: previousCount,
+      likeUri: previousUri,
+      isLoadingLike: false,
+      error: 'Failed to ${wasActive ? 'unlike' : 'like'} post',
+    ),
+    failureLogMessage: 'Failed to toggle like',
+  );
 
-    final wasLiked = state.isLiked;
-    final previousLikeCount = state.likeCount;
-    final previousLikeUri = state.likeUri;
+  Future<void> toggleRepost() => _runOptimisticToggle(
+    isLoading: state.isLoadingRepost,
+    wasActive: state.isReposted,
+    previousCount: state.repostCount,
+    previousUri: state.repostUri,
+    optimisticState: ({required wasActive, required previousCount}) => state.copyWith(
+      isReposted: !wasActive,
+      repostCount: wasActive ? previousCount - 1 : previousCount + 1,
+      isLoadingRepost: true,
+      error: null,
+    ),
+    activate: () => _postActionRepository.repostPost(uri: AtUri.parse(state.postUri), cid: _postCid),
+    deactivate: (uri) => _postActionRepository.unrepostPost(repostUri: uri),
+    successState: (uri) => state.copyWith(repostUri: uri, isLoadingRepost: false),
+    idleState: () => state.copyWith(isLoadingRepost: false),
+    rollbackState: ({required wasActive, required previousCount, required previousUri}) => state.copyWith(
+      isReposted: wasActive,
+      repostCount: previousCount,
+      repostUri: previousUri,
+      isLoadingRepost: false,
+      error: 'Failed to ${wasActive ? 'unrepost' : 'repost'} post',
+    ),
+    failureLogMessage: 'Failed to toggle repost',
+  );
 
-    emit(
-      state.copyWith(
-        isLiked: !wasLiked,
-        likeCount: wasLiked ? previousLikeCount - 1 : previousLikeCount + 1,
-        isLoadingLike: true,
-        error: null,
-      ),
-    );
+  Future<void> _runOptimisticToggle({
+    required bool isLoading,
+    required bool wasActive,
+    required int previousCount,
+    required String? previousUri,
+    required PostActionState Function({required bool wasActive, required int previousCount}) optimisticState,
+    required Future<String> Function() activate,
+    required Future<void> Function(String uri) deactivate,
+    required PostActionState Function(String? uri) successState,
+    required PostActionState Function() idleState,
+    required PostActionState Function({
+      required bool wasActive,
+      required int previousCount,
+      required String? previousUri,
+    })
+    rollbackState,
+    required String failureLogMessage,
+  }) async {
+    if (isLoading) return;
+
+    emit(optimisticState(wasActive: wasActive, previousCount: previousCount));
 
     try {
-      if (wasLiked) {
-        if (previousLikeUri != null) {
-          await _postActionRepository.unlikePost(likeUri: previousLikeUri);
-          emit(state.copyWith(likeUri: null, isLoadingLike: false));
+      if (wasActive) {
+        if (previousUri != null) {
+          await deactivate(previousUri);
+          emit(successState(null));
         } else {
-          emit(state.copyWith(isLoadingLike: false));
+          emit(idleState());
         }
       } else {
-        final newLikeUri = await _postActionRepository.likePost(uri: AtUri.parse(state.postUri), cid: _postCid);
-        emit(state.copyWith(likeUri: newLikeUri, isLoadingLike: false));
+        emit(successState(await activate()));
       }
     } catch (error) {
-      log.e('Failed to toggle like', error: error);
-
-      emit(
-        state.copyWith(
-          isLiked: wasLiked,
-          likeCount: previousLikeCount,
-          likeUri: previousLikeUri,
-          isLoadingLike: false,
-          error: 'Failed to ${wasLiked ? 'unlike' : 'like'} post',
-        ),
-      );
-    } finally {
-      _persistToCache();
-    }
-  }
-
-  Future<void> toggleRepost() async {
-    if (state.isLoadingRepost) return;
-
-    final wasReposted = state.isReposted;
-    final previousRepostCount = state.repostCount;
-    final previousRepostUri = state.repostUri;
-
-    emit(
-      state.copyWith(
-        isReposted: !wasReposted,
-        repostCount: wasReposted ? previousRepostCount - 1 : previousRepostCount + 1,
-        isLoadingRepost: true,
-        error: null,
-      ),
-    );
-
-    try {
-      if (wasReposted) {
-        if (previousRepostUri != null) {
-          await _postActionRepository.unrepostPost(repostUri: previousRepostUri);
-          emit(state.copyWith(repostUri: null, isLoadingRepost: false));
-        } else {
-          emit(state.copyWith(isLoadingRepost: false));
-        }
-      } else {
-        final newRepostUri = await _postActionRepository.repostPost(uri: AtUri.parse(state.postUri), cid: _postCid);
-        emit(state.copyWith(repostUri: newRepostUri, isLoadingRepost: false));
-      }
-    } catch (error) {
-      log.e('Failed to toggle repost', error: error);
-
-      emit(
-        state.copyWith(
-          isReposted: wasReposted,
-          repostCount: previousRepostCount,
-          repostUri: previousRepostUri,
-          isLoadingRepost: false,
-          error: 'Failed to ${wasReposted ? 'unrepost' : 'repost'} post',
-        ),
-      );
+      log.e(failureLogMessage, error: error);
+      emit(rollbackState(wasActive: wasActive, previousCount: previousCount, previousUri: previousUri));
     } finally {
       _persistToCache();
     }

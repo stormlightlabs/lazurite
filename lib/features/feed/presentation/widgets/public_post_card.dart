@@ -32,7 +32,9 @@ class PublicPostCard extends StatelessWidget {
     final footer = PublicPostCardFooter(feedViewPost: feedViewPost, providerKey: providerKey);
 
     Future<void> onTap() async {
-      await context.push('/post?uri=${Uri.encodeQueryComponent(feedViewPost.post.uri.toString())}&provider=$providerKey');
+      await context.push(
+        '/post?uri=${Uri.encodeQueryComponent(feedViewPost.post.uri.toString())}&provider=$providerKey',
+      );
     }
 
     final card = switch (resolvedVariant) {

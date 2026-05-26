@@ -9,6 +9,7 @@ import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/auth_repository.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:lazurite/features/auth/data/session_recovery.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/notifications/data/flutter_local_notification_adapter.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
@@ -151,18 +152,12 @@ class _BackgroundNotificationContext {
       }
       final accountDid = tokens.did;
 
-      Future<AuthTokens?> recoverSession() async {
-        final currentTokens = tokens;
-        if (currentTokens == null) {
-          return null;
-        }
-        final refreshed = await authRepository.refreshSession(currentTokens);
-        if (refreshed == null || refreshed.did != accountDid) {
-          return null;
-        }
-        tokens = refreshed;
-        return refreshed;
-      }
+      Future<AuthTokens?> recoverSession() => refreshCurrentAccountSession(
+        currentTokens: tokens,
+        accountDid: accountDid,
+        refresh: authRepository.refreshSession,
+        onRefreshed: (refreshed) => tokens = refreshed,
+      );
 
       final bluesky = createBlueskyClient(tokens);
       if (bluesky == null) {

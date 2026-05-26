@@ -108,6 +108,7 @@ void main() {
               .having((s) => s.isLoadingFollow, 'isLoadingFollow', isTrue),
           isA<ProfileActionState>()
               .having((s) => s.isFollowing, 'isFollowing', isFalse)
+              .having((s) => s.followUri, 'followUri', isNull)
               .having((s) => s.isLoadingFollow, 'isLoadingFollow', isFalse),
         ],
       );
@@ -238,6 +239,7 @@ void main() {
               .having((s) => s.isLoadingBlock, 'isLoadingBlock', isTrue),
           isA<ProfileActionState>()
               .having((s) => s.isBlocked, 'isBlocked', isFalse)
+              .having((s) => s.blockUri, 'blockUri', isNull)
               .having((s) => s.isLoadingBlock, 'isLoadingBlock', isFalse),
         ],
       );

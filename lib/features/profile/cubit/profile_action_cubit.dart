@@ -20,6 +20,8 @@ class ProfileActionState extends Equatable {
     this.error,
   });
 
+  static const Object _unset = Object();
+
   final String actorDid;
   final bool isFollowing;
   final bool isMuted;
@@ -39,12 +41,12 @@ class ProfileActionState extends Equatable {
     bool? isMuted,
     bool? isBlocked,
     bool? isBlockedBy,
-    String? followUri,
-    String? blockUri,
+    Object? followUri = _unset,
+    Object? blockUri = _unset,
     bool? isLoadingFollow,
     bool? isLoadingMute,
     bool? isLoadingBlock,
-    String? error,
+    Object? error = _unset,
   }) {
     return ProfileActionState(
       actorDid: actorDid,
@@ -52,12 +54,12 @@ class ProfileActionState extends Equatable {
       isMuted: isMuted ?? this.isMuted,
       isBlocked: isBlocked ?? this.isBlocked,
       isBlockedBy: isBlockedBy ?? this.isBlockedBy,
-      followUri: followUri ?? this.followUri,
-      blockUri: blockUri ?? this.blockUri,
+      followUri: identical(followUri, _unset) ? this.followUri : followUri as String?,
+      blockUri: identical(blockUri, _unset) ? this.blockUri : blockUri as String?,
       isLoadingFollow: isLoadingFollow ?? this.isLoadingFollow,
       isLoadingMute: isLoadingMute ?? this.isLoadingMute,
       isLoadingBlock: isLoadingBlock ?? this.isLoadingBlock,
-      error: error ?? this.error,
+      error: identical(error, _unset) ? this.error : error as String?,
     );
   }
 
@@ -102,39 +104,23 @@ class ProfileActionCubit extends Cubit<ProfileActionState> {
 
   final ProfileActionRepository _profileActionRepository;
 
-  Future<void> toggleFollow() async {
-    if (state.isLoadingFollow || state.isBlockedBy) return;
-
-    final wasFollowing = state.isFollowing;
-    final previousFollowUri = state.followUri;
-
-    emit(state.copyWith(isFollowing: !wasFollowing, isLoadingFollow: true, error: null));
-
-    try {
-      if (wasFollowing) {
-        if (previousFollowUri != null) {
-          await _profileActionRepository.unfollowActor(followUri: previousFollowUri);
-          emit(state.copyWith(followUri: null, isLoadingFollow: false));
-        } else {
-          emit(state.copyWith(isLoadingFollow: false));
-        }
-      } else {
-        final newFollowUri = await _profileActionRepository.followActor(did: state.actorDid);
-        emit(state.copyWith(followUri: newFollowUri, isLoadingFollow: false));
-      }
-    } catch (error) {
-      log.e('Failed to toggle follow', error: error);
-
-      emit(
-        state.copyWith(
-          isFollowing: wasFollowing,
-          followUri: previousFollowUri,
-          isLoadingFollow: false,
-          error: 'Failed to ${wasFollowing ? 'unfollow' : 'follow'} user',
-        ),
-      );
-    }
-  }
+  Future<void> toggleFollow() => _runUriBackedOptimisticToggle(
+    isLoading: state.isLoadingFollow,
+    wasActive: state.isFollowing,
+    previousUri: state.followUri,
+    optimisticState: (wasActive) => state.copyWith(isFollowing: !wasActive, isLoadingFollow: true, error: null),
+    activate: () => _profileActionRepository.followActor(did: state.actorDid),
+    deactivate: (uri) => _profileActionRepository.unfollowActor(followUri: uri),
+    successState: (uri) => state.copyWith(followUri: uri, isLoadingFollow: false),
+    idleState: () => state.copyWith(isLoadingFollow: false),
+    rollbackState: ({required wasActive, required previousUri}) => state.copyWith(
+      isFollowing: wasActive,
+      followUri: previousUri,
+      isLoadingFollow: false,
+      error: 'Failed to ${wasActive ? 'unfollow' : 'follow'} user',
+    ),
+    failureLogMessage: 'Failed to toggle follow',
+  );
 
   Future<void> toggleMute() async {
     if (state.isLoadingMute || state.isBlockedBy) return;
@@ -162,37 +148,54 @@ class ProfileActionCubit extends Cubit<ProfileActionState> {
     }
   }
 
-  Future<void> toggleBlock() async {
-    if (state.isLoadingBlock || state.isBlockedBy) return;
+  Future<void> toggleBlock() => _runUriBackedOptimisticToggle(
+    isLoading: state.isLoadingBlock,
+    wasActive: state.isBlocked,
+    previousUri: state.blockUri,
+    optimisticState: (wasActive) => state.copyWith(isBlocked: !wasActive, isLoadingBlock: true, error: null),
+    activate: () => _profileActionRepository.blockActor(did: state.actorDid),
+    deactivate: (uri) => _profileActionRepository.unblockActor(blockUri: uri),
+    successState: (uri) => state.copyWith(blockUri: uri, isLoadingBlock: false),
+    idleState: () => state.copyWith(isLoadingBlock: false),
+    rollbackState: ({required wasActive, required previousUri}) => state.copyWith(
+      isBlocked: wasActive,
+      blockUri: previousUri,
+      isLoadingBlock: false,
+      error: 'Failed to ${wasActive ? 'unblock' : 'block'} user',
+    ),
+    failureLogMessage: 'Failed to toggle block',
+  );
 
-    final wasBlocked = state.isBlocked;
-    final previousBlockUri = state.blockUri;
+  Future<void> _runUriBackedOptimisticToggle({
+    required bool isLoading,
+    required bool wasActive,
+    required String? previousUri,
+    required ProfileActionState Function(bool wasActive) optimisticState,
+    required Future<String> Function() activate,
+    required Future<void> Function(String uri) deactivate,
+    required ProfileActionState Function(String? uri) successState,
+    required ProfileActionState Function() idleState,
+    required ProfileActionState Function({required bool wasActive, required String? previousUri}) rollbackState,
+    required String failureLogMessage,
+  }) async {
+    if (isLoading || state.isBlockedBy) return;
 
-    emit(state.copyWith(isBlocked: !wasBlocked, isLoadingBlock: true, error: null));
+    emit(optimisticState(wasActive));
 
     try {
-      if (wasBlocked) {
-        if (previousBlockUri != null) {
-          await _profileActionRepository.unblockActor(blockUri: previousBlockUri);
-          emit(state.copyWith(blockUri: null, isLoadingBlock: false));
+      if (wasActive) {
+        if (previousUri != null) {
+          await deactivate(previousUri);
+          emit(successState(null));
         } else {
-          emit(state.copyWith(isLoadingBlock: false));
+          emit(idleState());
         }
       } else {
-        final newBlockUri = await _profileActionRepository.blockActor(did: state.actorDid);
-        emit(state.copyWith(blockUri: newBlockUri, isLoadingBlock: false));
+        emit(successState(await activate()));
       }
     } catch (error) {
-      log.e('Failed to toggle block', error: error);
-
-      emit(
-        state.copyWith(
-          isBlocked: wasBlocked,
-          blockUri: previousBlockUri,
-          isLoadingBlock: false,
-          error: 'Failed to ${wasBlocked ? 'unblock' : 'block'} user',
-        ),
-      );
+      log.e(failureLogMessage, error: error);
+      emit(rollbackState(wasActive: wasActive, previousUri: previousUri));
     }
   }
 

@@ -19,6 +19,7 @@ import 'package:poptart_lex/com/atproto/label/defs.dart' show LabelValueDefiniti
 
 const _officialBlueskyLabelerDid = 'did:plc:ar7c4by46qjdydhdevvrndac';
 const _maxCustomLabelers = 20;
+
 class ModerationService {
   ModerationService({
     required Bluesky bluesky,

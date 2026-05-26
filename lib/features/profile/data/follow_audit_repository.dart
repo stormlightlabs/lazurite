@@ -11,6 +11,7 @@ import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:lazurite/features/auth/data/session_identity.dart';
 
 enum FollowStatus { deleted, deactivated, suspended, blockedBy, blocking, mutualBlock, hidden, selfFollow }
 
@@ -478,19 +479,10 @@ class FollowAuditRepository {
     }
   }
 
-  String? _currentSessionDid() {
-    final sessionDid = _authRecovery.client.session?.did.trim().toLowerCase();
-    if (sessionDid != null && sessionDid.isNotEmpty) {
-      return sessionDid;
-    }
-
-    final oauthDid = _authRecovery.client.oAuthSession?.sub.trim().toLowerCase();
-    if (oauthDid != null && oauthDid.isNotEmpty) {
-      return oauthDid;
-    }
-
-    return null;
-  }
+  String? _currentSessionDid() => resolveCurrentSessionDid(
+    sessionDid: _authRecovery.client.session?.did,
+    oauthSubject: _authRecovery.client.oAuthSession?.sub,
+  );
 }
 
 class _BatchResult {

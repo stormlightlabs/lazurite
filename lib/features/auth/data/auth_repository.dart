@@ -1564,16 +1564,8 @@ class AuthRepository {
   @visibleForTesting
   static List<String> oauthRefreshServiceCandidates({required String? storedAuthService, required String? issuer}) {
     final candidates = <String>{};
-    final issuerHost = normalizeAtprotoServiceHost(issuer);
-    if (issuerHost != null) {
-      candidates.add(issuerHost);
-    }
-
-    final storedAuthHost = normalizeAtprotoServiceHost(storedAuthService);
-    if (storedAuthHost != null) {
-      candidates.add(storedAuthHost);
-    }
-
+    _addNormalizedAtprotoServiceHost(candidates, issuer);
+    _addNormalizedAtprotoServiceHost(candidates, storedAuthService);
     candidates.add(_oauthService);
     candidates.add(_fallbackService);
     return candidates.toList(growable: false);
@@ -1586,26 +1578,19 @@ class AuthRepository {
     required String? resolvedAuthService,
   }) {
     final candidates = <String>{};
-
-    final resolvedAuthHost = normalizeAtprotoServiceHost(resolvedAuthService);
-    if (resolvedAuthHost != null) {
-      candidates.add(resolvedAuthHost);
-    }
-
-    final preferredHost = normalizeAtprotoServiceHost(preferredAuthService);
-    if (preferredHost != null) {
-      candidates.add(preferredHost);
-    }
-
+    _addNormalizedAtprotoServiceHost(candidates, resolvedAuthService);
+    _addNormalizedAtprotoServiceHost(candidates, preferredAuthService);
     candidates.add(_oauthService);
-
-    final resolvedHost = normalizeAtprotoServiceHost(resolvedPdsHost);
-    if (resolvedHost != null) {
-      candidates.add(resolvedHost);
-    }
-
+    _addNormalizedAtprotoServiceHost(candidates, resolvedPdsHost);
     candidates.add(_fallbackService);
     return candidates.toList(growable: false);
+  }
+
+  static void _addNormalizedAtprotoServiceHost(Set<String> candidates, String? service) {
+    final host = normalizeAtprotoServiceHost(service);
+    if (host != null) {
+      candidates.add(host);
+    }
   }
 
   @visibleForTesting

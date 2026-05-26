@@ -144,47 +144,38 @@ class TypeaheadRepository {
       ...?await _moderationService?.headersForRequest(),
     });
     final response = await _httpClient.get(uri, headers: headers);
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw io.HttpException('Bluesky typeahead request failed: HTTP ${response.statusCode}', uri: uri);
-    }
-
-    final decoded = jsonDecode(response.body);
-    if (decoded is! Map<String, dynamic>) {
-      throw const FormatException('Bluesky typeahead response was not a JSON object.');
-    }
-
-    final actors = decoded['actors'];
-    if (actors is! List) {
-      return const [];
-    }
-
-    final results = <TypeaheadResult>[];
-    for (final actor in actors) {
-      if (actor is! Map<String, dynamic>) {
-        continue;
-      }
-
-      try {
-        results.add(TypeaheadResult.fromJson(actor));
-      } catch (error, stackTrace) {
-        log.w('TypeaheadRepository: skipped invalid Bluesky actor payload.', error: error, stackTrace: stackTrace);
-      }
-    }
-
-    return _applyModeration(results);
+    return _parseTypeaheadResponse(
+      response: response,
+      uri: uri,
+      providerLabel: 'Bluesky',
+      invalidActorLogMessage: 'TypeaheadRepository: skipped invalid Bluesky actor payload.',
+    );
   }
 
   Future<List<TypeaheadResult>> _searchCommunity({required String query, required int limit}) async {
     final uri = Uri.https(_communityHost, _communityPath, {'q': query, 'limit': limit.toString()});
     final response = await _httpClient.get(uri, headers: const {'X-Client': 'lazurite'});
+    return _parseTypeaheadResponse(
+      response: response,
+      uri: uri,
+      providerLabel: 'Community',
+      invalidActorLogMessage: 'TypeaheadRepository: skipped invalid community actor payload.',
+    );
+  }
 
+  List<TypeaheadResult> _parseTypeaheadResponse({
+    required http.Response response,
+    required Uri uri,
+    required String providerLabel,
+    required String invalidActorLogMessage,
+  }) {
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw io.HttpException('Community typeahead request failed: HTTP ${response.statusCode}', uri: uri);
+      throw io.HttpException('$providerLabel typeahead request failed: HTTP ${response.statusCode}', uri: uri);
     }
 
     final decoded = jsonDecode(response.body);
     if (decoded is! Map<String, dynamic>) {
-      throw const FormatException('Community typeahead response was not a JSON object.');
+      throw FormatException('$providerLabel typeahead response was not a JSON object.');
     }
 
     final actors = decoded['actors'];
@@ -201,7 +192,7 @@ class TypeaheadRepository {
       try {
         results.add(TypeaheadResult.fromJson(actor));
       } catch (error, stackTrace) {
-        log.w('TypeaheadRepository: skipped invalid community actor payload.', error: error, stackTrace: stackTrace);
+        log.w(invalidActorLogMessage, error: error, stackTrace: stackTrace);
       }
     }
 
