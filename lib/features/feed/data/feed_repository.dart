@@ -70,6 +70,8 @@ class FeedRepository {
 
   static const String timelineCacheKey = 'timeline';
   static const String homeFeedPreferenceId = 'home';
+  static const String blackskyAiPreferenceCollection = 'community.lexicon.preference.ai';
+  static const String blackskyAiPreferenceRkey = 'self';
   static const int _minTrendingLimit = 1;
   static const int _maxTrendingLimit = 25;
 
@@ -201,6 +203,36 @@ class FeedRepository {
     final headers = _appViewContext.appBskyHeadersWithoutProxy(await _moderationService?.headersForRequest());
     await _authRecovery.run((client) => client.actor.putPreferences(preferences: preferences, $headers: headers));
     _preferencesCache = preferences;
+  }
+
+  Future<Map<String, dynamic>?> getBlackskyAiPreferenceRecord() async {
+    try {
+      final response = await _authRecovery.run(
+        (client) => client.atproto.repo.getRecord(
+          repo: _accountDid,
+          collection: blackskyAiPreferenceCollection,
+          rkey: blackskyAiPreferenceRkey,
+        ),
+      );
+      return response.data.value;
+    } on XRPCException catch (error) {
+      final errorCode = error.response.data.error;
+      if (errorCode == 'RecordNotFound' || errorCode == 'NotFound') {
+        return null;
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> putBlackskyAiPreferenceRecord({required Map<String, dynamic> record}) async {
+    await _authRecovery.run(
+      (client) => client.atproto.repo.putRecord(
+        repo: _accountDid,
+        collection: blackskyAiPreferenceCollection,
+        rkey: blackskyAiPreferenceRkey,
+        record: record,
+      ),
+    );
   }
 
   Future<List<GeneratorView>> getSuggestedFeeds({String? cursor, int limit = 50}) async {
@@ -593,18 +625,12 @@ enum FeedFilter {
   postsWithMedia,
   postsAndAuthorThreads;
 
-  String get emptyLabel {
-    switch (this) {
-      case FeedFilter.postsWithReplies:
-        return 'No posts or replies yet';
-      case FeedFilter.postsNoReplies:
-        return 'No posts yet';
-      case FeedFilter.postsAndAuthorThreads:
-        return 'No replies or threads yet';
-      case FeedFilter.postsWithMedia:
-        return 'No media posts yet';
-    }
-  }
+  String get emptyLabel => switch (this) {
+    FeedFilter.postsWithReplies => 'No posts or replies yet',
+    FeedFilter.postsNoReplies => 'No posts yet',
+    FeedFilter.postsAndAuthorThreads => 'No replies or threads yet',
+    FeedFilter.postsWithMedia => 'No media posts yet',
+  };
 
   FeedGetAuthorFeedFilter get bskyFilter {
     switch (this) {

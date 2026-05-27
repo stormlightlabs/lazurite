@@ -58,93 +58,87 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Feeds'),
-        actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Done'))],
-      ),
-      body: BlocConsumer<FeedPreferencesCubit, FeedPreferencesState>(
-        listenWhen: (previous, current) =>
-            current.status == FeedPreferencesStatus.saveError ||
-            (current.status == FeedPreferencesStatus.loaded &&
-                current.message != null &&
-                current.message != previous.message),
-        listener: (context, state) {
-          if (state.status == FeedPreferencesStatus.saveError) {
-            showAppSnackBar(
-              context,
-              'Failed to sync: ${state.message}',
-              actionLabel: 'Dismiss',
-              onAction: () => context.read<FeedPreferencesCubit>().clearError(),
-            );
-          } else if (state.status == FeedPreferencesStatus.loaded && state.message != null) {
-            showAppSnackBar(context, state.message!);
-          }
-        },
-        builder: (context, state) {
-          if (state.status == FeedPreferencesStatus.loading) {
-            return const LoadingState();
-          }
-
-          return ListView(
-            children: [
-              _buildSectionHeader(
-                context,
-                'Pinned Feeds',
-                showReorder: state.pinnedFeeds.length > 1 && !_isReordering,
-                isReordering: _isReordering,
-                onAction: () => setState(() => _isReordering = !_isReordering),
-              ),
-              if (_isReordering && state.pinnedFeeds.length > 1)
-                _buildReorderablePinnedFeeds(context, state)
-              else
-                ...state.pinnedFeeds.map((feed) => _buildPinnedFeedItem(context, feed, state)),
-              const SizedBox(height: 16),
-              _buildSectionHeader(context, 'Saved Feeds'),
-              if (state.unpinnedFeeds.isEmpty)
-                const EmptyState(message: 'No saved feeds', icon: Icons.bookmark_border, padding: EdgeInsets.all(16))
-              else
-                ...state.unpinnedFeeds.map((feed) => _buildSavedFeedItem(context, feed)),
-              const SizedBox(height: 16),
-              _buildSectionHeader(context, 'Discover Feeds', actionText: 'Refresh', onAction: _loadSuggestedFeeds),
-              _buildDiscoverSection(context),
-              const SizedBox(height: 24),
-            ],
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: const Text('My Feeds'),
+      actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Done'))],
+    ),
+    body: BlocConsumer<FeedPreferencesCubit, FeedPreferencesState>(
+      listenWhen: (previous, current) =>
+          current.status == FeedPreferencesStatus.saveError ||
+          (current.status == FeedPreferencesStatus.loaded &&
+              current.message != null &&
+              current.message != previous.message),
+      listener: (context, state) {
+        if (state.status == FeedPreferencesStatus.saveError) {
+          showAppSnackBar(
+            context,
+            'Failed to sync: ${state.message}',
+            actionLabel: 'Dismiss',
+            onAction: () => context.read<FeedPreferencesCubit>().clearError(),
           );
-        },
-      ),
-    );
-  }
-
-  Widget _buildReorderablePinnedFeeds(BuildContext context, FeedPreferencesState state) {
-    final pinnedFeeds = state.pinnedFeeds;
-
-    return ReorderableListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      buildDefaultDragHandles: false,
-      itemCount: pinnedFeeds.length,
-      onReorderItem: (oldIndex, newIndex) {
-        context.read<FeedPreferencesCubit>().reorderPinnedFeeds(oldIndex, newIndex);
+        } else if (state.status == FeedPreferencesStatus.loaded && state.message != null) {
+          showAppSnackBar(context, state.message!);
+        }
       },
-      itemBuilder: (context, index) {
-        final feed = pinnedFeeds[index];
-        final isTimeline = state.isTimeline(feed);
-        final generator = state.generatorFor(feed);
+      builder: (context, state) {
+        if (state.status == FeedPreferencesStatus.loading) {
+          return const LoadingState();
+        }
 
-        return ListTile(
-          key: ValueKey(feed.id),
-          leading: isTimeline
-              ? _buildTimelineIcon(context)
-              : (generator != null ? _buildGeneratorIcon(context, generator) : _buildFeedIcon(context, feed.value)),
-          title: Text(state.displayNameFor(feed)),
-          subtitle: Text(state.subtitleFor(feed)),
-          trailing: ReorderableDragStartListener(index: index, child: const Icon(Icons.drag_handle)),
+        return ListView(
+          children: [
+            _buildSectionHeader(
+              context,
+              'Pinned Feeds',
+              showReorder: state.pinnedFeeds.length > 1 && !_isReordering,
+              isReordering: _isReordering,
+              onAction: () => setState(() => _isReordering = !_isReordering),
+            ),
+            if (_isReordering && state.pinnedFeeds.length > 1)
+              _buildReorderablePinnedFeeds(context, state)
+            else
+              ...state.pinnedFeeds.map((feed) => _buildPinnedFeedItem(context, feed, state)),
+            const SizedBox(height: 16),
+            _buildSectionHeader(context, 'Saved Feeds'),
+            if (state.unpinnedFeeds.isEmpty)
+              const EmptyState(message: 'No saved feeds', icon: Icons.bookmark_border, padding: EdgeInsets.all(16))
+            else
+              ...state.unpinnedFeeds.map((feed) => _buildSavedFeedItem(context, feed)),
+            const SizedBox(height: 16),
+            _buildSectionHeader(context, 'Discover Feeds', actionText: 'Refresh', onAction: _loadSuggestedFeeds),
+            _buildDiscoverSection(context),
+            const SizedBox(height: 24),
+          ],
         );
       },
-    );
-  }
+    ),
+  );
+
+  Widget _buildReorderablePinnedFeeds(BuildContext context, FeedPreferencesState state) => ReorderableListView.builder(
+    shrinkWrap: true,
+    physics: const NeverScrollableScrollPhysics(),
+    buildDefaultDragHandles: false,
+    itemCount: state.pinnedFeeds.length,
+    onReorderItem: (oldIndex, newIndex) {
+      context.read<FeedPreferencesCubit>().reorderPinnedFeeds(oldIndex, newIndex);
+    },
+    itemBuilder: (context, index) {
+      final feed = state.pinnedFeeds[index];
+      final isTimeline = state.isTimeline(feed);
+      final generator = state.generatorFor(feed);
+
+      return ListTile(
+        key: ValueKey(feed.id),
+        leading: isTimeline
+            ? _buildTimelineIcon(context)
+            : (generator != null ? _buildGeneratorIcon(context, generator) : _buildFeedIcon(context, feed.value)),
+        title: Text(state.displayNameFor(feed)),
+        subtitle: Text(state.subtitleFor(feed)),
+        trailing: ReorderableDragStartListener(index: index, child: const Icon(Icons.drag_handle)),
+      );
+    },
+  );
 
   Widget _buildSectionHeader(
     BuildContext context,
@@ -153,22 +147,20 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
     VoidCallback? onAction,
     bool showReorder = false,
     bool isReordering = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Row(
-        children: [
-          Text(
-            title.toUpperCase(),
-            style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
-          ),
-          const Spacer(),
-          if (showReorder) TextButton(onPressed: onAction, child: Text(isReordering ? 'Done' : 'Reorder')),
-          if (actionText != null && !showReorder) TextButton(onPressed: onAction, child: Text(actionText)),
-        ],
-      ),
-    );
-  }
+  }) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+    child: Row(
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
+        ),
+        const Spacer(),
+        if (showReorder) TextButton(onPressed: onAction, child: Text(isReordering ? 'Done' : 'Reorder')),
+        if (actionText != null && !showReorder) TextButton(onPressed: onAction, child: Text(actionText)),
+      ],
+    ),
+  );
 
   Widget _buildPinnedFeedItem(BuildContext context, SavedFeed feed, FeedPreferencesState state) {
     final isTimeline = state.isTimeline(feed);
@@ -202,13 +194,11 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
 
   Widget _buildSavedFeedItem(BuildContext context, SavedFeed feed) {
     final state = context.watch<FeedPreferencesCubit>().state;
-    final description = state.descriptionFor(feed);
     final generator = state.generatorFor(feed);
-
     return ListTile(
       leading: generator != null ? _buildGeneratorIcon(context, generator) : _buildFeedIcon(context, feed.value),
       title: Text(state.displayNameFor(feed)),
-      subtitle: Text(description ?? state.subtitleFor(feed)),
+      subtitle: Text(state.descriptionFor(feed) ?? state.subtitleFor(feed)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -230,8 +220,6 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
   Future<void> _showFeedDisplaySettings(BuildContext context, SavedFeed feed, FeedPreferencesState state) {
     final feedRepository = context.read<FeedRepository>();
     final feedPreferenceId = state.isTimeline(feed) ? homeFeedPreferenceId : feed.value;
-    final feedDisplayName = state.displayNameFor(feed);
-
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -240,7 +228,7 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
         create: (_) => AccountSettingsCubit(
           feedRepository: feedRepository,
           feed: feedPreferenceId,
-          feedDisplayName: feedDisplayName,
+          feedDisplayName: state.displayNameFor(feed),
         )..loadPreferences(),
         child: DraggableScrollableSheet(
           expand: false,
@@ -267,6 +255,7 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
                 child: AccountFeedDisplayPreferences(
                   padding: const EdgeInsets.only(bottom: 24),
                   scrollController: scrollController,
+                  showThreadSettings: false,
                 ),
               ),
             ],
@@ -295,7 +284,6 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
   Widget _buildDiscoverCard(BuildContext context, GeneratorView feed) {
     final prefsState = context.watch<FeedPreferencesCubit>().state;
     final isAdded = prefsState.containsFeedValue(feed.uri.toString());
-
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Padding(
@@ -352,17 +340,15 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
     );
   }
 
-  Widget _buildTimelineIcon(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFF0066FF), Color(0xFF0EA5E9)]),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Icon(Icons.people, color: Colors.white),
-    );
-  }
+  Widget _buildTimelineIcon(BuildContext context) => Container(
+    width: 40,
+    height: 40,
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(colors: [Color(0xFF0066FF), Color(0xFF0EA5E9)]),
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: const Icon(Icons.people, color: Colors.white),
+  );
 
   Widget _buildFeedIcon(BuildContext context, String feedUri) {
     final gradients = [
@@ -371,8 +357,8 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
       const [Color(0xFF22C55E), Color(0xFF42BE65)],
       const [Color(0xFFEE5396), Color(0xFFFF7EB6)],
     ];
-    final index = feedUri.hashCode % gradients.length;
 
+    final index = feedUri.hashCode % gradients.length;
     return Container(
       width: 40,
       height: 40,
@@ -407,14 +393,12 @@ class _FeedManagementScreenState extends State<FeedManagementScreen> {
     );
   }
 
-  Future<void> _confirmRemoveFeed(BuildContext context, String feedId) async {
-    await showConfirmationDialog(
-      context: context,
-      title: const Text('Remove Feed'),
-      content: const Text('Are you sure you want to remove this feed from your saved feeds?'),
-      confirmLabel: 'Remove',
-      confirmDestructive: true,
-      onConfirmed: () => context.read<FeedPreferencesCubit>().removeFeed(feedId),
-    );
-  }
+  Future<void> _confirmRemoveFeed(BuildContext context, String feedId) async => showConfirmationDialog(
+    context: context,
+    title: const Text('Remove Feed'),
+    content: const Text('Are you sure you want to remove this feed from your saved feeds?'),
+    confirmLabel: 'Remove',
+    confirmDestructive: true,
+    onConfirmed: () => context.read<FeedPreferencesCubit>().removeFeed(feedId),
+  );
 }

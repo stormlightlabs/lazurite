@@ -1,3 +1,4 @@
+import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -10,10 +11,14 @@ class AccountFeedDisplayPreferences extends StatelessWidget {
     super.key,
     this.padding = const EdgeInsets.only(bottom: 24),
     this.scrollController,
+    this.providerDisplayName = 'Bluesky',
+    this.showThreadSettings = true,
   });
 
   final EdgeInsetsGeometry padding;
   final ScrollController? scrollController;
+  final String providerDisplayName;
+  final bool showThreadSettings;
 
   @override
   Widget build(BuildContext context) => BlocBuilder<AccountSettingsCubit, AccountSettingsState>(
@@ -24,6 +29,8 @@ class AccountFeedDisplayPreferences extends StatelessWidget {
       final likeThreshold = preference?.hideRepliesByLikeCount;
       final hideReposts = preference?.hideReposts ?? false;
       final hideQuotePosts = preference?.hideQuotePosts ?? false;
+      final threadSort = state.threadViewPref?.sort;
+      final blackskyAiPreferences = state.blackskyAiPreferences;
 
       return ListView(
         controller: scrollController,
@@ -34,11 +41,18 @@ class AccountFeedDisplayPreferences extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
             child: Text(
-              state.feedDisplayName,
+              '$providerDisplayName settings',
               style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
-          const SettingsSectionHeader('Feed display'),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Text(
+              'Synced with $providerDisplayName via app.bsky.actor.getPreferences and putPreferences.',
+              style: context.textTheme.bodySmall,
+            ),
+          ),
+          SettingsSectionHeader('${state.feedDisplayName} feed display'),
           SettingsGroup(
             children: [
               SettingsTile(
@@ -96,6 +110,70 @@ class AccountFeedDisplayPreferences extends StatelessWidget {
               ),
             ],
           ),
+          if (showThreadSettings) ...[
+            const SizedBox(height: 24),
+            const SettingsSectionHeader('Thread display'),
+            SettingsGroup(
+              children: [
+                _ThreadSortTile(
+                  value: threadSort,
+                  enabled: !state.isBusy,
+                  onChanged: (value) => context.read<AccountSettingsCubit>().setThreadSort(value),
+                ),
+              ],
+            ),
+          ],
+          if (blackskyAiPreferences != null) ...[
+            const SizedBox(height: 24),
+            const SettingsSectionHeader('BlackSky AI preferences'),
+            SettingsGroup(
+              children: [
+                _BlackskyAiPreferenceTile(
+                  title: 'Training',
+                  subtitle: 'Preference for AI model training uses.',
+                  value: blackskyAiPreferences.training,
+                  enabled: !state.isBusy,
+                  onChanged: (value) => context.read<AccountSettingsCubit>().setBlackskyAiPreference(
+                    BlackskyAiPreferenceCategory.training,
+                    value,
+                  ),
+                ),
+                const Divider(height: 1),
+                _BlackskyAiPreferenceTile(
+                  title: 'Inference',
+                  subtitle: 'Preference for AI inference uses.',
+                  value: blackskyAiPreferences.inference,
+                  enabled: !state.isBusy,
+                  onChanged: (value) => context.read<AccountSettingsCubit>().setBlackskyAiPreference(
+                    BlackskyAiPreferenceCategory.inference,
+                    value,
+                  ),
+                ),
+                const Divider(height: 1),
+                _BlackskyAiPreferenceTile(
+                  title: 'Synthetic content',
+                  subtitle: 'Preference for synthetic content generation uses.',
+                  value: blackskyAiPreferences.syntheticContent,
+                  enabled: !state.isBusy,
+                  onChanged: (value) => context.read<AccountSettingsCubit>().setBlackskyAiPreference(
+                    BlackskyAiPreferenceCategory.syntheticContent,
+                    value,
+                  ),
+                ),
+                const Divider(height: 1),
+                _BlackskyAiPreferenceTile(
+                  title: 'Embedding',
+                  subtitle: 'Preference for embedding/vectorization uses.',
+                  value: blackskyAiPreferences.embedding,
+                  enabled: !state.isBusy,
+                  onChanged: (value) => context.read<AccountSettingsCubit>().setBlackskyAiPreference(
+                    BlackskyAiPreferenceCategory.embedding,
+                    value,
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (state.status == AccountSettingsStatus.saving)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -113,6 +191,74 @@ class AccountFeedDisplayPreferences extends StatelessWidget {
       );
     },
   );
+}
+
+class _BlackskyAiPreferenceTile extends StatelessWidget {
+  const _BlackskyAiPreferenceTile({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String subtitle;
+  final BlackskyAiPreferenceValue value;
+  final bool enabled;
+  final ValueChanged<BlackskyAiPreferenceValue> onChanged;
+
+  @override
+  Widget build(BuildContext context) => SettingsDropdownTile<BlackskyAiPreferenceValue>(
+    title: title,
+    subtitle: subtitle,
+    value: value,
+    options: BlackskyAiPreferenceValue.values,
+    labelBuilder: _labelFor,
+    onChanged: enabled ? (value) => onChanged(value ?? BlackskyAiPreferenceValue.unset) : null,
+  );
+
+  static String _labelFor(BlackskyAiPreferenceValue value) => switch (value) {
+    BlackskyAiPreferenceValue.unset => 'Unset',
+    BlackskyAiPreferenceValue.allow => 'Allow',
+    BlackskyAiPreferenceValue.deny => 'Deny',
+  };
+}
+
+class _ThreadSortTile extends StatelessWidget {
+  const _ThreadSortTile({required this.value, required this.enabled, required this.onChanged});
+
+  static const String _defaultSort = 'default';
+
+  /// TODO: this could be an enum
+  static const List<String> _options = [_defaultSort, 'oldest', 'newest', 'most-likes', 'random', 'hotness'];
+
+  final ThreadViewPrefSort? value;
+  final bool enabled;
+  final ValueChanged<ThreadViewPrefSort?> onChanged;
+
+  @override
+  Widget build(BuildContext context) => SettingsDropdownTile<String>(
+    title: 'Thread reply sort',
+    subtitle: 'Choose the default order for replies in post threads.',
+    value: _sortValue(value),
+    options: _options,
+    labelBuilder: _labelFor,
+    onChanged: enabled ? (sort) => onChanged(sort == _defaultSort ? null : ThreadViewPrefSort.valueOf(sort)) : null,
+  );
+
+  static String _sortValue(ThreadViewPrefSort? sort) => sort?.toJson() ?? _defaultSort;
+
+  /// TODO: this could be a getter on the enum made from [_options]
+  static String _labelFor(String sort) => switch (sort) {
+    _defaultSort => 'Default',
+    'oldest' => 'Oldest first',
+    'newest' => 'Newest first',
+    'most-likes' => 'Most likes',
+    'random' => 'Random',
+    'hotness' => 'Hotness',
+    _ => sort,
+  };
 }
 
 class _ReplyLikeThresholdTile extends StatelessWidget {

@@ -58,6 +58,9 @@ void main() {
         when(() => feedRepository.getPreferences()).thenAnswer(
           (_) async => PreferencesResult(
             preferences: const [
+              UPreferences.threadViewPref(
+                data: ThreadViewPref(sort: ThreadViewPrefSort.knownValue(data: KnownThreadViewPrefSort.newest)),
+              ),
               UPreferences.feedViewPref(data: FeedViewPref(feed: homeFeedPreferenceId, hideReplies: true)),
               UPreferences.feedViewPref(
                 data: FeedViewPref(
@@ -77,8 +80,136 @@ void main() {
             .having((state) => state.status, 'status', AccountSettingsStatus.loaded)
             .having((state) => state.feedViewPref?.hideReplies, 'hideReplies', null)
             .having((state) => state.feedViewPref?.hideReposts, 'hideReposts', true)
-            .having((state) => state.feedViewPref?.hideQuotePosts, 'hideQuotePosts', true),
+            .having((state) => state.feedViewPref?.hideQuotePosts, 'hideQuotePosts', true)
+            .having(
+              (state) => state.threadViewPref?.sort?.knownValue,
+              'threadViewPref.sort',
+              KnownThreadViewPrefSort.newest,
+            ),
       ],
+    );
+
+    blocTest<AccountSettingsCubit, AccountSettingsState>(
+      'loadPreferences loads BlackSky AI preference record when enabled',
+      build: () => AccountSettingsCubit(
+        feedRepository: feedRepository,
+        feed: homeFeedPreferenceId,
+        feedDisplayName: 'Following',
+        supportsBlackskyAiPreferences: true,
+      ),
+      setUp: () {
+        when(() => feedRepository.getPreferences()).thenAnswer((_) async => PreferencesResult(preferences: []));
+        when(() => feedRepository.getBlackskyAiPreferenceRecord()).thenAnswer(
+          (_) async => {
+            r'$type': FeedRepository.blackskyAiPreferenceCollection,
+            'preferences': {
+              'training': {'allow': false, 'updatedAt': '2026-01-01T00:00:00.000Z'},
+              'embedding': {'allow': true, 'updatedAt': '2026-01-01T00:00:00.000Z'},
+            },
+          },
+        );
+      },
+      act: (cubit) => cubit.loadPreferences(),
+      expect: () => [
+        isA<AccountSettingsState>().having((state) => state.status, 'status', AccountSettingsStatus.loading),
+        isA<AccountSettingsState>()
+            .having((state) => state.status, 'status', AccountSettingsStatus.loaded)
+            .having((state) => state.blackskyAiPreferences?.training, 'training', BlackskyAiPreferenceValue.deny)
+            .having((state) => state.blackskyAiPreferences?.embedding, 'embedding', BlackskyAiPreferenceValue.allow)
+            .having((state) => state.blackskyAiPreferences?.inference, 'inference', BlackskyAiPreferenceValue.unset),
+      ],
+    );
+
+    blocTest<AccountSettingsCubit, AccountSettingsState>(
+      'setBlackskyAiPreference writes the BlackSky preference record',
+      build: () => AccountSettingsCubit(
+        feedRepository: feedRepository,
+        feed: homeFeedPreferenceId,
+        feedDisplayName: 'Following',
+        supportsBlackskyAiPreferences: true,
+        clock: () => DateTime.utc(2026, 1, 2, 3, 4, 5),
+      ),
+      seed: () =>
+          const AccountSettingsState.initial(
+            feed: homeFeedPreferenceId,
+            feedDisplayName: 'Following',
+            supportsBlackskyAiPreferences: true,
+          ).copyWith(
+            status: AccountSettingsStatus.loaded,
+            blackskyAiPreferences: const BlackskyAiPreferences(training: BlackskyAiPreferenceValue.allow),
+          ),
+      setUp: () {
+        when(() => feedRepository.putBlackskyAiPreferenceRecord(record: any(named: 'record'))).thenAnswer((_) async {});
+      },
+      act: (cubit) =>
+          cubit.setBlackskyAiPreference(BlackskyAiPreferenceCategory.training, BlackskyAiPreferenceValue.deny),
+      expect: () => [
+        isA<AccountSettingsState>()
+            .having((state) => state.status, 'status', AccountSettingsStatus.saving)
+            .having((state) => state.blackskyAiPreferences?.training, 'training', BlackskyAiPreferenceValue.deny),
+        isA<AccountSettingsState>()
+            .having((state) => state.status, 'status', AccountSettingsStatus.loaded)
+            .having((state) => state.blackskyAiPreferences?.training, 'training', BlackskyAiPreferenceValue.deny),
+      ],
+      verify: (_) {
+        final record =
+            verify(
+                  () => feedRepository.putBlackskyAiPreferenceRecord(record: captureAny(named: 'record')),
+                ).captured.single
+                as Map<String, dynamic>;
+        expect(record[r'$type'], FeedRepository.blackskyAiPreferenceCollection);
+        expect(record['scope'], {r'$type': '${FeedRepository.blackskyAiPreferenceCollection}#globalScope'});
+        expect(record['preferences'], {
+          'training': {'allow': false, 'updatedAt': '2026-01-02T03:04:05.000Z'},
+        });
+      },
+    );
+
+    blocTest<AccountSettingsCubit, AccountSettingsState>(
+      'setThreadSort replaces only the thread preference',
+      build: () => AccountSettingsCubit(
+        feedRepository: feedRepository,
+        feed: homeFeedPreferenceId,
+        feedDisplayName: 'Following',
+      ),
+      seed: () => const AccountSettingsState.initial(feed: homeFeedPreferenceId, feedDisplayName: 'Following').copyWith(
+        status: AccountSettingsStatus.loaded,
+        threadViewPref: const ThreadViewPref(sort: ThreadViewPrefSort.knownValue(data: KnownThreadViewPrefSort.oldest)),
+      ),
+      setUp: () {
+        when(() => feedRepository.getPreferences()).thenAnswer(
+          (_) async => PreferencesResult(
+            preferences: const [
+              UPreferences.feedViewPref(data: FeedViewPref(feed: homeFeedPreferenceId, hideReplies: true)),
+              UPreferences.threadViewPref(
+                data: ThreadViewPref(sort: ThreadViewPrefSort.knownValue(data: KnownThreadViewPrefSort.oldest)),
+              ),
+            ],
+          ),
+        );
+        when(() => feedRepository.putPreferences(preferences: any(named: 'preferences'))).thenAnswer((_) async {});
+      },
+      act: (cubit) => cubit.setThreadSort(const ThreadViewPrefSort.knownValue(data: KnownThreadViewPrefSort.mostLikes)),
+      expect: () => [
+        isA<AccountSettingsState>()
+            .having((state) => state.status, 'status', AccountSettingsStatus.saving)
+            .having((state) => state.threadViewPref?.sort?.knownValue, 'sort', KnownThreadViewPrefSort.mostLikes),
+        isA<AccountSettingsState>()
+            .having((state) => state.status, 'status', AccountSettingsStatus.loaded)
+            .having((state) => state.threadViewPref?.sort?.knownValue, 'sort', KnownThreadViewPrefSort.mostLikes),
+      ],
+      verify: (_) {
+        final captured =
+            verify(() => feedRepository.putPreferences(preferences: captureAny(named: 'preferences'))).captured.single
+                as List<UPreferences>;
+
+        expect(captured.map((preference) => preference.threadViewPref).nonNulls, hasLength(1));
+        expect(
+          captured.singleWhere((preference) => preference.threadViewPref != null).threadViewPref!.sort!.knownValue,
+          KnownThreadViewPrefSort.mostLikes,
+        );
+        expect(captured.singleWhere((preference) => preference.feedViewPref != null).feedViewPref!.hideReplies, true);
+      },
     );
 
     blocTest<AccountSettingsCubit, AccountSettingsState>(

@@ -62,10 +62,6 @@ abstract final class AppViewProviders {
     return null;
   }
 
-  static String providerDisplayName(String providerKey) {
-    if (providerKey == AppViewProviders.blackskyKey) {
-      return 'Blacksky';
-    }
-    return 'Bluesky';
-  }
+  static String providerDisplayName(String providerKey) =>
+      (providerKey == AppViewProviders.blackskyKey) ? 'BlackSky' : 'Bluesky';
 }
