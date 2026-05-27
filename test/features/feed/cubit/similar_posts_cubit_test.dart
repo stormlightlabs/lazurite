@@ -16,7 +16,7 @@ void main() {
     blocTest<SimilarPostsCubit, SimilarPostsState>(
       'loads the first page on demand',
       build: () => SimilarPostsCubit(
-        repository: _repository(items: [_item('at://did:plc:one/app.bsky.feed.post/a')], cursor: 'next'),
+        repository: _repository(candidateUris: ['at://did:plc:one/app.bsky.feed.post/a'], cursor: 'next'),
       ),
       act: (cubit) => cubit.load('at://did:plc:seed/app.bsky.feed.post/root'),
       expect: () => [
@@ -33,17 +33,23 @@ void main() {
       build: () {
         var call = 0;
         return SimilarPostsCubit(
-          repository: _repositoryWithLoader((_, cursor, _) async {
-            call++;
-            if (call == 1) {
-              return (items: [_item('at://did:plc:one/app.bsky.feed.post/a')], cursor: 'next');
-            }
-            expect(cursor, 'next');
-            return (
-              items: [_item('at://did:plc:one/app.bsky.feed.post/a'), _item('at://did:plc:two/app.bsky.feed.post/b')],
-              cursor: null,
-            );
-          }),
+          repository: _repositoryWithLoader(
+            (_, cursor, _) async {
+              call++;
+              if (call == 1) {
+                return (dids: ['did:plc:liker1'], cursor: 'next');
+              }
+              expect(cursor, 'next');
+              return (dids: ['did:plc:liker2'], cursor: null);
+            },
+            recentLikedPostUriLoader: (did, _) async {
+              return switch (did) {
+                'did:plc:liker1' => ['at://did:plc:one/app.bsky.feed.post/a'],
+                'did:plc:liker2' => ['at://did:plc:one/app.bsky.feed.post/a', 'at://did:plc:two/app.bsky.feed.post/b'],
+                _ => const <String>[],
+              };
+            },
+          ),
         );
       },
       act: (cubit) async {
@@ -64,24 +70,23 @@ void main() {
   });
 }
 
-SimilarPostsRepository _repository({required List<ManyToManyItem> items, String? cursor}) =>
-    _repositoryWithLoader((_, _, _) async => (items: items, cursor: cursor));
+SimilarPostsRepository _repository({required List<String> candidateUris, String? cursor}) => _repositoryWithLoader(
+  (_, _, _) async => (dids: ['did:plc:liker'], cursor: cursor),
+  recentLikedPostUriLoader: (_, _) async => candidateUris,
+);
 
 SimilarPostsRepository _repositoryWithLoader(
-  Future<({List<ManyToManyItem> items, String? cursor})> Function(String postUri, String? cursor, int limit) loader,
-) {
+  Future<({List<String> dids, String? cursor})> Function(String postUri, String? cursor, int limit) loader, {
+  required Future<List<String>> Function(String did, int limit) recentLikedPostUriLoader,
+}) {
   return SimilarPostsRepository(
     bluesky: MockBluesky(),
     constellationClient: ConstellationClient(),
-    relationshipLoader: loader,
+    likerDidLoader: loader,
+    recentLikedPostUriLoader: recentLikedPostUriLoader,
     postHydrator: (uris) async => uris.map((uri) => _post(uri.toString())).toList(),
   );
 }
-
-ManyToManyItem _item(String otherSubject) => ManyToManyItem(
-  linkRecord: const ConstellationLinkRecord(did: 'did:plc:liker', collection: 'app.bsky.feed.like', rkey: 'like'),
-  otherSubject: otherSubject,
-);
 
 PostView _post(String uri) => testPostView(
   uri: uri,

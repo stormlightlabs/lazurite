@@ -11,25 +11,30 @@ class MockBluesky extends Mock implements Bluesky {}
 
 void main() {
   group('SimilarPostsRepository', () {
-    test('loads relationships, ranks shared-like duplicates, and hydrates only the top candidates', () async {
+    test('loads likers, reads their public likes, ranks duplicates, and hydrates top candidates', () async {
       final hydratedUris = <List<String>>[];
+      final recentLikeCalls = <String>[];
       final repository = SimilarPostsRepository(
         bluesky: MockBluesky(),
         constellationClient: ConstellationClient(),
-        relationshipLoader: (postUri, cursor, limit) async {
+        likerDidLoader: (postUri, cursor, limit) async {
           expect(postUri, 'at://did:plc:seed/app.bsky.feed.post/root');
           expect(cursor, isNull);
-          expect(limit, 100);
-          return (
-            items: [
-              _item('at://did:plc:one/app.bsky.feed.post/a'),
-              _item('at://did:plc:two/app.bsky.feed.post/b'),
-              _item('at://did:plc:one/app.bsky.feed.post/a'),
-              _item('at://did:plc:seed/app.bsky.feed.post/root'),
-              _item('not-a-uri'),
+          expect(limit, SimilarPostsRepository.defaultRelationshipLimit);
+          return (dids: ['did:plc:liker1', 'did:plc:liker2'], cursor: 'next');
+        },
+        recentLikedPostUriLoader: (did, limit) async {
+          recentLikeCalls.add('$did:$limit');
+          return switch (did) {
+            'did:plc:liker1' => [
+              'at://did:plc:one/app.bsky.feed.post/a',
+              'at://did:plc:two/app.bsky.feed.post/b',
+              'at://did:plc:seed/app.bsky.feed.post/root',
+              'not-a-uri',
             ],
-            cursor: 'next',
-          );
+            'did:plc:liker2' => ['at://did:plc:one/app.bsky.feed.post/a', 'at://did:plc:three/app.bsky.feed.post/c'],
+            _ => const <String>[],
+          };
         },
         postHydrator: (uris) async {
           hydratedUris.add(uris.map((uri) => uri.toString()).toList());
@@ -40,7 +45,15 @@ void main() {
       final page = await repository.getSimilarPosts(postUri: 'at://did:plc:seed/app.bsky.feed.post/root');
 
       expect(page.cursor, 'next');
-      expect(hydratedUris.single, ['at://did:plc:one/app.bsky.feed.post/a', 'at://did:plc:two/app.bsky.feed.post/b']);
+      expect(recentLikeCalls, [
+        'did:plc:liker1:${SimilarPostsRepository.defaultRecentLikesPerLiker}',
+        'did:plc:liker2:${SimilarPostsRepository.defaultRecentLikesPerLiker}',
+      ]);
+      expect(hydratedUris.single, [
+        'at://did:plc:one/app.bsky.feed.post/a',
+        'at://did:plc:three/app.bsky.feed.post/c',
+        'at://did:plc:two/app.bsky.feed.post/b',
+      ]);
       expect(page.posts.map((post) => post.uri.toString()), [
         'at://did:plc:one/app.bsky.feed.post/a',
         'at://did:plc:two/app.bsky.feed.post/b',
@@ -52,15 +65,13 @@ void main() {
       final repository = SimilarPostsRepository(
         bluesky: MockBluesky(),
         constellationClient: ConstellationClient(),
-        relationshipLoader: (_, _, _) async => (
-          items: [
-            _item(''),
-            _item('not-a-uri'),
-            _item('at://did:plc:seed/app.bsky.feed.post/root'),
-            _item('at://did:plc:actor/app.bsky.feed.like/rkey'),
-          ],
-          cursor: null,
-        ),
+        likerDidLoader: (_, _, _) async => (dids: ['did:plc:liker'], cursor: null),
+        recentLikedPostUriLoader: (_, _) async => const [
+          '',
+          'not-a-uri',
+          'at://did:plc:seed/app.bsky.feed.post/root',
+          'at://did:plc:actor/app.bsky.feed.like/rkey',
+        ],
         postHydrator: (_) async {
           hydrateCalled = true;
           return const <PostView>[];
@@ -75,16 +86,17 @@ void main() {
 
     test('caches pages within the configured ttl', () async {
       var now = DateTime.utc(2026, 5, 23, 12);
-      var relationshipCalls = 0;
+      var likerCalls = 0;
       final repository = SimilarPostsRepository(
         bluesky: MockBluesky(),
         constellationClient: ConstellationClient(),
         now: () => now,
         cacheTtl: const Duration(hours: 1),
-        relationshipLoader: (_, _, _) async {
-          relationshipCalls++;
-          return (items: [_item('at://did:plc:one/app.bsky.feed.post/a')], cursor: null);
+        likerDidLoader: (_, _, _) async {
+          likerCalls++;
+          return (dids: ['did:plc:liker'], cursor: null);
         },
+        recentLikedPostUriLoader: (_, _) async => ['at://did:plc:one/app.bsky.feed.post/a'],
         postHydrator: (_) async => [_post('at://did:plc:one/app.bsky.feed.post/a')],
       );
 
@@ -93,15 +105,10 @@ void main() {
       now = now.add(const Duration(hours: 2));
       await repository.getSimilarPosts(postUri: 'at://did:plc:seed/app.bsky.feed.post/root');
 
-      expect(relationshipCalls, 2);
+      expect(likerCalls, 2);
     });
   });
 }
-
-ManyToManyItem _item(String otherSubject) => ManyToManyItem(
-  linkRecord: const ConstellationLinkRecord(did: 'did:plc:liker', collection: 'app.bsky.feed.like', rkey: 'like'),
-  otherSubject: otherSubject,
-);
 
 PostView _post(String uri) => testPostView(
   uri: uri,

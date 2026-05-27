@@ -6,6 +6,7 @@ import 'package:lazurite/core/network/constellation_client.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/features/feed/cubit/similar_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/similar_posts_repository.dart';
+import 'package:lazurite/features/feed/presentation/widgets/compact_post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/similar_posts_section.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -26,6 +27,23 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('author.example'), findsOneWidget);
+    final card = tester.widget<CompactPostCard>(find.byType(CompactPostCard));
+    expect(card.contentPadding, const EdgeInsets.fromLTRB(16, 14, 16, 14));
+  });
+
+  testWidgets('places Show more in the section header instead of below the cards', (tester) async {
+    await tester.pumpWidget(
+      _TestApp(
+        repository: _repository(posts: [_post('at://did:plc:one/app.bsky.feed.post/a')], cursor: 'next'),
+      ),
+    );
+
+    await tester.tap(find.text('Show similar posts'));
+    await tester.pumpAndSettle();
+
+    final showMoreTop = tester.getTopLeft(find.widgetWithText(TextButton, 'Show more')).dy;
+    final cardBottom = tester.getBottomLeft(find.byType(CompactPostCard)).dy;
+    expect(showMoreTop, lessThan(cardBottom));
   });
 }
 
@@ -47,17 +65,12 @@ class _TestApp extends StatelessWidget {
   }
 }
 
-SimilarPostsRepository _repository({required List<PostView> posts}) => SimilarPostsRepository(
+SimilarPostsRepository _repository({required List<PostView> posts, String? cursor}) => SimilarPostsRepository(
   bluesky: MockBluesky(),
   constellationClient: ConstellationClient(),
-  relationshipLoader: (_, _, _) async =>
-      (items: posts.map((post) => _item(post.uri.toString())).toList(), cursor: null),
+  likerDidLoader: (_, _, _) async => (dids: ['did:plc:liker'], cursor: cursor),
+  recentLikedPostUriLoader: (_, _) async => posts.map((post) => post.uri.toString()).toList(),
   postHydrator: (_) async => posts,
-);
-
-ManyToManyItem _item(String otherSubject) => ManyToManyItem(
-  linkRecord: const ConstellationLinkRecord(did: 'did:plc:liker', collection: 'app.bsky.feed.like', rkey: 'like'),
-  otherSubject: otherSubject,
 );
 
 PostView _post(String uri) => testPostView(

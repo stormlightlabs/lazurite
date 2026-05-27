@@ -57,36 +57,8 @@ class SimilarPostsSection extends StatelessWidget {
         }
 
         return _SimilarPostsShell(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final cardWidth = constraints.maxWidth.clamp(260.0, 360.0).toDouble();
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: state.posts
-                          .map(
-                            (post) => Padding(
-                              padding: const EdgeInsets.only(right: 10),
-                              child: SizedBox(
-                                width: cardWidth,
-                                child: CompactPostCard(
-                                  feedViewPost: FeedViewPost(post: post),
-                                  onTap: () => navigateToPost(context, post.uri.toString()),
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(growable: false),
-                    ),
-                  );
-                },
-              ),
-              if (state.hasMore)
-                TextButton.icon(
+          trailing: state.hasMore
+              ? TextButton.icon(
                   onPressed: state.status == SimilarPostsStatus.loadingMore
                       ? null
                       : () => context.read<SimilarPostsCubit>().loadMore(),
@@ -94,8 +66,34 @@ class SimilarPostsSection extends StatelessWidget {
                       ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.expand_more),
                   label: const Text('Show more'),
+                )
+              : null,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final cardWidth = constraints.maxWidth.clamp(272.0, 372.0).toDouble();
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: state.posts
+                      .map(
+                        (post) => Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: SizedBox(
+                            width: cardWidth,
+                            child: CompactPostCard(
+                              feedViewPost: FeedViewPost(post: post),
+                              contentPadding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                              onTap: () => navigateToPost(context, post.uri.toString()),
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(growable: false),
                 ),
-            ],
+              );
+            },
           ),
         );
       },
@@ -104,9 +102,10 @@ class SimilarPostsSection extends StatelessWidget {
 }
 
 class _SimilarPostsShell extends StatelessWidget {
-  const _SimilarPostsShell({required this.child});
+  const _SimilarPostsShell({required this.child, this.trailing});
 
   final Widget child;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -115,13 +114,26 @@ class _SimilarPostsShell extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Similar posts', style: context.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 2),
-          Text(
-            'Liked by people who liked this post',
-            style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Similar posts', style: context.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Liked by people who liked this post',
+                      style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              if (trailing != null) Padding(padding: const EdgeInsetsDirectional.only(start: 12), child: trailing!),
+            ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           child,
         ],
       ),

@@ -112,7 +112,7 @@ class ConstellationClient {
     int? limit,
     String? cursor,
   }) async {
-    final uri = _xrpcUri('blue.microcosm.links.getDistinct', {
+    final uri = _xrpcUri('blue.microcosm.links.getBacklinkDids', {
       'subject': subject,
       'source': source,
       if (limit != null) 'limit': limit.toString(),
@@ -121,7 +121,7 @@ class ConstellationClient {
     final data = await _get(uri);
     return (
       total: data['total'] as int,
-      dids: _listField(data, 'dids').cast<String>(),
+      dids: _listFieldAny(data, ['linking_dids', 'dids']).cast<String>(),
       cursor: data['cursor'] as String?,
     );
   }

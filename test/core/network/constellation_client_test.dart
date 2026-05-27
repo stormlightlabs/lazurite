@@ -136,7 +136,7 @@ void main() {
       test('returns total, dids and cursor from response', () async {
         final responseBody = jsonEncode({
           'total': 3,
-          'dids': ['did:plc:aaa', 'did:plc:bbb', 'did:plc:ccc'],
+          'linking_dids': ['did:plc:aaa', 'did:plc:bbb', 'did:plc:ccc'],
           'cursor': 'next-cursor',
         });
         final client = ConstellationClient(httpClient: MockClient((_) async => http.Response(responseBody, 200)));
@@ -161,7 +161,7 @@ void main() {
       });
 
       test('treats null dids as empty list', () async {
-        final responseBody = jsonEncode({'total': 1, 'dids': null});
+        final responseBody = jsonEncode({'total': 1, 'linking_dids': null});
         final client = ConstellationClient(httpClient: MockClient((_) async => http.Response(responseBody, 200)));
 
         final result = await client.getDistinct('did:plc:abc', 'source');
@@ -174,7 +174,7 @@ void main() {
         final client = ConstellationClient(
           httpClient: MockClient((request) async {
             capturedUri = request.url;
-            return http.Response(jsonEncode({'total': 0, 'dids': []}), 200);
+            return http.Response(jsonEncode({'total': 0, 'linking_dids': []}), 200);
           }),
         );
 
@@ -182,6 +182,7 @@ void main() {
 
         expect(capturedUri?.queryParameters['limit'], '25');
         expect(capturedUri?.queryParameters['cursor'], 'some-cursor');
+        expect(capturedUri?.path, '/xrpc/blue.microcosm.links.getBacklinkDids');
       });
 
       test('omits limit and cursor when not provided', () async {
@@ -189,7 +190,7 @@ void main() {
         final client = ConstellationClient(
           httpClient: MockClient((request) async {
             capturedUri = request.url;
-            return http.Response(jsonEncode({'total': 0, 'dids': []}), 200);
+            return http.Response(jsonEncode({'total': 0, 'linking_dids': []}), 200);
           }),
         );
 

@@ -1762,7 +1762,7 @@ abstract class AppLocalizations {
   /// Settings subtitle for semantic search management
   ///
   /// In en, this message translates to:
-  /// **'Manage semantic search from Bookmarks & Likes -> Search'**
+  /// **'Manage searching your bookmarks & saved posts.'**
   String get messageManageSemanticSearchSubtitle;
 
   /// Settings subtitle for opening app logs

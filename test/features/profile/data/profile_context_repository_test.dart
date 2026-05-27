@@ -331,15 +331,15 @@ void main() {
     });
 
     group('getBlockedByProfiles', () {
-      test('hydrates DIDs returned by getDistinct', () async {
+      test('hydrates DIDs returned by getBacklinkDids', () async {
         final aliceProfile = _buildProfileView('did:plc:alice', 'alice.bsky.social');
         final bobProfile = _buildProfileView('did:plc:bob', 'bob.bsky.social');
 
         final constellation = _constellationWithResponses((uri) {
-          expect(uri.path, contains('getDistinct'));
+          expect(uri.path, contains('getBacklinkDids'));
           return {
             'total': 2,
-            'dids': ['did:plc:alice', 'did:plc:bob'],
+            'linking_dids': ['did:plc:alice', 'did:plc:bob'],
           };
         });
 
@@ -363,7 +363,7 @@ void main() {
         final constellation = _constellationWithResponses((_) {
           return {
             'total': 1,
-            'dids': ['did:plc:alice'],
+            'linking_dids': ['did:plc:alice'],
           };
         });
 
@@ -398,7 +398,7 @@ void main() {
           constellationClient: _constellationWithResponses((_) {
             return {
               'total': 1,
-              'dids': ['did:plc:alice'],
+              'linking_dids': ['did:plc:alice'],
             };
           }),
         );
@@ -427,7 +427,7 @@ void main() {
           constellationClient: _constellationWithResponses((_) {
             return {
               'total': 2,
-              'dids': ['did:plc:alice', 'did:plc:suspended'],
+              'linking_dids': ['did:plc:alice', 'did:plc:suspended'],
             };
           }),
         );
@@ -456,7 +456,7 @@ void main() {
           constellationClient: _constellationWithResponses((_) {
             return {
               'total': 1,
-              'dids': ['did:plc:alice'],
+              'linking_dids': ['did:plc:alice'],
             };
           }),
         );
@@ -465,23 +465,23 @@ void main() {
       });
 
       test('uses local offset cursor after collecting blocked-by DIDs', () async {
-        var getDistinctCalls = 0;
+        var getBacklinkDidsCalls = 0;
         String? capturedLimit;
         final constellation = _constellationWithResponses((uri) {
-          getDistinctCalls += 1;
+          getBacklinkDidsCalls += 1;
           capturedLimit = uri.queryParameters['limit'];
-          if (getDistinctCalls == 1) {
+          if (getBacklinkDidsCalls == 1) {
             expect(uri.queryParameters['cursor'], isNull);
             return {
               'total': 3,
-              'dids': ['did:plc:one', 'did:plc:two'],
+              'linking_dids': ['did:plc:one', 'did:plc:two'],
               'cursor': 'page2',
             };
           }
           expect(uri.queryParameters['cursor'], 'page2');
           return {
             'total': 3,
-            'dids': ['did:plc:three'],
+            'linking_dids': ['did:plc:three'],
             'cursor': null,
           };
         });
@@ -499,19 +499,19 @@ void main() {
 
         final result = await repo.getBlockedByProfiles('did:plc:target', cursor: '2');
 
-        expect(getDistinctCalls, 2);
+        expect(getBacklinkDidsCalls, 2);
         expect(capturedLimit, '16');
         expect(result.entries.map((entry) => entry.did), ['did:plc:three']);
         expect(result.cursor, isNull);
       });
 
-      test('falls back to getBacklinks when getDistinct returns 404', () async {
+      test('falls back to getBacklinks when getBacklinkDids returns 404', () async {
         final aliceProfile = _buildProfileViewDetailed('did:plc:alice', 'alice.bsky.social');
         final bobProfile = _buildProfileViewDetailed('did:plc:bob', 'bob.bsky.social');
 
         final constellation = ConstellationClient(
           httpClient: MockClient((request) async {
-            if (request.url.path.contains('getDistinct')) {
+            if (request.url.path.contains('getBacklinkDids')) {
               return http.Response('Not Found', 404);
             }
 
@@ -546,7 +546,7 @@ void main() {
       });
 
       test('collects blocked-by DIDs across pages before hydrating', () async {
-        var getDistinctCalls = 0;
+        var getBacklinkDidsCalls = 0;
         final repo = ProfileContextRepository(
           bluesky: _fakeBluesky(
             actor: _ThrowingActorService(),
@@ -562,16 +562,16 @@ void main() {
             atproto: _FakeAtProto(repo: _FakeRepoService(records: [])),
           ),
           constellationClient: _constellationWithResponses((uri) {
-            if (!uri.path.contains('getDistinct')) {
+            if (!uri.path.contains('getBacklinkDids')) {
               throw Exception('Unexpected endpoint: ${uri.path}');
             }
 
-            getDistinctCalls += 1;
-            if (getDistinctCalls == 1) {
+            getBacklinkDidsCalls += 1;
+            if (getBacklinkDidsCalls == 1) {
               expect(uri.queryParameters['cursor'], isNull);
               return {
                 'total': 23,
-                'dids': ['did:plc:suspended'],
+                'linking_dids': ['did:plc:suspended'],
                 'cursor': 'page-2',
               };
             }
@@ -579,7 +579,7 @@ void main() {
             expect(uri.queryParameters['cursor'], 'page-2');
             return {
               'total': 23,
-              'dids': ['did:plc:alice'],
+              'linking_dids': ['did:plc:alice'],
               'cursor': null,
             };
           }),
@@ -587,7 +587,7 @@ void main() {
 
         final result = await repo.getBlockedByProfiles('did:plc:target');
 
-        expect(getDistinctCalls, 2);
+        expect(getBacklinkDidsCalls, 2);
         expect(result.total, 23);
         expect(result.cursor, isNull);
         expect(result.entries.map((entry) => entry.did), ['did:plc:suspended', 'did:plc:alice']);
@@ -600,7 +600,7 @@ void main() {
         final profiles = dids.map((d) => _buildProfileView(d, '$d.bsky.social')).toList();
 
         final batchSizes = <int>[];
-        final constellation = _constellationWithResponses((_) => {'total': 30, 'dids': dids});
+        final constellation = _constellationWithResponses((_) => {'total': 30, 'linking_dids': dids});
 
         final repo = ProfileContextRepository(
           bluesky: _fakeBluesky(
@@ -619,7 +619,7 @@ void main() {
       });
 
       test('returns empty profiles when no DIDs returned', () async {
-        final constellation = _constellationWithResponses((_) => {'total': 0, 'dids': []});
+        final constellation = _constellationWithResponses((_) => {'total': 0, 'linking_dids': []});
         final repo = ProfileContextRepository(bluesky: _buildBluesky(), constellationClient: constellation);
 
         final result = await repo.getBlockedByProfiles('did:plc:target');
@@ -663,7 +663,7 @@ void main() {
 
         final constellation = ConstellationClient(
           httpClient: MockClient((request) async {
-            if (request.url.path.contains('getDistinct')) {
+            if (request.url.path.contains('getBacklinkDids')) {
               return http.Response('Not Found', 404);
             }
 
@@ -1038,7 +1038,7 @@ void main() {
           constellationClient: _constellationWithResponses((_) {
             return {
               'total': 3,
-              'dids': [' did:plc:alice ', 'did:plc:alice', '   '],
+              'linking_dids': [' did:plc:alice ', 'did:plc:alice', '   '],
             };
           }),
         );

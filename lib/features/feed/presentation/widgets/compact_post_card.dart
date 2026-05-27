@@ -23,12 +23,14 @@ class CompactPostCard extends StatelessWidget {
     required this.feedViewPost,
     this.footer,
     this.onTap,
+    this.contentPadding = const EdgeInsets.fromLTRB(12, 10, 12, 10),
     this.moderationContext = bsky_moderation.ModerationBehaviorContext.contentList,
   });
 
   final FeedViewPost feedViewPost;
   final Widget? footer;
   final VoidCallback? onTap;
+  final EdgeInsetsGeometry contentPadding;
   final bsky_moderation.ModerationBehaviorContext moderationContext;
 
   @override
@@ -51,7 +53,7 @@ class CompactPostCard extends StatelessWidget {
             InkWell(
               onTap: onTap,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                padding: contentPadding,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
