@@ -330,7 +330,7 @@ class SettingsScreen extends StatelessWidget {
   );
 
   Widget _fontSizeOption(BuildContext context, AppFontSize fontSize) => Text(
-    context.l10n.formatFontSizeOption(_fontSizeLabel(context, fontSize), fontSize.value.toInt()),
+    _fontSizeLabel(context, fontSize),
     textAlign: TextAlign.right,
     style: AppTypography.content(
       context.fontTheme.contentFontFamily,

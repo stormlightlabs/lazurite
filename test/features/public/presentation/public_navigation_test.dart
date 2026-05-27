@@ -40,12 +40,14 @@ void main() {
 
     await pumpTestRouterApp(tester, router);
 
-    navigateToPublicFeed(buttonContext, _feed(), context);
+    final feedNavigation = navigateToPublicFeed(buttonContext, _feed(), context);
     await tester.pumpAndSettle();
     expect(find.textContaining('provider=blacksky'), findsOneWidget);
     expect(find.textContaining('/feed?'), findsOneWidget);
-    expect(router.canPop(), isFalse);
+    expect(router.canPop(), isTrue);
 
+    router.pop();
+    await feedNavigation;
     router.go('/');
     await tester.pumpAndSettle();
     final postNavigation = navigateToPublicPost(buttonContext, 'at://did:plc:alice/app.bsky.feed.post/abc', context);

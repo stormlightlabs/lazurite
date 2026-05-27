@@ -1311,7 +1311,7 @@
   "@messageForceNextXrpc401Subtitle": {
     "description": "Developer setting subtitle for forced 401"
   },
-  "messageManageSemanticSearchSubtitle": "Manage semantic search from Bookmarks & Likes -> Search",
+  "messageManageSemanticSearchSubtitle": "Manage searching your bookmarks & saved posts.",
   "@messageManageSemanticSearchSubtitle": {
     "description": "Settings subtitle for semantic search management"
   },

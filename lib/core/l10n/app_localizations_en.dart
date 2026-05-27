@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -934,7 +935,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Debug-only: next network request returns Unauthorized to test token refresh';
 
   @override
-  String get messageManageSemanticSearchSubtitle => 'Manage semantic search from Bookmarks & Likes -> Search';
+  String get messageManageSemanticSearchSubtitle => 'Manage searching your bookmarks & saved posts.';
 
   @override
   String get messageLogsSubtitle => 'View app log files';

@@ -29,14 +29,22 @@ void main() {
   });
 
   group('TypeaheadRepository', () {
-    test('bluesky provider delegates to SDK and applies moderation filtering', () async {
-      final actorService = _FakeActorService()
-        ..searchActorsResult = const _FakeActorsData(
-          actors: [
-            ProfileViewBasic(did: 'did:plc:keep', handle: 'keep.bsky.social'),
-            ProfileViewBasic(did: 'did:plc:hide', handle: 'hide.bsky.social'),
-          ],
+    test('bluesky provider uses public HTTP endpoint and applies moderation filtering', () async {
+      Uri? requestedUri;
+      Map<String, String>? requestHeaders;
+      final client = _CallbackClient((request) async {
+        requestedUri = request.url;
+        requestHeaders = request.headers;
+        return http.Response(
+          jsonEncode({
+            'actors': [
+              {'did': 'did:plc:keep', 'handle': 'keep.bsky.social'},
+              {'did': 'did:plc:hide', 'handle': 'hide.bsky.social'},
+            ],
+          }),
+          200,
         );
+      });
 
       when(
         () => moderationService.shouldFilterProfileBasicInList(
@@ -45,18 +53,21 @@ void main() {
       ).thenReturn(true);
 
       final repository = TypeaheadRepository(
-        bluesky: _fakeBlueskyClient(actor: actorService),
+        bluesky: _fakeBlueskyClient(actor: _FakeActorService()),
         provider: TypeaheadRepository.blueskyProvider,
         moderationService: moderationService,
+        httpClient: client,
       );
 
       final results = await repository.search(query: 'keep', limit: 5);
 
       expect(results.map((actor) => actor.did).toList(), ['did:plc:keep']);
-      expect(actorService.lastQuery, 'keep');
-      expect(actorService.lastLimit, 5);
-      expect(actorService.lastHeaders?['x-test'], 'moderation');
-      expect(actorService.lastHeaders?['atproto-proxy'], isNull);
+      expect(requestedUri?.host, 'public.api.bsky.app');
+      expect(requestedUri?.path, '/xrpc/app.bsky.actor.searchActorsTypeahead');
+      expect(requestedUri?.queryParameters['q'], 'keep');
+      expect(requestedUri?.queryParameters['limit'], '5');
+      expect(requestHeaders?['x-test'], 'moderation');
+      expect(requestHeaders?['atproto-proxy'], isNull);
     });
 
     test('community provider makes HTTP request, parses JSON, and applies local moderation', () async {
@@ -128,7 +139,19 @@ void main() {
           actors: [ProfileViewBasic(did: 'did:plc:fallback', handle: 'fallback.bsky.social')],
         );
 
-      final client = _CallbackClient((_) async => http.Response('upstream unavailable', 503));
+      final client = _CallbackClient((request) async {
+        if (request.url.host == 'typeahead.waow.tech') {
+          return http.Response('upstream unavailable', 503);
+        }
+        return http.Response(
+          jsonEncode({
+            'actors': [
+              {'did': 'did:plc:fallback', 'handle': 'fallback.bsky.social'},
+            ],
+          }),
+          200,
+        );
+      });
 
       final repository = TypeaheadRepository(
         bluesky: _fakeBlueskyClient(actor: actorService),
@@ -140,8 +163,7 @@ void main() {
       final results = await repository.search(query: 'fallback', limit: 8);
 
       expect(results.map((actor) => actor.did).toList(), ['did:plc:fallback']);
-      expect(actorService.lastQuery, 'fallback');
-      expect(actorService.lastLimit, 8);
+      expect(actorService.lastQuery, isNull);
     });
 
     test('provider resolver picks up runtime provider changes without recreating repository', () async {
@@ -152,12 +174,22 @@ void main() {
         ..searchActorsResult = const _FakeActorsData(
           actors: [ProfileViewBasic(did: 'did:plc:bluesky', handle: 'bluesky.bsky.social')],
         );
-      final client = _CallbackClient((_) async {
-        communityCalls += 1;
+      final client = _CallbackClient((request) async {
+        if (request.url.host == 'typeahead.waow.tech') {
+          communityCalls += 1;
+          return http.Response(
+            jsonEncode({
+              'actors': [
+                {'did': 'did:plc:community', 'handle': 'community.bsky.social'},
+              ],
+            }),
+            200,
+          );
+        }
         return http.Response(
           jsonEncode({
             'actors': [
-              {'did': 'did:plc:community', 'handle': 'community.bsky.social'},
+              {'did': 'did:plc:bluesky', 'handle': 'bluesky.bsky.social'},
             ],
           }),
           200,
@@ -181,8 +213,7 @@ void main() {
       final blueskyResults = await repository.search(query: 'second', limit: 4);
       expect(blueskyResults.map((actor) => actor.did).toList(), ['did:plc:bluesky']);
       expect(communityCalls, 1);
-      expect(actorService.lastQuery, 'second');
-      expect(actorService.lastLimit, 4);
+      expect(actorService.lastQuery, isNull);
     });
 
     test('community fallback does not trigger when no Bluesky session/client exists', () async {

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io' as io;
 
-import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/network/app_view_request_context.dart';
@@ -113,25 +112,7 @@ class TypeaheadRepository {
   }
 
   Future<List<TypeaheadResult>> _searchBluesky({required String query, required int limit}) async {
-    final authRecovery = _authRecovery;
-    if (authRecovery == null) {
-      return _searchBlueskyPublicHttp(query: query, limit: limit);
-    }
-    final headers = await _moderationService?.headersForRequest();
-
-    final response = await authRecovery.run(
-      (client) => client.actor.searchActorsTypeahead(
-        q: query,
-        limit: limit,
-        $headers: _appViewContext.appBskyHeadersForEndpoint(_searchActorsTypeaheadEndpoint, headers),
-      ),
-    );
-
-    final results = (response.data.actors as List)
-        .whereType<ProfileViewBasic>()
-        .map(TypeaheadResult.fromProfileViewBasic)
-        .toList(growable: false);
-    return _applyModeration(results);
+    return _searchBlueskyPublicHttp(query: query, limit: limit);
   }
 
   Future<List<TypeaheadResult>> _searchBlueskyPublicHttp({required String query, required int limit}) async {

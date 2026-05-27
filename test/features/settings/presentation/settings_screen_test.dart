@@ -207,7 +207,8 @@ void main() {
     expect(find.text('Lora'), findsOneWidget);
     expect(find.text('Google Sans'), findsWidgets);
     expect(find.text('Google Sans Code'), findsOneWidget);
-    expect(find.text('Normal (16)'), findsOneWidget);
+    expect(find.text('Normal'), findsOneWidget);
+    expect(find.text('Normal (16)'), findsNothing);
 
     await tester.scrollUntilVisible(find.text('Feed Layout'), 300);
     await tester.pumpAndSettle();
@@ -245,9 +246,9 @@ void main() {
     final fontSizeDropdown = tester.widget<DropdownButton<AppFontSize>>(fontSizeFinder);
     expect(fontSizeDropdown.alignment, AlignmentDirectional.centerEnd);
     final fontSizeItems = fontSizeDropdown.selectedItemBuilder!(tester.element(fontSizeFinder));
-    _expectRightAlignedSelectedFontLabel(fontSizeItems[0], 'Small (14)');
-    _expectRightAlignedSelectedFontLabel(fontSizeItems[1], 'Normal (16)');
-    _expectRightAlignedSelectedFontLabel(fontSizeItems[2], 'Large (18)');
+    _expectRightAlignedSelectedFontLabel(fontSizeItems[0], 'Small');
+    _expectRightAlignedSelectedFontLabel(fontSizeItems[1], 'Normal');
+    _expectRightAlignedSelectedFontLabel(fontSizeItems[2], 'Large');
     fontSizeDropdown.onChanged?.call(AppFontSize.large);
 
     final codeDropdown = tester.widget<DropdownButton<AppCodeFontFamily>>(codeFinder);

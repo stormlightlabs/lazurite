@@ -112,7 +112,7 @@ void main() {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.text('Semantic Search'), 300);
-      expect(find.text('Manage semantic search from Bookmarks & Likes -> Search'), findsOneWidget);
+      expect(find.text('Manage searching your bookmarks & saved posts.'), findsOneWidget);
     });
 
     testWidgets('does not show semantic search controls in settings', (tester) async {

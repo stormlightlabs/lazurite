@@ -41,7 +41,7 @@ class AccountFeedDisplayPreferences extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
             child: Text(
-              '$providerDisplayName settings',
+              '$providerDisplayName Settings',
               style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
@@ -219,7 +219,7 @@ class _BlackskyAiPreferenceTile extends StatelessWidget {
   );
 
   static String _labelFor(BlackskyAiPreferenceValue value) => switch (value) {
-    BlackskyAiPreferenceValue.unset => 'Unset',
+    BlackskyAiPreferenceValue.unset => 'Not Set',
     BlackskyAiPreferenceValue.allow => 'Allow',
     BlackskyAiPreferenceValue.deny => 'Deny',
   };
@@ -228,37 +228,47 @@ class _BlackskyAiPreferenceTile extends StatelessWidget {
 class _ThreadSortTile extends StatelessWidget {
   const _ThreadSortTile({required this.value, required this.enabled, required this.onChanged});
 
-  static const String _defaultSort = 'default';
-
-  /// TODO: this could be an enum
-  static const List<String> _options = [_defaultSort, 'oldest', 'newest', 'most-likes', 'random', 'hotness'];
-
   final ThreadViewPrefSort? value;
   final bool enabled;
   final ValueChanged<ThreadViewPrefSort?> onChanged;
 
   @override
-  Widget build(BuildContext context) => SettingsDropdownTile<String>(
+  Widget build(BuildContext context) => SettingsDropdownTile<_ThreadSortOption>(
     title: 'Thread reply sort',
     subtitle: 'Choose the default order for replies in post threads.',
-    value: _sortValue(value),
-    options: _options,
-    labelBuilder: _labelFor,
-    onChanged: enabled ? (sort) => onChanged(sort == _defaultSort ? null : ThreadViewPrefSort.valueOf(sort)) : null,
+    value: _ThreadSortOption.fromPreference(value),
+    options: _ThreadSortOption.values,
+    labelBuilder: (option) => option.label,
+    onChanged: enabled ? (option) => onChanged(option?.preferenceValue) : null,
   );
+}
 
-  static String _sortValue(ThreadViewPrefSort? sort) => sort?.toJson() ?? _defaultSort;
+enum _ThreadSortOption {
+  defaultSort(null, 'Default'),
+  oldest(KnownThreadViewPrefSort.oldest, 'Oldest first'),
+  newest(KnownThreadViewPrefSort.newest, 'Newest first'),
+  mostLikes(KnownThreadViewPrefSort.mostLikes, 'Most likes'),
+  random(KnownThreadViewPrefSort.random, 'Random'),
+  hotness(KnownThreadViewPrefSort.hotness, 'Hotness');
 
-  /// TODO: this could be a getter on the enum made from [_options]
-  static String _labelFor(String sort) => switch (sort) {
-    _defaultSort => 'Default',
-    'oldest' => 'Oldest first',
-    'newest' => 'Newest first',
-    'most-likes' => 'Most likes',
-    'random' => 'Random',
-    'hotness' => 'Hotness',
-    _ => sort,
-  };
+  const _ThreadSortOption(this.knownValue, this.label);
+
+  final KnownThreadViewPrefSort? knownValue;
+  final String label;
+
+  ThreadViewPrefSort? get preferenceValue =>
+      knownValue == null ? null : ThreadViewPrefSort.knownValue(data: knownValue!);
+
+  static _ThreadSortOption fromPreference(ThreadViewPrefSort? sort) {
+    final knownValue = sort?.knownValue;
+    if (knownValue == null) {
+      return _ThreadSortOption.defaultSort;
+    }
+    return _ThreadSortOption.values.firstWhere(
+      (option) => option.knownValue == knownValue,
+      orElse: () => _ThreadSortOption.defaultSort,
+    );
+  }
 }
 
 class _ReplyLikeThresholdTile extends StatelessWidget {

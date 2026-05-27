@@ -1,5 +1,43 @@
 # CHANGELOG
 
+## v1.0.0 (Alpha 10)
+
+### Added
+
+- Similar posts on thread pages, using shared public-like relationships with
+  moderation-filtered AppView hydration.
+- Mentions tab on authenticated profile pages, including pagination, duplicate
+  filtering, and lightweight mention ranking.
+- Provider-aware account settings for Bluesky and BlackSky.
+- BlackSky AI preference controls backed by `community.lexicon.preference.ai` repo
+  records.
+- Thread reply sort preference in account settings.
+- Font size setting for content text.
+- Scrollable, bounded alt-text panel for full-screen image and video viewers.
+- Opaque OAuth token support and OAuth session restoration after app restart.
+- Shared test fixtures, router/widget harnesses, and network fixtures.
+
+### Changed
+
+- Profile Context now uses the nested `/profile/:actor/context` route, with
+  compatibility redirects
+- Thread pages have an explicit back button with authenticated and public-route
+  fallbacks.
+- Public post navigation pushes onto the stack for better back behavior.
+- Settings has broader English localization coverage and narrower state selection
+  during rendering.
+- Normal content text defaults to 16px, with compact and nested post text scaled from
+  the configured content size.
+- Feed layout naming now uses Comfortable/Compact
+- Session identity and recovery helpers are shared across the app's lifecycle
+
+### Fixed
+
+- Pending OAuth state is persisted and restored so app restarts during login no longer
+  strand callback handling.
+- Notification Screen crash
+- Long media alt text is no longer truncated in full-screen viewers.
+
 ## v1.0.0 (Alpha 9)
 
 ### Added
@@ -80,7 +118,26 @@ and website
 
 ## v1.0.0 (Alpha 5)
 
-TODO
+### Added
+
+- Account switcher access from the login screen.
+- Settings access while signed out, including public routes for logs, about,
+  legal pages, and developer tools (AT Explorer).
+- Troubleshooting actions for clearing local cache and resetting sign-in data.
+- Persistent OAuth client IDs for session records.
+
+### Changed
+
+- More comfortable composer layout with improved image attachment handling.
+- Auth refresh failures are now non-destructive
+- Push notification registration, notification reads, profile writes, compose uploads,
+  and scheduled posts use improved auth recovery paths.
+
+### Fixed
+
+- OAuth callback duplicate exchange loops.
+- Image/blob uploading from compose.
+- Failed refreshes incorrectly clearing current sessions.
 
 ## v1.0.0 (Alpha 4)
 
@@ -94,7 +151,8 @@ TODO
 
 #### 2026-05-04
 
-- Fixed background auth-expiry recovery by adding unauthorized retry + session refresh/recovery paths across feed/thread/conversation reads.
+- Fixed background auth-expiry recovery by adding unauthorized retry + session
+  refresh/recovery paths across feed/thread/conversation reads.
 - Fixed account-switch reliability.
 
 ## v1.0.0 (Alpha 3)

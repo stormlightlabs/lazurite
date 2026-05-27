@@ -16,20 +16,21 @@ class PublicProviderScope extends InheritedWidget {
   bool updateShouldNotify(covariant PublicProviderScope oldWidget) => oldWidget.providerKey != providerKey;
 }
 
-void navigateToPublicFeed(BuildContext context, GeneratorView feed, PublicProviderContext providerContext) {
-  final uri = Uri(
-    path: '/feed',
-    queryParameters: {'uri': feed.uri.toString(), 'provider': providerContext.providerKey},
+Future<Object?> navigateToPublicFeed(BuildContext context, GeneratorView feed, PublicProviderContext providerContext) {
+  return context.push(
+    Uri(
+      path: '/feed',
+      queryParameters: {'uri': feed.uri.toString(), 'provider': providerContext.providerKey},
+    ).toString(),
   );
-  context.go(uri.toString());
 }
 
 void navigateToPublicProfile(BuildContext context, String actor, PublicProviderContext providerContext) {
-  final uri = providerContext.appendTo(Uri(path: '/profile/$actor'));
-  context.go(uri.toString());
+  context.go(providerContext.appendTo(Uri(path: '/profile/$actor')).toString());
 }
 
 Future<Object?> navigateToPublicPost(BuildContext context, String postUri, PublicProviderContext providerContext) {
-  final uri = Uri(path: '/post', queryParameters: {'uri': postUri, 'provider': providerContext.providerKey});
-  return context.push(uri.toString());
+  return context.push(
+    Uri(path: '/post', queryParameters: {'uri': postUri, 'provider': providerContext.providerKey}).toString(),
+  );
 }

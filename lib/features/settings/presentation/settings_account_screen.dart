@@ -21,7 +21,7 @@ class SettingsAccountScreen extends StatelessWidget {
         supportsBlackskyAiPreferences: providerKey == AppViewProviders.blackskyKey,
       )..loadPreferences(),
       child: Scaffold(
-        appBar: AppBar(title: Text('$providerName settings')),
+        appBar: AppBar(title: Text('$providerName Settings')),
         body: AccountFeedDisplayPreferences(providerDisplayName: providerName),
       ),
     );

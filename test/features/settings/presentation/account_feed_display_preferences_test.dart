@@ -40,7 +40,7 @@ void main() {
       ),
     );
 
-    expect(find.text('BlackSky settings'), findsOneWidget);
+    expect(find.text('BlackSky Settings'), findsOneWidget);
     expect(find.textContaining('app.bsky.actor.getPreferences'), findsOneWidget);
 
     await tester.drag(find.byType(ListView), const Offset(0, -1200));
@@ -85,16 +85,14 @@ void main() {
 
     await tester.drag(find.byType(ListView), const Offset(0, -1600));
     await tester.pumpAndSettle();
-
     expect(find.text('BLACKSKY AI PREFERENCES'), findsOneWidget);
     expect(find.text('Training'), findsOneWidget);
-    expect(find.text('Unset'), findsAtLeastNWidgets(1));
+    expect(find.text('Not Set'), findsAtLeastNWidgets(1));
 
-    await tester.tap(find.text('Unset').last);
+    await tester.tap(find.text('Not Set').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Deny').last);
     await tester.pumpAndSettle();
-
     verify(
       () => cubit.setBlackskyAiPreference(BlackskyAiPreferenceCategory.embedding, BlackskyAiPreferenceValue.deny),
     ).called(1);
