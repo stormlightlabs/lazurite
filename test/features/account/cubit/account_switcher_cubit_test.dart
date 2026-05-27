@@ -1,4 +1,5 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/account/cubit/account_switcher_cubit.dart';
@@ -84,6 +85,27 @@ void main() {
           ),
         ],
       );
+
+      test('loads cached avatar URL for active account', () async {
+        final database = AppDatabase(executor: NativeDatabase.memory());
+        addTearDown(database.close);
+        await database.insertAccount(
+          AccountsCompanion.insert(did: 'did:plc:user1', handle: 'user1.bsky.social', accessToken: 'token'),
+        );
+        await database.setSetting(AppDatabase.activeAccountDidSettingKey, 'did:plc:user1');
+        await database.cacheProfile(
+          did: 'did:plc:user1',
+          handle: 'user1.bsky.social',
+          payload: '{"did":"did:plc:user1","handle":"user1.bsky.social","avatar":"https://cdn.example/avatar.jpg"}',
+        );
+
+        final cubit = AccountSwitcherCubit(database: database, authRepository: mockAuthRepository);
+        addTearDown(cubit.close);
+        await cubit.loadAccounts();
+
+        expect(cubit.state.activeDid, 'did:plc:user1');
+        expect(cubit.state.activeAvatarUrl, 'https://cdn.example/avatar.jpg');
+      });
 
       blocTest<AccountSwitcherCubit, AccountSwitcherState>(
         'keeps activeDid null when no active account is saved',

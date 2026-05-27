@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
@@ -51,7 +52,13 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
         activeDid = savedDid;
       }
 
-      emit(AccountSwitcherState.ready(accounts: accounts, activeDid: activeDid));
+      emit(
+        AccountSwitcherState.ready(
+          accounts: accounts,
+          activeDid: activeDid,
+          activeAvatarUrl: await _cachedAvatarUrlForDid(activeDid),
+        ),
+      );
     } catch (error) {
       emit(const AccountSwitcherState.ready(accounts: []));
     }
@@ -82,36 +89,57 @@ class AccountSwitcherCubit extends Cubit<AccountSwitcherState> {
       }
 
       await _database.setSetting(AppDatabase.activeAccountDidSettingKey, did);
-      emit(state.copyWith(activeDid: did));
+      emit(state.copyWith(activeDid: did, activeAvatarUrl: await _cachedAvatarUrlForDid(did)));
       return nextTokens;
     } catch (_) {
       return null;
     }
   }
 
-  AuthTokens _tokensFromAccount(Account account) {
-    final tokens = AuthTokens(
-      accessToken: account.accessToken,
-      refreshToken: account.refreshToken,
-      expiresAt: account.expiresAt,
-      did: account.did,
-      handle: account.handle,
-      displayName: account.displayName,
-      service: account.service,
-      oauthService: account.oauthService,
-      oauthClientId: account.oauthClientId,
-      oauthTokenType: account.oauthTokenType,
-      oauthScope: account.oauthScope,
-      dpopNonce: account.dpopNonce,
-      dpopPublicKey: account.dpopPublicKey,
-      dpopPrivateKey: account.dpopPrivateKey,
-      authMethod: account.dpopPrivateKey != null && account.dpopPublicKey != null
-          ? AuthMethod.oauth
-          : AuthMethod.appPassword,
-    );
+  Future<String?> _cachedAvatarUrlForDid(String? did) async {
+    if (did == null) {
+      return null;
+    }
 
-    return tokens;
+    try {
+      final cachedProfile = await (_database.select(
+        _database.cachedProfiles,
+      )..where((profile) => profile.did.equals(did))).getSingleOrNull();
+      final payload = cachedProfile?.payload;
+      if (payload == null) {
+        return null;
+      }
+      final decoded = jsonDecode(payload);
+      if (decoded is! Map<String, dynamic>) {
+        return null;
+      }
+      final avatar = decoded['avatar'];
+      return avatar is String && avatar.isNotEmpty ? avatar : null;
+    } catch (error, stackTrace) {
+      log.d('AccountSwitcherCubit: Failed to read cached avatar for $did', error: error, stackTrace: stackTrace);
+      return null;
+    }
   }
+
+  AuthTokens _tokensFromAccount(Account account) => AuthTokens(
+    accessToken: account.accessToken,
+    refreshToken: account.refreshToken,
+    expiresAt: account.expiresAt,
+    did: account.did,
+    handle: account.handle,
+    displayName: account.displayName,
+    service: account.service,
+    oauthService: account.oauthService,
+    oauthClientId: account.oauthClientId,
+    oauthTokenType: account.oauthTokenType,
+    oauthScope: account.oauthScope,
+    dpopNonce: account.dpopNonce,
+    dpopPublicKey: account.dpopPublicKey,
+    dpopPrivateKey: account.dpopPrivateKey,
+    authMethod: account.dpopPrivateKey != null && account.dpopPublicKey != null
+        ? AuthMethod.oauth
+        : AuthMethod.appPassword,
+  );
 
   Future<AuthTokens?> addAccountWithOAuth(String handle) async {
     _lastAddAccountErrorMessage = null;

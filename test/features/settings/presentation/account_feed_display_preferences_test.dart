@@ -98,6 +98,33 @@ void main() {
     ).called(1);
   });
 
+  testWidgets('shows confirmation snackbar after settings save succeeds', (tester) async {
+    final savingState = const AccountSettingsState.initial(feed: homeFeedPreferenceId, feedDisplayName: 'Following')
+        .copyWith(
+          status: AccountSettingsStatus.saving,
+          feedViewPref: const FeedViewPref(feed: homeFeedPreferenceId),
+        );
+    final loadedState = const AccountSettingsState.initial(feed: homeFeedPreferenceId, feedDisplayName: 'Following')
+        .copyWith(
+          status: AccountSettingsStatus.loaded,
+          feedViewPref: const FeedViewPref(feed: homeFeedPreferenceId),
+        );
+    when(() => cubit.state).thenReturn(loadedState);
+    whenListen(cubit, Stream<AccountSettingsState>.fromIterable([loadedState]), initialState: savingState);
+
+    await tester.pumpWidget(
+      BlocProvider<AccountSettingsCubit>.value(
+        value: cubit,
+        child: const MaterialApp(
+          home: Scaffold(body: AccountFeedDisplayPreferences(providerDisplayName: 'Bluesky')),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Bluesky Settings updated.'), findsOneWidget);
+  });
+
   testWidgets('can hide thread settings when used from feed management', (tester) async {
     await tester.pumpWidget(
       BlocProvider<AccountSettingsCubit>.value(

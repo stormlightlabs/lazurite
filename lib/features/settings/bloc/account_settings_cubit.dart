@@ -10,7 +10,19 @@ enum AccountSettingsStatus { initial, loading, loaded, saving, error, saveError 
 
 enum BlackskyAiPreferenceCategory { training, inference, syntheticContent, embedding }
 
-enum BlackskyAiPreferenceValue { unset, allow, deny }
+enum BlackskyAiPreferenceValue {
+  unset,
+  allow,
+  deny;
+
+  String get label => switch (this) {
+    BlackskyAiPreferenceValue.unset => 'Not Set',
+    BlackskyAiPreferenceValue.allow => 'Allow',
+    BlackskyAiPreferenceValue.deny => 'Deny',
+  };
+
+  static String labelFor(BlackskyAiPreferenceValue value) => value.label;
+}
 
 class BlackskyAiPreferences extends Equatable {
   const BlackskyAiPreferences({

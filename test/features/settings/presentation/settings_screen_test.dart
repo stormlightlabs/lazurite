@@ -14,6 +14,7 @@ import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
 import 'package:lazurite/features/settings/bloc/settings_state.dart';
 import 'package:lazurite/features/settings/presentation/settings_screen.dart';
+import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -273,6 +274,48 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Lazurite v1.0.0 alpha 6'), findsOneWidget);
+  });
+
+  testWidgets('account switcher row shows cached active account avatar', (tester) async {
+    final tokens = _authenticatedTokens();
+    final account = Account(
+      did: tokens.did,
+      handle: tokens.handle,
+      displayName: 'Owais',
+      service: tokens.service,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      dpopPublicKey: null,
+      dpopPrivateKey: null,
+      dpopNonce: null,
+      expiresAt: null,
+      createdAt: DateTime.utc(2026, 1, 1),
+      updatedAt: DateTime.utc(2026, 1, 1),
+    );
+    when(() => authBloc.state).thenReturn(AuthState.authenticated(tokens));
+    whenListen(authBloc, const Stream<AuthState>.empty(), initialState: AuthState.authenticated(tokens));
+    when(() => accountSwitcherCubit.state).thenReturn(
+      AccountSwitcherState.ready(
+        accounts: [account],
+        activeDid: account.did,
+        activeAvatarUrl: 'https://cdn.example/avatar.jpg',
+      ),
+    );
+    whenListen(
+      accountSwitcherCubit,
+      const Stream<AccountSwitcherState>.empty(),
+      initialState: AccountSwitcherState.ready(
+        accounts: [account],
+        activeDid: account.did,
+        activeAvatarUrl: 'https://cdn.example/avatar.jpg',
+      ),
+    );
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    final avatar = tester.widget<ProfileAvatar>(find.byType(ProfileAvatar).first);
+    expect(avatar.imageUrl, 'https://cdn.example/avatar.jpg');
   });
 
   testWidgets('shows the AT Protocol connection card for the authenticated account', (tester) async {

@@ -87,6 +87,7 @@ class SettingsScreen extends StatelessWidget {
                   leading: ProfileAvatar(
                     size: 40,
                     fallbackText: authenticatedTokens.displayName ?? authenticatedTokens.handle,
+                    imageUrl: switcherState.activeAvatarUrl,
                   ),
                   title: Text(authenticatedTokens.displayName ?? authenticatedTokens.handle),
                   subtitle: Text(subtitle),
@@ -206,116 +207,112 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _title(BuildContext context) => Text(context.l10n.labelSettings, style: context.textTheme.titleLarge);
 
-  Widget _buildThemeSelector(BuildContext context) {
-    return BlocBuilder<SettingsCubit, SettingsState>(
-      builder: (context, state) {
-        return SettingsGroup(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Center(
-                child: SegmentedButton<AppearanceMode>(
-                  style: SegmentedButton.styleFrom(
-                    selectedBackgroundColor: context.colorScheme.primary,
-                    selectedForegroundColor: context.colorScheme.onPrimary,
-                  ),
-                  segments: [
-                    ButtonSegment(value: AppearanceMode.system, label: Text(context.l10n.labelSystem)),
-                    ButtonSegment(value: AppearanceMode.light, label: Text(context.l10n.labelLight)),
-                    ButtonSegment(value: AppearanceMode.dark, label: Text(context.l10n.labelDark)),
-                  ],
-                  selected: {AppearanceMode.fromState(state)},
-                  onSelectionChanged: (selected) {
-                    final settingsCubit = context.read<SettingsCubit>();
-                    switch (selected.first) {
-                      case AppearanceMode.system:
-                        settingsCubit.setUseSystemTheme(true);
-                      case AppearanceMode.light:
-                        settingsCubit.setUseSystemTheme(false);
-                        settingsCubit.setThemeVariant(AppThemeVariant.light);
-                      case AppearanceMode.dark:
-                        settingsCubit.setUseSystemTheme(false);
-                        settingsCubit.setThemeVariant(AppThemeVariant.dark);
-                    }
-                  },
-                ),
+  Widget _buildThemeSelector(BuildContext context) => BlocBuilder<SettingsCubit, SettingsState>(
+    builder: (context, state) => SettingsGroup(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Center(
+            child: SegmentedButton<AppearanceMode>(
+              style: SegmentedButton.styleFrom(
+                selectedBackgroundColor: context.colorScheme.primary,
+                selectedForegroundColor: context.colorScheme.onPrimary,
               ),
-            ),
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  context.l10n.labelTheme,
-                  style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
-                ),
-              ),
-            ),
-            for (final palette in AppThemePalette.values)
-              ThemePaletteRow(
-                palette: palette,
-                isSelected: state.themePalette == palette,
-                onTap: () => context.read<SettingsCubit>().setThemePalette(palette),
-              ),
-            const Divider(height: 1),
-            SettingsDropdownTile<AppHeadingFontFamily>(
-              title: context.l10n.labelHeadingFont,
-              value: state.headingFontFamily,
-              options: AppHeadingFontFamily.values,
-              labelBuilder: (fontFamily) => fontFamily.label,
-              optionBuilder: _headingFontOption,
-              onChanged: (value) {
-                if (value != null) {
-                  context.read<SettingsCubit>().setHeadingFontFamily(value);
+              segments: [
+                ButtonSegment(value: AppearanceMode.system, label: Text(context.l10n.labelSystem)),
+                ButtonSegment(value: AppearanceMode.light, label: Text(context.l10n.labelLight)),
+                ButtonSegment(value: AppearanceMode.dark, label: Text(context.l10n.labelDark)),
+              ],
+              selected: {AppearanceMode.fromState(state)},
+              onSelectionChanged: (selected) {
+                final settingsCubit = context.read<SettingsCubit>();
+                switch (selected.first) {
+                  case AppearanceMode.system:
+                    settingsCubit.setUseSystemTheme(true);
+                  case AppearanceMode.light:
+                    settingsCubit.setUseSystemTheme(false);
+                    settingsCubit.setThemeVariant(AppThemeVariant.light);
+                  case AppearanceMode.dark:
+                    settingsCubit.setUseSystemTheme(false);
+                    settingsCubit.setThemeVariant(AppThemeVariant.dark);
                 }
               },
             ),
-            const Divider(height: 1),
-            SettingsDropdownTile<AppContentFontFamily>(
-              title: context.l10n.labelContentFont,
-              value: state.contentFontFamily,
-              options: AppContentFontFamily.values,
-              labelBuilder: (fontFamily) => fontFamily.label,
-              optionBuilder: _contentFontOption,
-              onChanged: (value) {
-                if (value != null) {
-                  context.read<SettingsCubit>().setContentFontFamily(value);
-                }
-              },
+          ),
+        ),
+        const Divider(height: 1),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              context.l10n.labelTheme,
+              style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
             ),
-            const Divider(height: 1),
-            SettingsDropdownTile<AppFontSize>(
-              title: context.l10n.labelFontSize,
-              value: state.contentFontSize,
-              options: AppFontSize.values,
-              labelBuilder: (fontSize) => _fontSizeLabel(context, fontSize),
-              optionBuilder: _fontSizeOption,
-              onChanged: (value) {
-                if (value != null) {
-                  context.read<SettingsCubit>().setContentFontSize(value);
-                }
-              },
-            ),
-            const Divider(height: 1),
-            SettingsDropdownTile<AppCodeFontFamily>(
-              title: context.l10n.labelCodeFont,
-              value: state.codeFontFamily,
-              options: AppCodeFontFamily.values,
-              labelBuilder: (fontFamily) => fontFamily.label,
-              optionBuilder: _codeFontOption,
-              onChanged: (value) {
-                if (value != null) {
-                  context.read<SettingsCubit>().setCodeFontFamily(value);
-                }
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        );
-      },
-    );
-  }
+          ),
+        ),
+        for (final palette in AppThemePalette.values)
+          ThemePaletteRow(
+            palette: palette,
+            isSelected: state.themePalette == palette,
+            onTap: () => context.read<SettingsCubit>().setThemePalette(palette),
+          ),
+        const Divider(height: 1),
+        SettingsDropdownTile<AppHeadingFontFamily>(
+          title: context.l10n.labelHeadingFont,
+          value: state.headingFontFamily,
+          options: AppHeadingFontFamily.values,
+          labelBuilder: (fontFamily) => fontFamily.label,
+          optionBuilder: _headingFontOption,
+          onChanged: (value) {
+            if (value != null) {
+              context.read<SettingsCubit>().setHeadingFontFamily(value);
+            }
+          },
+        ),
+        const Divider(height: 1),
+        SettingsDropdownTile<AppContentFontFamily>(
+          title: context.l10n.labelContentFont,
+          value: state.contentFontFamily,
+          options: AppContentFontFamily.values,
+          labelBuilder: (fontFamily) => fontFamily.label,
+          optionBuilder: _contentFontOption,
+          onChanged: (value) {
+            if (value != null) {
+              context.read<SettingsCubit>().setContentFontFamily(value);
+            }
+          },
+        ),
+        const Divider(height: 1),
+        SettingsDropdownTile<AppFontSize>(
+          title: context.l10n.labelFontSize,
+          value: state.contentFontSize,
+          options: AppFontSize.values,
+          labelBuilder: (fontSize) => _fontSizeLabel(context, fontSize),
+          optionBuilder: _fontSizeOption,
+          onChanged: (value) {
+            if (value != null) {
+              context.read<SettingsCubit>().setContentFontSize(value);
+            }
+          },
+        ),
+        const Divider(height: 1),
+        SettingsDropdownTile<AppCodeFontFamily>(
+          title: context.l10n.labelCodeFont,
+          value: state.codeFontFamily,
+          options: AppCodeFontFamily.values,
+          labelBuilder: (fontFamily) => fontFamily.label,
+          optionBuilder: _codeFontOption,
+          onChanged: (value) {
+            if (value != null) {
+              context.read<SettingsCubit>().setCodeFontFamily(value);
+            }
+          },
+        ),
+        const SizedBox(height: 8),
+      ],
+    ),
+  );
 
   Widget _headingFontOption(BuildContext context, AppHeadingFontFamily fontFamily) => Text(
     fontFamily.label,

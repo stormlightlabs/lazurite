@@ -5,6 +5,7 @@ import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/settings/bloc/account_settings_cubit.dart';
 import 'package:lazurite/features/settings/presentation/widgets/settings_section.dart';
 import 'package:lazurite/features/settings/presentation/widgets/settings_tiles.dart';
+import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
 
 class AccountFeedDisplayPreferences extends StatelessWidget {
   const AccountFeedDisplayPreferences({
@@ -21,7 +22,10 @@ class AccountFeedDisplayPreferences extends StatelessWidget {
   final bool showThreadSettings;
 
   @override
-  Widget build(BuildContext context) => BlocBuilder<AccountSettingsCubit, AccountSettingsState>(
+  Widget build(BuildContext context) => BlocConsumer<AccountSettingsCubit, AccountSettingsState>(
+    listenWhen: (previous, current) =>
+        previous.status == AccountSettingsStatus.saving && current.status == AccountSettingsStatus.loaded,
+    listener: (context, state) => showAppSnackBar(context, '$providerDisplayName Settings updated.'),
     builder: (context, state) {
       final preference = state.feedViewPref;
       final hideReplies = preference?.hideReplies ?? false;
@@ -31,7 +35,6 @@ class AccountFeedDisplayPreferences extends StatelessWidget {
       final hideQuotePosts = preference?.hideQuotePosts ?? false;
       final threadSort = state.threadViewPref?.sort;
       final blackskyAiPreferences = state.blackskyAiPreferences;
-
       return ListView(
         controller: scrollController,
         padding: padding,
@@ -214,15 +217,9 @@ class _BlackskyAiPreferenceTile extends StatelessWidget {
     subtitle: subtitle,
     value: value,
     options: BlackskyAiPreferenceValue.values,
-    labelBuilder: _labelFor,
+    labelBuilder: BlackskyAiPreferenceValue.labelFor,
     onChanged: enabled ? (value) => onChanged(value ?? BlackskyAiPreferenceValue.unset) : null,
   );
-
-  static String _labelFor(BlackskyAiPreferenceValue value) => switch (value) {
-    BlackskyAiPreferenceValue.unset => 'Not Set',
-    BlackskyAiPreferenceValue.allow => 'Allow',
-    BlackskyAiPreferenceValue.deny => 'Deny',
-  };
 }
 
 class _ThreadSortTile extends StatelessWidget {
