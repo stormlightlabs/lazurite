@@ -4,12 +4,12 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/app/auth_recovery_coordinator.dart';
 import 'package:lazurite/core/cache/local_cache_maintenance_service.dart';
 import 'package:lazurite/core/crash_reporting/crash_reporting_service.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/embedding/embedding_service.dart';
 import 'package:lazurite/core/l10n/app_localizations.dart';
-import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/logging/logging_navigator_observer.dart';
 import 'package:lazurite/core/network/app_view_fallback_service.dart';
 import 'package:lazurite/core/network/constellation_client.dart';
@@ -144,7 +144,7 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
   late String _observedAppViewProvider;
   var _routerGeneration = 0;
   var _isSoftRestarting = false;
-  final Map<String, Completer<AuthTokens?>> _authRecoveryCompletersByDid = {};
+  late final AuthRecoveryCoordinator _authRecoveryCoordinator;
 
   @override
   void initState() {
@@ -152,6 +152,13 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _routerSessionKey = _sessionKeyFor(widget.authBloc.state);
     _observedAppViewProvider = widget.settingsCubit.state.appViewProvider;
+    _authRecoveryCoordinator = AuthRecoveryCoordinator(
+      readAuthState: () => widget.authBloc.state,
+      refreshSession: widget.authRepository.refreshSession,
+      publishSession: (tokens) => widget.authBloc.add(SessionRestored(tokens: tokens)),
+      requestSessionCheck: () => widget.authBloc.add(const CheckSessionRequested()),
+      canPublishRecoveryForDid: _canPublishRecoveryForDid,
+    );
     _router = _createRouter();
     unawaited(
       widget.localNotificationAdapter.initialize(onTap: _handleNotificationDeepLink).then((_) {
@@ -233,53 +240,8 @@ class _LazuriteAppState extends State<LazuriteApp> with WidgetsBindingObserver {
     await _recoverAuthSession(trigger: 'app_resumed');
   }
 
-  /// Shared auth recovery entry point for app resume, router/repository 401s,
-  /// push registration, and background-triggered work. Recovery is coalesced by
-  /// DID so simultaneous failures spend at most one rotating refresh token.
-  Future<AuthTokens?> _recoverAuthSession({required String trigger}) async {
-    String? refreshingDid;
-    Completer<AuthTokens?>? completer;
-    try {
-      final authState = widget.authBloc.state;
-      final tokens = authState.tokens;
-      if (!authState.isAuthenticated || tokens == null || tokens.refreshToken == null) {
-        return null;
-      }
-      refreshingDid = tokens.did;
-      final inFlight = _authRecoveryCompletersByDid[refreshingDid];
-      if (inFlight != null) {
-        return inFlight.future;
-      }
-
-      completer = Completer<AuthTokens?>();
-      _authRecoveryCompletersByDid[refreshingDid] = completer;
-
-      final refreshed = await widget.authRepository.refreshSession(tokens);
-      if (!_canPublishRecoveryForDid(refreshingDid)) {
-        completer.complete(null);
-        return null;
-      }
-
-      if (refreshed == null || refreshed.did != refreshingDid) {
-        completer.complete(null);
-        return null;
-      }
-      widget.authBloc.add(SessionRestored(tokens: refreshed));
-      completer.complete(refreshed);
-      return refreshed;
-    } catch (error, stackTrace) {
-      log.w('Auth recovery failed (trigger=$trigger)', error: error, stackTrace: stackTrace);
-      if (_canPublishRecoveryForDid(refreshingDid)) {
-        widget.authBloc.add(const CheckSessionRequested());
-      }
-      completer?.complete(null);
-      return null;
-    } finally {
-      if (refreshingDid != null && identical(_authRecoveryCompletersByDid[refreshingDid], completer)) {
-        _authRecoveryCompletersByDid.remove(refreshingDid);
-      }
-    }
-  }
+  Future<AuthTokens?> _recoverAuthSession({required String trigger}) =>
+      _authRecoveryCoordinator.recover(trigger: trigger);
 
   /// Guard against publishing refreshed tokens after logout or account switch.
   bool _canPublishRecoveryForDid(String? refreshingDid) {
