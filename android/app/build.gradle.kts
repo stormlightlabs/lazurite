@@ -1,3 +1,21 @@
+import java.util.Properties
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
+}
+
+fun releaseSigningProperty(name: String): String {
+    val value = keystoreProperties.getProperty(name)
+        ?.trim()
+        ?.removeSurrounding("\"")
+        ?.removeSurrounding("'")
+
+    return value?.takeIf { it.isNotBlank() }
+        ?: error("Missing '$name' in ${keystorePropertiesFile.path}; release builds must be signed with the release keystore.")
+}
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -32,11 +50,18 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = releaseSigningProperty("keyAlias")
+            keyPassword = releaseSigningProperty("keyPassword")
+            storeFile = file(releaseSigningProperty("storeFile"))
+            storePassword = releaseSigningProperty("storePassword")
+        }
+    }
+
     buildTypes {
         release {
-            // Uses the debug keystore so local `flutter run --release` works.
-            // Configure a real release signing config before distribution.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }

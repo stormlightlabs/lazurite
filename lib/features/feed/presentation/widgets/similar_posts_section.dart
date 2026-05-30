@@ -12,6 +12,9 @@ import 'package:lazurite/shared/presentation/helpers/navigation_helpers.dart';
 /// the data flow visible to the user and prevents every thread open from paying
 /// the Constellation/AppView cost. Once expanded, [SimilarPostsCubit] owns the
 /// network flow and this widget only renders states.
+const double _similarPostCardHeight = 220;
+const Key similarPostCardScrollKey = Key('similar-post-card-scroll');
+
 class SimilarPostsSection extends StatelessWidget {
   const SimilarPostsSection({super.key, required this.postUri});
 
@@ -82,10 +85,20 @@ class SimilarPostsSection extends StatelessWidget {
                           padding: const EdgeInsets.only(right: 12),
                           child: SizedBox(
                             width: cardWidth,
-                            child: CompactPostCard(
-                              feedViewPost: FeedViewPost(post: post),
-                              contentPadding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                              onTap: () => navigateToPost(context, post.uri.toString()),
+                            height: _similarPostCardHeight,
+                            child: ClipRect(
+                              child: SingleChildScrollView(
+                                key: similarPostCardScrollKey,
+                                primary: false,
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(minHeight: _similarPostCardHeight),
+                                  child: CompactPostCard(
+                                    feedViewPost: FeedViewPost(post: post),
+                                    contentPadding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                                    onTap: () => navigateToPost(context, post.uri.toString()),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),

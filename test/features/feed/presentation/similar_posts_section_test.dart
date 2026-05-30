@@ -45,6 +45,29 @@ void main() {
     final cardBottom = tester.getBottomLeft(find.byType(CompactPostCard)).dy;
     expect(showMoreTop, lessThan(cardBottom));
   });
+
+  testWidgets('keeps loaded similar post cards at a fixed height with scrollable content', (tester) async {
+    final longPost = _post(
+      'at://did:plc:one/app.bsky.feed.post/a',
+      text: List.filled(24, 'A long similar post sentence.').join(' '),
+    );
+
+    await tester.pumpWidget(_TestApp(repository: _repository(posts: [longPost])));
+
+    await tester.tap(find.text('Show similar posts'));
+    await tester.pumpAndSettle();
+
+    final scrollable = find.byKey(similarPostCardScrollKey);
+    expect(scrollable, findsOneWidget);
+    expect(tester.getSize(scrollable).height, 220);
+
+    final scrollableState = tester.state<ScrollableState>(find.descendant(of: scrollable, matching: find.byType(Scrollable)));
+    expect(scrollableState.position.maxScrollExtent, greaterThan(0));
+
+    await tester.drag(scrollable, const Offset(0, -80));
+    await tester.pump();
+    expect(scrollableState.position.pixels, greaterThan(0));
+  });
 }
 
 class _TestApp extends StatelessWidget {
@@ -73,10 +96,10 @@ SimilarPostsRepository _repository({required List<PostView> posts, String? curso
   postHydrator: (_) async => posts,
 );
 
-PostView _post(String uri) => testPostView(
+PostView _post(String uri, {String text = 'similar post body'}) => testPostView(
   uri: uri,
   cid: 'cid-$uri',
   author: testProfileViewBasic(handle: 'author.example'),
-  record: testPostRecordJson(text: 'similar post body', createdAt: DateTime.utc(2026, 5, 23)),
+  record: testPostRecordJson(text: text, createdAt: DateTime.utc(2026, 5, 23)),
   indexedAt: DateTime.utc(2026, 5, 23),
 );
