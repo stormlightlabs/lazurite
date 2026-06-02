@@ -11,7 +11,10 @@ import 'package:lazurite/features/auth/bloc/auth_bloc.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/connectivity/cubit/connectivity_cubit.dart';
 import 'package:lazurite/features/feed/cubit/feed_preferences_cubit.dart';
+import 'package:lazurite/features/feed/cubit/post_action_cache.dart';
+import 'package:lazurite/features/feed/cubit/saved_posts_cubit.dart';
 import 'package:lazurite/features/feed/data/feed_repository.dart';
+import 'package:lazurite/features/feed/data/post_action_repository.dart';
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
 import 'package:lazurite/features/feed/presentation/widgets/feed_layout_view.dart';
 import 'package:lazurite/features/settings/bloc/settings_cubit.dart';
@@ -20,6 +23,7 @@ import 'package:lazurite/shared/presentation/widgets/animated_refresh_indicator.
 import 'package:lazurite/shared/presentation/widgets/app_screen_entrance.dart';
 import 'package:mocktail/mocktail.dart';
 import '../../../helpers/connectivity_helpers.dart';
+import '../../../helpers/fixtures/feed.dart';
 
 class MockSettingsCubit extends MockCubit<SettingsState> implements SettingsCubit {}
 
@@ -30,6 +34,10 @@ class MockFeedRepository extends Mock implements FeedRepository {}
 class MockConnectivityCubit extends MockCubit<ConnectivityState> implements ConnectivityCubit {}
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
+
+class MockPostActionRepository extends Mock implements PostActionRepository {}
+
+class MockSavedPostsCubit extends MockCubit<SavedPostsState> implements SavedPostsCubit {}
 
 SettingsState _settingsState(FeedLayout architecture) => SettingsState(
   themePalette: AppThemePalette.oxocarbon,
@@ -82,6 +90,8 @@ void main() {
     final connectivityCubit = MockConnectivityCubit();
     final settingsCubit = MockSettingsCubit();
     final authBloc = MockAuthBloc();
+    final postActionRepository = MockPostActionRepository();
+    final savedPostsCubit = MockSavedPostsCubit();
     stubConnectivityCubit(connectivityCubit, state: connectivityState);
     when(() => settingsCubit.state).thenReturn(_settingsState(FeedLayout.comfortable));
     whenListen(
@@ -89,6 +99,8 @@ void main() {
       const Stream<SettingsState>.empty(),
       initialState: _settingsState(FeedLayout.comfortable),
     );
+    when(() => savedPostsCubit.state).thenReturn(const SavedPostsState());
+    whenListen(savedPostsCubit, const Stream<SavedPostsState>.empty(), initialState: const SavedPostsState());
     when(() => authBloc.state).thenReturn(
       const AuthState.authenticated(AuthTokens(accessToken: 'access', did: 'did:plc:test', handle: 'test.bsky.social')),
     );
@@ -101,14 +113,19 @@ void main() {
     );
 
     return MaterialApp(
-      home: RepositoryProvider<FeedRepository>.value(
-        value: feedRepository,
+      home: MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<FeedRepository>.value(value: feedRepository),
+          RepositoryProvider<PostActionRepository>.value(value: postActionRepository),
+          RepositoryProvider<PostActionCache>(create: (_) => PostActionCache()),
+        ],
         child: MultiBlocProvider(
           providers: [
             BlocProvider<AuthBloc>.value(value: authBloc),
             BlocProvider<SettingsCubit>.value(value: settingsCubit),
             BlocProvider<FeedPreferencesCubit>.value(value: feedPreferencesCubit),
             BlocProvider<ConnectivityCubit>.value(value: connectivityCubit),
+            BlocProvider<SavedPostsCubit>.value(value: savedPostsCubit),
           ],
           child: const HomeFeedScreen(),
         ),
@@ -188,6 +205,34 @@ void main() {
 
       final listView = tester.widget<ListView>(find.byType(ListView));
       expect(listView.padding, const EdgeInsets.symmetric(vertical: 4));
+    });
+
+    testWidgets('wraps rendered rows in repaint boundaries with stable keys', (tester) async {
+      final cubit = MockSettingsCubit();
+      when(() => cubit.state).thenReturn(_settingsState(FeedLayout.comfortable));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlocProvider<SettingsCubit>.value(
+              value: cubit,
+              child: FeedLayoutView(
+                itemCount: 1,
+                scrollController: ScrollController(),
+                isLoadingMore: false,
+                onRefresh: () async {},
+                itemKeyBuilder: (index) => ValueKey('post-$index'),
+                gridItemBuilder: (_, i) => Text('grid $i'),
+                linearItemBuilder: (_, i) => Text('linear $i'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final keyedRow = find.byKey(const ValueKey('post-0'));
+      expect(keyedRow, findsOneWidget);
+      expect(find.descendant(of: keyedRow, matching: find.byType(RepaintBoundary)), findsOneWidget);
     });
   });
 
@@ -392,6 +437,37 @@ void main() {
       final screenWidth = tester.view.physicalSize.width / tester.view.devicePixelRatio;
 
       expect(jumpRect.left, moreOrLessEquals(screenWidth - composeRect.right, epsilon: 0.1));
+    });
+
+    testWidgets('caps the initially rendered feed window for large result sets', (tester) async {
+      final feedPreferencesCubit = MockFeedPreferencesCubit();
+      final feedRepository = MockFeedRepository();
+      final posts = List.generate(
+        400,
+        (index) => testFeedViewPost(
+          uri: 'at://did:plc:author/app.bsky.feed.post/$index',
+          record: testPostRecordJson(text: 'Post $index'),
+        ),
+      );
+
+      when(() => feedPreferencesCubit.state).thenReturn(_homeFeedState);
+      whenListen(feedPreferencesCubit, const Stream<FeedPreferencesState>.empty(), initialState: _homeFeedState);
+      when(() => feedRepository.getCachedFeedPage(any())).thenAnswer((_) async => null);
+      when(
+        () => feedRepository.getTimeline(
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => FeedResult(posts: posts, cursor: 'cursor-1'));
+
+      await tester.pumpWidget(
+        buildHomeSubject(feedPreferencesCubit: feedPreferencesCubit, feedRepository: feedRepository),
+      );
+      await tester.pumpAndSettle();
+
+      final listView = tester.widget<ListView>(find.byType(ListView));
+      final delegate = listView.childrenDelegate as SliverChildBuilderDelegate;
+      expect(delegate.estimatedChildCount, 320);
     });
 
     testWidgets('re-tapping selected feed tab reloads the feed', (tester) async {

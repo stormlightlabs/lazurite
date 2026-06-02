@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:bluesky_poptart/app/bsky/embed/external.dart';
 import 'package:bluesky_poptart/app/bsky/embed/images.dart';
 import 'package:bluesky_poptart/app/bsky/embed/record.dart';
@@ -19,6 +21,8 @@ import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as b
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/shared/presentation/widgets/external_link_preview_card.dart';
+
+enum _ImageThumbnailAction { save, share }
 
 /// Renders the appropriate embed widget for a post embed.
 ///
@@ -141,14 +145,11 @@ class PostEmbedView extends StatelessWidget {
               onTap: () => _openImageViewer(context, images, initialIndex: index, heroNamespace: heroNamespace),
               child: Hero(
                 tag: heroTag,
-                child: CachedNetworkImage(
+                child: _cachedMediaImage(
+                  context,
                   imageUrl: image.thumb,
-                  cacheManager: LazuriteImageCacheManager.instance,
                   fit: BoxFit.cover,
-                  errorWidget: (_, _, _) => ColoredBox(
-                    color: context.colorScheme.surfaceContainerHighest,
-                    child: const Center(child: Icon(Icons.image_not_supported_outlined)),
-                  ),
+                  errorIcon: const Icon(Icons.image_not_supported_outlined),
                 ),
               ),
             ),
@@ -188,14 +189,11 @@ class PostEmbedView extends StatelessWidget {
                       onTap: () => _openImageViewer(context, images, initialIndex: index, heroNamespace: heroNamespace),
                       child: Hero(
                         tag: _imageHeroTag(heroNamespace, index),
-                        child: CachedNetworkImage(
+                        child: _cachedMediaImage(
+                          context,
                           imageUrl: visibleImages[index].thumb,
-                          cacheManager: LazuriteImageCacheManager.instance,
                           fit: BoxFit.cover,
-                          errorWidget: (_, _, _) => ColoredBox(
-                            color: context.colorScheme.surfaceContainerHighest,
-                            child: const Center(child: Icon(Icons.image_not_supported_outlined, size: 18)),
-                          ),
+                          errorIcon: const Icon(Icons.image_not_supported_outlined, size: 18),
                         ),
                       ),
                     ),
@@ -238,14 +236,11 @@ class PostEmbedView extends StatelessWidget {
               aspectRatio: aspectRatio,
               child: video.thumbnail == null
                   ? ColoredBox(color: context.colorScheme.surfaceContainerHighest, child: const SizedBox.expand())
-                  : CachedNetworkImage(
+                  : _cachedMediaImage(
+                      context,
                       imageUrl: video.thumbnail!,
-                      cacheManager: LazuriteImageCacheManager.instance,
                       fit: BoxFit.cover,
-                      errorWidget: (_, _, _) => ColoredBox(
-                        color: context.colorScheme.surfaceContainerHighest,
-                        child: const SizedBox.expand(),
-                      ),
+                      errorIcon: const SizedBox.expand(),
                     ),
             ),
             Container(
@@ -297,15 +292,44 @@ class PostEmbedView extends StatelessWidget {
     );
   }
 
-  Widget _buildUnknownEmbed(BuildContext context) {
-    return PostRecordResourceCard(
-      icon: Icons.extension_outlined,
-      fallbackText: context.l10n.labelUnknown,
-      label: context.l10n.labelUnknown,
-      title: context.l10n.labelUnknown,
-      compact: compact,
+  Widget _cachedMediaImage(
+    BuildContext context, {
+    required String imageUrl,
+    required BoxFit fit,
+    required Widget errorIcon,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+        final logicalWidth = constraints.maxWidth.isFinite ? constraints.maxWidth : MediaQuery.sizeOf(context).width;
+        final logicalHeight = constraints.maxHeight.isFinite ? constraints.maxHeight : logicalWidth;
+        final memCacheWidth = math.max(1, (logicalWidth * devicePixelRatio).round());
+        final memCacheHeight = math.max(1, (logicalHeight * devicePixelRatio).round());
+
+        return CachedNetworkImage(
+          imageUrl: imageUrl,
+          cacheManager: LazuriteImageCacheManager.instance,
+          fit: fit,
+          memCacheWidth: memCacheWidth,
+          memCacheHeight: memCacheHeight,
+          maxWidthDiskCache: memCacheWidth,
+          maxHeightDiskCache: memCacheHeight,
+          errorWidget: (_, _, _) => ColoredBox(
+            color: context.colorScheme.surfaceContainerHighest,
+            child: Center(child: errorIcon),
+          ),
+        );
+      },
     );
   }
+
+  Widget _buildUnknownEmbed(BuildContext context) => PostRecordResourceCard(
+    icon: Icons.extension_outlined,
+    fallbackText: context.l10n.labelUnknown,
+    label: context.l10n.labelUnknown,
+    title: context.l10n.labelUnknown,
+    compact: compact,
+  );
 
   void _openImageViewer(
     BuildContext context,
@@ -386,5 +410,3 @@ class PostEmbedView extends StatelessWidget {
     return segment.isEmpty ? 'image.jpg' : segment;
   }
 }
-
-enum _ImageThumbnailAction { save, share }

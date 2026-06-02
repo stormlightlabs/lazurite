@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -47,13 +49,29 @@ class ExternalLinkPreviewCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (thumbUrl != null && thumbUrl!.isNotEmpty)
-                  CachedNetworkImage(
-                    imageUrl: thumbUrl!,
-                    cacheManager: cacheManager,
-                    height: compact ? 140 : 180,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorWidget: (_, _, _) => const SizedBox.shrink(),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+                      final logicalWidth = constraints.maxWidth.isFinite
+                          ? constraints.maxWidth
+                          : MediaQuery.sizeOf(context).width;
+                      final logicalHeight = compact ? 140.0 : 180.0;
+                      final memCacheWidth = math.max(1, (logicalWidth * devicePixelRatio).round());
+                      final memCacheHeight = math.max(1, (logicalHeight * devicePixelRatio).round());
+
+                      return CachedNetworkImage(
+                        imageUrl: thumbUrl!,
+                        cacheManager: cacheManager,
+                        height: logicalHeight,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        memCacheWidth: memCacheWidth,
+                        memCacheHeight: memCacheHeight,
+                        maxWidthDiskCache: memCacheWidth,
+                        maxHeightDiskCache: memCacheHeight,
+                        errorWidget: (_, _, _) => const SizedBox.shrink(),
+                      );
+                    },
                   ),
                 Padding(
                   padding: const EdgeInsets.all(12),
@@ -61,7 +79,7 @@ class ExternalLinkPreviewCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        title.trim().isEmpty ? _displayHost(uri) : title.trim(),
+                        title.trim().isEmpty ? displayHost(uri) : title.trim(),
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: colorScheme.onSurface,
@@ -78,7 +96,7 @@ class ExternalLinkPreviewCard extends StatelessWidget {
                       ],
                       const SizedBox(height: 8),
                       Text(
-                        _displayHost(uri),
+                        displayHost(uri),
                         style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                       ),
                     ],
@@ -106,11 +124,9 @@ class ExternalLinkPreviewCard extends StatelessWidget {
       ),
     );
   }
-
-  static String displayHost(String rawUri) => _displayHost(rawUri);
 }
 
-String _displayHost(String rawUri) {
+String displayHost(String rawUri) {
   final parsed = Uri.tryParse(rawUri);
   final host = parsed?.host.trim();
   if (host == null || host.isEmpty) {

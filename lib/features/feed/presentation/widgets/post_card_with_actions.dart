@@ -52,11 +52,8 @@ class PostCardWithActions extends StatefulWidget {
   State<PostCardWithActions> createState() => _PostCardWithActionsState();
 }
 
-class _PostCardWithActionsState extends State<PostCardWithActions> with AutomaticKeepAliveClientMixin {
+class _PostCardWithActionsState extends State<PostCardWithActions> {
   late PostActionCubit _postActionCubit;
-
-  @override
-  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -106,7 +103,6 @@ class _PostCardWithActionsState extends State<PostCardWithActions> with Automati
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     return BlocProvider<PostActionCubit>.value(
       value: _postActionCubit,
       child: _PostCardWithActionsContent(

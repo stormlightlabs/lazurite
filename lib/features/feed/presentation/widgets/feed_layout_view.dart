@@ -21,6 +21,8 @@ class FeedLayoutView extends StatelessWidget {
     required this.scrollController,
     required this.isLoadingMore,
     required this.onRefresh,
+    this.itemKeyBuilder,
+    this.storageKey,
   });
 
   final int itemCount;
@@ -29,32 +31,33 @@ class FeedLayoutView extends StatelessWidget {
   final ScrollController scrollController;
   final bool isLoadingMore;
   final RefreshCallback onRefresh;
+  final Key? Function(int index)? itemKeyBuilder;
+  final PageStorageKey<String>? storageKey;
 
   @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<SettingsCubit, SettingsState>(
-      buildWhen: (prev, curr) => prev.feedLayout != curr.feedLayout,
-      builder: (context, settingsState) {
-        if (settingsState.feedLayout == FeedLayout.compact) {
-          return _buildCompact(context);
-        }
-        return _buildCard(context);
-      },
-    );
-  }
+  Widget build(BuildContext context) => BlocBuilder<SettingsCubit, SettingsState>(
+    buildWhen: (prev, curr) => prev.feedLayout != curr.feedLayout,
+    builder: (context, settingsState) {
+      if (settingsState.feedLayout == FeedLayout.compact) {
+        return _buildCompact(context);
+      }
+      return _buildCard(context);
+    },
+  );
 
   Widget _buildCompact(BuildContext context) {
     return AnimatedRefreshIndicator(
       onRefresh: onRefresh,
       showCornerSpinner: false,
       child: CustomScrollView(
+        key: storageKey,
         controller: scrollController,
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
             sliver: SliverList.separated(
               itemCount: itemCount,
-              itemBuilder: gridItemBuilder,
+              itemBuilder: (context, index) => _buildListItem(context, index, gridItemBuilder),
               separatorBuilder: (_, _) => const SizedBox(height: 2),
             ),
           ),
@@ -74,6 +77,7 @@ class FeedLayoutView extends StatelessWidget {
       onRefresh: onRefresh,
       showCornerSpinner: false,
       child: ListView.builder(
+        key: storageKey,
         controller: scrollController,
         padding: const EdgeInsets.symmetric(vertical: 4),
         itemCount: itemCount + (isLoadingMore ? 1 : 0),
@@ -83,9 +87,23 @@ class FeedLayoutView extends StatelessWidget {
               child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
             );
           }
-          return Padding(padding: const EdgeInsets.only(bottom: 4), child: linearItemBuilder(context, index));
+          return _buildListItem(
+            context,
+            index,
+            (context, index) =>
+                Padding(padding: const EdgeInsets.only(bottom: 4), child: linearItemBuilder(context, index)),
+          );
         },
       ),
     );
+  }
+
+  Widget _buildListItem(BuildContext context, int index, IndexedWidgetBuilder builder) {
+    final child = RepaintBoundary(child: builder(context, index));
+    final key = itemKeyBuilder?.call(index);
+    if (key == null) {
+      return child;
+    }
+    return KeyedSubtree(key: key, child: child);
   }
 }

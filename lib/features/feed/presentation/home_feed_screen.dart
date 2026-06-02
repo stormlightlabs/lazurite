@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+
+import 'package:lazurite/features/feed/presentation/constants.dart';
 import 'package:poptart_core/poptart_core.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/feed/defs.dart';
@@ -141,6 +144,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               itemCount: pinnedFeeds.length,
               itemBuilder: (context, index) => _FeedListView(
                 feed: pinnedFeeds[index],
+                isActive: index == currentTabIndex,
                 reloadCommand: _reloadCommandByFeed[pinnedFeeds[index].id] ?? 0,
                 jumpToTopCommand: _jumpToTopCommandByFeed[pinnedFeeds[index].id] ?? 0,
                 key: ValueKey('feed-list-${pinnedFeeds[index].id}'),
@@ -269,9 +273,16 @@ class _FeedTabBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 class _FeedListView extends StatefulWidget {
-  const _FeedListView({required this.feed, required this.reloadCommand, required this.jumpToTopCommand, super.key});
+  const _FeedListView({
+    required this.feed,
+    required this.isActive,
+    required this.reloadCommand,
+    required this.jumpToTopCommand,
+    super.key,
+  });
 
   final SavedFeed feed;
+  final bool isActive;
   final int reloadCommand;
   final int jumpToTopCommand;
 
@@ -293,7 +304,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   late int _lastJumpToTopCommand;
 
   @override
-  bool get wantKeepAlive => true;
+  bool get wantKeepAlive => widget.isActive;
 
   @override
   void initState() {
@@ -307,6 +318,13 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
   @override
   void didUpdateWidget(covariant _FeedListView oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    if (widget.isActive != oldWidget.isActive) {
+      updateKeepAlive();
+      if (!widget.isActive) {
+        _trimRetainedPosts(inactiveRetainedFeedPosts, keepTail: false);
+      }
+    }
 
     if (widget.reloadCommand != _lastReloadCommand) {
       _lastReloadCommand = widget.reloadCommand;
@@ -347,7 +365,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
     if (_isLoading || _showInitialLoading) {
       return;
     }
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - loadMoreExtentThreshold) {
       _loadMore();
     }
   }
@@ -363,7 +381,10 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
         _setStateIfMounted(() {
           _posts
             ..clear()
-            ..addAll(cachedResult.posts);
+            ..addAll(_uniquePosts(cachedResult.posts).take(maxRetainedFeedPosts));
+          _seenPostUris
+            ..clear()
+            ..addAll(_posts.take(animatedEntranceItemLimit).map((post) => post.post.uri.toString()));
           _cursor = cachedResult.cursor;
           _hasError = false;
           _errorMessage = null;
@@ -415,7 +436,8 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
 
       _setStateIfMounted(() {
         _posts.clear();
-        _posts.addAll(result.posts);
+        _posts.addAll(_uniquePosts(result.posts).take(maxRetainedFeedPosts));
+        _seenPostUris.clear();
         _cursor = result.cursor;
         _isLoading = false;
         _showInitialLoading = false;
@@ -458,13 +480,72 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
       final result = await _fetchFeed(feedRepository, cursor: _cursor);
 
       _setStateIfMounted(() {
-        _posts.addAll(result.posts);
+        _appendUniquePosts(result.posts);
         _cursor = result.cursor;
         _isLoadingMore = false;
       });
     } catch (e) {
       _setStateIfMounted(() => _isLoadingMore = false);
     }
+  }
+
+  void _appendUniquePosts(List<FeedViewPost> posts) {
+    final existingUris = _posts.map((post) => post.post.uri.toString()).toSet();
+    for (final post in posts) {
+      final uri = post.post.uri.toString();
+      if (existingUris.add(uri)) {
+        _posts.add(post);
+      }
+    }
+    _trimRetainedPosts(maxRetainedFeedPosts, keepTail: true);
+  }
+
+  List<FeedViewPost> _uniquePosts(List<FeedViewPost> posts) {
+    final seenUris = <String>{};
+    return [
+      for (final post in posts)
+        if (seenUris.add(post.post.uri.toString())) post,
+    ];
+  }
+
+  void _trimRetainedPosts(int maxRetainedPosts, {required bool keepTail}) {
+    if (_posts.length <= maxRetainedPosts) {
+      return;
+    }
+
+    final removeCount = _posts.length - maxRetainedPosts;
+    if (!keepTail) {
+      final removedPosts = _posts
+          .skip(maxRetainedPosts)
+          .map((post) => post.post.uri.toString())
+          .toList(growable: false);
+      _posts.removeRange(maxRetainedPosts, _posts.length);
+      _seenPostUris.removeAll(removedPosts);
+      return;
+    }
+
+    final previousScrollExtent = _scrollController.hasClients ? _scrollController.position.maxScrollExtent : null;
+    final previousOffset = _scrollController.hasClients ? _scrollController.offset : null;
+    final averageItemExtent = previousScrollExtent != null && _posts.isNotEmpty
+        ? previousScrollExtent / math.max(_posts.length, 1)
+        : 0.0;
+
+    final removedPosts = _posts.take(removeCount).map((post) => post.post.uri.toString()).toList(growable: false);
+    _posts.removeRange(0, removeCount);
+    _seenPostUris.removeAll(removedPosts);
+
+    if (previousOffset == null || previousOffset <= 0 || !_scrollController.hasClients) {
+      return;
+    }
+
+    final adjustedOffset = math.max(0.0, previousOffset - (averageItemExtent * removeCount));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+      final maxOffset = _scrollController.position.maxScrollExtent;
+      _scrollController.jumpTo(adjustedOffset.clamp(0.0, maxOffset));
+    });
   }
 
   Future<void> jumpToTop() async {
@@ -530,6 +611,7 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
         itemKey: postUri,
         index: index,
         seenKeys: _seenPostUris,
+        enabled: index < animatedEntranceItemLimit,
         child: PostCardWithActions(
           feedViewPost: post,
           accountDid: accountDid,
@@ -546,6 +628,8 @@ class _FeedListViewState extends State<_FeedListView> with AutomaticKeepAliveCli
       scrollController: _scrollController,
       isLoadingMore: _isLoadingMore,
       onRefresh: _loadFeed,
+      itemKeyBuilder: (index) => ValueKey(_posts[index].post.uri.toString()),
+      storageKey: PageStorageKey('home-feed-scroll-${widget.feed.id}'),
       gridItemBuilder: (context, index) => buildCard(index, PostCardVariant.compact),
       linearItemBuilder: (context, index) => buildCard(index, PostCardVariant.card),
     );

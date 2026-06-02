@@ -10,11 +10,13 @@ class StaggeredEntrance extends StatelessWidget {
     required this.itemKey,
     required this.index,
     required this.seenKeys,
+    this.enabled = true,
   });
 
   final Widget child;
   final String itemKey;
   final int index;
+  final bool enabled;
 
   /// Widget keys that have been seen before, used to determine whether to animate the child.
   ///
@@ -24,7 +26,8 @@ class StaggeredEntrance extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasSeen = seenKeys.contains(itemKey);
-    if (hasSeen) {
+    if (hasSeen || !enabled) {
+      seenKeys.add(itemKey);
       return child;
     }
 
