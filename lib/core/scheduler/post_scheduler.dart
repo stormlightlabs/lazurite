@@ -91,8 +91,9 @@ Future<void> _submitScheduledDraft(int draftId) async {
 
     final composeRepo = ComposeRepository(bluesky: bluesky, onUnauthorized: recoverSession);
 
+    final postText = formatComposePostTextForSubmission(draft.content);
     final facets = <RichtextFacet>[];
-    for (final entity in BlueskyText(draft.content).entities) {
+    for (final entity in BlueskyText(postText).entities) {
       try {
         final facetJson = await entity.toFacet().timeout(
           const Duration(seconds: 5),
@@ -127,7 +128,7 @@ Future<void> _submitScheduledDraft(int draftId) async {
     }
 
     final result = await composeRepo.createPost(
-      text: draft.content,
+      text: postText,
       facets: facets,
       embed: embed,
       reply: reply,

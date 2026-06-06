@@ -195,6 +195,19 @@ void main() {
       );
 
       blocTest<ComposeBloc, ComposeState>(
+        'counts formatted text after Bluesky link shortening',
+        build: () => composeBloc,
+        act: (bloc) => bloc.add(TextChanged('Read https://example.com/${'a' * 80}')),
+        expect: () => [
+          isA<ComposeState>().having(
+            (s) => s.graphemeCount,
+            'graphemeCount',
+            composePostTextLength('Read https://example.com/${'a' * 80}'),
+          ),
+        ],
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
         'does not emit when empty text is unchanged',
         build: () => composeBloc,
         act: (bloc) => bloc.add(const TextChanged('')),
@@ -681,6 +694,39 @@ void main() {
               embed: any(named: 'embed'),
               reply: any(named: 'reply'),
               repo: 'did:plc:test',
+            ),
+          ).called(1);
+        },
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'submits formatted text after Bluesky link shortening',
+        build: () {
+          when(
+            () => mockRepository.createPost(
+              text: any(named: 'text'),
+              facets: any(named: 'facets'),
+              embed: any(named: 'embed'),
+              reply: any(named: 'reply'),
+              repo: any(named: 'repo'),
+            ),
+          ).thenAnswer((_) async => const CreatePostResult.success());
+          return composeBloc;
+        },
+        seed: () {
+          final text = 'Read https://example.com/${'a' * 80}';
+          return ComposeState.ready(text: text, graphemeCount: composePostTextLength(text), isEmpty: false);
+        },
+        act: (bloc) => bloc.add(const PostSubmitted()),
+        verify: (_) {
+          final raw = 'Read https://example.com/${'a' * 80}';
+          verify(
+            () => mockRepository.createPost(
+              text: formatComposePostTextForSubmission(raw),
+              facets: any(named: 'facets'),
+              embed: any(named: 'embed'),
+              reply: any(named: 'reply'),
+              repo: any(named: 'repo'),
             ),
           ).called(1);
         },

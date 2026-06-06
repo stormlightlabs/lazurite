@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -695,6 +696,30 @@ void main() {
         await tester.pump();
 
         verify(() => mockBloc.add(const DraftSaved())).called(1);
+      });
+
+      testWidgets('cancel after explicit draft save completes does not prompt to save again', (tester) async {
+        final controller = StreamController<ComposeState>.broadcast();
+        addTearDown(controller.close);
+        const dirtyState = ComposeState.ready(text: 'Save this', graphemeCount: 9, isEmpty: false, isDraftDirty: true);
+        whenListen(mockBloc, controller.stream, initialState: dirtyState);
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        await tester.tap(find.byTooltip('Save draft'));
+        await tester.pump();
+        verify(() => mockBloc.add(const DraftSaved())).called(1);
+
+        controller.add(dirtyState.copyWith(isSavingDraft: true));
+        await tester.pump();
+        controller.add(dirtyState.copyWith(draftId: 42, isSavingDraft: false, isDraftDirty: false));
+        await tester.pump();
+
+        await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Save Draft?'), findsNothing);
       });
 
       testWidgets('shows draft items when drafts are loaded', (tester) async {

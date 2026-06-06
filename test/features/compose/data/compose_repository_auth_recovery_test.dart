@@ -45,6 +45,17 @@ void main() {
       expect(refreshedTransport.lastUploadHeaders, containsPair('Content-Type', 'image/png'));
     });
 
+    test('createPost returns safe validation failure detail from PDS rejection', () async {
+      final transport = _CreatePostValidationTransport();
+      final repository = ComposeRepository(bluesky: testBluesky(postClient: transport.post));
+
+      final result = await repository.createPost(text: 'a' * 301, facets: const [], repo: 'did:plc:test');
+
+      expect(result.isSuccess, isFalse);
+      expect(result.errorMessage, 'Invalid record: text too long');
+      expect(transport.createAttempts, 1);
+    });
+
     test('editPost preserves unknown top-level post record fields', () async {
       final transport = _EditPostTransport(
         initialRecord: {
@@ -112,6 +123,22 @@ class _UploadBlobTransport {
         ),
       ).toJson(),
     );
+  }
+}
+
+class _CreatePostValidationTransport {
+  int createAttempts = 0;
+
+  Future<http.Response> post(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
+    if (url.pathSegments.last != 'com.atproto.repo.createRecord') {
+      return unexpectedPostClient(url, headers: headers, body: body, encoding: encoding);
+    }
+
+    createAttempts += 1;
+    return jsonResponse(url, 'POST', const {
+      'error': 'InvalidRequest',
+      'message': 'Invalid record: text too long',
+    }, statusCode: 400);
   }
 }
 

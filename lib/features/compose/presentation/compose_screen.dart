@@ -112,6 +112,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
   bool _didLogMissingAuthProviderForAvatar = false;
   bool _didLogMissingProfileRepositoryForAvatar = false;
   bool _didLogComposerAvatarLookupFailure = false;
+  Future<bool>? _pendingDraftSave;
 
   @override
   void initState() {
@@ -226,7 +227,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
         canPop: false,
         onPopInvokedWithResult: (bool didPop, dynamic result) {
           if (didPop) return;
-          _handleBackNavigation(context);
+          unawaited(_handleBackNavigation());
         },
         child: Scaffold(
           appBar: AppBar(
@@ -236,7 +237,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
             surfaceTintColor: Colors.transparent,
             shape: Border(bottom: BorderSide(color: context.colorScheme.outlineVariant)),
             leading: TextButton(
-              onPressed: () => _handleBackNavigation(context),
+              onPressed: () {
+                unawaited(_handleBackNavigation());
+              },
               child: Text(context.l10n.buttonCancel),
             ),
             leadingWidth: 80,
@@ -613,7 +616,11 @@ class _ComposeScreenState extends State<ComposeScreen> {
                             return _buildToolbarIconButton(
                               icon: Icons.save_outlined,
                               tooltip: context.l10n.messageComposeSaveDraft,
-                              onPressed: hasDraftableContent ? _saveDraft : null,
+                              onPressed: hasDraftableContent
+                                  ? () {
+                                      unawaited(_saveDraft());
+                                    }
+                                  : null,
                             );
                           },
                         ),
@@ -1295,11 +1302,45 @@ class _ComposeScreenState extends State<ComposeScreen> {
     context.read<ComposeBloc>().add(PostSubmitted(suppressedLinkUri: _hiddenPreviewUrl));
   }
 
-  void _saveDraft() {
-    if (context.read<ComposeBloc>().state.isEditing) return;
-    context.read<ComposeBloc>().add(const DraftSaved());
-    if (mounted) {
+  Future<bool> _saveDraft({bool showSnackbar = true}) {
+    final existingSave = _pendingDraftSave;
+    if (existingSave != null) return existingSave;
+
+    final save = _performDraftSave(showSnackbar: showSnackbar).whenComplete(() {
+      _pendingDraftSave = null;
+    });
+    _pendingDraftSave = save;
+    return save;
+  }
+
+  Future<bool> _performDraftSave({required bool showSnackbar}) async {
+    final bloc = context.read<ComposeBloc>();
+    final initialState = bloc.state;
+    if (initialState.isEditing) return false;
+    if (!initialState.isDraftDirty) return true;
+
+    final completion = _waitForDraftSaveCompletion(bloc);
+    bloc.add(const DraftSaved());
+    final savedState = await completion;
+    final saved = !savedState.isDraftDirty;
+    if (mounted && showSnackbar && saved) {
       showAppSnackBar(context, context.l10n.messageComposeDraftSaved);
+    }
+    return saved;
+  }
+
+  Future<ComposeState> _waitForDraftSaveCompletion(ComposeBloc bloc) async {
+    try {
+      await bloc.stream.firstWhere((state) => state.isSavingDraft).timeout(const Duration(seconds: 1));
+    } catch (error) {
+      log.d('ComposeScreen: draft save did not emit an in-progress state before timeout', error: error);
+    }
+
+    try {
+      return await bloc.stream.firstWhere((state) => !state.isSavingDraft).timeout(const Duration(seconds: 5));
+    } catch (error) {
+      log.w('ComposeScreen: timed out waiting for draft save completion', error: error);
+      return bloc.state;
     }
   }
 
@@ -1313,24 +1354,35 @@ class _ComposeScreenState extends State<ComposeScreen> {
     );
   }
 
-  void _handleBackNavigation(BuildContext context) {
+  Future<void> _handleBackNavigation() async {
+    final pendingDraftSave = _pendingDraftSave;
+    if (pendingDraftSave != null) {
+      final saved = await pendingDraftSave;
+      if (!mounted) return;
+      final latestState = context.read<ComposeBloc>().state;
+      if (saved || !latestState.isDraftDirty) {
+        Navigator.of(context).pop();
+        return;
+      }
+    }
+
     final state = context.read<ComposeBloc>().state;
     final navigator = Navigator.of(context);
 
-    final hasContent = state.text.trim().isNotEmpty || state.mediaAttachments.isNotEmpty;
+    final hasContent = state.text.trim().isNotEmpty || state.hasMedia || state.hasVideo || state.hasScheduledTime;
 
     if (state.isEditing) {
       if (state.isDraftDirty) {
-        showConfirmationDialog(
+        final shouldDiscard = await showConfirmationDialog(
           context: context,
           title: Text(context.l10n.dialogDiscardChangesTitle),
           content: Text(context.l10n.dialogDiscardChangesContent),
           confirmLabel: context.l10n.buttonDiscard,
-        ).then((shouldDiscard) {
-          if (shouldDiscard && mounted) {
-            navigator.pop(false);
-          }
-        });
+        );
+        if (!mounted) return;
+        if (shouldDiscard) {
+          navigator.pop(false);
+        }
       } else {
         navigator.pop(false);
       }
@@ -1338,20 +1390,20 @@ class _ComposeScreenState extends State<ComposeScreen> {
     }
 
     if (hasContent && state.isDraftDirty) {
-      showConfirmationDialog(
+      final shouldSave = await showConfirmationDialog(
         context: context,
         title: Text(context.l10n.dialogSaveDraftTitle),
         content: Text(context.l10n.dialogSaveDraftContent),
         cancelLabel: context.l10n.buttonDiscard,
         confirmLabel: context.l10n.buttonSave,
-      ).then((shouldSave) {
-        if (shouldSave) {
-          _saveDraft();
-        }
-        if (mounted) {
-          navigator.pop();
-        }
-      });
+      );
+      if (shouldSave) {
+        final saved = await _saveDraft();
+        if (!saved) return;
+      }
+      if (mounted) {
+        navigator.pop();
+      }
     } else {
       navigator.pop();
     }

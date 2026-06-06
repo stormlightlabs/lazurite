@@ -11,7 +11,6 @@ import 'package:bluesky_poptart/app/bsky/embed/video.dart';
 import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 import 'package:bluesky_poptart/app/bsky/richtext/facet.dart';
 import 'package:bluesky_poptart/app/bsky/video/defs.dart';
-import 'package:characters/characters.dart';
 import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -43,6 +42,15 @@ const int kMaxImageBytes = 1 * 1024 * 1024;
 const int kMaxVideoBytes = 100 * 1024 * 1024;
 const _kVideoJobPollInterval = Duration(seconds: 2);
 const _kVideoJobPollTimeout = Duration(minutes: 5);
+const _kPostLinkConfig = LinkConfig(excludeProtocol: true, enableShortening: true);
+
+String formatComposePostTextForSubmission(String text) {
+  return BlueskyText(text, linkConfig: _kPostLinkConfig).format().value;
+}
+
+int composePostTextLength(String text) {
+  return BlueskyText(text, linkConfig: _kPostLinkConfig).format().length;
+}
 
 class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
   ComposeBloc({required ComposeRepository composeRepository, required AppDatabase database, required String accountDid})
@@ -80,7 +88,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
     if (text == state.text) {
       return;
     }
-    final graphemeCount = text.characters.length;
+    final graphemeCount = composePostTextLength(text);
     final isOverLimit = graphemeCount > kMaxGraphemes;
     final isEmpty = text.trim().isEmpty && state.mediaAttachments.isEmpty && state.videoAttachment == null;
 
@@ -303,7 +311,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
       }
 
       final text = draft.content;
-      final graphemeCount = text.characters.length;
+      final graphemeCount = composePostTextLength(text);
       final isOverLimit = graphemeCount > kMaxGraphemes;
       final isEmpty = text.trim().isEmpty && attachments.isEmpty;
 
@@ -386,7 +394,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
 
   Future<void> _onEditContextSet(EditContextSet event, Emitter<ComposeState> emit) async {
     final text = event.initialText ?? state.text;
-    final graphemeCount = text.characters.length;
+    final graphemeCount = composePostTextLength(text);
     final isOverLimit = graphemeCount > kMaxGraphemes;
     final isEmpty = text.trim().isEmpty;
 
@@ -412,7 +420,8 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
     emit(state.copyWith(status: ComposeStatus.submitting, canSubmit: false));
 
     try {
-      final facets = await _collectFacets();
+      final postText = formatComposePostTextForSubmission(state.text);
+      final facets = await _collectFacets(postText);
 
       if (state.isEditing) {
         final editPostUri = state.editPostUri;
@@ -428,7 +437,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
           postUri: editPostUri,
           currentCid: editPostCid,
           originalRecord: editRecord,
-          text: state.text,
+          text: postText,
           facets: facets,
           repo: _accountDid,
         );
@@ -562,7 +571,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
       }
 
       final result = await _composeRepository.createPost(
-        text: state.text,
+        text: postText,
         facets: facets,
         embed: embed,
         reply: reply,
@@ -591,8 +600,8 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
     }
   }
 
-  Future<List<RichtextFacet>> _collectFacets() async {
-    final blueskyText = BlueskyText(state.text);
+  Future<List<RichtextFacet>> _collectFacets(String text) async {
+    final blueskyText = BlueskyText(text);
     final facets = <RichtextFacet>[];
 
     for (final entity in blueskyText.entities) {
@@ -829,18 +838,39 @@ class ComposeRepository {
     } on XRPCException catch (e, stackTrace) {
       final errorMessage = e.response.data.message;
       final errorCode = e.response.data.error;
-      log.e('Failed to create post', error: e, stackTrace: stackTrace);
-      return CreatePostResult.failure(
-        errorMessage?.isNotEmpty == true
-            ? errorMessage!
-            : errorCode.isNotEmpty
-            ? errorCode
-            : 'Failed to create post. Please try again.',
+      log.e(
+        'Failed to create post: ${errorCode.isNotEmpty ? errorCode : 'unknown'} ${errorMessage ?? ''}',
+        error: e,
+        stackTrace: stackTrace,
       );
+      return CreatePostResult.failure(_safeCreatePostErrorMessage(errorCode: errorCode, message: errorMessage));
     } catch (e, stackTrace) {
       log.e('Failed to create post', error: e, stackTrace: stackTrace);
       return const CreatePostResult.failure('Failed to create post. Please try again.');
     }
+  }
+
+  String _safeCreatePostErrorMessage({required String errorCode, required String? message}) {
+    final trimmed = message?.trim();
+    if (trimmed != null && trimmed.isNotEmpty) {
+      final lower = trimmed.toLowerCase();
+      final looksLikeValidationError =
+          lower.contains('invalid') ||
+          lower.contains('too long') ||
+          lower.contains('limit') ||
+          lower.contains('text') ||
+          lower.contains('facet') ||
+          lower.contains('record');
+      if (looksLikeValidationError) {
+        return trimmed;
+      }
+    }
+
+    if (errorCode == 'InvalidRequest') {
+      return 'The server rejected this post. Please check the text and attachments, then try again.';
+    }
+
+    return 'Failed to create post. Please try again.';
   }
 
   Future<LinkPreviewData?> fetchLinkPreview(String rawUrl) async {
