@@ -619,6 +619,12 @@ abstract class AppLocalizations {
   /// **'Scheduled for {dateTime}'**
   String formatComposeScheduledFor(String dateTime);
 
+  /// Explains that an over-limit scheduled compose will publish as a thread
+  ///
+  /// In en, this message translates to:
+  /// **'This will publish as a thread of {count, plural, =1{1 post} other{{count} posts}}.'**
+  String formatComposeScheduledThreadPreview(int count);
+
   /// Video attachment status when ready and alt text exists
   ///
   /// In en, this message translates to:

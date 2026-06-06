@@ -523,6 +523,15 @@
       }
     }
   },
+  "formatComposeScheduledThreadPreview": "This will publish as a thread of {count, plural, =1{1 post} other{{count} posts}}.",
+  "@formatComposeScheduledThreadPreview": {
+    "description": "Explains that an over-limit scheduled compose will publish as a thread",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "formatComposeVideoReadyWithAltText": "Ready - \"{altText}\"",
   "@formatComposeVideoReadyWithAltText": {
     "description": "Video attachment status when ready and alt text exists",

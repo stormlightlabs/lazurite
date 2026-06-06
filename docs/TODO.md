@@ -54,11 +54,6 @@ updated: 2026-05-23
 - Holding the quote/repost button should show the quote/repost menu (it does so on the thread
   screen but not others)
 
-### Composer
-
-- Odd behavior when saving drafts: can save draft via the button but hitting cancel
-  prompts to save or discard.
-
 ### Dev Tools
 
 - Instead of tabs, navigating to a record through dev tools should instead show

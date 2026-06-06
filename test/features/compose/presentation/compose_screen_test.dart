@@ -770,6 +770,23 @@ void main() {
         verify(() => mockBloc.add(const ScheduleCleared())).called(1);
       });
 
+      testWidgets('scheduled over-limit post explains it will publish as a thread', (tester) async {
+        seedState(
+          ComposeState.ready(
+            text: '${'a' * 299} ${'b' * 20}',
+            graphemeCount: 320,
+            isOverLimit: true,
+            isEmpty: false,
+            scheduledAt: DateTime(2026, 6, 1, 12),
+          ),
+        );
+
+        await tester.pumpWidget(buildSubject());
+        await tester.pump();
+
+        expect(find.text('This will publish as a thread of 2 posts.'), findsOneWidget);
+      });
+
       testWidgets('shows loading indicator while drafts are loading', (tester) async {
         seedState(const ComposeState.ready().copyWith(isLoadingDrafts: true));
 

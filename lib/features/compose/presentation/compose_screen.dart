@@ -1503,45 +1503,78 @@ class _ComposeScreenState extends State<ComposeScreen> {
       return const SizedBox.shrink();
     }
 
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(68, 4, 16, 12),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: context.colorScheme.primary,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: context.colorScheme.primary),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.schedule, size: 15, color: context.colorScheme.onPrimary),
-            const SizedBox(width: 7),
-            Text(
-              context.l10n.formatComposeScheduledFor(
-                DateFormat.yMMMd(Localizations.localeOf(context).toString()).add_jm().format(state.scheduledAt!),
-              ),
-              style: context.textTheme.bodySmall?.copyWith(
-                color: context.colorScheme.onPrimary,
-                fontWeight: FontWeight.w600,
-              ),
+    final scheduledThreadPartCount = state.isOverLimit ? splitComposePostText(state.text).length : 1;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(68, 4, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: context.colorScheme.primary,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: context.colorScheme.primary),
             ),
-            const SizedBox(width: 2),
-            IconButton(
-              onPressed: () => context.read<ComposeBloc>().add(const ScheduleCleared()),
-              icon: Icon(Icons.close, size: 16, color: context.colorScheme.onPrimary),
-              tooltip: context.l10n.messageComposeClearScheduledTime,
-              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-              padding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              style: IconButton.styleFrom(
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                minimumSize: const Size(40, 40),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.schedule, size: 15, color: context.colorScheme.onPrimary),
+                const SizedBox(width: 7),
+                Text(
+                  context.l10n.formatComposeScheduledFor(
+                    DateFormat.yMMMd(Localizations.localeOf(context).toString()).add_jm().format(state.scheduledAt!),
+                  ),
+                  style: context.textTheme.bodySmall?.copyWith(
+                    color: context.colorScheme.onPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 2),
+                IconButton(
+                  onPressed: () => context.read<ComposeBloc>().add(const ScheduleCleared()),
+                  icon: Icon(Icons.close, size: 16, color: context.colorScheme.onPrimary),
+                  tooltip: context.l10n.messageComposeClearScheduledTime,
+                  constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                  style: IconButton.styleFrom(
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    minimumSize: const Size(40, 40),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (scheduledThreadPartCount > 1) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: context.colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: context.colorScheme.outlineVariant),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.account_tree_outlined, size: 16, color: context.colorScheme.onSecondaryContainer),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      context.l10n.formatComposeScheduledThreadPreview(scheduledThreadPartCount),
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: context.colorScheme.onSecondaryContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
-        ),
+        ],
       ),
     );
   }

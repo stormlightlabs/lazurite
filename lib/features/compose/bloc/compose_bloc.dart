@@ -11,6 +11,7 @@ import 'package:bluesky_poptart/app/bsky/embed/video.dart';
 import 'package:bluesky_poptart/app/bsky/feed/post.dart';
 import 'package:bluesky_poptart/app/bsky/richtext/facet.dart';
 import 'package:bluesky_poptart/app/bsky/video/defs.dart';
+import 'package:characters/characters.dart';
 import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,6 +25,7 @@ import 'package:lazurite/core/scheduler/post_scheduler.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/compose/data/draft_embed_payload.dart';
 import 'package:lazurite/features/compose/data/link_preview_service.dart';
+import 'package:lazurite/features/compose/data/scheduled_compose_payload.dart';
 import 'package:lazurite/shared/utils/media_type_sniffer.dart';
 import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
 import 'package:poptart_lex/com/atproto/repo/get_record.dart';
@@ -50,6 +52,54 @@ String formatComposePostTextForSubmission(String text) {
 
 int composePostTextLength(String text) {
   return BlueskyText(text, linkConfig: _kPostLinkConfig).format().length;
+}
+
+List<String> splitComposePostText(String text) {
+  final formattedText = formatComposePostTextForSubmission(text).trim();
+  if (formattedText.isEmpty) {
+    return const [];
+  }
+  if (composePostTextLength(formattedText) <= kMaxGraphemes) {
+    return [formattedText];
+  }
+
+  final chunks = <String>[];
+  final buffer = StringBuffer();
+  final tokens = RegExp(r'\S+\s*|\s+').allMatches(formattedText).map((match) => match.group(0)!).toList();
+
+  void flush() {
+    final chunk = buffer.toString().trimRight();
+    if (chunk.isNotEmpty) {
+      chunks.add(chunk);
+    }
+    buffer.clear();
+  }
+
+  for (final token in tokens) {
+    if (token.trim().isEmpty && buffer.isEmpty) {
+      continue;
+    }
+
+    if (composePostTextLength(token.trimRight()) > kMaxGraphemes) {
+      flush();
+      var word = token.trimRight();
+      while (word.characters.isNotEmpty) {
+        final part = word.characters.take(kMaxGraphemes).toString();
+        chunks.add(part);
+        word = word.characters.skip(kMaxGraphemes).toString();
+      }
+      continue;
+    }
+
+    final candidate = '${buffer.toString()}$token';
+    if (buffer.isNotEmpty && composePostTextLength(candidate.trimRight()) > kMaxGraphemes) {
+      flush();
+    }
+    buffer.write(token);
+  }
+
+  flush();
+  return chunks;
 }
 
 class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
@@ -83,6 +133,22 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
   final AppDatabase _database;
   final String _accountDid;
 
+  bool _canSubmit({
+    required bool isOverLimit,
+    required bool isEmpty,
+    required VideoAttachment? videoAttachment,
+    required bool isEditing,
+    required DateTime? scheduledAt,
+  }) {
+    if (isEmpty || (videoAttachment?.isActive ?? false)) {
+      return false;
+    }
+    if (!isOverLimit) {
+      return true;
+    }
+    return !isEditing;
+  }
+
   Future<void> _onTextChanged(TextChanged event, Emitter<ComposeState> emit) async {
     final text = event.text;
     if (text == state.text) {
@@ -98,7 +164,13 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         graphemeCount: graphemeCount,
         isOverLimit: isOverLimit,
         isEmpty: isEmpty,
-        canSubmit: !isOverLimit && !isEmpty && !(state.videoAttachment?.isActive ?? false),
+        canSubmit: _canSubmit(
+          isOverLimit: isOverLimit,
+          isEmpty: isEmpty,
+          videoAttachment: state.videoAttachment,
+          isEditing: state.isEditing,
+          scheduledAt: state.scheduledAt,
+        ),
         isDraftDirty: true,
       ),
     );
@@ -115,7 +187,13 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
       state.copyWith(
         mediaAttachments: attachments,
         isEmpty: isEmpty,
-        canSubmit: !state.isOverLimit && !isEmpty,
+        canSubmit: _canSubmit(
+          isOverLimit: state.isOverLimit,
+          isEmpty: isEmpty,
+          videoAttachment: state.videoAttachment,
+          isEditing: state.isEditing,
+          scheduledAt: state.scheduledAt,
+        ),
         isDraftDirty: true,
       ),
     );
@@ -131,7 +209,13 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
       state.copyWith(
         mediaAttachments: attachments,
         isEmpty: isEmpty,
-        canSubmit: !state.isOverLimit && !isEmpty,
+        canSubmit: _canSubmit(
+          isOverLimit: state.isOverLimit,
+          isEmpty: isEmpty,
+          videoAttachment: state.videoAttachment,
+          isEditing: state.isEditing,
+          scheduledAt: state.scheduledAt,
+        ),
         isDraftDirty: true,
       ),
     );
@@ -192,7 +276,19 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         jobId: jobId,
       );
       final isEmpty = state.text.trim().isEmpty && state.mediaAttachments.isEmpty;
-      emit(state.copyWith(videoAttachment: readyVideo, isEmpty: isEmpty, canSubmit: !state.isOverLimit && !isEmpty));
+      emit(
+        state.copyWith(
+          videoAttachment: readyVideo,
+          isEmpty: isEmpty,
+          canSubmit: _canSubmit(
+            isOverLimit: state.isOverLimit,
+            isEmpty: isEmpty,
+            videoAttachment: readyVideo,
+            isEditing: state.isEditing,
+            scheduledAt: state.scheduledAt,
+          ),
+        ),
+      );
     } catch (e, stackTrace) {
       log.e('Video upload failed', error: e, stackTrace: stackTrace);
       _setVideoError(emit, 'Upload failed: $e');
@@ -244,7 +340,19 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
 
   Future<void> _onVideoRemoved(VideoRemoved event, Emitter<ComposeState> emit) async {
     final isEmpty = state.text.trim().isEmpty && state.mediaAttachments.isEmpty;
-    emit(state.copyWith(videoAttachment: null, isEmpty: isEmpty, canSubmit: !state.isOverLimit && !isEmpty));
+    emit(
+      state.copyWith(
+        videoAttachment: null,
+        isEmpty: isEmpty,
+        canSubmit: _canSubmit(
+          isOverLimit: state.isOverLimit,
+          isEmpty: isEmpty,
+          videoAttachment: null,
+          isEditing: state.isEditing,
+          scheduledAt: state.scheduledAt,
+        ),
+      ),
+    );
   }
 
   Future<void> _onVideoAltTextUpdated(VideoAltTextUpdated event, Emitter<ComposeState> emit) async {
@@ -330,7 +438,13 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
           graphemeCount: graphemeCount,
           isOverLimit: isOverLimit,
           isEmpty: isEmpty,
-          canSubmit: !isOverLimit && !isEmpty,
+          canSubmit: _canSubmit(
+            isOverLimit: isOverLimit,
+            isEmpty: isEmpty,
+            videoAttachment: null,
+            isEditing: false,
+            scheduledAt: draft.scheduledAt,
+          ),
         ),
       );
     } catch (e, stackTrace) {
@@ -361,12 +475,34 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
 
   Future<void> _onPostScheduled(PostScheduled event, Emitter<ComposeState> emit) async {
     if (state.isEditing) return;
-    emit(state.copyWith(scheduledAt: event.scheduledAt));
+    emit(
+      state.copyWith(
+        scheduledAt: event.scheduledAt,
+        canSubmit: _canSubmit(
+          isOverLimit: state.isOverLimit,
+          isEmpty: state.isEmpty,
+          videoAttachment: state.videoAttachment,
+          isEditing: state.isEditing,
+          scheduledAt: event.scheduledAt,
+        ),
+      ),
+    );
   }
 
   Future<void> _onScheduleCleared(ScheduleCleared event, Emitter<ComposeState> emit) async {
     if (state.isEditing) return;
-    emit(state.copyWith(scheduledAt: null));
+    emit(
+      state.copyWith(
+        scheduledAt: null,
+        canSubmit: _canSubmit(
+          isOverLimit: state.isOverLimit,
+          isEmpty: state.isEmpty,
+          videoAttachment: state.videoAttachment,
+          isEditing: state.isEditing,
+          scheduledAt: null,
+        ),
+      ),
+    );
   }
 
   Future<void> _onReplyContextSet(ReplyContextSet event, Emitter<ComposeState> emit) async {
@@ -404,7 +540,13 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         graphemeCount: graphemeCount,
         isOverLimit: isOverLimit,
         isEmpty: isEmpty,
-        canSubmit: !isOverLimit && !isEmpty,
+        canSubmit: _canSubmit(
+          isOverLimit: isOverLimit,
+          isEmpty: isEmpty,
+          videoAttachment: state.videoAttachment,
+          isEditing: true,
+          scheduledAt: null,
+        ),
         editPostUri: event.postUri,
         editPostCid: event.postCid,
         editRecord: Map<String, dynamic>.from(event.record),
@@ -415,7 +557,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
   }
 
   Future<void> _onPostSubmitted(PostSubmitted event, Emitter<ComposeState> emit) async {
-    if (!state.canSubmit || state.isOverLimit) return;
+    if (!state.canSubmit) return;
 
     emit(state.copyWith(status: ComposeStatus.submitting, canSubmit: false));
 
@@ -452,6 +594,17 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
 
       if (state.scheduledAt != null && state.scheduledAt!.isAfter(DateTime.now())) {
         final embedPayload = _buildEmbedPayload();
+        final scheduledParts = splitComposePostText(state.text);
+        final scheduledPayload = scheduledParts.length > 1
+            ? ScheduledComposePayload(
+                originalText: state.text,
+                parts: scheduledParts
+                    .asMap()
+                    .entries
+                    .map((entry) => ScheduledComposePart(index: entry.key, text: entry.value))
+                    .toList(growable: false),
+              )
+            : null;
         final draft = DraftsCompanion(
           accountDid: Value(_accountDid),
           content: Value(state.text),
@@ -463,6 +616,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
           mediaPaths: state.mediaAttachments.isNotEmpty
               ? Value(DraftEmbedPayload.encodeMediaPaths(state.mediaAttachments.map((m) => m.localPath)))
               : const Value.absent(),
+          composePayloadJson: scheduledPayload != null ? Value(scheduledPayload.encode()) : const Value.absent(),
           scheduledAt: Value(state.scheduledAt!),
           updatedAt: Value(DateTime.now()),
         );
@@ -570,6 +724,22 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         );
       }
 
+      final chunks = splitComposePostText(state.text);
+      if (chunks.length > 1) {
+        final threadResult = await _createThreadPosts(chunks: chunks, firstEmbed: embed, initialReply: reply);
+        if (threadResult.isSuccess) {
+          if (state.draftId != null) await _database.deleteDraft(state.draftId!);
+          emit(state.copyWith(status: ComposeStatus.success, canSubmit: false, isDraftDirty: false));
+        } else {
+          await _saveFailedSubmissionAsDraft(
+            emit,
+            threadResult.errorMessage ?? 'Failed to create post. Please try again.',
+            userMessage: _postFailureDraftMessage(threadResult.errorMessage),
+          );
+        }
+        return;
+      }
+
       final result = await _composeRepository.createPost(
         text: postText,
         facets: facets,
@@ -598,6 +768,43 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
 
       await _saveFailedSubmissionAsDraft(emit, e);
     }
+  }
+
+  Future<CreatePostResult> _createThreadPosts({
+    required List<String> chunks,
+    required UFeedPostEmbed? firstEmbed,
+    required ReplyRef? initialReply,
+  }) async {
+    ReplyRef? reply = initialReply;
+    RepoStrongRef? rootRef = initialReply?.root;
+
+    for (var i = 0; i < chunks.length; i++) {
+      final chunk = chunks[i];
+      final chunkFacets = await _collectFacets(chunk);
+      final result = await _composeRepository.createPost(
+        text: chunk,
+        facets: chunkFacets,
+        embed: i == 0 ? firstEmbed : null,
+        reply: reply,
+        repo: _accountDid,
+      );
+
+      if (!result.isSuccess) {
+        return result;
+      }
+
+      final uri = result.uri;
+      final cid = result.cid;
+      if (uri == null || cid == null || uri.isEmpty || cid.isEmpty) {
+        return const CreatePostResult.failure('Post was created but the server response was missing thread refs.');
+      }
+
+      final ref = RepoStrongRef(uri: AtUri.parse(uri), cid: cid);
+      rootRef ??= ref;
+      reply = ReplyRef(parent: ref, root: rootRef);
+    }
+
+    return const CreatePostResult.success();
   }
 
   Future<List<RichtextFacet>> _collectFacets(String text) async {
@@ -669,7 +876,13 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
       state.copyWith(
         status: ComposeStatus.ready,
         errorMessage: message,
-        canSubmit: !state.isOverLimit && !state.isEmpty,
+        canSubmit: _canSubmit(
+          isOverLimit: state.isOverLimit,
+          isEmpty: state.isEmpty,
+          videoAttachment: state.videoAttachment,
+          isEditing: state.isEditing,
+          scheduledAt: state.scheduledAt,
+        ),
       ),
     );
   }
@@ -712,14 +925,17 @@ class _UploadedImage {
 }
 
 class CreatePostResult {
-  const CreatePostResult._({required this.isSuccess, this.errorMessage});
+  const CreatePostResult._({required this.isSuccess, this.errorMessage, this.uri, this.cid});
 
-  const CreatePostResult.success() : this._(isSuccess: true);
+  const CreatePostResult.success({String? uri, String? cid}) : this._(isSuccess: true, uri: uri, cid: cid);
 
-  const CreatePostResult.failure(String message) : this._(isSuccess: false, errorMessage: message);
+  const CreatePostResult.failure(String message)
+    : this._(isSuccess: false, errorMessage: message, uri: null, cid: null);
 
   final bool isSuccess;
   final String? errorMessage;
+  final String? uri;
+  final String? cid;
 }
 
 class EditPostResult {
@@ -827,14 +1043,14 @@ class ComposeRepository {
         createdAt: DateTime.now().toUtc(),
       );
 
-      await _authRecovery.run(
+      final created = await _authRecovery.run(
         (client) => client.atproto.repo.createRecord(
           repo: repo,
           collection: 'app.bsky.feed.post',
           record: _postRecordJson(record),
         ),
       );
-      return const CreatePostResult.success();
+      return CreatePostResult.success(uri: created.data.uri.toString(), cid: created.data.cid);
     } on XRPCException catch (e, stackTrace) {
       final errorMessage = e.response.data.message;
       final errorCode = e.response.data.error;

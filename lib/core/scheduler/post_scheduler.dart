@@ -15,6 +15,7 @@ import 'package:lazurite/features/auth/data/models/auth_models.dart';
 import 'package:lazurite/features/auth/data/session_recovery.dart';
 import 'package:lazurite/features/compose/bloc/compose_bloc.dart';
 import 'package:lazurite/features/compose/data/draft_embed_payload.dart';
+import 'package:lazurite/features/compose/data/scheduled_compose_payload.dart';
 import 'package:lazurite/features/notifications/background/notification_background_worker.dart';
 import 'package:lazurite/shared/utils/media_type_sniffer.dart';
 import 'package:poptart_bluesky_text/poptart_bluesky_text.dart';
@@ -91,24 +92,10 @@ Future<void> _submitScheduledDraft(int draftId) async {
 
     final composeRepo = ComposeRepository(bluesky: bluesky, onUnauthorized: recoverSession);
 
-    final postText = formatComposePostTextForSubmission(draft.content);
-    final facets = <RichtextFacet>[];
-    for (final entity in BlueskyText(postText).entities) {
-      try {
-        final facetJson = await entity.toFacet().timeout(
-          const Duration(seconds: 5),
-          onTimeout: () {
-            log.w('Scheduled post: timeout resolving facet for "${entity.value}"');
-            return {};
-          },
-        );
-        if (facetJson.isNotEmpty) {
-          facets.add(const RichtextFacetConverter().fromJson(Map<String, dynamic>.from(facetJson)));
-        }
-      } catch (e) {
-        log.w('Scheduled post: could not resolve facet for "${entity.value}": $e');
-      }
-    }
+    final scheduledPayload = ScheduledComposePayload.tryDecode(draft.composePayloadJson);
+    final postTexts =
+        scheduledPayload?.parts.map((part) => part.text).toList(growable: false) ??
+        [formatComposePostTextForSubmission(draft.content)];
 
     UFeedPostEmbed? embed;
 
@@ -127,16 +114,30 @@ Future<void> _submitScheduledDraft(int draftId) async {
       );
     }
 
-    final result = await composeRepo.createPost(
-      text: postText,
-      facets: facets,
-      embed: embed,
-      reply: reply,
-      repo: accountDid,
-    );
+    ReplyRef? nextReply = reply;
+    RepoStrongRef? rootRef = reply?.root;
+    for (var i = 0; i < postTexts.length; i++) {
+      final result = await composeRepo.createPost(
+        text: postTexts[i],
+        facets: await _collectFacets(postTexts[i]),
+        embed: i == 0 ? embed : null,
+        reply: nextReply,
+        repo: accountDid,
+      );
 
-    if (!result.isSuccess) {
-      throw Exception(result.errorMessage ?? 'createPost failed for scheduled draft $draftId');
+      if (!result.isSuccess) {
+        throw Exception(result.errorMessage ?? 'createPost failed for scheduled draft $draftId part $i');
+      }
+
+      final uri = result.uri;
+      final cid = result.cid;
+      if (uri == null || cid == null || uri.isEmpty || cid.isEmpty) {
+        throw Exception('createPost response missing thread refs for scheduled draft $draftId part $i');
+      }
+
+      final ref = RepoStrongRef(uri: AtUri.parse(uri), cid: cid);
+      rootRef ??= ref;
+      nextReply = ReplyRef(parent: ref, root: rootRef);
     }
 
     await database.deleteDraft(draftId);
@@ -144,6 +145,27 @@ Future<void> _submitScheduledDraft(int draftId) async {
   } finally {
     await database.close();
   }
+}
+
+Future<List<RichtextFacet>> _collectFacets(String text) async {
+  final facets = <RichtextFacet>[];
+  for (final entity in BlueskyText(text).entities) {
+    try {
+      final facetJson = await entity.toFacet().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          log.w('Scheduled post: timeout resolving facet for "${entity.value}"');
+          return {};
+        },
+      );
+      if (facetJson.isNotEmpty) {
+        facets.add(const RichtextFacetConverter().fromJson(Map<String, dynamic>.from(facetJson)));
+      }
+    } catch (e) {
+      log.w('Scheduled post: could not resolve facet for "${entity.value}": $e');
+    }
+  }
+  return facets;
 }
 
 /// Uploads images from a draft embed payload.

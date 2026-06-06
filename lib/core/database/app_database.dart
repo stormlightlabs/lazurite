@@ -41,7 +41,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _serializedWriteTail = Future.value();
 
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => 26;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -189,6 +189,9 @@ class AppDatabase extends _$AppDatabase {
             AND dpop_public_key IS NOT NULL
             AND dpop_private_key IS NOT NULL
         ''');
+      }
+      if (from < 26) {
+        await migrator.addColumn(drafts, drafts.composePayloadJson);
       }
     },
   );

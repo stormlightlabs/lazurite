@@ -348,6 +348,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String formatComposeScheduledThreadPreview(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count posts', one: '1 post');
+    return 'This will publish as a thread of $_temp0.';
+  }
+
+  @override
   String formatComposeVideoReadyWithAltText(String altText) {
     return 'Ready - \"$altText\"';
   }

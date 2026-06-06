@@ -183,14 +183,14 @@ void main() {
       );
 
       blocTest<ComposeBloc, ComposeState>(
-        'emits overLimit when text exceeds 300 graphemes',
+        'allows immediate thread submission when text exceeds 300 graphemes',
         build: () => composeBloc,
         act: (bloc) => bloc.add(TextChanged('a' * 301)),
         expect: () => [
           isA<ComposeState>()
               .having((s) => s.graphemeCount, 'graphemeCount', 301)
               .having((s) => s.isOverLimit, 'isOverLimit', true)
-              .having((s) => s.canSubmit, 'canSubmit', false),
+              .having((s) => s.canSubmit, 'canSubmit', true),
         ],
       );
 
@@ -392,6 +392,19 @@ void main() {
           isA<ComposeState>()
               .having((s) => s.hasScheduledTime, 'hasScheduledTime', true)
               .having((s) => s.scheduledAt, 'scheduledAt', DateTime(2025, 1, 1)),
+        ],
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'keeps scheduled over-limit thread posts submittable',
+        build: () => composeBloc,
+        seed: () => ComposeState.ready(text: 'a' * 301, graphemeCount: 301, isOverLimit: true, isEmpty: false),
+        act: (bloc) => bloc.add(PostScheduled(DateTime(2026, 1, 1))),
+        expect: () => [
+          isA<ComposeState>()
+              .having((s) => s.hasScheduledTime, 'hasScheduledTime', true)
+              .having((s) => s.isOverLimit, 'isOverLimit', true)
+              .having((s) => s.canSubmit, 'canSubmit', true),
         ],
       );
     });
@@ -696,6 +709,58 @@ void main() {
               repo: 'did:plc:test',
             ),
           ).called(1);
+        },
+      );
+
+      blocTest<ComposeBloc, ComposeState>(
+        'splits over-limit text into reply thread posts',
+        build: () {
+          var call = 0;
+          when(
+            () => mockRepository.createPost(
+              text: any(named: 'text'),
+              facets: any(named: 'facets'),
+              embed: any(named: 'embed'),
+              reply: any(named: 'reply'),
+              repo: any(named: 'repo'),
+            ),
+          ).thenAnswer((_) async {
+            call += 1;
+            return CreatePostResult.success(
+              uri: 'at://did:plc:test/app.bsky.feed.post/thread-$call',
+              cid: 'cid-thread-$call',
+            );
+          });
+          return composeBloc;
+        },
+        seed: () {
+          final text = '${'a' * 299} ${'b' * 20}';
+          return ComposeState.ready(text: text, graphemeCount: composePostTextLength(text), isEmpty: false);
+        },
+        act: (bloc) => bloc.add(const PostSubmitted()),
+        expect: () => [
+          isA<ComposeState>().having((s) => s.isSubmitting, 'isSubmitting', true),
+          isA<ComposeState>().having((s) => s.isSuccess, 'isSuccess', true),
+        ],
+        verify: (_) {
+          final captured = verify(
+            () => mockRepository.createPost(
+              text: captureAny(named: 'text'),
+              facets: any(named: 'facets'),
+              embed: any(named: 'embed'),
+              reply: captureAny(named: 'reply'),
+              repo: any(named: 'repo'),
+            ),
+          ).captured;
+
+          expect(captured[0], 'a' * 299);
+          expect(captured[1], isNull);
+          expect(captured[2], 'b' * 20);
+          final reply = captured[3] as ReplyRef;
+          expect(reply.parent.uri.toString(), 'at://did:plc:test/app.bsky.feed.post/thread-1');
+          expect(reply.parent.cid, 'cid-thread-1');
+          expect(reply.root.uri.toString(), 'at://did:plc:test/app.bsky.feed.post/thread-1');
+          expect(reply.root.cid, 'cid-thread-1');
         },
       );
 

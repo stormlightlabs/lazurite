@@ -119,13 +119,29 @@ class SearchHistory extends Table {
 class Drafts extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get accountDid => text()();
+
+  /// Back-compat and draft-list preview text. For structured scheduled compose
+  /// jobs, this stores the original text while [composePayloadJson] stores the
+  /// postable parts used by the scheduler.
   TextColumn get content => text()();
+
+  /// Back-compat single-parent reply fields. Structured scheduled compose jobs
+  /// still use these as the initial reply seed for the first scheduled part.
   TextColumn get replyUri => text().nullable()();
   TextColumn get replyCid => text().nullable()();
   TextColumn get rootUri => text().nullable()();
   TextColumn get rootCid => text().nullable()();
+
+  /// Back-compat embed/media fields shared by normal drafts and scheduled jobs.
+  /// For split scheduled threads, embeds/media are attached to the first part.
   TextColumn get embedJson => text().nullable()();
   TextColumn get mediaPaths => text().nullable()();
+
+  /// Structured scheduled compose payload. Currently stores split thread parts
+  /// for over-limit scheduled posts while keeping legacy columns populated for
+  /// previews, older code paths, and migration safety.
+  TextColumn get composePayloadJson => text().nullable()();
+
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get scheduledAt => dateTime().nullable()();
