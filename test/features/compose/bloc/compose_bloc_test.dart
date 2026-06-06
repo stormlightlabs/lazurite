@@ -664,7 +664,7 @@ void main() {
               reply: any(named: 'reply'),
               repo: any(named: 'repo'),
             ),
-          ).thenAnswer((_) async => true);
+          ).thenAnswer((_) async => const CreatePostResult.success());
           return composeBloc;
         },
         seed: () => const ComposeState.ready(text: 'Hello', graphemeCount: 5, isEmpty: false),
@@ -708,7 +708,7 @@ void main() {
               reply: any(named: 'reply'),
               repo: any(named: 'repo'),
             ),
-          ).thenAnswer((_) async => true);
+          ).thenAnswer((_) async => const CreatePostResult.success());
           return composeBloc;
         },
         seed: () =>
@@ -747,7 +747,7 @@ void main() {
               reply: any(named: 'reply'),
               repo: any(named: 'repo'),
             ),
-          ).thenAnswer((_) async => true);
+          ).thenAnswer((_) async => const CreatePostResult.success());
           return composeBloc;
         },
         seed: () =>
@@ -786,7 +786,7 @@ void main() {
               reply: any(named: 'reply'),
               repo: any(named: 'repo'),
             ),
-          ).thenAnswer((_) async => true);
+          ).thenAnswer((_) async => const CreatePostResult.success());
           return composeBloc;
         },
         seed: () {
@@ -856,7 +856,7 @@ void main() {
               reply: any(named: 'reply'),
               repo: any(named: 'repo'),
             ),
-          ).thenAnswer((_) async => true);
+          ).thenAnswer((_) async => const CreatePostResult.success());
           return composeBloc;
         },
         seed: () => const ComposeState.ready(
@@ -913,7 +913,7 @@ void main() {
               reply: any(named: 'reply'),
               repo: any(named: 'repo'),
             ),
-          ).thenAnswer((_) async => true);
+          ).thenAnswer((_) async => const CreatePostResult.success());
           return composeBloc;
         },
         seed: () => const ComposeState.ready(
@@ -947,7 +947,7 @@ void main() {
       );
 
       blocTest<ComposeBloc, ComposeState>(
-        'emits error and returns to ready when createPost returns false',
+        'saves draft and returns to ready when createPost returns failure',
         build: () {
           when(
             () => mockRepository.createPost(
@@ -957,17 +957,24 @@ void main() {
               reply: any(named: 'reply'),
               repo: any(named: 'repo'),
             ),
-          ).thenAnswer((_) async => false);
+          ).thenAnswer((_) async => const CreatePostResult.failure('Invalid record: text too long'));
+          when(() => mockDatabase.saveDraft(any())).thenAnswer((_) async => 99);
           return composeBloc;
         },
         seed: () => const ComposeState.ready(text: 'Hello', graphemeCount: 5, isEmpty: false),
         act: (bloc) => bloc.add(const PostSubmitted()),
         expect: () => [
           isA<ComposeState>().having((s) => s.isSubmitting, 'isSubmitting', true),
-          isA<ComposeState>().having((s) => s.hasError, 'hasError', true),
-
+          isA<ComposeState>()
+              .having((s) => s.hasError, 'hasError', true)
+              .having((s) => s.errorMessage, 'errorMessage', contains('saved as draft'))
+              .having((s) => s.errorMessage, 'errorMessage', contains('Invalid record')),
           isA<ComposeState>().having((s) => s.isReady, 'isReady', true),
         ],
+        verify: (_) {
+          final draft = verify(() => mockDatabase.saveDraft(captureAny())).captured.single as DraftsCompanion;
+          expect(draft.content.value, 'Hello');
+        },
       );
 
       blocTest<ComposeBloc, ComposeState>(
@@ -1018,7 +1025,7 @@ void main() {
               reply: any(named: 'reply'),
               repo: any(named: 'repo'),
             ),
-          ).thenAnswer((_) async => true);
+          ).thenAnswer((_) async => const CreatePostResult.success());
           when(() => mockDatabase.deleteDraft(7)).thenAnswer((_) async => 1);
           return composeBloc;
         },

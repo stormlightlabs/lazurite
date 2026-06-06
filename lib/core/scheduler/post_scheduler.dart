@@ -126,7 +126,7 @@ Future<void> _submitScheduledDraft(int draftId) async {
       );
     }
 
-    final success = await composeRepo.createPost(
+    final result = await composeRepo.createPost(
       text: draft.content,
       facets: facets,
       embed: embed,
@@ -134,8 +134,8 @@ Future<void> _submitScheduledDraft(int draftId) async {
       repo: accountDid,
     );
 
-    if (!success) {
-      throw Exception('createPost returned false for scheduled draft $draftId');
+    if (!result.isSuccess) {
+      throw Exception(result.errorMessage ?? 'createPost failed for scheduled draft $draftId');
     }
 
     await database.deleteDraft(draftId);

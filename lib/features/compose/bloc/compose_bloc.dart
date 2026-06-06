@@ -561,7 +561,7 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         );
       }
 
-      final success = await _composeRepository.createPost(
+      final result = await _composeRepository.createPost(
         text: state.text,
         facets: facets,
         embed: embed,
@@ -569,11 +569,15 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         repo: _accountDid,
       );
 
-      if (success) {
+      if (result.isSuccess) {
         if (state.draftId != null) await _database.deleteDraft(state.draftId!);
-        emit(state.copyWith(status: ComposeStatus.success, canSubmit: false));
+        emit(state.copyWith(status: ComposeStatus.success, canSubmit: false, isDraftDirty: false));
       } else {
-        _emitError(emit, 'Failed to create post. Please try again.');
+        await _saveFailedSubmissionAsDraft(
+          emit,
+          result.errorMessage ?? 'Failed to create post. Please try again.',
+          userMessage: _postFailureDraftMessage(result.errorMessage),
+        );
       }
     } catch (e, stackTrace) {
       log.e('Failed to submit post', error: e, stackTrace: stackTrace);
@@ -611,7 +615,11 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
     return facets;
   }
 
-  Future<void> _saveFailedSubmissionAsDraft(Emitter<ComposeState> emit, Object error) async {
+  Future<void> _saveFailedSubmissionAsDraft(
+    Emitter<ComposeState> emit,
+    Object error, {
+    String userMessage = 'Post failed — saved as draft.',
+  }) async {
     try {
       final embedPayload = _buildEmbedPayload();
       final draft = DraftsCompanion(
@@ -629,11 +637,19 @@ class ComposeBloc extends Bloc<ComposeEvent, ComposeState> {
         updatedAt: Value(DateTime.now()),
       );
       await _database.saveDraft(draft);
-      _emitError(emit, 'Network error — post saved as draft.');
+      _emitError(emit, userMessage);
     } catch (draftError, stackTrace) {
       log.e('Failed to save failed post submission as draft', error: draftError, stackTrace: stackTrace);
       _emitError(emit, 'Failed to submit post: $error');
     }
+  }
+
+  String _postFailureDraftMessage(String? errorMessage) {
+    final detail = errorMessage?.trim();
+    if (detail == null || detail.isEmpty) {
+      return 'Post failed — saved as draft.';
+    }
+    return 'Post failed — saved as draft. $detail';
   }
 
   /// Emits error state (preserving content), then transitions back to ready
@@ -684,6 +700,17 @@ class _UploadedImage {
   final String altText;
   final int? width;
   final int? height;
+}
+
+class CreatePostResult {
+  const CreatePostResult._({required this.isSuccess, this.errorMessage});
+
+  const CreatePostResult.success() : this._(isSuccess: true);
+
+  const CreatePostResult.failure(String message) : this._(isSuccess: false, errorMessage: message);
+
+  final bool isSuccess;
+  final String? errorMessage;
 }
 
 class EditPostResult {
@@ -774,7 +801,7 @@ class ComposeRepository {
     }
   }
 
-  Future<bool> createPost({
+  Future<CreatePostResult> createPost({
     required String text,
     required List<RichtextFacet> facets,
     UFeedPostEmbed? embed,
@@ -798,10 +825,21 @@ class ComposeRepository {
           record: _postRecordJson(record),
         ),
       );
-      return true;
+      return const CreatePostResult.success();
+    } on XRPCException catch (e, stackTrace) {
+      final errorMessage = e.response.data.message;
+      final errorCode = e.response.data.error;
+      log.e('Failed to create post', error: e, stackTrace: stackTrace);
+      return CreatePostResult.failure(
+        errorMessage?.isNotEmpty == true
+            ? errorMessage!
+            : errorCode.isNotEmpty
+            ? errorCode
+            : 'Failed to create post. Please try again.',
+      );
     } catch (e, stackTrace) {
       log.e('Failed to create post', error: e, stackTrace: stackTrace);
-      return false;
+      return const CreatePostResult.failure('Failed to create post. Please try again.');
     }
   }
 
