@@ -2,14 +2,22 @@ import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as b
 import 'package:flutter/material.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
+import 'package:lazurite/features/moderation/data/label_detail_models.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 
 class ModerationBadgeRow extends StatelessWidget {
-  const ModerationBadgeRow({super.key, required this.ui, this.padding = EdgeInsets.zero, this.labelResolver});
+  const ModerationBadgeRow({
+    super.key,
+    required this.ui,
+    this.padding = EdgeInsets.zero,
+    this.labelResolver,
+    this.onLabelTap,
+  });
 
   final bsky_moderation.ModerationUI ui;
   final EdgeInsetsGeometry padding;
   final ModerationLabelResolver? labelResolver;
+  final ValueChanged<LabelContext>? onLabelTap;
 
   @override
   Widget build(BuildContext context) {
@@ -39,38 +47,54 @@ class ModerationBadgeRow extends StatelessWidget {
           ? colorScheme.errorContainer.withValues(alpha: 0.7)
           : colorScheme.secondaryContainer.withValues(alpha: 0.85);
       final foreground = isAlert ? colorScheme.onErrorContainer : colorScheme.onSecondaryContainer;
+      final labelContext = descriptor.labelContext;
+      final tapHandler = labelContext == null || onLabelTap == null ? null : () => onLabelTap!(labelContext);
+
+      final chip = ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: Material(
+          color: background,
+          borderRadius: BorderRadius.circular(999),
+          child: InkWell(
+            onTap: tapHandler,
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: foreground.withValues(alpha: 0.15)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(isAlert ? Icons.warning_amber_rounded : Icons.info_outline, size: 14, color: foreground),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      descriptor.label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.textTheme.labelSmall?.copyWith(
+                        color: foreground,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
 
       return Tooltip(
         message: descriptor.description,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: background,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: foreground.withValues(alpha: 0.15)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(isAlert ? Icons.warning_amber_rounded : Icons.info_outline, size: 14, color: foreground),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    descriptor.label,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.textTheme.labelSmall?.copyWith(
-                      color: foreground,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        child: Semantics(
+          button: tapHandler != null,
+          label: descriptor.label,
+          hint: tapHandler == null ? descriptor.description : '${descriptor.description}. Open label details.',
+          child: chip,
         ),
       );
     }

@@ -14,11 +14,9 @@ import 'package:lazurite/core/network/poptart_client_adapter.dart';
 import 'package:lazurite/core/network/unauthorized_recovery_runner.dart';
 import 'package:lazurite/core/network/xrpc_client_factory.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
+import 'package:lazurite/features/moderation/data/moderation_constants.dart';
 import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as moderation;
 import 'package:poptart_lex/com/atproto/label/defs.dart' show LabelValueDefinition, LabelValueDefinitionStrings;
-
-const _officialBlueskyLabelerDid = 'did:plc:ar7c4by46qjdydhdevvrndac';
-const _maxCustomLabelers = 20;
 
 class ModerationService {
   ModerationService({
@@ -161,7 +159,7 @@ class ModerationService {
   }
 
   Future<void> subscribeToLabeler(String did) async {
-    if (did == _officialBlueskyLabelerDid) {
+    if (did == officialBlueskyLabelerDid) {
       return;
     }
 
@@ -170,8 +168,8 @@ class ModerationService {
     if (currentLabelers.contains(did)) {
       return;
     }
-    if (currentLabelers.length >= _maxCustomLabelers) {
-      throw StateError('A maximum of $_maxCustomLabelers labelers can be subscribed.');
+    if (currentLabelers.length >= maxCustomLabelers) {
+      throw StateError('A maximum of $maxCustomLabelers labelers can be subscribed.');
     }
 
     final updated = _replaceLabelersPref(preferences, [
@@ -183,7 +181,7 @@ class ModerationService {
   }
 
   Future<void> unsubscribeFromLabeler(String did) async {
-    if (did == _officialBlueskyLabelerDid) {
+    if (did == officialBlueskyLabelerDid) {
       return;
     }
 
@@ -299,7 +297,7 @@ class ModerationService {
     }
 
     final requestedDid = (labelerDid == null || labelerDid.isEmpty) ? null : labelerDid;
-    final candidateDids = <String>{_officialBlueskyLabelerDid};
+    final candidateDids = <String>{officialBlueskyLabelerDid};
     if (requestedDid != null) {
       candidateDids.add(requestedDid);
     }
@@ -432,7 +430,7 @@ class ModerationService {
     moderation.ModerationPrefs prefs,
   ) async {
     final labelerDids = {
-      _officialBlueskyLabelerDid,
+      officialBlueskyLabelerDid,
       ...prefs.labelers.map((labeler) => labeler.did),
     }.where((did) => did.startsWith('did:')).toList();
 
@@ -585,7 +583,7 @@ class ModerationService {
   moderation.ModerationPrefs _toModerationPrefs(List<UPreferences> preferences) {
     return ActorGetPreferencesOutput(
       preferences: preferences,
-    ).getModerationPrefs(appLabelers: const [_officialBlueskyLabelerDid]);
+    ).getModerationPrefs(appLabelers: const [officialBlueskyLabelerDid]);
   }
 
   Map<String, List<moderation.InterpretedLabelValueDefinition>> _mapLabelDefinitions(
@@ -705,10 +703,10 @@ class ModerationService {
 
 Map<String, String> _buildLabelerHeaders(Iterable<String> subscribedLabelers) {
   final dids = <String>{
-    _officialBlueskyLabelerDid,
+    officialBlueskyLabelerDid,
     ...subscribedLabelers
-        .where((did) => did.startsWith('did:') && did != _officialBlueskyLabelerDid)
-        .take(_maxCustomLabelers),
+        .where((did) => did.startsWith('did:') && did != officialBlueskyLabelerDid)
+        .take(maxCustomLabelers),
   };
 
   return {'atproto-accept-labelers': dids.map((did) => '$did;redact').join(', ')};

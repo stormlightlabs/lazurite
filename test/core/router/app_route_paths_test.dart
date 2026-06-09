@@ -6,5 +6,9 @@ void main() {
     test('profileContextLocation encodes actor as a path segment', () {
       expect(AppRoutePath.profileContextLocation(actor: 'did:plc:abc123'), '/profile/did:plc:abc123/context');
     });
+
+    test('labelerProfileLocation encodes did as a path segment', () {
+      expect(AppRoutePath.labelerProfileLocation(did: 'did:plc:labeler'), '/labelers/did:plc:labeler');
+    });
   });
 }

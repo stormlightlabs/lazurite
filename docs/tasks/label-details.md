@@ -24,36 +24,36 @@
 
 ## M2 - Tappable Badge Plumbing
 
-- [ ] Update `ModerationBadgeRow` to optionally render badges as tappable controls
-- [ ] Preserve current passive rendering when no tap handler/details are supplied
-- [ ] Carry enough data from moderation causes to build `LabelContext`
-- [ ] Add tap handling for post badges
-- [ ] Add tap handling for profile/account badges
-- [ ] Add semantics labels and focus behavior for tappable badges
-- [ ] Widget tests for passive badges, tappable badges, and keyboard/accessibility activation
+- [x] Update `ModerationBadgeRow` to optionally render badges as tappable controls
+- [x] Preserve current passive rendering when no tap handler/details are supplied
+- [x] Carry enough data from moderation causes to build `LabelContext`
+- [x] Add tap handling for post badges
+- [x] Add tap handling for profile/account badges
+- [x] Add semantics labels and focus behavior for tappable badges
+- [x] Widget tests for passive badges, tappable badges, and keyboard/accessibility activation
 
 ## M3 - Label Detail Sheet
 
-- [ ] Create `LabelDetailSheet` / `LabelDetailBottomSheet`
-- [ ] Show localized label name and description when a definition exists
-- [ ] Show raw identifier and no-description fallback when no definition exists
-- [ ] Show labeler avatar/display name/handle/DID
-- [ ] Show flags/chips for severity, blur target, default setting, effective preference, adult-only, negation, expiry
-- [ ] Add collapsible protocol details for `src`, `uri`, `cid`, `val`, `cts`, `exp`, `neg`, and `ver`
-- [ ] Add actions: open labeler profile, subscribe/unsubscribe, change label preference when possible
-- [ ] Handle loading, retry, partial data, and cached/offline states
-- [ ] Widget tests for all sheet states and actions
+- [x] Create `LabelDetailSheet` / `LabelDetailBottomSheet`
+- [x] Show localized label name and description when a definition exists
+- [x] Show raw identifier and no-description fallback when no definition exists
+- [x] Show labeler avatar/display name/handle/DID
+- [x] Show flags/chips for severity, blur target, default setting, effective preference, adult-only, negation, expiry
+- [x] Add collapsible protocol details for `src`, `uri`, `cid`, `val`, `cts`, `exp`, `neg`, and `ver`
+- [x] Add actions: open labeler profile, subscribe/unsubscribe, change label preference when possible
+- [x] Handle loading, retry, partial data, and cached/offline states
+- [x] Widget tests for all sheet states and actions
 
 ## M4 - Labeler Profile Route
 
-- [ ] Add canonical `/labelers/:did` route and navigation helper
-- [ ] Route existing moderation settings labeler taps through the same route/helper where practical
-- [ ] Update `LabelerDetailScreen` title/header to behave as a labeler-service profile
-- [ ] Add visible service URI and creator-account distinction
-- [ ] Show `reasonTypes`, `subjectTypes`, and `subjectCollections` when present
-- [ ] Add link/action to open the creator's normal account profile
-- [ ] Preserve subscribe/unsubscribe and per-label preference editing
-- [ ] Route tests for `/labelers/:did` and navigation from the sheet
+- [x] Add canonical `/labelers/:did` route and navigation helper
+- [x] Route existing moderation settings labeler taps through the same route/helper where practical
+- [x] Update `LabelerDetailScreen` title/header to behave as a labeler-service profile
+- [x] Add visible service URI and creator-account distinction
+- [x] Show `reasonTypes`, `subjectTypes`, and `subjectCollections` when present
+- [x] Add link/action to open the creator's normal account profile
+- [x] Preserve subscribe/unsubscribe and per-label preference editing
+- [x] Route tests for `/labelers/:did` and navigation from the sheet
 
 ## M5 - Integration Across Surfaces
 

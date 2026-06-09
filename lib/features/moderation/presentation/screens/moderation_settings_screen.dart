@@ -2,10 +2,11 @@ import 'package:bluesky_poptart/app/bsky/labeler/defs.dart';
 import 'package:bluesky_poptart/app/bsky/labeler/get_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
+import 'package:lazurite/features/moderation/data/moderation_constants.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
+import 'package:lazurite/features/moderation/presentation/labeler_navigation.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/shared/presentation/helpers/snackbar_helper.dart';
@@ -242,9 +243,7 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
                   labeler: data.officialLabeler!,
                   isSubscribed: true,
                   isOfficial: true,
-                  onTap: () => context.push(
-                    '/settings/moderation/detail?did=${Uri.encodeQueryComponent(data.officialLabeler!.creator.did)}',
-                  ),
+                  onTap: () => openLabelerProfile(context, data.officialLabeler!.creator.did),
                 )
               else
                 _SettingsCard(
@@ -275,9 +274,7 @@ class _ModerationSettingsScreenState extends State<ModerationSettingsScreen> {
                   _LabelerCard(
                     labeler: labeler,
                     isSubscribed: true,
-                    onTap: () => context.push(
-                      '/settings/moderation/detail?did=${Uri.encodeQueryComponent(labeler.creator.did)}',
-                    ),
+                    onTap: () => openLabelerProfile(context, labeler.creator.did),
                     onUnsubscribe: () => _unsubscribe(labeler.creator.did),
                   ),
                   const SizedBox(height: 12),

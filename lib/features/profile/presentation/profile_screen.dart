@@ -29,6 +29,7 @@ import 'package:lazurite/features/lists/cubit/add_to_list_cubit.dart';
 import 'package:lazurite/features/lists/cubit/my_lists_cubit.dart';
 import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/widgets/list_row_tile.dart';
+import 'package:lazurite/features/moderation/data/label_detail_models.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
@@ -66,11 +67,18 @@ class _ProfileFeedTabConfig {
 }
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key, this.actor, this.showBackButton = false, this.publicProviderKey});
+  const ProfileScreen({
+    super.key,
+    this.actor,
+    this.showBackButton = false,
+    this.publicProviderKey,
+    this.onModerationLabelTap,
+  });
 
   final String? actor;
   final bool showBackButton;
   final String? publicProviderKey;
+  final ValueChanged<LabelContext>? onModerationLabelTap;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -846,7 +854,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           const SizedBox(height: 4),
 
           Text('@${profile.handle}', style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
-          if (profileUi.alert || profileUi.inform) ...[const SizedBox(height: 10), ModerationBadgeRow(ui: profileUi)],
+          if (profileUi.alert || profileUi.inform) ...[
+            const SizedBox(height: 10),
+            ModerationBadgeRow(ui: profileUi, onLabelTap: widget.onModerationLabelTap),
+          ],
           if (profile.description?.isNotEmpty ?? false) ...[
             const SizedBox(height: 12),
 

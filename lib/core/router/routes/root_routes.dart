@@ -22,6 +22,7 @@ import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/list_detail_screen.dart';
 import 'package:lazurite/features/lists/presentation/list_members_screen.dart';
 import 'package:lazurite/features/lists/presentation/my_lists_screen.dart';
+import 'package:lazurite/features/moderation/presentation/screens/labeler_detail_screen.dart';
 import 'package:lazurite/features/profile/cubit/profile_context_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_context_repository.dart';
 import 'package:lazurite/features/profile/presentation/profile_context_screen.dart';
@@ -35,6 +36,9 @@ import 'package:lazurite/features/starter_packs/data/starter_pack_repository.dar
 import 'package:lazurite/features/starter_packs/presentation/actor_starter_packs_screen.dart';
 import 'package:lazurite/features/starter_packs/presentation/create_edit_starter_pack_screen.dart';
 import 'package:lazurite/features/starter_packs/presentation/starter_pack_detail_screen.dart';
+
+const _listCollection = 'app.bsky.graph.list';
+const _starterPackCollection = 'app.bsky.graph.starterpack';
 
 /// Builds root-level routes that sit outside the tabbed app shells.
 ///
@@ -76,6 +80,12 @@ List<RouteBase> buildRootRoutes({
           ),
         );
       },
+    ),
+    GoRoute(
+      path: AppRoutePath.labelerProfile.path,
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (context, state) =>
+          buildAppRoutePage(context, state, LabelerDetailScreen(did: state.pathParameters['did'] ?? '')),
     ),
     GoRoute(
       path: AppRoutePath.hashtag.path,
@@ -234,7 +244,7 @@ List<RouteBase> buildRootRoutes({
       ],
     ),
     GoRoute(
-      path: _profileContextCompatibilityPath,
+      path: '/profile-context',
       redirect: (_, state) {
         final did = state.uri.queryParameters['did'];
         if (did == null || did.isEmpty) {
@@ -277,10 +287,6 @@ List<RouteBase> buildRootRoutes({
     ),
   ];
 }
-
-const _profileContextCompatibilityPath = '/profile-context';
-const _listCollection = 'app.bsky.graph.list';
-const _starterPackCollection = 'app.bsky.graph.starterpack';
 
 bool _hasCollection(AtUri uri, String collection) {
   try {

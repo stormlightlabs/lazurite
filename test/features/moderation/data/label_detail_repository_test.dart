@@ -8,6 +8,7 @@ import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/moderation/data/label_detail_models.dart';
 import 'package:lazurite/features/moderation/data/label_detail_repository.dart';
+import 'package:lazurite/features/moderation/data/moderation_constants.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
@@ -15,7 +16,6 @@ import 'package:poptart_core/poptart_core.dart';
 import 'package:poptart_lex/com/atproto/label/defs.dart';
 
 const _customLabelerDid = 'did:plc:custom-labeler';
-const _officialLabelerDid = 'did:plc:ar7c4by46qjdydhdevvrndac';
 
 class _MockModerationService extends Mock implements ModerationService {}
 
@@ -208,13 +208,13 @@ void main() {
 
   test('treats the official Bluesky labeler as subscribed', () async {
     when(
-      () => moderationService.getLabelerDetails(_officialLabelerDid),
-    ).thenAnswer((_) async => _buildLabeler(did: _officialLabelerDid, identifier: 'porn'));
+      () => moderationService.getLabelerDetails(officialBlueskyLabelerDid),
+    ).thenAnswer((_) async => _buildLabeler(did: officialBlueskyLabelerDid, identifier: 'porn'));
 
     final repository = LabelDetailRepository(moderationService: moderationService);
 
     final data = await repository.getLabelDetail(
-      LabelContext.fromIdentifier(labelerDid: _officialLabelerDid, identifier: 'porn'),
+      LabelContext.fromIdentifier(labelerDid: officialBlueskyLabelerDid, identifier: 'porn'),
     );
 
     expect(data.isSubscribed, isTrue);

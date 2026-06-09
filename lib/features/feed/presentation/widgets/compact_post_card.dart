@@ -8,6 +8,7 @@ import 'package:lazurite/features/feed/presentation/widgets/post_embed_view.dart
 import 'package:lazurite/features/feed/presentation/widgets/post_repost_context.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dart';
 import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
+import 'package:lazurite/features/moderation/data/label_detail_models.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
@@ -23,6 +24,7 @@ class CompactPostCard extends StatelessWidget {
     required this.feedViewPost,
     this.footer,
     this.onTap,
+    this.onModerationLabelTap,
     this.contentPadding = const EdgeInsets.fromLTRB(12, 10, 12, 10),
     this.moderationContext = bsky_moderation.ModerationBehaviorContext.contentList,
   });
@@ -30,6 +32,7 @@ class CompactPostCard extends StatelessWidget {
   final FeedViewPost feedViewPost;
   final Widget? footer;
   final VoidCallback? onTap;
+  final ValueChanged<LabelContext>? onModerationLabelTap;
   final EdgeInsetsGeometry contentPadding;
   final bsky_moderation.ModerationBehaviorContext moderationContext;
 
@@ -62,7 +65,10 @@ class CompactPostCard extends StatelessWidget {
                       const SizedBox(height: 6),
                     ],
                     _buildHeader(context, post.author, createdAt),
-                    if (postUi.alert || postUi.inform) ...[const SizedBox(height: 8), ModerationBadgeRow(ui: postUi)],
+                    if (postUi.alert || postUi.inform) ...[
+                      const SizedBox(height: 8),
+                      ModerationBadgeRow(ui: postUi, onLabelTap: onModerationLabelTap),
+                    ],
                     if (record != null && record.text.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       FacetText(

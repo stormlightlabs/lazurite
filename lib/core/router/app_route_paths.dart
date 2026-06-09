@@ -88,6 +88,9 @@ enum AppRoutePath {
   /// AT Explorer route.
   atExplorer,
 
+  /// Canonical labeler service profile route.
+  labelerProfile,
+
   /// Settings root.
   settings,
 
@@ -143,6 +146,7 @@ enum AppRoutePath {
     AppRoutePath.messages => '/messages',
     AppRoutePath.search => '/search',
     AppRoutePath.atExplorer => '/at-explorer',
+    AppRoutePath.labelerProfile => '/labelers/:did',
     AppRoutePath.settings => '/settings',
     AppRoutePath.settingsAbout => '/settings/about',
     AppRoutePath.settingsLogs => '/settings/logs',
@@ -162,4 +166,7 @@ enum AppRoutePath {
   /// Canonical profile-context location for an actor DID or handle.
   static String profileContextLocation({required String actor}) =>
       '/${Uri(pathSegments: ['profile', actor, 'context'])}';
+
+  /// Canonical labeler-service profile location for a labeler DID.
+  static String labelerProfileLocation({required String did}) => '/${Uri(pathSegments: ['labelers', did])}';
 }

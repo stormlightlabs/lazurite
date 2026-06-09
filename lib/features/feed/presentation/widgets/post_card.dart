@@ -9,6 +9,7 @@ import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dar
 import 'package:lazurite/features/feed/presentation/widgets/post_embed_view.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_repost_context.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dart';
+import 'package:lazurite/features/moderation/data/label_detail_models.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
@@ -23,6 +24,7 @@ class PostCard extends StatelessWidget {
     required this.feedViewPost,
     this.actionBar,
     this.onTap,
+    this.onModerationLabelTap,
     this.moderationContext = bsky_moderation.ModerationBehaviorContext.contentList,
   });
 
@@ -36,6 +38,7 @@ class PostCard extends StatelessWidget {
   /// should do the same.
   final Widget? actionBar;
   final VoidCallback? onTap;
+  final ValueChanged<LabelContext>? onModerationLabelTap;
   final bsky_moderation.ModerationBehaviorContext moderationContext;
 
   @override
@@ -73,7 +76,10 @@ class PostCard extends StatelessWidget {
                       const SizedBox(height: 8),
                     ],
                     _buildHeader(context, post.author),
-                    if (postUi.alert || postUi.inform) ...[const SizedBox(height: 10), ModerationBadgeRow(ui: postUi)],
+                    if (postUi.alert || postUi.inform) ...[
+                      const SizedBox(height: 10),
+                      ModerationBadgeRow(ui: postUi, onLabelTap: onModerationLabelTap),
+                    ],
                     if (record?.reply != null) ...[const SizedBox(height: 8), _buildReplyContext(context)],
                     if (record != null && record.text.isNotEmpty) ...[
                       const SizedBox(height: 12),

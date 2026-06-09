@@ -14,6 +14,7 @@ import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dar
 import 'package:lazurite/features/feed/presentation/widgets/post_embed_view.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_repost_context.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dart';
+import 'package:lazurite/features/moderation/data/label_detail_models.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
@@ -37,6 +38,7 @@ class GridPostCard extends StatelessWidget {
     required this.feedViewPost,
     this.footer,
     this.onTap,
+    this.onModerationLabelTap,
     this.moderationContext = bsky_moderation.ModerationBehaviorContext.contentList,
   });
 
@@ -45,6 +47,7 @@ class GridPostCard extends StatelessWidget {
   /// Optional footer widget. Defaults to a read-only [PostCardFooter] when null.
   final Widget? footer;
   final VoidCallback? onTap;
+  final ValueChanged<LabelContext>? onModerationLabelTap;
   final bsky_moderation.ModerationBehaviorContext moderationContext;
 
   @override
@@ -115,7 +118,7 @@ class GridPostCard extends StatelessWidget {
                         _buildAuthorRow(context, post.author),
                         if (postUi.alert || postUi.inform) ...[
                           const SizedBox(height: 10),
-                          ModerationBadgeRow(ui: postUi),
+                          ModerationBadgeRow(ui: postUi, onLabelTap: onModerationLabelTap),
                         ],
                         if (record?.reply != null) ...[
                           const SizedBox(height: AppSpacing.xs),

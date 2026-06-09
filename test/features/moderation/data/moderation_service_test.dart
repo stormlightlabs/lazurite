@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/network/poptart_client_adapter.dart';
+import 'package:lazurite/features/moderation/data/moderation_constants.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as moderation;
 import 'package:poptart_lex/com/atproto/label/defs.dart';
@@ -80,7 +81,7 @@ void main() {
         record: testPostRecordJson(text: 'sensitive'),
         labels: [
           Label(
-            src: 'did:plc:ar7c4by46qjdydhdevvrndac',
+            src: officialBlueskyLabelerDid,
             uri: 'at://did:plc:author/app.bsky.feed.post/abc',
             val: 'porn',
             cts: DateTime.utc(2026, 3, 15),
@@ -406,7 +407,7 @@ ProfileViewDetailed _authGatedProfile() => ProfileViewDetailed(
   indexedAt: DateTime.utc(2026, 5, 16),
   labels: [
     Label(
-      src: 'did:plc:ar7c4by46qjdydhdevvrndac',
+      src: officialBlueskyLabelerDid,
       uri: 'at://$_accountDid/app.bsky.actor.profile/self',
       val: '!no-unauthenticated',
       cts: DateTime.utc(2026, 5, 16),

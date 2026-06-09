@@ -2,8 +2,10 @@ import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/labeler/defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
+import 'package:lazurite/features/moderation/data/moderation_constants.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
@@ -52,7 +54,7 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
       labeler: details,
       adultContentEnabled: adultContentEnabledFromPreferences(_service.currentPreferences),
       currentPreferences: _service.currentPreferences,
-      isSubscribed: currentLabelers.contains(widget.did),
+      isSubscribed: widget.did == officialBlueskyLabelerDid || currentLabelers.contains(widget.did),
     );
   }
 
@@ -166,10 +168,20 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
                                   color: context.colorScheme.onSurfaceVariant,
                                 ),
                               ),
+                              const SizedBox(height: 4),
+                              Text(
+                                context.l10n.labelLabeler,
+                                style: context.textTheme.labelMedium?.copyWith(color: context.colorScheme.primary),
+                              ),
                             ],
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+                    SelectableText(
+                      labeler.uri.toString(),
+                      style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                     ),
                     if (creator.description?.isNotEmpty ?? false) ...[
                       const SizedBox(height: 16),
@@ -185,7 +197,14 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
                         if (isOfficial) _PolicyChip(label: context.l10n.labelBuiltInModeration),
                       ],
                     ),
+                    if (_hasScopeMetadata(labeler)) ...[const SizedBox(height: 16), _ScopeMetadata(labeler: labeler)],
                     const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: () => context.push('/${Uri(pathSegments: ['profile', creator.did])}'),
+                      icon: const Icon(Icons.person_outline),
+                      label: const Text('Open creator account profile'),
+                    ),
+                    const SizedBox(height: 8),
                     SwitchListTile.adaptive(
                       value: data.isSubscribed || isOfficial,
                       onChanged: isOfficial || _isUpdatingSubscription ? null : _toggleSubscription,
@@ -319,6 +338,68 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
   );
 }
 
+class _ScopeMetadata extends StatelessWidget {
+  const _ScopeMetadata({required this.labeler});
+
+  final LabelerViewDetailed labeler;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Published scope',
+          style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ...(labeler.reasonTypes ?? []).map((r) => _PolicyChip(label: 'Reason ${r.toJson()}')),
+            ...(labeler.subjectTypes ?? const []).map((s) => _PolicyChip(label: 'Subject ${s.toJson()}')),
+            ...(labeler.subjectCollections ?? []).map((c) => _PolicyChip(label: c)),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _PolicyChip extends StatelessWidget {
+  const _PolicyChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: context.colorScheme.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(999),
+    ),
+    child: Text(label, style: context.textTheme.labelSmall),
+  );
+}
+
+class _PreferenceCard extends StatelessWidget {
+  const _PreferenceCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: context.colorScheme.surfaceContainerLowest,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(20),
+      side: BorderSide(color: context.colorScheme.outlineVariant),
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: child,
+  );
+}
+
 class _LabelerDetailData {
   const _LabelerDetailData({
     required this.labeler,
@@ -344,39 +425,7 @@ String _errorMessageFor(BuildContext context, Object? error) {
   return '$error';
 }
 
-class _PolicyChip extends StatelessWidget {
-  const _PolicyChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: context.colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(label, style: context.textTheme.labelSmall),
-    );
-  }
-}
-
-class _PreferenceCard extends StatelessWidget {
-  const _PreferenceCard({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: context.colorScheme.surfaceContainerLowest,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: context.colorScheme.outlineVariant),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: child,
-    );
-  }
-}
+bool _hasScopeMetadata(LabelerViewDetailed labeler) =>
+    (labeler.reasonTypes?.isNotEmpty ?? false) ||
+    (labeler.subjectTypes?.isNotEmpty ?? false) ||
+    (labeler.subjectCollections?.isNotEmpty ?? false);

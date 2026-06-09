@@ -1,4 +1,5 @@
 import 'package:poptart_lex/com/atproto/label/defs.dart';
+import 'package:poptart_lex/com/atproto/moderation/defs.dart';
 import 'package:poptart_core/poptart_core.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/app/bsky/labeler/defs.dart';
@@ -7,8 +8,8 @@ import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as b
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/features/moderation/data/moderation_constants.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
-import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:lazurite/features/moderation/presentation/screens/labeler_detail_screen.dart';
 import 'package:lazurite/features/moderation/presentation/screens/moderation_settings_screen.dart';
 import 'package:mocktail/mocktail.dart';
@@ -102,11 +103,29 @@ void main() {
     await tester.pumpWidget(buildSubject(const LabelerDetailScreen(did: 'did:plc:custom-labeler')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Spoilers'), findsOneWidget);
-    expect(find.text('Spoilers should be treated cautiously.'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Hide'), 300);
-    expect(find.text('Hide'), findsOneWidget);
-    expect(find.text('Default warn'), findsOneWidget);
+    expect(find.text('Spoilers', skipOffstage: false), findsWidgets);
+    expect(find.text('Spoilers should be treated cautiously.', skipOffstage: false), findsOneWidget);
+    expect(find.text('Hide', skipOffstage: false), findsWidgets);
+    expect(find.text('Default warn', skipOffstage: false), findsOneWidget);
+  });
+
+  testWidgets('labeler detail screen renders service uri scope and creator profile action', (tester) async {
+    final scopedLabeler = customLabeler.copyWith(
+      reasonTypes: [const ReasonType.unknown(data: 'com.example.reason')],
+      subjectTypes: [const SubjectType.unknown(data: 'record')],
+      subjectCollections: ['app.bsky.feed.post'],
+    );
+    when(() => moderationService.getLabelerDetails('did:plc:custom-labeler')).thenAnswer((_) async => scopedLabeler);
+
+    await tester.pumpWidget(buildSubject(const LabelerDetailScreen(did: 'did:plc:custom-labeler')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('at://did:plc:custom-labeler/app.bsky.labeler.service/self', skipOffstage: false), findsOneWidget);
+    expect(find.text('Published scope'), findsOneWidget);
+    expect(find.text('Reason com.example.reason'), findsOneWidget);
+    expect(find.text('Subject record'), findsOneWidget);
+    expect(find.text('app.bsky.feed.post'), findsOneWidget);
+    expect(find.text('Open creator account profile'), findsOneWidget);
   });
 }
 

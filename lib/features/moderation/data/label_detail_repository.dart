@@ -5,10 +5,10 @@ import 'package:bluesky_poptart/app/bsky/labeler/defs.dart';
 import 'package:lazurite/core/cache/poptart_cache_codecs.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/features/moderation/data/label_detail_models.dart';
+import 'package:lazurite/features/moderation/data/moderation_constants.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
+import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
 import 'package:poptart_lex/com/atproto/label/defs.dart';
-
-const _officialBlueskyLabelerDid = 'did:plc:ar7c4by46qjdydhdevvrndac';
 
 class LabelDetailRepository {
   LabelDetailRepository({required ModerationService moderationService, AppDatabase? database})
@@ -35,7 +35,7 @@ class LabelDetailRepository {
       context: context,
       labeler: labeler,
       definition: definition,
-      displayName: _localizedName(definition, preferredLanguages) ?? _humanizeLabel(context.identifier),
+      displayName: _localizedName(definition, preferredLanguages) ?? humanizeModerationLabel(context.identifier),
       description: _localizedDescription(definition, preferredLanguages),
       effectivePreference: _resolveLabelPreference(
         _moderationService.currentPreferences,
@@ -83,7 +83,7 @@ class LabelDetailRepository {
   }
 
   bool _isSubscribed(String did) {
-    if (did == _officialBlueskyLabelerDid) {
+    if (did == officialBlueskyLabelerDid) {
       return true;
     }
 
@@ -191,14 +191,4 @@ LabelValueDefinitionStrings? _localizedStrings(
   }
 
   return locales.first;
-}
-
-String _humanizeLabel(String value) {
-  if (value.isEmpty) {
-    return 'Sensitive content';
-  }
-
-  final cleaned = value.replaceAll('!', '').replaceAll('-', ' ').trim();
-  final words = cleaned.split(RegExp(r'\s+')).where((word) => word.isNotEmpty);
-  return words.map((word) => '${word[0].toUpperCase()}${word.substring(1)}').join(' ');
 }

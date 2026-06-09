@@ -4,20 +4,28 @@ import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as b
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/l10n/app_localizations.dart';
+import 'package:lazurite/features/moderation/data/label_detail_models.dart';
+import 'package:lazurite/features/moderation/data/moderation_constants.dart';
 import 'package:lazurite/features/moderation/data/moderation_service.dart';
-
-const officialBlueskyLabelerDid = 'did:plc:ar7c4by46qjdydhdevvrndac';
 
 enum ModerationBadgeTone { alert, inform }
 
 typedef ModerationLabelResolver = String? Function({required String identifier, String? labelerDid});
 
 class ModerationBadgeDescriptor {
-  const ModerationBadgeDescriptor({required this.label, required this.description, required this.tone});
+  const ModerationBadgeDescriptor({
+    required this.label,
+    required this.description,
+    required this.tone,
+    this.labelContext,
+  });
 
   final String label;
   final String description;
   final ModerationBadgeTone tone;
+  final LabelContext? labelContext;
+
+  bool get canOpenLabelDetails => labelContext != null;
 }
 
 ModerationService? maybeModerationService(BuildContext context) {
@@ -140,6 +148,7 @@ ModerationBadgeDescriptor moderationDescriptorForCause(
         label: label,
         description: l10n?.formatModerationSourceLabel(source) ?? '$source label',
         tone: tone,
+        labelContext: LabelContext.fromLabel(data.label),
       );
     },
     muted: (_) => ModerationBadgeDescriptor(
