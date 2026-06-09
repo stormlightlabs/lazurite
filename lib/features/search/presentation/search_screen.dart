@@ -14,6 +14,7 @@ import 'package:lazurite/features/feed/presentation/widgets/compact_post_card.da
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
 import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/label_detail_sheet.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/search/bloc/search_bloc.dart';
 import 'package:lazurite/features/search/data/post_search_filters.dart';
@@ -75,9 +76,7 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  void _onSearchChanged() {
-    setState(() {});
-  }
+  void _onSearchChanged() => setState(() {});
 
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
@@ -221,12 +220,11 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final shouldShowFab = widget.showJumpToProfileAction && !widget.postsOnlyMode;
-    final l10n = context.l10n;
     return AppScreenEntrance(
       child: Scaffold(
         appBar: widget.postsOnlyMode
             ? AppBar(
-                title: Text(widget.title ?? l10n.labelSearchPosts),
+                title: Text(widget.title ?? context.l10n.labelSearchPosts),
                 leading: widget.showBackButton
                     ? IconButton(
                         icon: const Icon(Icons.arrow_back),
@@ -239,7 +237,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ? FloatingActionButton.extended(
                 onPressed: _openJumpToProfileDialog,
                 icon: const Icon(Icons.person_search),
-                label: Text(l10n.labelJumpToProfile),
+                label: Text(context.l10n.labelJumpToProfile),
               ).animateIfAllowed(
                 context,
                 effects: const [
@@ -269,17 +267,14 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildSearchBar(BuildContext context, SearchState state) {
-    final hasText = _searchController.text.isNotEmpty;
-    final theme = Theme.of(context);
-    final l10n = context.l10n;
     final isSearchDisabled = state.currentTab == SearchTab.starterPacks;
     final fieldFillColor = isSearchDisabled
-        ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55)
-        : theme.colorScheme.surfaceContainerHighest;
+        ? context.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55)
+        : context.colorScheme.surfaceContainerHighest;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: theme.dividerColor)),
+        border: Border(bottom: BorderSide(color: context.theme.dividerColor)),
       ),
       child: Row(
         children: [
@@ -298,14 +293,14 @@ class _SearchScreenState extends State<SearchScreen> {
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
                 hintText: _searchPlaceholderForTab(state.currentTab),
-                helperText: isSearchDisabled ? l10n.messageStarterPackSearchApiUnavailable : null,
+                helperText: isSearchDisabled ? context.l10n.messageStarterPackSearchApiUnavailable : null,
                 helperMaxLines: 1,
                 prefixIcon: Icon(
                   isSearchDisabled ? Icons.block_outlined : Icons.search,
                   size: 20,
-                  color: isSearchDisabled ? theme.colorScheme.onSurfaceVariant : null,
+                  color: isSearchDisabled ? context.colorScheme.onSurfaceVariant : null,
                 ),
-                suffixIcon: hasText && !isSearchDisabled ? _buildSuffixIcon(context, theme) : null,
+                suffixIcon: _searchController.text.isNotEmpty && !isSearchDisabled ? _buildSuffixIcon(context) : null,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(999)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                 filled: true,
@@ -316,11 +311,11 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(999),
-                  borderSide: BorderSide(color: theme.colorScheme.primary),
+                  borderSide: BorderSide(color: context.colorScheme.primary),
                 ),
                 disabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(999),
-                  borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                  borderSide: BorderSide(color: context.colorScheme.outlineVariant.withValues(alpha: 0.5)),
                 ),
               ),
             ),
@@ -330,51 +325,46 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildSuffixIcon(BuildContext context, ThemeData theme) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          onPressed: _onCancel,
-          icon: const Icon(Icons.close, size: 20),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-        ),
-        IconButton(
-          onPressed: () => _onSubmit(_searchController.text),
-          icon: Icon(Icons.arrow_forward_rounded, size: 20, color: theme.colorScheme.primary),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-        ),
-      ],
-    );
-  }
+  Widget _buildSuffixIcon(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      IconButton(
+        onPressed: _onCancel,
+        icon: const Icon(Icons.close, size: 20),
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+      ),
+      IconButton(
+        onPressed: () => _onSubmit(_searchController.text),
+        icon: Icon(Icons.arrow_forward_rounded, size: 20, color: context.theme.colorScheme.primary),
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+      ),
+    ],
+  );
 
-  Widget _buildTabs(BuildContext context, SearchState state) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
+  Widget _buildTabs(BuildContext context, SearchState state) => Container(
+    decoration: BoxDecoration(
+      border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
+    ),
+    child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _buildTab(context, SearchTab.posts, state),
+          _buildTab(context, SearchTab.actors, state),
+          _buildTab(context, SearchTab.feeds, state),
+          _buildTab(context, SearchTab.starterPacks, state),
+        ],
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            _buildTab(context, SearchTab.posts, state),
-            _buildTab(context, SearchTab.actors, state),
-            _buildTab(context, SearchTab.feeds, state),
-            _buildTab(context, SearchTab.starterPacks, state),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
 
   Widget _buildTab(BuildContext context, SearchTab tab, SearchState state) {
     final isSelected = state.currentTab == tab;
-    final theme = Theme.of(context);
-    final textStyle = theme.textTheme.bodyLarge?.copyWith(
+    final textStyle = context.textTheme.bodyLarge?.copyWith(
       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      color: isSelected ? theme.colorScheme.onSurface : theme.colorScheme.onSurfaceVariant,
+      color: isSelected ? context.colorScheme.onSurface : context.colorScheme.onSurfaceVariant,
     );
     return InkWell(
       onTap: () => _onTabChanged(tab),
@@ -383,7 +373,7 @@ class _SearchScreenState extends State<SearchScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           border: Border(
-            bottom: BorderSide(color: isSelected ? theme.colorScheme.primary : Colors.transparent, width: 2),
+            bottom: BorderSide(color: isSelected ? context.colorScheme.primary : Colors.transparent, width: 2),
           ),
         ),
         child: Text(
@@ -399,12 +389,10 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildSortToggle(BuildContext context, SearchState state) {
-    final theme = Theme.of(context);
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: theme.dividerColor)),
+        border: Border(top: BorderSide(color: context.theme.dividerColor)),
       ),
       child: Wrap(
         spacing: 8,
@@ -413,11 +401,11 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           Text(
             context.l10n.labelSortBy,
-            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
           ),
           Container(
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
+              color: context.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -440,20 +428,20 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildSortOption(BuildContext context, SearchSort sort, SearchState state) {
     final isSelected = state.currentSort == sort.name;
-    final theme = Theme.of(context);
-    final labelColor = isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant;
-
     return GestureDetector(
       onTap: () => _onSortChanged(sort.name),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? theme.colorScheme.primary : null,
+          color: isSelected ? context.colorScheme.primary : null,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
           _sortLabel(context, sort),
-          style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500, color: labelColor),
+          style: context.textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.w500,
+            color: isSelected ? context.colorScheme.onPrimary : context.colorScheme.onSurfaceVariant,
+          ),
         ),
       ),
     );
@@ -575,193 +563,180 @@ class _SearchScreenState extends State<SearchScreen> {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 16,
-                bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setState) => Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(context.l10n.labelPostFilters, style: context.textTheme.titleMedium),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: mentionsController,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  smartDashesType: SmartDashesType.disabled,
+                  smartQuotesType: SmartQuotesType.disabled,
+                  decoration: InputDecoration(labelText: context.l10n.labelMentions, hintText: 'did:plc:... or handle'),
+                ),
+                const SizedBox(height: 10),
+                if (widget.fixedPostAuthor == null) ...[
+                  TextField(
+                    controller: authorController,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    smartDashesType: SmartDashesType.disabled,
+                    smartQuotesType: SmartQuotesType.disabled,
+                    decoration: InputDecoration(labelText: context.l10n.labelAuthor, hintText: 'did:plc:... or handle'),
+                  ),
+                  const SizedBox(height: 10),
+                ] else ...[
+                  InputDecorator(
+                    decoration: InputDecoration(labelText: context.l10n.labelAuthorFixed),
+                    child: Text(widget.fixedPostAuthor!),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                TextField(
+                  controller: langController,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  smartDashesType: SmartDashesType.disabled,
+                  smartQuotesType: SmartQuotesType.disabled,
+                  decoration: InputDecoration(labelText: context.l10n.labelLanguage, hintText: 'en'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: domainController,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  smartDashesType: SmartDashesType.disabled,
+                  smartQuotesType: SmartQuotesType.disabled,
+                  decoration: InputDecoration(labelText: context.l10n.labelDomain, hintText: 'example.com'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: urlController,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  smartDashesType: SmartDashesType.disabled,
+                  smartQuotesType: SmartQuotesType.disabled,
+                  decoration: InputDecoration(labelText: context.l10n.labelUrl, hintText: 'https://example.com/path'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: tagsController,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  smartDashesType: SmartDashesType.disabled,
+                  smartQuotesType: SmartQuotesType.disabled,
+                  decoration: InputDecoration(labelText: context.l10n.labelTags, hintText: '#dart, flutter'),
+                ),
+                const SizedBox(height: 12),
+                Row(
                   children: [
-                    Text(context.l10n.labelPostFilters, style: context.textTheme.titleMedium),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: mentionsController,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      smartDashesType: SmartDashesType.disabled,
-                      smartQuotesType: SmartQuotesType.disabled,
-                      decoration: InputDecoration(
-                        labelText: context.l10n.labelMentions,
-                        hintText: 'did:plc:... or handle',
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          FocusScope.of(sheetContext).unfocus();
+                          final selected = await pickDateTime(since, isUntil: false);
+                          if (selected == null || !sheetContext.mounted) {
+                            return;
+                          }
+                          setState(() => since = selected);
+                        },
+                        icon: const Icon(Icons.calendar_today, size: 16),
+                        label: Text(since == null ? context.l10n.labelSince : formatTimestamp(since!)),
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    if (widget.fixedPostAuthor == null) ...[
-                      TextField(
-                        controller: authorController,
-                        autocorrect: false,
-                        enableSuggestions: false,
-                        smartDashesType: SmartDashesType.disabled,
-                        smartQuotesType: SmartQuotesType.disabled,
-                        decoration: InputDecoration(
-                          labelText: context.l10n.labelAuthor,
-                          hintText: 'did:plc:... or handle',
-                        ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          FocusScope.of(sheetContext).unfocus();
+                          final selected = await pickDateTime(until, isUntil: true);
+                          if (selected == null || !sheetContext.mounted) {
+                            return;
+                          }
+                          setState(() => until = selected);
+                        },
+                        icon: const Icon(Icons.calendar_today, size: 16),
+                        label: Text(until == null ? context.l10n.labelUntil : formatTimestamp(until!)),
                       ),
-                      const SizedBox(height: 10),
-                    ] else ...[
-                      InputDecorator(
-                        decoration: InputDecoration(labelText: context.l10n.labelAuthorFixed),
-                        child: Text(widget.fixedPostAuthor!),
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-                    TextField(
-                      controller: langController,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      smartDashesType: SmartDashesType.disabled,
-                      smartQuotesType: SmartQuotesType.disabled,
-                      decoration: InputDecoration(labelText: context.l10n.labelLanguage, hintText: 'en'),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: domainController,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      smartDashesType: SmartDashesType.disabled,
-                      smartQuotesType: SmartQuotesType.disabled,
-                      decoration: InputDecoration(labelText: context.l10n.labelDomain, hintText: 'example.com'),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: urlController,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      smartDashesType: SmartDashesType.disabled,
-                      smartQuotesType: SmartQuotesType.disabled,
-                      decoration: InputDecoration(
-                        labelText: context.l10n.labelUrl,
-                        hintText: 'https://example.com/path',
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: tagsController,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      smartDashesType: SmartDashesType.disabled,
-                      smartQuotesType: SmartQuotesType.disabled,
-                      decoration: InputDecoration(labelText: context.l10n.labelTags, hintText: '#dart, flutter'),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () async {
-                              FocusScope.of(sheetContext).unfocus();
-                              final selected = await pickDateTime(since, isUntil: false);
-                              if (selected == null || !sheetContext.mounted) {
-                                return;
-                              }
-                              setState(() => since = selected);
-                            },
-                            icon: const Icon(Icons.calendar_today, size: 16),
-                            label: Text(since == null ? context.l10n.labelSince : formatTimestamp(since!)),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () async {
-                              FocusScope.of(sheetContext).unfocus();
-                              final selected = await pickDateTime(until, isUntil: true);
-                              if (selected == null || !sheetContext.mounted) {
-                                return;
-                              }
-                              setState(() => until = selected);
-                            },
-                            icon: const Icon(Icons.calendar_today, size: 16),
-                            label: Text(until == null ? context.l10n.labelUntil : formatTimestamp(until!)),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        TextButton(
-                          onPressed: () => setState(() => since = null),
-                          child: Text(context.l10n.labelClearSince),
-                        ),
-                        TextButton(
-                          onPressed: () => setState(() => until = null),
-                          child: Text(context.l10n.labelClearUntil),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.of(sheetContext).pop(),
-                          child: Text(context.l10n.buttonCancel),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            FocusScope.of(sheetContext).unfocus();
-                            _updatePostFilters(
-                              widget.fixedPostAuthor == null
-                                  ? const PostSearchFilters()
-                                  : PostSearchFilters(author: widget.fixedPostAuthor),
-                            );
-                            Navigator.of(sheetContext).pop();
-                          },
-                          child: Text(context.l10n.buttonClearAll),
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton(
-                          onPressed: () {
-                            FocusScope.of(sheetContext).unfocus();
-                            final tags = tagsController.text
-                                .split(',')
-                                .map((value) => value.trim())
-                                .where((value) => value.isNotEmpty)
-                                .toList(growable: false);
-                            final nextFilters = PostSearchFilters(
-                              mentions: mentionsController.text,
-                              author: widget.fixedPostAuthor ?? authorController.text,
-                              lang: langController.text,
-                              domain: domainController.text,
-                              url: urlController.text,
-                              tags: tags,
-                              since: since,
-                              until: until,
-                            );
-                            _updatePostFilters(nextFilters);
-                            Navigator.of(sheetContext).pop();
-                          },
-                          child: Text(context.l10n.buttonApply),
-                        ),
-                      ],
                     ),
                   ],
                 ),
-              ),
-            );
-          },
-        );
-      },
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: () => setState(() => since = null),
+                      child: Text(context.l10n.labelClearSince),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() => until = null),
+                      child: Text(context.l10n.labelClearUntil),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                      child: Text(context.l10n.buttonCancel),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        FocusScope.of(sheetContext).unfocus();
+                        _updatePostFilters(
+                          widget.fixedPostAuthor == null
+                              ? const PostSearchFilters()
+                              : PostSearchFilters(author: widget.fixedPostAuthor),
+                        );
+                        Navigator.of(sheetContext).pop();
+                      },
+                      child: Text(context.l10n.buttonClearAll),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: () {
+                        FocusScope.of(sheetContext).unfocus();
+                        final tags = tagsController.text
+                            .split(',')
+                            .map((value) => value.trim())
+                            .where((value) => value.isNotEmpty)
+                            .toList(growable: false);
+                        final nextFilters = PostSearchFilters(
+                          mentions: mentionsController.text,
+                          author: widget.fixedPostAuthor ?? authorController.text,
+                          lang: langController.text,
+                          domain: domainController.text,
+                          url: urlController.text,
+                          tags: tags,
+                          since: since,
+                          until: until,
+                        );
+                        _updatePostFilters(nextFilters);
+                        Navigator.of(sheetContext).pop();
+                      },
+                      child: Text(context.l10n.buttonApply),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -808,15 +783,12 @@ class _SearchScreenState extends State<SearchScreen> {
       );
     }
 
-    if (state.currentTab == SearchTab.posts) {
-      return _buildPostResults(context, state);
-    } else if (state.currentTab == SearchTab.feeds) {
-      return _buildFeedResults(context, state);
-    } else if (state.currentTab == SearchTab.starterPacks) {
-      return _buildStarterPackResults(context, state);
-    } else {
-      return _buildActorResults(context, state);
-    }
+    return switch (state.currentTab) {
+      SearchTab.posts => _buildPostResults(context, state),
+      SearchTab.feeds => _buildFeedResults(context, state),
+      SearchTab.starterPacks => _buildStarterPackResults(context, state),
+      SearchTab.actors => _buildActorResults(context, state),
+    };
   }
 
   Widget _buildSearchHistory(BuildContext context, SearchState state) {
@@ -1115,7 +1087,7 @@ class _ActorResultTile extends StatelessWidget {
                   ),
                   if (profileUi.alert || profileUi.inform) ...[
                     const SizedBox(height: 8),
-                    ModerationBadgeRow(ui: profileUi),
+                    ModerationBadgeRow(ui: profileUi, onLabelTap: labelDetailTapHandler(context)),
                   ],
                   if (actor.description != null && actor.description!.isNotEmpty) ...[
                     const SizedBox(height: 2),

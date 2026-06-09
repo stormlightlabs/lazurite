@@ -12,6 +12,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:poptart_core/poptart_core.dart';
 import 'package:poptart_lex/com/atproto/label/defs.dart';
 
+import '../../../../helpers/router_harness.dart';
+
 class MockModerationService extends Mock implements ModerationService {}
 
 void main() {
@@ -136,6 +138,39 @@ void main() {
 
     expect(find.text('Spoilers'), findsOneWidget);
     expect(calls, 2);
+  });
+
+  testWidgets('open labeler profile action routes to canonical labeler profile', (tester) async {
+    Uri? capturedUri;
+    final harness = TestRouterHarness(
+      home: RepositoryProvider<ModerationService>.value(
+        value: moderationService,
+        child: Builder(
+          builder: (context) => Scaffold(
+            body: FilledButton(
+              onPressed: () => showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => RepositoryProvider<ModerationService>.value(
+                  value: moderationService,
+                  child: LabelDetailSheet(labelContext: labelContext, loadLabelDetail: (_, _) async => detailData),
+                ),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+      routes: [capturedRoute(path: '/labelers/:did', onRoute: (uri) => capturedUri = uri)],
+    );
+    await harness.pump(tester);
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open labeler profile'));
+    await tester.pumpAndSettle();
+
+    expect(capturedUri?.path, '/labelers/did:plc:labeler');
   });
 
   testWidgets('subscription and preference actions call moderation service', (tester) async {

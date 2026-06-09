@@ -19,6 +19,7 @@ import 'package:lazurite/features/feed/presentation/widgets/grid_post_card.dart'
 import 'package:lazurite/features/feed/presentation/widgets/post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_card_footer.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_menu_actions.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/label_detail_sheet.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
 import 'package:lazurite/features/profile/presentation/widgets/report_dialog.dart';
@@ -170,32 +171,34 @@ class _PostCardWithActionsContent extends StatelessWidget {
     );
   }
 
-  Widget _buildCard(BuildContext context) {
-    final resolvedVariant = _resolveVariant(context);
-    Future<Object?> onTap() => context.push('/post?uri=${Uri.encodeQueryComponent(feedViewPost.post.uri.toString())}');
-    if (resolvedVariant == PostCardVariant.grid) {
-      return GridPostCard(
-        feedViewPost: feedViewPost,
-        footer: _buildFooter(context),
-        onTap: onTap,
-        moderationContext: moderationContext,
-      );
-    }
-    if (resolvedVariant == PostCardVariant.compact) {
-      return CompactPostCard(
-        feedViewPost: feedViewPost,
-        footer: _buildFooter(context),
-        onTap: onTap,
-        moderationContext: moderationContext,
-      );
-    }
-    return PostCard(
+  // TODO: should this be awaited like public_post_card?
+  Future<Object?> _handleOnTap(BuildContext context) {
+    return context.push('/post?uri=${Uri.encodeQueryComponent(feedViewPost.post.uri.toString())}');
+  }
+
+  Widget _buildCard(BuildContext context) => switch (_resolveVariant(context)) {
+    PostCardVariant.grid => GridPostCard(
+      feedViewPost: feedViewPost,
+      footer: _buildFooter(context),
+      onTap: () => _handleOnTap(context),
+      moderationContext: moderationContext,
+      onModerationLabelTap: labelDetailTapHandler(context),
+    ),
+    PostCardVariant.compact => CompactPostCard(
+      feedViewPost: feedViewPost,
+      footer: _buildFooter(context),
+      onTap: () => _handleOnTap(context),
+      moderationContext: moderationContext,
+      onModerationLabelTap: labelDetailTapHandler(context),
+    ),
+    _ => PostCard(
       feedViewPost: feedViewPost,
       actionBar: _buildFooter(context),
-      onTap: onTap,
+      onTap: () => _handleOnTap(context),
       moderationContext: moderationContext,
-    );
-  }
+      onModerationLabelTap: labelDetailTapHandler(context),
+    ),
+  };
 
   PostCardVariant _resolveVariant(BuildContext context) {
     if (variant != PostCardVariant.adaptive) {
@@ -214,36 +217,32 @@ class _PostCardWithActionsContent extends StatelessWidget {
     final post = feedViewPost.post;
     final isOffline = context.select<ConnectivityCubit, bool>((cubit) => cubit.state.isOffline);
     return BlocBuilder<PostActionCubit, PostActionState>(
-      builder: (context, postActionState) {
-        return BlocBuilder<SavedPostsCubit, SavedPostsState>(
-          builder: (context, savedState) {
-            return PostCardFooter(
-              timestamp: formatPostTime(post.indexedAt, nowLabel: context.l10n.labelNow),
-              replyCount: post.replyCount ?? 0,
-              repostCount: postActionState.repostCount,
-              likeCount: postActionState.likeCount,
-              saveCount: post.bookmarkCount ?? 0,
-              isLiked: postActionState.isLiked,
-              isReposted: postActionState.isReposted,
-              isSaved: savedState.isSaved(post.uri.toString()),
-              saveType: savedState.saveTypeForUri(post.uri.toString()),
-              isLoadingLike: postActionState.isLoadingLike,
-              isLoadingRepost: postActionState.isLoadingRepost,
-              onReply: () => _onReply(context),
-              onRepost: () => context.read<PostActionCubit>().toggleRepost(),
-              onQuote: () => _onQuote(context),
-              onLike: () => context.read<PostActionCubit>().toggleLike(),
-              onSave: () => unawaited(_onToggleSave(context)),
-              onLongPressSave: () => unawaited(_onToggleSave(context)),
-              onCloudSave: () => unawaited(_onCloudSave(context)),
-              onCloudUnsave: () => unawaited(_onCloudUnsave(context)),
-              onMore: () => _showMoreOptions(context),
-              showCounts: true,
-              isOffline: isOffline,
-            );
-          },
-        );
-      },
+      builder: (context, postActionState) => BlocBuilder<SavedPostsCubit, SavedPostsState>(
+        builder: (context, savedState) => PostCardFooter(
+          timestamp: formatPostTime(post.indexedAt, nowLabel: context.l10n.labelNow),
+          replyCount: post.replyCount ?? 0,
+          repostCount: postActionState.repostCount,
+          likeCount: postActionState.likeCount,
+          saveCount: post.bookmarkCount ?? 0,
+          isLiked: postActionState.isLiked,
+          isReposted: postActionState.isReposted,
+          isSaved: savedState.isSaved(post.uri.toString()),
+          saveType: savedState.saveTypeForUri(post.uri.toString()),
+          isLoadingLike: postActionState.isLoadingLike,
+          isLoadingRepost: postActionState.isLoadingRepost,
+          onReply: () => _onReply(context),
+          onRepost: () => context.read<PostActionCubit>().toggleRepost(),
+          onQuote: () => _onQuote(context),
+          onLike: () => context.read<PostActionCubit>().toggleLike(),
+          onSave: () => unawaited(_onToggleSave(context)),
+          onLongPressSave: () => unawaited(_onToggleSave(context)),
+          onCloudSave: () => unawaited(_onCloudSave(context)),
+          onCloudUnsave: () => unawaited(_onCloudUnsave(context)),
+          onMore: () => _showMoreOptions(context),
+          showCounts: true,
+          isOffline: isOffline,
+        ),
+      ),
     );
   }
 

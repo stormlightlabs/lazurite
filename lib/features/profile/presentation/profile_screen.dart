@@ -31,6 +31,7 @@ import 'package:lazurite/features/lists/data/list_repository.dart';
 import 'package:lazurite/features/lists/presentation/widgets/list_row_tile.dart';
 import 'package:lazurite/features/moderation/data/label_detail_models.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/label_detail_sheet.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
@@ -804,10 +805,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     final colorScheme = context.colorScheme;
     final textTheme = context.textTheme;
     final moderationService = maybeModerationService(context);
+    final pronouns = profile.pronouns?.trim();
     final profileUi =
         moderationService?.profileDetailedUi(profile, bsky_moderation.ModerationBehaviorContext.profileView) ??
         const bsky_moderation.ModerationUI();
-    final pronouns = profile.pronouns?.trim();
 
     final metaChildren = <Widget>[
       if (profile.website?.isNotEmpty ?? false)
@@ -856,7 +857,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           Text('@${profile.handle}', style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
           if (profileUi.alert || profileUi.inform) ...[
             const SizedBox(height: 10),
-            ModerationBadgeRow(ui: profileUi, onLabelTap: widget.onModerationLabelTap),
+            ModerationBadgeRow(
+              ui: profileUi,
+              onLabelTap: widget.onModerationLabelTap ?? labelDetailTapHandler(context),
+            ),
           ],
           if (profile.description?.isNotEmpty ?? false) ...[
             const SizedBox(height: 12),

@@ -100,6 +100,29 @@ void main() {
     expect(context.subjectCid, 'bafyrecord');
   });
 
+  testWidgets('label badge taps do not activate a parent post/profile tap target', (tester) async {
+    final ui = bsky_moderation.ModerationUI(alerts: [_labelCause()]);
+    var labelTapCount = 0;
+    var parentTapCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: InkWell(
+            onTap: () => parentTapCount++,
+            child: ModerationBadgeRow(ui: ui, onLabelTap: (_) => labelTapCount++),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Aaa'));
+    await tester.pump();
+
+    expect(labelTapCount, 1);
+    expect(parentTapCount, 0);
+  });
+
   testWidgets('does not call the label tap handler for non-label badges', (tester) async {
     const ui = bsky_moderation.ModerationUI(
       alerts: [

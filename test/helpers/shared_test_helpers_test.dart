@@ -1,5 +1,7 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
+import 'package:bluesky_poptart/chat/bsky/convo/defs.dart';
+import 'package:bluesky_poptart/chat/bsky/group/defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/auth/data/models/auth_models.dart';
@@ -13,6 +15,7 @@ import 'assertion_helpers.dart';
 import 'connectivity_helpers.dart';
 import 'fixtures/auth.dart';
 import 'fixtures/graph.dart';
+import 'fixtures/messages.dart';
 import 'fixtures/network.dart';
 import 'fixtures/package_info.dart';
 import 'search_helpers.dart';
@@ -62,6 +65,30 @@ void main() {
       expect(testListView(uri: listUri, name: 'Good Accounts').uri, listUri);
       expect(testListItemView().subject.handle, 'member.bsky.social');
       expect(testStarterPackViewBasic(name: 'Good Pack').record['name'], 'Good Pack');
+    });
+  });
+
+  group('message fixtures', () {
+    test('build direct and group conversation JSON accepted by generated models', () {
+      final direct = ConvoView.fromJson(testDirectConvoJson());
+      final group = ConvoView.fromJson(testGroupConvoJson());
+
+      expect(direct.kind?.isDirectConvo, isTrue);
+      expect(group.kind?.isGroupConvo, isTrue);
+      expect(group.kind?.groupConvo?.name, testGroupName);
+      expect(group.kind?.groupConvo?.$unknown?['memberLimit'], 50);
+    });
+
+    test('build group member, system message, join link, and join request JSON', () {
+      final memberPage = testGroupMemberPageJson();
+      final systemMessage = SystemMessageView.fromJson(testGroupSystemMessageJson());
+      final joinLink = JoinLinkView.fromJson(testJoinLinkJson());
+      final joinRequest = JoinRequestView.fromJson(testJoinRequestJson());
+
+      expect(memberPage['members'], isA<List<Map<String, Object?>>>());
+      expect(systemMessage.data.isSystemMessageDataMemberJoin, isTrue);
+      expect(joinLink.code, testJoinLinkCode);
+      expect(joinRequest.convoId, testConvoId);
     });
   });
 

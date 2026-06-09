@@ -1,6 +1,7 @@
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/database/app_database.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -13,14 +14,27 @@ import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/shared/utils/format_utils.dart';
 
+ValueChanged<LabelContext>? labelDetailTapHandler(BuildContext context) {
+  if (maybeModerationService(context) == null) {
+    return null;
+  }
+  return (labelContext) => showLabelDetailBottomSheet(context, labelContext);
+}
+
 Future<void> showLabelDetailBottomSheet(BuildContext context, LabelContext labelContext) {
+  final moderationService = maybeModerationService(context);
+  if (moderationService == null) {
+    return Future<void>.value();
+  }
+
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
+    constraints: const BoxConstraints(maxWidth: 640),
     builder: (_) => MultiRepositoryProvider(
       providers: [
-        RepositoryProvider<ModerationService>.value(value: context.read<ModerationService>()),
+        RepositoryProvider<ModerationService>.value(value: moderationService),
         if (_maybeRead<AppDatabase>(context) case final database?)
           RepositoryProvider<AppDatabase>.value(value: database),
       ],
@@ -83,7 +97,7 @@ class _LabelDetailSheetState extends State<LabelDetailSheet> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to update labeler subscription: $error')));
+        ).showSnackBar(SnackBar(content: Text(context.l10n.errorFailedToUpdateLabelerSubscription(error))));
       }
     } finally {
       if (mounted) {
@@ -105,7 +119,7 @@ class _LabelDetailSheetState extends State<LabelDetailSheet> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to update label preference: $error')));
+        ).showSnackBar(SnackBar(content: Text(context.l10n.errorFailedToUpdateLabelPreference(error))));
       }
     } finally {
       if (mounted) {
@@ -115,42 +129,40 @@ class _LabelDetailSheetState extends State<LabelDetailSheet> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: FutureBuilder<LabelDetailData>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const SizedBox(height: 240, child: Center(child: CircularProgressIndicator()));
-          }
+  Widget build(BuildContext context) => SafeArea(
+    child: FutureBuilder<LabelDetailData>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const SizedBox(height: 240, child: Center(child: CircularProgressIndicator()));
+        }
 
-          if (snapshot.hasError) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Unable to load label details', style: context.textTheme.titleMedium),
-                  const SizedBox(height: 8),
-                  Text('${snapshot.error}', textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  FilledButton(onPressed: _reload, child: Text(context.l10n.buttonRetry)),
-                ],
-              ),
-            );
-          }
-
-          return _LabelDetailContent(
-            data: snapshot.data!,
-            isUpdatingSubscription: _isUpdatingSubscription,
-            isUpdatingPreference: _isUpdatingPreference,
-            onToggleSubscription: _toggleSubscription,
-            onUpdatePreference: _updatePreference,
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(context.l10n.errorUnableToLoadLabelDetails, style: context.textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Text('${snapshot.error}', textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                FilledButton(onPressed: _reload, child: Text(context.l10n.buttonRetry)),
+              ],
+            ),
           );
-        },
-      ),
-    );
-  }
+        }
+
+        return _LabelDetailContent(
+          data: snapshot.data!,
+          isUpdatingSubscription: _isUpdatingSubscription,
+          isUpdatingPreference: _isUpdatingPreference,
+          onToggleSubscription: _toggleSubscription,
+          onUpdatePreference: _updatePreference,
+        );
+      },
+    ),
+  );
 }
 
 class _LabelDetailContent extends StatelessWidget {
@@ -176,8 +188,9 @@ class _LabelDetailContent extends StatelessWidget {
     final description = data.description?.isNotEmpty == true
         ? data.description!
         : definition == null
-        ? 'This labeler did not publish a description for this raw label value.'
+        ? context.l10n.messageNoDescriptionForRawLabel
         : context.l10n.messageNoLabelDescriptionAvailable;
+
     final isOfficial = data.context.labelerDid == officialBlueskyLabelerDid;
 
     return DraggableScrollableSheet(
@@ -195,7 +208,7 @@ class _LabelDetailContent extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            definition == null ? 'Raw label value: ${data.context.identifier}' : description,
+            definition == null ? context.l10n.formatRawLabelValue(data.context.identifier) : description,
             style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant),
           ),
           if (definition == null || data.description?.isNotEmpty != true) ...[
@@ -205,14 +218,16 @@ class _LabelDetailContent extends StatelessWidget {
               style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant),
             ),
           ],
+          const SizedBox(height: 12),
+          _Notice(text: context.l10n.messageThirdPartyLabelerDefinitionNotice),
           const SizedBox(height: 20),
           _LabelerIdentity(creator: creator, labelerDid: data.context.labelerDid, serviceUri: labeler?.uri.toString()),
           if (data.isPartial) ...[
             const SizedBox(height: 12),
             _Notice(
               text: labeler == null
-                  ? 'Labeler details are unavailable. Showing protocol metadata and any cached policy data.'
-                  : 'No matching published definition was found for this label.',
+                  ? context.l10n.messageLabelerDetailsUnavailableCached
+                  : context.l10n.messageNoMatchingLabelDefinition,
             ),
           ],
           const SizedBox(height: 16),
@@ -221,30 +236,31 @@ class _LabelDetailContent extends StatelessWidget {
             runSpacing: 8,
             children: [
               if (definition != null) ...[
-                _Chip('Severity ${definition.severity.toJson()}'),
-                _Chip('Blurs ${definition.blurs.toJson()}'),
-                _Chip('Default ${visibilityFromDefaultSetting(definition.defaultSetting).name}'),
-                if (definition.adultOnly ?? false) const _Chip('Adult only'),
+                _Chip(context.l10n.formatPolicySeverity(definition.severity.toJson())),
+                _Chip(context.l10n.formatPolicyBlur(definition.blurs.toJson())),
+                _Chip(context.l10n.formatPolicyDefault(visibilityFromDefaultSetting(definition.defaultSetting).name)),
+                if (definition.adultOnly ?? false) _Chip(context.l10n.labelAdultOnlyShort),
               ],
-              _Chip('Active ${data.effectivePreference.name}'),
-              if (data.context.isNegation) const _Chip('Negation'),
-              if (data.context.expiresAt != null) _Chip(_expiryLabel(data.context.expiresAt!)),
+              _Chip(context.l10n.formatActiveLabelPreference(data.effectivePreference.name)),
+              if (data.context.isNegation) _Chip(context.l10n.labelLabelNegation),
+              if (data.context.expiresAt != null) _Chip(_expiryLabel(context, data.context.expiresAt!)),
             ],
           ),
           const SizedBox(height: 18),
           ExpansionTile(
             tilePadding: EdgeInsets.zero,
-            title: const Text('Protocol details'),
+            title: Text(context.l10n.labelProtocolDetails),
             children: [_ProtocolDetails(data.context)],
           ),
           const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: () {
+              final router = GoRouter.of(context);
               Navigator.of(context).pop();
-              openLabelerProfile(context, data.context.labelerDid);
+              router.push(labelerProfileLocation(data.context.labelerDid));
             },
             icon: const Icon(Icons.open_in_new),
-            label: const Text('Open labeler profile'),
+            label: Text(context.l10n.labelOpenLabelerProfile),
           ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
@@ -254,13 +270,16 @@ class _LabelDetailContent extends StatelessWidget {
               isOfficial
                   ? context.l10n.labelBuiltInModeration
                   : data.isSubscribed
-                  ? 'Unsubscribe from labeler'
-                  : 'Subscribe to labeler',
+                  ? context.l10n.labelUnsubscribeFromLabeler
+                  : context.l10n.labelSubscribeToLabeler,
             ),
           ),
           if (definition != null) ...[
             const SizedBox(height: 12),
-            Text('Label preference', style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+            Text(
+              context.l10n.labelLabelPreference,
+              style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 8),
             SegmentedButton<KnownContentLabelPrefVisibility>(
               segments: [
@@ -433,5 +452,9 @@ T? _maybeRead<T>(BuildContext context) {
   }
 }
 
-String _expiryLabel(DateTime expiry) =>
-    expiry.isBefore(DateTime.now()) ? 'Expired ${expiry.toLocal()}' : 'Expires ${expiry.toLocal()}';
+String _expiryLabel(BuildContext context, DateTime expiry) {
+  final value = expiry.toLocal().toString();
+  return expiry.isBefore(DateTime.now())
+      ? context.l10n.formatExpiredLabel(value)
+      : context.l10n.formatExpiresLabel(value);
+}

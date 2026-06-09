@@ -30,6 +30,7 @@ import 'package:lazurite/features/feed/presentation/widgets/post_menu_actions.da
 import 'package:lazurite/features/feed/presentation/widgets/public_post_card.dart';
 import 'package:lazurite/features/feed/presentation/widgets/similar_posts_section.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/label_detail_sheet.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_avatar.dart';
 import 'package:lazurite/features/profile/cubit/profile_action_cubit.dart';
 import 'package:lazurite/features/profile/data/profile_action_repository.dart';
@@ -242,23 +243,18 @@ class _PostThreadContentState extends State<_PostThreadContent> {
     return _PostThreadPublicProviderScope(providerKey: providerKey, child: content);
   }
 
-  Widget _buildError(BuildContext context, String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 48, color: Colors.grey),
-          const SizedBox(height: 16),
-          Text(message),
-          const SizedBox(height: 16),
-          FilledButton(
-            onPressed: () => context.read<PostThreadCubit>().load(widget.postUri),
-            child: const Text('Retry'),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildError(BuildContext context, String message) => Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+        const SizedBox(height: 16),
+        Text(message),
+        const SizedBox(height: 16),
+        FilledButton(onPressed: () => context.read<PostThreadCubit>().load(widget.postUri), child: const Text('Retry')),
+      ],
+    ),
+  );
 
   Widget _buildThread(BuildContext context, ThreadViewPost thread) {
     final publicProviderKey = widget.publicProviderKey;
@@ -308,8 +304,8 @@ class _PostThreadContentState extends State<_PostThreadContent> {
               ),
             ),
             const Divider(height: 1),
-            for (final reply in replies)
-              ThreadReplyNode(
+            ...replies.map(
+              (reply) => ThreadReplyNode(
                 key: ValueKey('thread-reply-node-${reply.post.uri}'),
                 thread: reply,
                 depth: 1,
@@ -320,23 +316,22 @@ class _PostThreadContentState extends State<_PostThreadContent> {
                 onToggleCollapse: _toggleCollapsed,
                 onReplySubmitted: _reloadThreadAfterReply,
               ),
+            ),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildThreadConnector(BuildContext context) {
-    return SizedBox(
-      height: 16,
-      child: Row(
-        children: [
-          const SizedBox(width: 37),
-          Container(width: 2, color: Theme.of(context).dividerColor),
-        ],
-      ),
-    );
-  }
+  Widget _buildThreadConnector(BuildContext context) => SizedBox(
+    height: 16,
+    child: Row(
+      children: [
+        const SizedBox(width: 37),
+        Container(width: 2, color: Theme.of(context).dividerColor),
+      ],
+    ),
+  );
 
   List<ThreadViewPost> _getParentChain(ThreadViewPost thread) {
     final parents = <ThreadViewPost>[];
@@ -537,37 +532,35 @@ class _CollapsedThreadReply extends StatelessWidget {
   final VoidCallback? onLongPress;
 
   @override
-  Widget build(BuildContext context) {
-    final post = thread.post;
-    final colorScheme = context.colorScheme;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onLongPress: onLongPress,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 1),
-        decoration: BoxDecoration(
-          border: Border.all(color: colorScheme.outlineVariant),
-          color: colorScheme.surfaceContainerLowest,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _CollapsedThreadHeader(post: post),
-              const SizedBox(height: 10),
-              Text(
-                _hiddenReplyLabel(hiddenReplyCount).toUpperCase(),
-                key: ValueKey('collapsed-indicator-${post.uri}'),
-                style: context.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant, letterSpacing: 1.1),
+  Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onLongPress: onLongPress,
+    child: Container(
+      margin: const EdgeInsets.symmetric(vertical: 1),
+      decoration: BoxDecoration(
+        border: Border.all(color: context.colorScheme.outlineVariant),
+        color: context.colorScheme.surfaceContainerLowest,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _CollapsedThreadHeader(post: thread.post),
+            const SizedBox(height: 10),
+            Text(
+              _hiddenReplyLabel(hiddenReplyCount).toUpperCase(),
+              key: ValueKey('collapsed-indicator-${thread.post.uri}'),
+              style: context.textTheme.labelSmall?.copyWith(
+                color: context.colorScheme.onSurfaceVariant,
+                letterSpacing: 1.1,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _CollapsedThreadHeader extends StatelessWidget {
@@ -577,7 +570,6 @@ class _CollapsedThreadHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = context.colorScheme;
     final timestamp = _parsePostRecord(post.record)?.createdAt ?? post.indexedAt;
     final moderationService = maybeModerationService(context);
     final avatarUi =
@@ -593,7 +585,7 @@ class _CollapsedThreadHeader extends StatelessWidget {
           imageUrl: post.author.avatar,
           initials: _initials(post.author.displayName ?? post.author.handle),
           shape: BoxShape.rectangle,
-          border: Border.all(color: colorScheme.outlineVariant),
+          border: Border.all(color: context.colorScheme.outlineVariant),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -614,7 +606,7 @@ class _CollapsedThreadHeader extends StatelessWidget {
                   Text(
                     DateFormat('MMM d').format(timestamp.toLocal()).toUpperCase(),
                     style: context.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                      color: context.colorScheme.onSurfaceVariant,
                       letterSpacing: 0.8,
                     ),
                   ),
@@ -624,7 +616,7 @@ class _CollapsedThreadHeader extends StatelessWidget {
               Text(
                 '@${post.author.handle}'.toUpperCase(),
                 style: context.textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                  color: context.colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.5,
                 ),
@@ -693,18 +685,16 @@ class _ThreadLineButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        key: ValueKey('threadline-$postUri'),
-        onTap: onTap,
-        splashColor: color.withValues(alpha: 0.16),
-        highlightColor: color.withValues(alpha: 0.08),
-        child: _ThreadLine(color: color, isCollapsed: isCollapsed),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Material(
+    color: Colors.transparent,
+    child: InkWell(
+      key: ValueKey('threadline-$postUri'),
+      onTap: onTap,
+      splashColor: color.withValues(alpha: 0.16),
+      highlightColor: color.withValues(alpha: 0.08),
+      child: _ThreadLine(color: color, isCollapsed: isCollapsed),
+    ),
+  );
 }
 
 class _ThreadLine extends StatelessWidget {
@@ -714,24 +704,20 @@ class _ThreadLine extends StatelessWidget {
   final bool isCollapsed;
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: AnimatedContainer(
-        duration: _threadCollapseDuration,
-        width: 2,
-        margin: EdgeInsets.symmetric(vertical: isCollapsed ? 12 : 0),
-        color: color,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Center(
+    child: AnimatedContainer(
+      duration: _threadCollapseDuration,
+      width: 2,
+      margin: EdgeInsets.symmetric(vertical: isCollapsed ? 12 : 0),
+      color: color,
+    ),
+  );
 }
 
-List<ThreadViewPost> _threadRepliesOf(ThreadViewPost thread) {
-  return (thread.replies ?? <UThreadViewPostReplies>[])
-      .where((reply) => reply.isThreadViewPost)
-      .map((reply) => reply.threadViewPost!)
-      .toList();
-}
+List<ThreadViewPost> _threadRepliesOf(ThreadViewPost thread) => (thread.replies ?? <UThreadViewPostReplies>[])
+    .where((reply) => reply.isThreadViewPost)
+    .map((reply) => reply.threadViewPost!)
+    .toList();
 
 ThreadViewPost _getThreadRoot(ThreadViewPost thread) {
   var current = thread;
@@ -822,7 +808,6 @@ class _FocusedPostWithActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final post = thread.post;
     final viewer = post.viewer;
-
     return BlocProvider(
       create: (_) => PostActionCubit(
         postActionRepository: context.read<PostActionRepository>(),
@@ -895,6 +880,7 @@ class _FocusedPostContent extends StatelessWidget {
         feedViewPost: FeedViewPost(post: post),
         moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
         footer: actionBar,
+        onModerationLabelTap: labelDetailTapHandler(context),
       );
     }
 
@@ -902,6 +888,7 @@ class _FocusedPostContent extends StatelessWidget {
       feedViewPost: FeedViewPost(post: post),
       moderationContext: bsky_moderation.ModerationBehaviorContext.contentView,
       actionBar: actionBar,
+      onModerationLabelTap: labelDetailTapHandler(context),
     );
   }
 
@@ -1013,9 +1000,7 @@ class _FocusedPostContent extends StatelessWidget {
     );
   }
 
-  void _onReply(BuildContext context) {
-    unawaited(_handleReply(context));
-  }
+  void _onReply(BuildContext context) => unawaited(_handleReply(context));
 
   Future<void> _handleReply(BuildContext context) async {
     HapticHelper.selectionClick();
@@ -1143,8 +1128,7 @@ class _FocusedPostContent extends StatelessWidget {
       const Duration(seconds: 4),
     ];
 
-    for (var i = 0; i < retryDelays.length; i++) {
-      final delay = retryDelays[i];
+    for (final delay in retryDelays) {
       if (delay > Duration.zero) {
         await Future<void>.delayed(delay);
       }
@@ -1176,31 +1160,25 @@ class _FocusedPostContent extends StatelessWidget {
     }
   }
 
-  void _showReportDialog(BuildContext context) {
-    final post = thread.post;
-
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => BlocProvider(
-        create: (_) => ProfileActionCubit(
-          profileActionRepository: context.read<ProfileActionRepository>(),
-          actorDid: post.author.did,
-        ),
-        child: ReportDialog.post(postUri: post.uri, cid: post.cid, authorHandle: post.author.handle),
+  void _showReportDialog(BuildContext context) => showDialog<void>(
+    context: context,
+    builder: (dialogContext) => BlocProvider(
+      create: (_) => ProfileActionCubit(
+        profileActionRepository: context.read<ProfileActionRepository>(),
+        actorDid: thread.post.author.did,
       ),
-    );
-  }
+      child: ReportDialog.post(postUri: thread.post.uri, cid: thread.post.cid, authorHandle: thread.post.author.handle),
+    ),
+  );
 
-  Future<void> _confirmDelete(BuildContext context) async {
-    await showConfirmationDialog(
-      context: context,
-      title: Text(context.l10n.dialogDeletePostTitle),
-      content: Text(context.l10n.dialogDeletePostContent),
-      confirmLabel: context.l10n.buttonDelete,
-      confirmDestructive: true,
-      onConfirmed: () => context.read<PostActionCubit>().deletePost(),
-    );
-  }
+  Future<void> _confirmDelete(BuildContext context) async => await showConfirmationDialog(
+    context: context,
+    title: Text(context.l10n.dialogDeletePostTitle),
+    content: Text(context.l10n.dialogDeletePostContent),
+    confirmLabel: context.l10n.buttonDelete,
+    confirmDestructive: true,
+    onConfirmed: () => context.read<PostActionCubit>().deletePost(),
+  );
 
   (String, String) _findRoot() {
     var current = thread.parent;
@@ -1215,9 +1193,7 @@ class _FocusedPostContent extends StatelessWidget {
     return (thread.post.uri.toString(), thread.post.cid);
   }
 
-  String _formatTimestamp(DateTime time) {
-    return DateFormat('h:mm a · MMM d, yyyy').format(time.toLocal());
-  }
+  String _formatTimestamp(DateTime time) => DateFormat('h:mm a · MMM d, yyyy').format(time.toLocal());
 
   String _editableTextFromRecord(Map<String, dynamic> record) {
     final parsed = _parsePostRecord(record);

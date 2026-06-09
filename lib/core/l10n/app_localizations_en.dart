@@ -2169,7 +2169,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorNoLabelerFoundForDid => 'No labeler found for that DID.';
 
   @override
+  String get errorUnableToLoadLabelDetails => 'Unable to load label details';
+
+  @override
   String get errorUnableToLoadLabeler => 'Unable to load labeler';
+
+  @override
+  String formatActiveLabelPreference(String value) {
+    return 'Active $value';
+  }
+
+  @override
+  String formatExpiredLabel(String value) {
+    return 'Expired $value';
+  }
+
+  @override
+  String formatExpiresLabel(String value) {
+    return 'Expires $value';
+  }
+
+  @override
+  String formatRawLabelValue(String identifier) {
+    return 'Raw label value: $identifier';
+  }
+
+  @override
+  String formatReasonScope(String value) {
+    return 'Reason $value';
+  }
+
+  @override
+  String formatSubjectScope(String value) {
+    return 'Subject $value';
+  }
 
   @override
   String formatAddLabelerLimit(int current, int max) {
@@ -2284,6 +2317,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get labelBuiltInModeration => 'Built-in moderation';
+
+  @override
+  String get labelLabelNegation => 'Negation';
+
+  @override
+  String get labelLabelPreference => 'Label preference';
+
+  @override
+  String get labelOpenCreatorAccountProfile => 'Open creator account profile';
+
+  @override
+  String get labelOpenLabelerProfile => 'Open labeler profile';
+
+  @override
+  String get labelProtocolDetails => 'Protocol details';
+
+  @override
+  String get labelPublishedScope => 'Published scope';
+
+  @override
+  String get labelSubscribeToLabeler => 'Subscribe to labeler';
+
+  @override
+  String get labelUnsubscribeFromLabeler => 'Unsubscribe from labeler';
 
   @override
   String get labelBlockedAccount => 'Blocked account';
@@ -2448,6 +2505,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messageNoLabelDescriptionAvailable => 'No description available for this label.';
+
+  @override
+  String get messageLabelerDetailsUnavailableCached =>
+      'Labeler details are unavailable. Showing protocol metadata and any cached policy data.';
+
+  @override
+  String get messageNoDescriptionForRawLabel => 'This labeler did not publish a description for this raw label value.';
+
+  @override
+  String get messageNoMatchingLabelDefinition => 'No matching published definition was found for this label.';
+
+  @override
+  String get messageThirdPartyLabelerDefinitionNotice =>
+      'Label names and descriptions are published by the labeler, not endorsed by Lazurite.';
 
   @override
   String get messageNoLogFileAvailable => 'No log file available';

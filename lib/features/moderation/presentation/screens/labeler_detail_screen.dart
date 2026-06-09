@@ -202,7 +202,7 @@ class _LabelerDetailScreenState extends State<LabelerDetailScreen> {
                     OutlinedButton.icon(
                       onPressed: () => context.push('/${Uri(pathSegments: ['profile', creator.did])}'),
                       icon: const Icon(Icons.person_outline),
-                      label: const Text('Open creator account profile'),
+                      label: Text(context.l10n.labelOpenCreatorAccountProfile),
                     ),
                     const SizedBox(height: 8),
                     SwitchListTile.adaptive(
@@ -349,7 +349,7 @@ class _ScopeMetadata extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Published scope',
+          context.l10n.labelPublishedScope,
           style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
         ),
         const SizedBox(height: 8),
@@ -357,8 +357,10 @@ class _ScopeMetadata extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            ...(labeler.reasonTypes ?? []).map((r) => _PolicyChip(label: 'Reason ${r.toJson()}')),
-            ...(labeler.subjectTypes ?? const []).map((s) => _PolicyChip(label: 'Subject ${s.toJson()}')),
+            ...(labeler.reasonTypes ?? []).map((r) => _PolicyChip(label: context.l10n.formatReasonScope(r.toJson()))),
+            ...(labeler.subjectTypes ?? const []).map(
+              (s) => _PolicyChip(label: context.l10n.formatSubjectScope(s.toJson())),
+            ),
             ...(labeler.subjectCollections ?? []).map((c) => _PolicyChip(label: c)),
           ],
         ),

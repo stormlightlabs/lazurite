@@ -57,19 +57,19 @@
 
 ## M5 - Integration Across Surfaces
 
-- [ ] Wire post feed badges to open label details
-- [ ] Wire thread/post detail badges to open label details
-- [ ] Wire profile header/account badges to open label details
-- [ ] Wire notification-related post/profile badges when displayed
-- [ ] Ensure label taps do not trigger parent post/profile navigation accidentally
-- [ ] Integration/widget tests for each surface
+- [x] Wire post feed badges to open label details
+- [x] Wire thread/post detail badges to open label details
+- [x] Wire profile header/account badges to open label details
+- [x] Wire notification-related post/profile badges when displayed
+- [x] Ensure label taps do not trigger parent post/profile navigation accidentally
+- [x] Integration/widget tests for each surface
 
 ## M6 - Polish, Localization, And Verification
 
-- [ ] Add all user-facing strings to l10n files
-- [ ] Ensure long label names/descriptions wrap cleanly on narrow screens
-- [ ] Add tablet behavior decision: sheet vs side panel/direct route
-- [ ] Review copy for trust boundaries: third-party labeler text is not Lazurite endorsement
-- [ ] Run `flutter analyze`
-- [ ] Run `flutter test --reporter=failures-only` with timeout
-- [ ] Update `docs/dev/social-features-and-moderation.md` after implementation is complete
+- [x] Add all user-facing strings to l10n files
+- [x] Ensure long label names/descriptions wrap cleanly on narrow screens
+- [x] Add tablet behavior decision: sheet vs side panel/direct route
+- [x] Review copy for trust boundaries: third-party labeler text is not Lazurite endorsement
+- [x] Run `flutter analyze`
+- [x] Run `flutter test --reporter=failures-only` with timeout
+- [x] Update `docs/dev/social-features-and-moderation.md` after implementation is complete

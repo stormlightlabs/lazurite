@@ -3997,11 +3997,53 @@ abstract class AppLocalizations {
   /// **'No labeler found for that DID.'**
   String get errorNoLabelerFoundForDid;
 
+  /// Error title when a label detail sheet cannot load
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load label details'**
+  String get errorUnableToLoadLabelDetails;
+
   /// Error title when a labeler detail screen cannot load
   ///
   /// In en, this message translates to:
   /// **'Unable to load labeler'**
   String get errorUnableToLoadLabeler;
+
+  /// Label detail chip showing active preference
+  ///
+  /// In en, this message translates to:
+  /// **'Active {value}'**
+  String formatActiveLabelPreference(String value);
+
+  /// Label detail expiry chip for expired labels
+  ///
+  /// In en, this message translates to:
+  /// **'Expired {value}'**
+  String formatExpiredLabel(String value);
+
+  /// Label detail expiry chip for active temporary labels
+  ///
+  /// In en, this message translates to:
+  /// **'Expires {value}'**
+  String formatExpiresLabel(String value);
+
+  /// Label detail raw identifier fallback
+  ///
+  /// In en, this message translates to:
+  /// **'Raw label value: {identifier}'**
+  String formatRawLabelValue(String identifier);
+
+  /// Labeler profile scope chip for reason types
+  ///
+  /// In en, this message translates to:
+  /// **'Reason {value}'**
+  String formatReasonScope(String value);
+
+  /// Labeler profile scope chip for subject types
+  ///
+  /// In en, this message translates to:
+  /// **'Subject {value}'**
+  String formatSubjectScope(String value);
 
   /// Add labeler button showing current and maximum custom labelers
   ///
@@ -4140,6 +4182,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Built-in moderation'**
   String get labelBuiltInModeration;
+
+  /// Label detail chip for label negation events
+  ///
+  /// In en, this message translates to:
+  /// **'Negation'**
+  String get labelLabelNegation;
+
+  /// Singular title for changing one label preference
+  ///
+  /// In en, this message translates to:
+  /// **'Label preference'**
+  String get labelLabelPreference;
+
+  /// Action to open the account that created a labeler service
+  ///
+  /// In en, this message translates to:
+  /// **'Open creator account profile'**
+  String get labelOpenCreatorAccountProfile;
+
+  /// Action to open the labeler service profile
+  ///
+  /// In en, this message translates to:
+  /// **'Open labeler profile'**
+  String get labelOpenLabelerProfile;
+
+  /// Expansion tile title for raw protocol label data
+  ///
+  /// In en, this message translates to:
+  /// **'Protocol details'**
+  String get labelProtocolDetails;
+
+  /// Labeler profile scope metadata title
+  ///
+  /// In en, this message translates to:
+  /// **'Published scope'**
+  String get labelPublishedScope;
+
+  /// Action to subscribe to a labeler service
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe to labeler'**
+  String get labelSubscribeToLabeler;
+
+  /// Action to unsubscribe from a labeler service
+  ///
+  /// In en, this message translates to:
+  /// **'Unsubscribe from labeler'**
+  String get labelUnsubscribeFromLabeler;
 
   /// Moderation badge for blocked account content
   ///
@@ -4464,6 +4554,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No description available for this label.'**
   String get messageNoLabelDescriptionAvailable;
+
+  /// Label detail notice when labeler details cannot be loaded
+  ///
+  /// In en, this message translates to:
+  /// **'Labeler details are unavailable. Showing protocol metadata and any cached policy data.'**
+  String get messageLabelerDetailsUnavailableCached;
+
+  /// Label detail fallback when a raw value has no published definition
+  ///
+  /// In en, this message translates to:
+  /// **'This labeler did not publish a description for this raw label value.'**
+  String get messageNoDescriptionForRawLabel;
+
+  /// Label detail notice when no matching definition exists
+  ///
+  /// In en, this message translates to:
+  /// **'No matching published definition was found for this label.'**
+  String get messageNoMatchingLabelDefinition;
+
+  /// Trust boundary copy for labeler-published text
+  ///
+  /// In en, this message translates to:
+  /// **'Label names and descriptions are published by the labeler, not endorsed by Lazurite.'**
+  String get messageThirdPartyLabelerDefinitionNotice;
 
   /// Snackbar when there is no log file to share
   ///

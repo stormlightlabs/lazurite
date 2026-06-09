@@ -3082,9 +3082,73 @@
   "@errorNoLabelerFoundForDid": {
     "description": "Validation error when no labeler exists for the entered DID"
   },
+  "errorUnableToLoadLabelDetails": "Unable to load label details",
+  "@errorUnableToLoadLabelDetails": {
+    "description": "Error title when a label detail sheet cannot load"
+  },
   "errorUnableToLoadLabeler": "Unable to load labeler",
   "@errorUnableToLoadLabeler": {
     "description": "Error title when a labeler detail screen cannot load"
+  },
+  "formatActiveLabelPreference": "Active {value}",
+  "@formatActiveLabelPreference": {
+    "description": "Label detail chip showing active preference",
+    "placeholders": {
+      "value": {
+        "type": "String",
+        "example": "warn"
+      }
+    }
+  },
+  "formatExpiredLabel": "Expired {value}",
+  "@formatExpiredLabel": {
+    "description": "Label detail expiry chip for expired labels",
+    "placeholders": {
+      "value": {
+        "type": "String",
+        "example": "2026-02-01 00:00:00.000"
+      }
+    }
+  },
+  "formatExpiresLabel": "Expires {value}",
+  "@formatExpiresLabel": {
+    "description": "Label detail expiry chip for active temporary labels",
+    "placeholders": {
+      "value": {
+        "type": "String",
+        "example": "2026-02-01 00:00:00.000"
+      }
+    }
+  },
+  "formatRawLabelValue": "Raw label value: {identifier}",
+  "@formatRawLabelValue": {
+    "description": "Label detail raw identifier fallback",
+    "placeholders": {
+      "identifier": {
+        "type": "String",
+        "example": "spoilers"
+      }
+    }
+  },
+  "formatReasonScope": "Reason {value}",
+  "@formatReasonScope": {
+    "description": "Labeler profile scope chip for reason types",
+    "placeholders": {
+      "value": {
+        "type": "String",
+        "example": "com.example.reason"
+      }
+    }
+  },
+  "formatSubjectScope": "Subject {value}",
+  "@formatSubjectScope": {
+    "description": "Labeler profile scope chip for subject types",
+    "placeholders": {
+      "value": {
+        "type": "String",
+        "example": "record"
+      }
+    }
   },
   "formatAddLabelerLimit": "Add ({current}/{max})",
   "@formatAddLabelerLimit": {
@@ -3275,6 +3339,38 @@
   "labelBuiltInModeration": "Built-in moderation",
   "@labelBuiltInModeration": {
     "description": "Moderation labeler chip and switch label for built-in moderation"
+  },
+  "labelLabelNegation": "Negation",
+  "@labelLabelNegation": {
+    "description": "Label detail chip for label negation events"
+  },
+  "labelLabelPreference": "Label preference",
+  "@labelLabelPreference": {
+    "description": "Singular title for changing one label preference"
+  },
+  "labelOpenCreatorAccountProfile": "Open creator account profile",
+  "@labelOpenCreatorAccountProfile": {
+    "description": "Action to open the account that created a labeler service"
+  },
+  "labelOpenLabelerProfile": "Open labeler profile",
+  "@labelOpenLabelerProfile": {
+    "description": "Action to open the labeler service profile"
+  },
+  "labelProtocolDetails": "Protocol details",
+  "@labelProtocolDetails": {
+    "description": "Expansion tile title for raw protocol label data"
+  },
+  "labelPublishedScope": "Published scope",
+  "@labelPublishedScope": {
+    "description": "Labeler profile scope metadata title"
+  },
+  "labelSubscribeToLabeler": "Subscribe to labeler",
+  "@labelSubscribeToLabeler": {
+    "description": "Action to subscribe to a labeler service"
+  },
+  "labelUnsubscribeFromLabeler": "Unsubscribe from labeler",
+  "@labelUnsubscribeFromLabeler": {
+    "description": "Action to unsubscribe from a labeler service"
   },
   "labelBlockedAccount": "Blocked account",
   "@labelBlockedAccount": {
@@ -3491,6 +3587,22 @@
   "messageNoLabelDescriptionAvailable": "No description available for this label.",
   "@messageNoLabelDescriptionAvailable": {
     "description": "Fallback description for a label definition without localized description"
+  },
+  "messageLabelerDetailsUnavailableCached": "Labeler details are unavailable. Showing protocol metadata and any cached policy data.",
+  "@messageLabelerDetailsUnavailableCached": {
+    "description": "Label detail notice when labeler details cannot be loaded"
+  },
+  "messageNoDescriptionForRawLabel": "This labeler did not publish a description for this raw label value.",
+  "@messageNoDescriptionForRawLabel": {
+    "description": "Label detail fallback when a raw value has no published definition"
+  },
+  "messageNoMatchingLabelDefinition": "No matching published definition was found for this label.",
+  "@messageNoMatchingLabelDefinition": {
+    "description": "Label detail notice when no matching definition exists"
+  },
+  "messageThirdPartyLabelerDefinitionNotice": "Label names and descriptions are published by the labeler, not endorsed by Lazurite.",
+  "@messageThirdPartyLabelerDefinitionNotice": {
+    "description": "Trust boundary copy for labeler-published text"
   },
   "messageNoLogFileAvailable": "No log file available",
   "@messageNoLogFileAvailable": {

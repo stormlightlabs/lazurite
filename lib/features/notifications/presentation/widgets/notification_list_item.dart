@@ -1,9 +1,11 @@
 import 'package:bluesky_poptart/app/bsky/notification/list_notifications.dart' as bsky;
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 import 'package:flutter/material.dart' hide Notification;
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
+import 'package:lazurite/features/moderation/presentation/widgets/label_detail_sheet.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderated_blur_overlay.dart';
 import 'package:lazurite/features/moderation/presentation/widgets/moderation_badge_row.dart';
 import 'package:lazurite/features/notifications/domain/notification_deep_link_navigator.dart';
@@ -19,7 +21,6 @@ class NotificationListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final isUnread = !notification.isRead;
     final moderationService = maybeModerationService(context);
     final notificationUi =
@@ -30,15 +31,15 @@ class NotificationListItem extends StatelessWidget {
       onTap: () => _onTap(context),
       child: Container(
         decoration: BoxDecoration(
-          border: Border(left: isUnread ? BorderSide(color: theme.colorScheme.primary, width: 3) : BorderSide.none),
-          color: isUnread ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5) : null,
+          border: Border(left: isUnread ? BorderSide(color: context.colorScheme.primary, width: 3) : BorderSide.none),
+          color: isUnread ? context.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5) : null,
         ),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildReasonIcon(theme),
+              _buildReasonIcon(context.theme),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -46,14 +47,14 @@ class NotificationListItem extends StatelessWidget {
                   children: [
                     _buildActorRow(context),
                     const SizedBox(height: 4),
-                    _buildSummary(context, theme),
+                    _buildSummary(context),
                     const SizedBox(height: 2),
-                    _buildTime(context, theme),
+                    _buildTime(context),
                     if (notificationUi.alert || notificationUi.inform) ...[
                       const SizedBox(height: 8),
-                      ModerationBadgeRow(ui: notificationUi),
+                      ModerationBadgeRow(ui: notificationUi, onLabelTap: labelDetailTapHandler(context)),
                     ],
-                    if (_shouldShowPreview) ...[const SizedBox(height: 8), _buildPreview(context, theme)],
+                    if (_shouldShowPreview) ...[const SizedBox(height: 8), _buildPreview(context)],
                   ],
                 ),
               ),
@@ -76,10 +77,9 @@ class NotificationListItem extends StatelessWidget {
   }
 
   Widget _buildActorRow(BuildContext context) {
-    final author = notification.author;
     final moderationService = maybeModerationService(context);
     final avatarUi =
-        moderationService?.profileUi(author, bsky_moderation.ModerationBehaviorContext.avatar) ??
+        moderationService?.profileUi(notification.author, bsky_moderation.ModerationBehaviorContext.avatar) ??
         const bsky_moderation.ModerationUI();
 
     return Row(
@@ -87,8 +87,8 @@ class NotificationListItem extends StatelessWidget {
         ProfileAvatar(
           size: 28,
           moderationUi: avatarUi,
-          imageUrl: author.avatar,
-          fallbackText: author.displayName ?? author.handle,
+          imageUrl: notification.author.avatar,
+          fallbackText: notification.author.displayName ?? notification.author.handle,
           shape: BoxShape.circle,
           placeholderTextStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black54),
         ),
@@ -96,48 +96,37 @@ class NotificationListItem extends StatelessWidget {
     );
   }
 
-  Widget _buildSummary(BuildContext context, ThemeData theme) {
-    final author = notification.author;
-    final displayName = author.displayName ?? author.handle;
-    final reasonText = _getReasonText(context);
-
-    return RichText(
-      text: TextSpan(
-        children: [
-          TextSpan(
-            text: displayName,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
+  Widget _buildSummary(BuildContext context) => RichText(
+    text: TextSpan(
+      children: [
+        TextSpan(
+          text: notification.author.displayName ?? notification.author.handle,
+          style: context.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: context.colorScheme.onSurface,
           ),
-          TextSpan(
-            text: ' $reasonText',
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+        TextSpan(
+          text: ' ${_getReasonText(context)}',
+          style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant),
+        ),
+      ],
+    ),
+  );
 
   String _getReasonText(BuildContext context) {
     return NotificationReasonUtils.summaryTextForReason(notification.reason, l10n: context.l10n);
   }
 
-  Widget _buildTime(BuildContext context, ThemeData theme) {
-    return Text(
-      formatRelativeTime(notification.indexedAt, nowLabel: context.l10n.commonJustNow, includeAgo: true),
-      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-    );
-  }
+  Widget _buildTime(BuildContext context) => Text(
+    formatRelativeTime(notification.indexedAt, nowLabel: context.l10n.commonJustNow, includeAgo: true),
+    style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
+  );
 
-  bool get _shouldShowPreview {
-    return !NotificationReasonUtils.isProfileNavigationReason(notification.reason);
-  }
+  bool get _shouldShowPreview => !NotificationReasonUtils.isProfileNavigationReason(notification.reason);
 
-  Widget _buildPreview(BuildContext context, ThemeData theme) {
-    final record = notification.record;
-    final text = record['text'] as String?;
+  Widget _buildPreview(BuildContext context) {
+    final text = notification.record['text'] as String?;
     final moderationService = maybeModerationService(context);
     final notificationUi =
         moderationService?.notificationUi(notification, bsky_moderation.ModerationBehaviorContext.contentList) ??
@@ -153,15 +142,15 @@ class NotificationListItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
+          color: context.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: theme.dividerColor),
+          border: Border.all(color: context.theme.dividerColor),
         ),
         child: Text(
           text,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
         ),
       ),
     );

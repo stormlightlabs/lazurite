@@ -1,5 +1,5 @@
 name: lazurite
-description: A material BlueSky client.
+description: A cross-platform ATmosphere client.
 publish_to: "none"
 version: 1.0.0+10
 
@@ -23,13 +23,13 @@ dependencies:
   flutter_bloc: ^9.1.1
   drift: ^2.24.0
   drift_flutter: ^0.2.8
-  go_router: ^17.1.0
+  go_router: ^17.3.0
   path_provider: ^2.1.5
   package_info_plus: ^9.0.1
   path: ^1.9.0
   equatable: ^2.0.7
   freezed_annotation: ^3.1.0
-  json_annotation: ^4.9.0
+  json_annotation: ^4.12.0
   crypto: ^3.0.6
   url_launcher: ^6.3.1
   intl: ^0.20.2
@@ -51,10 +51,10 @@ dependencies:
   chewie: ^1.13.0
   dio: ^5.9.2
   gal: ^2.3.2
-  permission_handler: ^12.0.1
+  permission_handler: ^12.0.3
   provider: ^6.1.5+1
-  objectbox: ^5.3.1
-  objectbox_flutter_libs: ^5.3.1
+  objectbox: ^5.3.2
+  objectbox_flutter_libs: ^5.3.2
   tflite_flutter: ^0.12.1
   flutter_animate: ^4.5.2
   cached_network_image: ^3.4.1
@@ -62,7 +62,7 @@ dependencies:
   flutter_local_notifications: ^19.4.2
   firebase_core: ^4.0.0
   firebase_messaging: ^16.0.0
-  firebase_crashlytics: ^5.2.0
+  firebase_crashlytics: ^5.2.3
   fuzzywuzzy: ^1.2.0
   poptart_bluesky_moderation: ^0.2.0
 
@@ -73,10 +73,10 @@ dev_dependencies:
   drift_dev: ^2.24.0
   build_runner: ^2.4.15
   freezed: ^3.0.0
-  json_serializable: ^6.8.0
+  json_serializable: ^6.14.0
   bloc_test: ^10.0.0
   mocktail: ^1.0.4
-  objectbox_generator: ^5.3.1
+  objectbox_generator: ^5.3.2
   # flutter_native_splash: ^2.4.7
 
 flutter:

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-readonly OBJECTBOX_DART_COMMIT="5c96e04"
+readonly OBJECTBOX_DART_COMMIT="b5d29dc308e4ec0e27fa091c080f04d10b5edd36"
 readonly INSTALL_URL="https://raw.githubusercontent.com/objectbox/objectbox-dart/${OBJECTBOX_DART_COMMIT}/install.sh"
 readonly SCRIPT_NAME="$(basename "$0")"
 

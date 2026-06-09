@@ -1,6 +1,6 @@
 ---
 title: Social Features And Moderation
-updated: 2026-05-07
+updated: 2026-06-08
 ---
 
 Messaging, in-app media, multi-account behavior, offline rendering, moderation, lists,
@@ -62,6 +62,16 @@ Subscribed labeler definitions are cached in Drift so preference screens and
 moderation decisions can use recent data when offline. The XRPC client includes
 the accepted-labelers header on content requests and updates that header when
 preferences change.
+
+Moderation label badges are actionable when the UI has an applied protocol
+label. Feed cards, thread posts, profile headers, search profile rows, and
+notification rows pass the badge's `LabelContext` to the label detail bottom
+sheet. The sheet resolves the labeler service and definition on demand, shows
+raw protocol metadata when details are partial or offline, and keeps labeler
+copy clearly attributed to the third-party labeler rather than Lazurite. The
+canonical labeler-service profile route is `/labelers/:did`; use
+`labelerProfileLocation`/`openLabelerProfile` instead of linking through
+settings-only routes.
 
 ## Lists
 
