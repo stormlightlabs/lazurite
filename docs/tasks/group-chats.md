@@ -20,15 +20,22 @@
 
 ## M1 - Repository Layer
 
-- [ ] Extend `ConvoRepository` with `createGroup`
-- [ ] Extend `ConvoRepository` with `getConvoMembers`
-- [ ] Extend `ConvoRepository` with `addGroupMembers`
-- [ ] Extend `ConvoRepository` with `removeGroupMembers`
-- [ ] Extend `ConvoRepository` with `editGroupName`
-- [ ] Add join-link methods: create, edit, enable, disable, preview
-- [ ] Add join-request methods: request, withdraw, list, approve, reject, mark-read when available
-- [ ] Preserve unauthorized recovery for every new chat API call
-- [ ] Unit tests for success and API error mapping for each repository method
+- [x] Extend `ConvoRepository` with `createGroup`
+- [x] Extend `ConvoRepository` with `getConvoMembers`
+- [x] Extend `ConvoRepository` with `addGroupMembers`
+- [x] Extend `ConvoRepository` with `removeGroupMembers`
+- [x] Extend `ConvoRepository` with `editGroupName`
+- [x] Add join-link methods: create, edit, enable, disable, preview
+- [x] Add join-request methods: request, withdraw, list, approve, reject, mark-read when available
+- [x] Preserve unauthorized recovery for every new chat API call
+- [x] Unit tests for success and API error mapping for each repository method
+
+### Notes
+
+- Added `BlueskyGroupService` to the local poptart adapter and wired generated `chat.bsky.group` APIs through `ConvoRepository`.
+- Added available join-request methods for request, list, approve, and reject. The resolved `bluesky_poptart 0.1.1` package does not generate withdraw or mark-read endpoints, so no repository methods were added for unavailable APIs.
+- Every new repository method runs through the existing `UnauthorizedRecoveryRunner`.
+- Repository tests cover success and API error propagation for every added method.
 
 ## M2 - Conversation List Support
 

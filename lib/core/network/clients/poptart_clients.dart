@@ -194,6 +194,7 @@ class BlueskyChat extends Bluesky {
   }
 
   BlueskyConvoService get convo => BlueskyConvoService._(_client);
+  BlueskyGroupService get group => BlueskyGroupService._(_client);
 }
 
 typedef ATProto = BlueskyAtProto;
