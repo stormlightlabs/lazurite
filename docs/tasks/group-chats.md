@@ -67,32 +67,55 @@
 
 ## M3 - Create Group Flow
 
-- [ ] Add `/alerts/messages/new-group` route
-- [ ] Add create group screen from the messages tab
-- [ ] Add group name input with protocol-aligned validation
-- [ ] Add profile search/member picker
-- [ ] Add selected member list/chips with removal
-- [ ] Disable create until name and at least one member are valid
-- [ ] Call `ConvoRepository.createGroup`
-- [ ] Navigate to the created conversation thread on success
-- [ ] Show actionable errors for blocked users, forbidden groups, follow restrictions,
+- [x] Add `/alerts/messages/new-group` route
+- [x] Add create group screen from the messages tab
+- [x] Add group name input with protocol-aligned validation
+- [x] Add profile search/member picker
+- [x] Add selected member list/chips with removal
+- [x] Disable create until name and at least one member are valid
+- [x] Call `ConvoRepository.createGroup`
+- [x] Navigate to the created conversation thread on success
+- [x] Show actionable errors for blocked users, forbidden groups, follow restrictions,
       and recipient not found
-- [ ] Bloc/widget tests for validation, success, and error states
+- [x] Bloc/widget tests for validation, success, and error states
+
+### Notes
+
+- Added `GroupCreateCubit` to own name/member validation, duplicate/self-invite prevention,
+  submission state, and protocol error mapping.
+- Added the create group route and a messages-tab action that opens it.
+- The create screen uses the existing `TypeaheadRepository` for profile search, selected
+  member chips for removal, and navigates to the created thread after inserting the
+  created conversation into the inbox state.
+- Tests cover cubit validation, repository success, protocol error copy, member picker
+  behavior, route construction, and success navigation.
 
 ## M4 - Group Message Thread
 
-- [ ] Load or pass `ConvoView` into `MessageThreadScreen` so group metadata is available
-- [ ] Use group name in the app bar for group conversations
-- [ ] Show member count in the thread header or details entry point
-- [ ] Render group system messages inline
-- [ ] Disable message input for locked/permanently locked group conversations
-- [ ] Respect request status before allowing sends
-- [ ] Keep direct conversation behavior unchanged
-- [ ] Widget tests for group title, system message rendering, locked input, and normal sends
+- [x] Load or pass `ConvoView` into `MessageThreadScreen` so group metadata is available
+- [x] Use group name in the app bar for group conversations
+- [x] Show member count in the thread header or details entry point
+- [x] Render group system messages inline
+- [x] Disable message input for locked/permanently locked group conversations
+- [x] Respect request status before allowing sends
+- [x] Keep direct conversation behavior unchanged
+- [x] Widget tests for group title, system message rendering, locked input, and normal sends
+
+### Notes
+
+- `MessageThreadRouteArgs` now carries an optional `ConvoView`; inbox and create-group
+  navigation pass the conversation metadata into the thread.
+- Group threads derive the app bar title and member-count subtitle from `GroupConvo`.
+- Group system messages render as concise inline status rows, with unknown/unstable events
+  falling back to a generic group update.
+- The message input is disabled for request conversations and for locked or permanently
+  locked group conversations.
+- Direct conversations keep the existing title and send behavior when no group metadata is
+  present.
 
 ## M5 - Group Details And Member List
 
-- [ ] Add `/alerts/messages/:id/details` route or equivalent details sheet
+- [ ] Add `/alerts/messages/:id/details` route
 - [ ] Fetch full members with `getConvoMembers`
 - [ ] Paginate member list
 - [ ] Show group name, member count, member limit, muted state, and lock status
@@ -126,5 +149,3 @@
 - [ ] Review copy for privacy and trust boundaries around join links and group invites
 - [ ] Run `flutter analyze`
 - [ ] Run `gtimeout 1200s flutter test --reporter=failures-only`
-- [ ] Update developer docs if the final routing or message architecture differs from this
-      spec

@@ -46,3 +46,12 @@ class ConvoTabChanged extends ConvoListEvent {
   @override
   List<Object?> get props => [tab];
 }
+
+class ConvoUpserted extends ConvoListEvent {
+  const ConvoUpserted({required this.convo});
+
+  final ConvoView convo;
+
+  @override
+  List<Object?> get props => [convo];
+}

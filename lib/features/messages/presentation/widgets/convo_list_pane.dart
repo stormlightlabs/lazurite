@@ -166,13 +166,19 @@ class _ConvoListPaneState extends State<ConvoListPane> {
   void _openThread(BuildContext context, ConvoView convo, String currentUserDid) {
     final group = convo.kind?.groupConvo;
     if (group != null) {
-      context.push('/alerts/messages/${convo.id}', extra: MessageThreadRouteArgs(title: group.name));
+      context.push(
+        '/alerts/messages/${convo.id}',
+        extra: MessageThreadRouteArgs(title: group.name, convo: convo),
+      );
       return;
     }
 
     final other = convo.members.where((m) => m.did != currentUserDid).firstOrNull;
     final title = other?.displayName ?? other?.handle ?? context.l10n.labelConversation;
-    context.push('/alerts/messages/${convo.id}', extra: MessageThreadRouteArgs(title: title));
+    context.push(
+      '/alerts/messages/${convo.id}',
+      extra: MessageThreadRouteArgs(title: title, convo: convo),
+    );
   }
 }
 

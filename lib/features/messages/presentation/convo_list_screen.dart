@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/router/app_shell.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
@@ -43,6 +44,13 @@ class _ConvoListScreenState extends State<ConvoListScreen> with SingleTickerProv
       appBar: AppBar(
         leading: const AppShellMenuButton(),
         title: Text(context.l10n.labelMessages, style: context.textTheme.titleMedium),
+        actions: [
+          IconButton(
+            tooltip: 'New group',
+            icon: const Icon(Icons.group_add_outlined),
+            onPressed: () => context.push('/alerts/messages/new-group'),
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: [

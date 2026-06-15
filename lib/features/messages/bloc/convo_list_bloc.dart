@@ -16,6 +16,7 @@ class ConvoListBloc extends Bloc<ConvoListEvent, ConvoListState> {
     on<ConvoMuted>(_onConvoMuted);
     on<ConvoUnmuted>(_onConvoUnmuted);
     on<ConvoTabChanged>(_onConvoTabChanged);
+    on<ConvoUpserted>(_onConvoUpserted);
   }
 
   final ConvoRepository _convoRepository;
@@ -77,5 +78,10 @@ class ConvoListBloc extends Bloc<ConvoListEvent, ConvoListState> {
 
   void _onConvoTabChanged(ConvoTabChanged event, Emitter<ConvoListState> emit) {
     emit(state.copyWith(activeTab: event.tab));
+  }
+
+  void _onConvoUpserted(ConvoUpserted event, Emitter<ConvoListState> emit) {
+    final convos = [event.convo, ...state.convos.where((convo) => convo.id != event.convo.id)];
+    emit(state.copyWith(status: ConvoListStatus.loaded, convos: convos));
   }
 }

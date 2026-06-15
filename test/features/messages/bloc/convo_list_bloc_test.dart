@@ -154,5 +154,19 @@ void main() {
       act: (bloc) => bloc.add(const ConvoTabChanged(tab: ConvoTab.primary)),
       expect: () => [predicate<ConvoListState>((state) => state.activeTab == ConvoTab.primary)],
     );
+
+    blocTest<ConvoListBloc, ConvoListState>(
+      'upserts created conversations at the top of the list',
+      build: () => ConvoListBloc(convoRepository: mockConvoRepository),
+      seed: () => ConvoListState.loaded(convos: [makeConvoView('c1'), makeConvoView('c2')], cursor: null),
+      act: (bloc) => bloc.add(ConvoUpserted(convo: makeConvoView('c2'))),
+      expect: () => [
+        predicate<ConvoListState>(
+          (state) =>
+              state.status == ConvoListStatus.loaded &&
+              state.convos.map((convo) => convo.id).toList().join(',') == 'c2,c1',
+        ),
+      ],
+    );
   });
 }

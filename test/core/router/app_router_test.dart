@@ -23,6 +23,7 @@ import 'package:lazurite/features/feed/data/post_thread_repository.dart';
 import 'package:lazurite/features/feed/presentation/media/image_viewer_route_args.dart';
 import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
+import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/notifications/cubit/unread_count_cubit.dart';
 import 'package:lazurite/features/notifications/data/notification_repository.dart';
 import 'package:lazurite/features/profile/bloc/profile_bloc.dart';
@@ -61,6 +62,8 @@ class MockAccountSwitcherCubit extends MockCubit<AccountSwitcherState> implement
 class MockUnreadCountCubit extends MockCubit<UnreadCountState> implements UnreadCountCubit {}
 
 class MockConvoListBloc extends MockBloc<ConvoListEvent, ConvoListState> implements ConvoListBloc {}
+
+class MockConvoRepository extends Mock implements ConvoRepository {}
 
 class MockNotificationRepository extends Mock implements NotificationRepository {}
 
@@ -122,6 +125,7 @@ void main() {
   late MockAccountSwitcherCubit accountSwitcherCubit;
   late MockUnreadCountCubit unreadCountCubit;
   late MockConvoListBloc convoListBloc;
+  late MockConvoRepository convoRepository;
   late MockNotificationRepository notificationRepository;
   late MockProfileRepository profileRepository;
   late MockProfileActionRepository profileActionRepository;
@@ -160,6 +164,7 @@ void main() {
     accountSwitcherCubit = MockAccountSwitcherCubit();
     unreadCountCubit = MockUnreadCountCubit();
     convoListBloc = MockConvoListBloc();
+    convoRepository = MockConvoRepository();
     notificationRepository = MockNotificationRepository();
     profileRepository = MockProfileRepository();
     profileActionRepository = MockProfileActionRepository();
@@ -188,6 +193,7 @@ void main() {
     when(() => accountSwitcherCubit.state).thenReturn(const AccountSwitcherState.ready(accounts: []));
     when(() => accountSwitcherCubit.loadAccounts()).thenAnswer((_) async {});
     when(() => unreadCountCubit.state).thenReturn(const UnreadCountState(0));
+    when(() => unreadCountCubit.refresh()).thenAnswer((_) async {});
     when(() => convoListBloc.state).thenReturn(const ConvoListState.loaded(convos: [], cursor: null, hasMore: false));
     when(() => notificationRepository.getUnreadCount()).thenAnswer((_) async => 0);
     when(() => profileRepository.getProfile(any())).thenAnswer((invocation) async {
@@ -284,6 +290,7 @@ void main() {
           RepositoryProvider<ProfileRepository>.value(value: profileRepository),
           RepositoryProvider<ProfileActionRepository>.value(value: profileActionRepository),
           RepositoryProvider<FeedRepository>.value(value: feedRepository),
+          RepositoryProvider<ConvoRepository>.value(value: convoRepository),
           RepositoryProvider<PublicContentRepository>.value(value: const FakePublicContentRepository()),
           RepositoryProvider<String>.value(value: tokens.did),
         ],
@@ -413,6 +420,21 @@ void main() {
 
     expect(find.text('Edit profile'), findsOneWidget);
     expect(find.byKey(const ValueKey('profile_edit_save_button')), findsOneWidget);
+
+    router.dispose();
+  });
+
+  testWidgets('messages new group route builds the create group screen', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final router = AppRouter(authBloc: authBloc).router;
+
+    await tester.pumpWidget(buildSubjectWithRouter(router));
+    router.go('/alerts/messages/new-group');
+    await tester.pumpAndSettle();
+
+    expect(find.text('New group'), findsOneWidget);
+    expect(find.byKey(const ValueKey('create_group_name_field')), findsOneWidget);
 
     router.dispose();
   });

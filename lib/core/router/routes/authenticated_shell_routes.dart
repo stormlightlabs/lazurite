@@ -11,8 +11,10 @@ import 'package:lazurite/features/alerts/presentation/alerts_screen.dart';
 import 'package:lazurite/features/feed/presentation/feed_management_screen.dart';
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
 import 'package:lazurite/features/feed/presentation/trending_screen.dart';
+import 'package:lazurite/features/messages/bloc/group_create_cubit.dart';
 import 'package:lazurite/features/messages/bloc/message_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
+import 'package:lazurite/features/messages/presentation/create_group_screen.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_edit_screen.dart';
@@ -115,6 +117,20 @@ StatefulShellRoute buildAuthenticatedShellRoute({
                 ),
                 routes: [
                   GoRoute(
+                    path: 'new-group',
+                    pageBuilder: (context, state) => buildAppRoutePage(
+                      context,
+                      state,
+                      BlocProvider(
+                        create: (_) => GroupCreateCubit(
+                          convoRepository: context.read<ConvoRepository>(),
+                          currentUserDid: context.read<String>(),
+                        ),
+                        child: const CreateGroupScreen(),
+                      ),
+                    ),
+                  ),
+                  GoRoute(
                     path: ':id',
                     pageBuilder: (context, state) {
                       final convoId = state.pathParameters['id']!;
@@ -127,7 +143,11 @@ StatefulShellRoute buildAuthenticatedShellRoute({
                             convoRepository: context.read<ConvoRepository>(),
                             currentUserDid: context.read<String>(),
                           ),
-                          child: MessageThreadScreen(convoId: convoId, title: args?.title ?? 'Conversation'),
+                          child: MessageThreadScreen(
+                            convoId: convoId,
+                            title: args?.title ?? 'Conversation',
+                            convo: args?.convo,
+                          ),
                         ),
                       );
                     },
