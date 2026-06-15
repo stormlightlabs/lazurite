@@ -90,6 +90,21 @@ void main() {
       expect(convo.id, 'created-group');
     });
 
+    test('getConvo returns conversation by id', () async {
+      final repository = ConvoRepository(
+        chat: _ScriptedTransport(
+          getReplies: [
+            _okReply({'convo': testGroupConvoJson(id: testConvoId)}),
+          ],
+        ).createChat(),
+      );
+
+      final convo = await repository.getConvo(testConvoId);
+
+      expect(convo.id, testConvoId);
+      expect(convo.kind?.isGroupConvo, isTrue);
+    });
+
     test('getConvoMembers returns paginated members', () async {
       final repository = ConvoRepository(
         chat: _ScriptedTransport(getReplies: [_okReply(testGroupMemberPageJson(cursor: 'next-members'))]).createChat(),
@@ -293,6 +308,19 @@ void main() {
       expect(transport.postCalls, 1);
     });
 
+    test('leaveConvo completes on leave response', () async {
+      final transport = _ScriptedTransport(
+        postReplies: [
+          _okReply({'convoId': testConvoId, 'rev': 'rev-left'}),
+        ],
+      );
+      final repository = ConvoRepository(chat: transport.createChat());
+
+      await repository.leaveConvo(testConvoId);
+
+      expect(transport.postCalls, 1);
+    });
+
     for (final scenario in _groupApiErrorScenarios()) {
       test('${scenario.name} rethrows API errors', () async {
         final repository = ConvoRepository(
@@ -416,6 +444,7 @@ List<_RepositoryScenario> _groupApiErrorScenarios() {
       usesGet: false,
       call: (repository) => repository.createGroup(name: testGroupName, memberDids: [testMemberDid]),
     ),
+    _RepositoryScenario(name: 'getConvo', usesGet: true, call: (repository) => repository.getConvo(testConvoId)),
     _RepositoryScenario(
       name: 'getConvoMembers',
       usesGet: true,
@@ -484,6 +513,7 @@ List<_RepositoryScenario> _groupApiErrorScenarios() {
       usesGet: false,
       call: (repository) => repository.rejectJoinRequest(testConvoId, testMemberDid),
     ),
+    _RepositoryScenario(name: 'leaveConvo', usesGet: false, call: (repository) => repository.leaveConvo(testConvoId)),
   ];
 }
 

@@ -12,6 +12,10 @@ class BlueskyConvoService {
     );
   }
 
+  Future<XRPCResponse<ConvoGetConvoOutput>> getConvo({required String convoId}) {
+    return _client.call(chatBskyConvoGetConvo, parameters: ConvoGetConvoInput(convoId: convoId));
+  }
+
   Future<XRPCResponse<ConvoGetConvoForMembersOutput>> getConvoForMembers({required List<String> members}) {
     return _client.call(chatBskyConvoGetConvoForMembers, parameters: ConvoGetConvoForMembersInput(members: members));
   }
@@ -59,6 +63,10 @@ class BlueskyConvoService {
       chatBskyConvoUpdateRead,
       input: ConvoUpdateReadInput(convoId: convoId, messageId: messageId),
     );
+  }
+
+  Future<XRPCResponse<ConvoLeaveConvoOutput>> leaveConvo({required String convoId}) {
+    return _client.call(chatBskyConvoLeaveConvo, input: ConvoLeaveConvoInput(convoId: convoId));
   }
 }
 

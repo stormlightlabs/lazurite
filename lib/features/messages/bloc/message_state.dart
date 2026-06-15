@@ -11,6 +11,7 @@ class MessageState extends Equatable {
     this.cursor,
     this.hasMore = false,
     this.convoId,
+    this.convo,
     this.isSending = false,
     this.isLoadingMore = false,
     this.errorMessage,
@@ -25,7 +26,15 @@ class MessageState extends Equatable {
     String? cursor,
     bool hasMore = false,
     required String convoId,
-  }) : this._(status: MessageStatus.loaded, messages: messages, cursor: cursor, hasMore: hasMore, convoId: convoId);
+    ConvoView? convo,
+  }) : this._(
+         status: MessageStatus.loaded,
+         messages: messages,
+         cursor: cursor,
+         hasMore: hasMore,
+         convoId: convoId,
+         convo: convo,
+       );
 
   const MessageState.error(String message) : this._(status: MessageStatus.error, errorMessage: message);
 
@@ -34,6 +43,7 @@ class MessageState extends Equatable {
   final String? cursor;
   final bool hasMore;
   final String? convoId;
+  final ConvoView? convo;
   final bool isSending;
   final bool isLoadingMore;
   final String? errorMessage;
@@ -44,6 +54,7 @@ class MessageState extends Equatable {
     Object? cursor = _messageStateNoValue,
     bool? hasMore,
     Object? convoId = _messageStateNoValue,
+    Object? convo = _messageStateNoValue,
     bool? isSending,
     bool? isLoadingMore,
     Object? errorMessage = _messageStateNoValue,
@@ -53,11 +64,22 @@ class MessageState extends Equatable {
     cursor: identical(cursor, _messageStateNoValue) ? this.cursor : cursor as String?,
     hasMore: hasMore ?? this.hasMore,
     convoId: identical(convoId, _messageStateNoValue) ? this.convoId : convoId as String?,
+    convo: identical(convo, _messageStateNoValue) ? this.convo : convo as ConvoView?,
     isSending: isSending ?? this.isSending,
     isLoadingMore: isLoadingMore ?? this.isLoadingMore,
     errorMessage: identical(errorMessage, _messageStateNoValue) ? this.errorMessage : errorMessage as String?,
   );
 
   @override
-  List<Object?> get props => [status, messages, cursor, hasMore, convoId, isSending, isLoadingMore, errorMessage];
+  List<Object?> get props => [
+    status,
+    messages,
+    cursor,
+    hasMore,
+    convoId,
+    convo,
+    isSending,
+    isLoadingMore,
+    errorMessage,
+  ];
 }

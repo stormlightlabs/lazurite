@@ -12,9 +12,12 @@ import 'package:lazurite/features/feed/presentation/feed_management_screen.dart'
 import 'package:lazurite/features/feed/presentation/home_feed_screen.dart';
 import 'package:lazurite/features/feed/presentation/trending_screen.dart';
 import 'package:lazurite/features/messages/bloc/group_create_cubit.dart';
+import 'package:lazurite/features/messages/bloc/group_details_cubit.dart';
 import 'package:lazurite/features/messages/bloc/message_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/messages/presentation/create_group_screen.dart';
+import 'package:lazurite/features/messages/presentation/group_details_route_args.dart';
+import 'package:lazurite/features/messages/presentation/group_details_screen.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_edit_screen.dart';
@@ -151,6 +154,28 @@ StatefulShellRoute buildAuthenticatedShellRoute({
                         ),
                       );
                     },
+                    routes: [
+                      GoRoute(
+                        path: 'details',
+                        pageBuilder: (context, state) {
+                          final convoId = state.pathParameters['id']!;
+                          final args = state.extra as GroupDetailsRouteArgs?;
+                          return buildAppRoutePage(
+                            context,
+                            state,
+                            BlocProvider(
+                              create: (_) => GroupDetailsCubit(
+                                convoRepository: context.read<ConvoRepository>(),
+                                convoId: convoId,
+                                currentUserDid: context.read<String>(),
+                                initialConvo: args?.convo,
+                              ),
+                              child: GroupDetailsScreen(convoId: convoId),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),

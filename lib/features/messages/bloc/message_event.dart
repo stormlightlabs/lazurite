@@ -8,13 +8,14 @@ sealed class MessageEvent extends Equatable {
 }
 
 class MessagesRequested extends MessageEvent {
-  const MessagesRequested({required this.convoId, this.limit = 50});
+  const MessagesRequested({required this.convoId, this.limit = 50, this.initialConvo});
 
   final String convoId;
   final int limit;
+  final ConvoView? initialConvo;
 
   @override
-  List<Object?> get props => [convoId, limit];
+  List<Object?> get props => [convoId, limit, initialConvo];
 }
 
 class MessagesPageLoaded extends MessageEvent {

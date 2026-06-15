@@ -1,4 +1,5 @@
 import 'package:bluesky_poptart/chat/bsky/convo/get_messages.dart';
+import 'package:bluesky_poptart/chat/bsky/convo/defs.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
@@ -28,6 +29,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     emit(const MessageState.loading());
 
     try {
+      final convo = event.initialConvo ?? await _convoRepository.getConvo(event.convoId);
       final result = await _convoRepository.getMessages(event.convoId, limit: event.limit);
 
       emit(
@@ -36,6 +38,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
           cursor: result.cursor,
           hasMore: result.cursor != null,
           convoId: event.convoId,
+          convo: convo,
         ),
       );
     } catch (error) {

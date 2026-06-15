@@ -115,16 +115,25 @@
 
 ## M5 - Group Details And Member List
 
-- [ ] Add `/alerts/messages/:id/details` route
-- [ ] Fetch full members with `getConvoMembers`
-- [ ] Paginate member list
-- [ ] Show group name, member count, member limit, muted state, and lock status
-- [ ] Show leave conversation action
-- [ ] Show rename/add/remove controls only where appropriate
-- [ ] Handle `InsufficientRole` responses without leaving stale UI
-- [ ] Refresh conversation/member state after each mutation
-- [ ] Tests for member pagination, leave, rename, add member, remove member, and
+- [x] Add `/alerts/messages/:id/details` route
+- [x] Fetch full members with `getConvoMembers`
+- [x] Paginate member list
+- [x] Show group name, member count, member limit, muted state, and lock status
+- [x] Show leave conversation action
+- [x] Show rename/add/remove controls only where appropriate
+- [x] Handle `InsufficientRole` responses without leaving stale UI
+- [x] Refresh conversation/member state after each mutation
+- [x] Tests for member pagination, leave, rename, add member, remove member, and
       insufficient role
+
+### Notes
+
+- Added single-conversation fetch and leave methods to `ConvoRepository`, so deep-linked
+  message routes can hydrate the full `ConvoView` instead of rendering a title-only thread.
+- Added the group details route from the message thread app bar with paginated member
+  loading, owner-only rename/add/remove controls, leave handling, and mutation refresh.
+- Tests cover deep-linked group metadata hydration, repository get/leave calls, member
+  pagination, leave, rename, add, remove, and insufficient-role errors.
 
 ## M6 - Join Links And Join Requests
 

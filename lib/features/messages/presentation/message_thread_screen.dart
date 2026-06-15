@@ -3,10 +3,12 @@ import 'package:bluesky_poptart/chat/bsky/convo/get_messages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/bloc/message_bloc.dart';
+import 'package:lazurite/features/messages/presentation/group_details_route_args.dart';
 import 'package:lazurite/features/messages/presentation/widgets/message_bubble.dart';
 
 class MessageThreadScreen extends StatefulWidget {
@@ -30,7 +32,7 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     context.read<MessageBloc>()
-      ..add(MessagesRequested(convoId: widget.convoId))
+      ..add(MessagesRequested(convoId: widget.convoId, initialConvo: widget.convo))
       ..add(const ConvoMarkedRead());
   }
 
@@ -56,7 +58,7 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
   }
 
   void _sendMessage() {
-    if (_inputDisabledReason != null) return;
+    if (_inputDisabledReason(context.read<MessageBloc>().state) != null) return;
     final text = _textController.text.trim();
     if (text.isEmpty) return;
     _textController.clear();
@@ -83,25 +85,25 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
 
   ThemeData get _theme => Theme.of(context);
 
-  GroupConvo? get _group => widget.convo?.kind?.groupConvo;
+  GroupConvo? _group(MessageState state) => (state.convo ?? widget.convo)?.kind?.groupConvo;
 
-  String get _threadTitle => _group?.name ?? widget.title;
+  String _threadTitle(MessageState state) => _group(state)?.name ?? widget.title;
 
-  String? get _threadSubtitle {
-    final group = _group;
+  String? _threadSubtitle(MessageState state) {
+    final group = _group(state);
     if (group == null) return null;
     final count = group.memberCount;
     return count == 1 ? '1 member' : '$count members';
   }
 
-  String? get _inputDisabledReason {
-    final convo = widget.convo;
+  String? _inputDisabledReason(MessageState state) {
+    final convo = state.convo ?? widget.convo;
     final status = convo?.status?.knownValue;
     if (status == KnownConvoStatus.request) {
       return 'Accept the message request before replying.';
     }
 
-    final lockStatus = _group?.lockStatus.knownValue;
+    final lockStatus = _group(state)?.lockStatus.knownValue;
     if (lockStatus == KnownConvoLockStatus.lockedPermanently) {
       return 'This group is permanently locked.';
     }
@@ -117,32 +119,60 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_threadTitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: _theme.textTheme.titleMedium),
-            if (_threadSubtitle != null)
-              Text(
-                _threadSubtitle!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: _theme.textTheme.bodySmall?.copyWith(color: _theme.colorScheme.onSurfaceVariant),
-              ),
-          ],
+        title: BlocBuilder<MessageBloc, MessageState>(
+          buildWhen: (previous, current) => previous.convo != current.convo,
+          builder: (context, state) {
+            final subtitle = _threadSubtitle(state);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _threadTitle(state),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _theme.textTheme.titleMedium,
+                ),
+                if (subtitle != null)
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: _theme.textTheme.bodySmall?.copyWith(color: _theme.colorScheme.onSurfaceVariant),
+                  ),
+              ],
+            );
+          },
         ),
         actions: [
           BlocBuilder<MessageBloc, MessageState>(
-            builder: (context, state) => PopupMenuButton<_ThreadAction>(
-              onSelected: (action) {
-                if (action == _ThreadAction.copyAll && state.messages.isNotEmpty) {
-                  _copyAllMessages(state.messages);
-                }
-              },
-              itemBuilder: (_) => [
-                PopupMenuItem(value: _ThreadAction.copyAll, child: Text(context.l10n.buttonCopyAll)),
-              ],
-            ),
+            builder: (context, state) {
+              final convo = state.convo ?? widget.convo;
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (convo?.kind?.groupConvo != null)
+                    IconButton(
+                      tooltip: 'Group details',
+                      icon: const Icon(Icons.info_outline),
+                      onPressed: () => context.push(
+                        '/alerts/messages/${widget.convoId}/details',
+                        extra: GroupDetailsRouteArgs(convo: convo),
+                      ),
+                    ),
+                  PopupMenuButton<_ThreadAction>(
+                    onSelected: (action) {
+                      if (action == _ThreadAction.copyAll && state.messages.isNotEmpty) {
+                        _copyAllMessages(state.messages);
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(value: _ThreadAction.copyAll, child: Text(context.l10n.buttonCopyAll)),
+                    ],
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -190,14 +220,18 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildInputBar(context),
+          BlocBuilder<MessageBloc, MessageState>(
+            buildWhen: (previous, current) =>
+                previous.convo != current.convo || previous.isSending != current.isSending,
+            builder: (context, state) => _buildInputBar(context, state),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildInputBar(BuildContext context) {
-    final disabledReason = _inputDisabledReason;
+  Widget _buildInputBar(BuildContext context, MessageState state) {
+    final disabledReason = _inputDisabledReason(state);
     final inputEnabled = disabledReason == null;
 
     return SafeArea(
@@ -243,16 +277,14 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            BlocBuilder<MessageBloc, MessageState>(
-              builder: (context, state) => IconButton.filled(
-                onPressed: inputEnabled && !state.isSending ? _sendMessage : null,
-                icon: state.isSending
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : Icon(
-                        Icons.send,
-                        color: inputEnabled ? _theme.colorScheme.onPrimary : _theme.colorScheme.onSurfaceVariant,
-                      ),
-              ),
+            IconButton.filled(
+              onPressed: inputEnabled && !state.isSending ? _sendMessage : null,
+              icon: state.isSending
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : Icon(
+                      Icons.send,
+                      color: inputEnabled ? _theme.colorScheme.onPrimary : _theme.colorScheme.onSurfaceVariant,
+                    ),
             ),
           ],
         ),

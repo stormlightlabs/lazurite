@@ -67,13 +67,17 @@ void main() {
   UConvoGetMessagesMessages makeSystemMessage(Map<String, Object?> json) =>
       UConvoGetMessagesMessages.systemMessageView(data: SystemMessageView.fromJson(json));
 
-  Widget buildSubject({String title = 'Test Convo', ConvoView? convo}) {
+  Widget buildSubject({String title = 'Test Convo', ConvoView? convo, bool passConvo = true}) {
     return RepositoryProvider<String>.value(
       value: currentUserDid,
       child: MaterialApp(
         home: BlocProvider(
           create: (_) => MessageBloc(convoRepository: mockRepository, currentUserDid: currentUserDid),
-          child: MessageThreadScreen(convoId: convoId, title: title, convo: convo),
+          child: MessageThreadScreen(
+            convoId: convoId,
+            title: title,
+            convo: passConvo ? (convo ?? makeDirectConvo()) : null,
+          ),
         ),
       ),
     );
@@ -127,6 +131,26 @@ void main() {
       expect(find.text('Release Planning'), findsOneWidget);
       expect(find.text('4 members'), findsOneWidget);
       expect(find.text('Fallback title'), findsNothing);
+    });
+
+    testWidgets('hydrates deep-linked group metadata before rendering title', (tester) async {
+      final convo = makeGroupConvo(name: 'Deep Link Group', memberCount: 7);
+      when(() => mockRepository.getConvo(convoId)).thenAnswer((_) async => convo);
+      when(
+        () => mockRepository.getMessages(
+          any(),
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => MessageListResult(messages: [], cursor: null));
+      when(() => mockRepository.updateRead(any())).thenAnswer((_) async {});
+
+      await tester.pumpWidget(buildSubject(title: 'Conversation', passConvo: false));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Deep Link Group'), findsOneWidget);
+      expect(find.text('7 members'), findsOneWidget);
+      verify(() => mockRepository.getConvo(convoId)).called(1);
     });
 
     testWidgets('shows empty state when no messages', (tester) async {

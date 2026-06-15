@@ -33,6 +33,11 @@ class ConvoRepository {
     return response.data.convo;
   }
 
+  Future<ConvoView> getConvo(String convoId) async {
+    final response = await _authRecovery.run((client) => client.convo.getConvo(convoId: convoId));
+    return response.data.convo;
+  }
+
   Future<ConvoView> createGroup({required String name, required List<String> memberDids}) async {
     final response = await _authRecovery.run((client) => client.group.createGroup(name: name, members: memberDids));
     return response.data.convo;
@@ -156,6 +161,10 @@ class ConvoRepository {
 
   Future<void> updateRead(String convoId) async {
     await _authRecovery.run((client) => client.convo.updateRead(convoId: convoId));
+  }
+
+  Future<void> leaveConvo(String convoId) async {
+    await _authRecovery.run((client) => client.convo.leaveConvo(convoId: convoId));
   }
 }
 

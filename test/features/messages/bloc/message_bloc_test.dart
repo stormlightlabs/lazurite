@@ -6,6 +6,8 @@ import 'package:lazurite/features/messages/bloc/message_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../helpers/fixtures/messages.dart';
+
 class MockConvoRepository extends Mock implements ConvoRepository {}
 
 void main() {
@@ -16,6 +18,9 @@ void main() {
 
   setUp(() {
     mockConvoRepository = MockConvoRepository();
+    when(
+      () => mockConvoRepository.getConvo(any()),
+    ).thenAnswer((_) async => ConvoView.fromJson(testDirectConvoJson(id: testConvoId)));
   });
 
   MessageView makeMessageView(String id, String text) => MessageView(
