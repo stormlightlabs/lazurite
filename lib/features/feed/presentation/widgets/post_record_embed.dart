@@ -12,6 +12,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/feed/presentation/widgets/facet_text.dart';
+import 'package:lazurite/features/feed/presentation/widgets/gallery_embed_adapter.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_text_styles.dart';
 import 'package:lazurite/shared/presentation/widgets/actor_name_widget.dart';
 import 'package:lazurite/shared/presentation/widgets/profile_avatar.dart';
@@ -314,6 +315,10 @@ class PostRecordEmbed extends StatelessWidget {
       );
     }
     if (embed.isUnknown) {
+      final galleryImages = galleryImagesFromUnknownEmbed(embed.unknown);
+      if (galleryImages.isNotEmpty) {
+        return buildImagesEmbed(context, galleryImages, heroNamespace: '$heroNamespace/gallery');
+      }
       return buildUnknownEmbed(context);
     }
 
@@ -333,6 +338,12 @@ class PostRecordEmbed extends StatelessWidget {
     }
     if (media.isEmbedVideoView) {
       return buildVideoEmbed(context, media.embedVideoView!);
+    }
+    if (media.isUnknown) {
+      final galleryImages = galleryImagesFromUnknownEmbed(media.unknown);
+      if (galleryImages.isNotEmpty) {
+        return buildImagesEmbed(context, galleryImages, heroNamespace: '$heroNamespace/gallery');
+      }
     }
     return buildUnknownEmbed(context);
   }

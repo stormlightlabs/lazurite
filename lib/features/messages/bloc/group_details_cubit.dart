@@ -1,5 +1,6 @@
 import 'package:bluesky_poptart/chat/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/chat/bsky/convo/defs.dart';
+import 'package:bluesky_poptart/chat/bsky/group/defs.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
@@ -37,6 +38,9 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
           errorMessage: null,
         ),
       );
+      if (state.canManage(_currentUserDid)) {
+        await loadJoinRequests();
+      }
     } catch (error) {
       emit(state.copyWith(status: GroupDetailsStatus.error, errorMessage: 'Failed to load group details.'));
     }
@@ -67,9 +71,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     await _mutate(() => _convoRepository.editGroupName(_convoId, trimmed));
   }
 
-  Future<void> addMember(String did) async {
-    await _mutate(() => _convoRepository.addGroupMembers(_convoId, [did]));
-  }
+  Future<void> addMember(String did) async => await _mutate(() => _convoRepository.addGroupMembers(_convoId, [did]));
 
   Future<void> removeMember(String did) async {
     if (did == _currentUserDid) return;
@@ -81,6 +83,93 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     try {
       await _convoRepository.leaveConvo(_convoId);
       emit(state.copyWith(isMutating: false, leaveSucceeded: true));
+    } catch (error) {
+      emit(state.copyWith(isMutating: false, errorMessage: _groupDetailsErrorMessage(error)));
+    }
+  }
+
+  Future<void> createJoinLink({required JoinRule joinRule, required bool requireApproval}) async {
+    await _mutateJoinLink(
+      () => _convoRepository.createJoinLink(convoId: _convoId, joinRule: joinRule, requireApproval: requireApproval),
+    );
+  }
+
+  Future<void> editJoinLink({required JoinRule joinRule, required bool requireApproval}) async {
+    await _mutateJoinLink(
+      () => _convoRepository.editJoinLink(convoId: _convoId, joinRule: joinRule, requireApproval: requireApproval),
+    );
+  }
+
+  Future<void> enableJoinLink() async => await _mutateJoinLink(() => _convoRepository.enableJoinLink(_convoId));
+
+  Future<void> disableJoinLink() async => await _mutateJoinLink(() => _convoRepository.disableJoinLink(_convoId));
+
+  Future<void> loadJoinRequests() async {
+    if (state.isLoadingJoinRequests) return;
+    emit(state.copyWith(isLoadingJoinRequests: true, errorMessage: null));
+    try {
+      final page = await _convoRepository.listJoinRequests(_convoId);
+      await _convoRepository.updateJoinRequestsRead(_convoId);
+      emit(
+        state.copyWith(
+          joinRequests: page.requests,
+          joinRequestsCursor: page.cursor,
+          hasMoreJoinRequests: page.cursor != null,
+          isLoadingJoinRequests: false,
+          errorMessage: null,
+        ),
+      );
+    } catch (error) {
+      emit(state.copyWith(isLoadingJoinRequests: false, errorMessage: _groupDetailsErrorMessage(error)));
+    }
+  }
+
+  Future<void> loadMoreJoinRequests() async {
+    if (!state.hasMoreJoinRequests || state.isLoadingJoinRequests) return;
+    emit(state.copyWith(isLoadingJoinRequests: true));
+    try {
+      final page = await _convoRepository.listJoinRequests(_convoId, cursor: state.joinRequestsCursor);
+      emit(
+        state.copyWith(
+          joinRequests: [...state.joinRequests, ...page.requests],
+          joinRequestsCursor: page.cursor,
+          hasMoreJoinRequests: page.cursor != null,
+          isLoadingJoinRequests: false,
+        ),
+      );
+    } catch (error) {
+      emit(state.copyWith(isLoadingJoinRequests: false, hasMoreJoinRequests: false));
+    }
+  }
+
+  Future<void> approveJoinRequest(String memberDid) async {
+    await _mutate(() => _convoRepository.approveJoinRequest(_convoId, memberDid));
+    await loadJoinRequests();
+  }
+
+  Future<void> rejectJoinRequest(String memberDid) async {
+    emit(state.copyWith(isMutating: true, errorMessage: null));
+    try {
+      await _convoRepository.rejectJoinRequest(_convoId, memberDid);
+      await loadJoinRequests();
+      emit(state.copyWith(isMutating: false, errorMessage: null));
+    } catch (error) {
+      emit(state.copyWith(isMutating: false, errorMessage: _groupDetailsErrorMessage(error)));
+    }
+  }
+
+  Future<void> _mutateJoinLink(Future<JoinLinkView> Function() mutation) async {
+    emit(state.copyWith(isMutating: true, errorMessage: null));
+    try {
+      final joinLink = await mutation();
+      final refreshed = await _convoRepository.getConvo(_convoId);
+      final group = refreshed.kind?.groupConvo;
+      final convo = group == null
+          ? refreshed
+          : refreshed.copyWith(
+              kind: UConvoViewKind.groupConvo(data: group.copyWith(joinLink: joinLink)),
+            );
+      emit(state.copyWith(convo: convo, isMutating: false, errorMessage: null));
     } catch (error) {
       emit(state.copyWith(isMutating: false, errorMessage: _groupDetailsErrorMessage(error)));
     }
@@ -117,6 +206,9 @@ String _groupDetailsErrorMessage(Object error) {
     'UserForbidsGroups' => 'That member does not allow group chat invites.',
     'NotFollowedBySender' => 'That member only accepts group invites from people they follow.',
     'RecipientNotFound' => 'That account could not be found.',
+    'JoinLinkNotFound' => 'That join link could not be found.',
+    'JoinLinkDisabled' => 'That join link is disabled.',
+    'InvalidJoinRequest' => 'That join request is no longer pending.',
     _ => 'Group update failed. Try again.',
   };
 }

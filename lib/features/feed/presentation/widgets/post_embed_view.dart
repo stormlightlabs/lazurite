@@ -16,6 +16,7 @@ import 'package:lazurite/features/feed/presentation/media/image_viewer_route_arg
 import 'package:lazurite/features/feed/presentation/media/media_actions.dart';
 import 'package:lazurite/features/feed/presentation/media/video_layout.dart';
 import 'package:lazurite/features/feed/presentation/media/video_player_route_args.dart';
+import 'package:lazurite/features/feed/presentation/widgets/gallery_embed_adapter.dart';
 import 'package:lazurite/features/feed/presentation/widgets/post_record_embed.dart';
 import 'package:poptart_bluesky_moderation/poptart_bluesky_moderation.dart' as bsky_moderation;
 import 'package:lazurite/features/moderation/presentation/moderation_ui_helpers.dart';
@@ -87,6 +88,10 @@ class PostEmbedView extends StatelessWidget {
       );
     }
     if (embed.isUnknown) {
+      final galleryImages = galleryImagesFromUnknownEmbed(embed.unknown);
+      if (galleryImages.isNotEmpty) {
+        return _buildImagesEmbed(context, galleryImages, heroNamespace: '$heroNamespace/gallery');
+      }
       return _buildUnknownEmbed(context);
     }
 
@@ -106,6 +111,12 @@ class PostEmbedView extends StatelessWidget {
     }
     if (media.isEmbedVideoView) {
       return _buildVideoEmbed(context, media.embedVideoView!);
+    }
+    if (media.isUnknown) {
+      final galleryImages = galleryImagesFromUnknownEmbed(media.unknown);
+      if (galleryImages.isNotEmpty) {
+        return _buildImagesEmbed(context, galleryImages, heroNamespace: '$heroNamespace/gallery');
+      }
     }
     return _buildUnknownEmbed(context);
   }

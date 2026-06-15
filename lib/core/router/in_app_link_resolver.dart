@@ -55,6 +55,14 @@ class InAppLinkResolver {
 
   static String? _resolveBskyAppUri(Uri uri) {
     final segments = uri.pathSegments;
+    if (segments.length >= 3 && segments[0] == 'messages' && segments[1] == 'join') {
+      final code = segments[2].trim();
+      if (code.isEmpty) {
+        return null;
+      }
+      return '/alerts/messages/join/${Uri.encodeComponent(code)}';
+    }
+
     if (segments.length < 2 || segments.first != 'profile') {
       return null;
     }

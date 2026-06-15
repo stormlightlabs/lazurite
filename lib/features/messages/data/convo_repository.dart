@@ -125,6 +125,14 @@ class ConvoRepository {
     await _authRecovery.run((client) => client.group.rejectJoinRequest(convoId: convoId, member: memberDid));
   }
 
+  Future<void> withdrawJoinRequest(String convoId) async {
+    await _authRecovery.run((client) => client.group.withdrawJoinRequest(convoId: convoId));
+  }
+
+  Future<void> updateJoinRequestsRead(String convoId) async {
+    await _authRecovery.run((client) => client.group.updateJoinRequestsRead(convoId: convoId));
+  }
+
   Future<MessageListResult> getMessages(String convoId, {String? cursor, int limit = 50}) async {
     final response = await _authRecovery.run(
       (client) => client.convo.getMessages(convoId: convoId, cursor: cursor, limit: limit),

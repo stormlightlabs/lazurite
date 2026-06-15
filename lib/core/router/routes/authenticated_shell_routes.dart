@@ -18,6 +18,7 @@ import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:lazurite/features/messages/presentation/create_group_screen.dart';
 import 'package:lazurite/features/messages/presentation/group_details_route_args.dart';
 import 'package:lazurite/features/messages/presentation/group_details_screen.dart';
+import 'package:lazurite/features/messages/presentation/join_link_preview_screen.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_route_args.dart';
 import 'package:lazurite/features/messages/presentation/message_thread_screen.dart';
 import 'package:lazurite/features/profile/presentation/profile_edit_screen.dart';
@@ -132,6 +133,13 @@ StatefulShellRoute buildAuthenticatedShellRoute({
                         child: const CreateGroupScreen(),
                       ),
                     ),
+                  ),
+                  GoRoute(
+                    path: 'join/:code',
+                    pageBuilder: (context, state) {
+                      final code = state.pathParameters['code']!;
+                      return buildAppRoutePage(context, state, JoinLinkPreviewScreen(code: code));
+                    },
                   ),
                   GoRoute(
                     path: ':id',

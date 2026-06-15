@@ -84,6 +84,26 @@ UEmbedRecordViewRecordEmbeds _nestedQuoteEmbed({
   );
 }
 
+Map<String, dynamic> _galleryViewJson() => {
+  r'$type': 'app.bsky.embed.gallery#view',
+  'items': [
+    {
+      r'$type': 'app.bsky.embed.gallery#viewImage',
+      'thumbnail': 'https://example.com/gallery-thumb-1.jpg',
+      'fullsize': 'https://example.com/gallery-full-1.jpg',
+      'alt': 'first gallery image',
+      'aspectRatio': {'width': 4, 'height': 3},
+    },
+    {
+      r'$type': 'app.bsky.embed.gallery#viewImage',
+      'thumbnail': 'https://example.com/gallery-thumb-2.jpg',
+      'fullsize': 'https://example.com/gallery-full-2.jpg',
+      'alt': 'second gallery image',
+      'aspectRatio': {'width': 1, 'height': 1},
+    },
+  ],
+};
+
 FeedViewPost _makeReplyPost({String handle = 'test.bsky.social'}) {
   final record = <String, dynamic>{
     r'$type': 'app.bsky.feed.post',
@@ -180,6 +200,24 @@ void main() {
     expect(find.text('Example Article'), findsOneWidget);
     expect(find.text('A useful external card'), findsOneWidget);
     expect(find.text('example.com'), findsOneWidget);
+  });
+
+  testWidgets('renders gallery embeds from unknown union data', (tester) async {
+    final record = FeedPostRecord(text: 'Gallery', createdAt: DateTime.utc(2026, 3, 16));
+    final post = testFeedViewPost(
+      uri: 'at://did:plc:test/app.bsky.feed.post/gallery',
+      cid: 'cid-gallery',
+      author: testProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+      record: record.toJson(),
+      indexedAt: DateTime.utc(2026, 3, 16),
+      embed: UPostViewEmbed.unknown(data: _galleryViewJson()),
+    );
+
+    await tester.pumpWidget(buildSubject(post));
+
+    expect(find.byType(GridView), findsOneWidget);
+    expect(find.text('Unknown'), findsNothing);
+    expect(tester.widgetList<Hero>(find.byType(Hero)), hasLength(2));
   });
 
   testWidgets('tapping bsky external embed routes to profile in app', (tester) async {
@@ -606,6 +644,44 @@ void main() {
     final heroTags = tester.widgetList<Hero>(find.byType(Hero)).map((hero) => hero.tag).toList();
     expect(heroTags.length, greaterThanOrEqualTo(2));
     expect(heroTags.toSet().length, heroTags.length);
+  });
+
+  testWidgets('renders gallery embeds nested inside quoted records', (tester) async {
+    final quotedRecord = FeedPostRecord(text: 'Quoted with gallery', createdAt: DateTime.utc(2026, 3, 15));
+    final post = testFeedViewPost(
+      uri: 'at://did:plc:test/app.bsky.feed.post/quoted-gallery',
+      cid: 'cid-quoted-gallery',
+      author: testProfileViewBasic(did: 'did:plc:test', handle: 'test.bsky.social'),
+      record: FeedPostRecord(text: 'Main post with gallery quote', createdAt: DateTime.utc(2026, 3, 16)).toJson(),
+      indexedAt: DateTime.utc(2026, 3, 16),
+      embed: UPostViewEmbed.embedRecordView(
+        data: EmbedRecordView(
+          record: UEmbedRecordViewRecord.embedRecordViewRecord(
+            data: EmbedRecordViewRecord(
+              uri: AtUri.parse('at://did:plc:quoted/app.bsky.feed.post/gallery'),
+              cid: 'cid-gallery',
+              author: const ProfileViewBasic(did: 'did:plc:quoted', handle: 'quoted.bsky.social'),
+              value: quotedRecord.toJson(),
+              embeds: [UEmbedRecordViewRecordEmbeds.unknown(data: _galleryViewJson())],
+              indexedAt: DateTime.utc(2026, 3, 15),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(child: PostCard(feedViewPost: post)),
+        ),
+      ),
+    );
+
+    expect(find.text('Quoted with gallery', findRichText: true), findsOneWidget);
+    expect(find.byType(GridView), findsOneWidget);
+    expect(find.text('Unknown'), findsNothing);
+    expect(tester.widgetList<Hero>(find.byType(Hero)), hasLength(2));
   });
 
   testWidgets('renders starter pack record embeds and navigates to detail', (tester) async {

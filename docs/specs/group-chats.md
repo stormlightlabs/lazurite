@@ -210,6 +210,11 @@ Viewer-facing controls:
 - withdraw pending request
 - join immediately when approval is not required and the server accepts it
 
+Implementation note: the resolved `bluesky_poptart 0.1.1` generated package
+does not expose `withdrawJoinRequest` or `updateJoinRequestsRead`. Lazurite uses
+narrow raw-XRPC adapters for those two procedures until generated bindings are
+available.
+
 ## Data And Architecture
 
 ### Repository

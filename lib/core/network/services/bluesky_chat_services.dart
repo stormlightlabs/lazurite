@@ -161,4 +161,20 @@ class BlueskyGroupService {
       input: GroupRejectJoinRequestInput(convoId: convoId, member: member),
     );
   }
+
+  Future<XRPCResponse<EmptyData>> withdrawJoinRequest({required String convoId}) {
+    return _client.post(
+      NSID.parse('chat.bsky.group.withdrawJoinRequest'),
+      body: {'convoId': convoId},
+      to: EmptyData.fromJson,
+    );
+  }
+
+  Future<XRPCResponse<EmptyData>> updateJoinRequestsRead({required String convoId}) {
+    return _client.post(
+      NSID.parse('chat.bsky.group.updateJoinRequestsRead'),
+      body: {'convoId': convoId},
+      to: EmptyData.fromJson,
+    );
+  }
 }

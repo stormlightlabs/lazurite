@@ -116,3 +116,12 @@ Map<String, Object?> testJoinRequestJson({String convoId = testConvoId, String r
   'requestedBy': testChatProfileJson(did: requestedByDid),
   'requestedAt': '2026-06-15T14:10:00.000Z',
 };
+
+Map<String, Object?> testJoinLinkPreviewJson({bool requireApproval = true, Map<String, Object?>? convo}) => {
+  r'$type': 'chat.bsky.group.defs#joinLinkPreviewView',
+  'name': testGroupName,
+  'owner': testChatProfileJson(did: testOwnerDid, handle: 'owner.bsky.social', displayName: 'Owner'),
+  'memberCount': 3,
+  'requireApproval': requireApproval,
+  'convo': ?convo,
+};

@@ -308,6 +308,24 @@ void main() {
       expect(transport.postCalls, 1);
     });
 
+    test('withdrawJoinRequest completes on empty response', () async {
+      final transport = _ScriptedTransport(postReplies: [_okReply({})]);
+      final repository = ConvoRepository(chat: transport.createChat());
+
+      await repository.withdrawJoinRequest(testConvoId);
+
+      expect(transport.postCalls, 1);
+    });
+
+    test('updateJoinRequestsRead completes on empty response', () async {
+      final transport = _ScriptedTransport(postReplies: [_okReply({})]);
+      final repository = ConvoRepository(chat: transport.createChat());
+
+      await repository.updateJoinRequestsRead(testConvoId);
+
+      expect(transport.postCalls, 1);
+    });
+
     test('leaveConvo completes on leave response', () async {
       final transport = _ScriptedTransport(
         postReplies: [
@@ -512,6 +530,16 @@ List<_RepositoryScenario> _groupApiErrorScenarios() {
       name: 'rejectJoinRequest',
       usesGet: false,
       call: (repository) => repository.rejectJoinRequest(testConvoId, testMemberDid),
+    ),
+    _RepositoryScenario(
+      name: 'withdrawJoinRequest',
+      usesGet: false,
+      call: (repository) => repository.withdrawJoinRequest(testConvoId),
+    ),
+    _RepositoryScenario(
+      name: 'updateJoinRequestsRead',
+      usesGet: false,
+      call: (repository) => repository.updateJoinRequestsRead(testConvoId),
     ),
     _RepositoryScenario(name: 'leaveConvo', usesGet: false, call: (repository) => repository.leaveConvo(testConvoId)),
   ];

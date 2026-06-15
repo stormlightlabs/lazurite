@@ -137,16 +137,32 @@
 
 ## M6 - Join Links And Join Requests
 
-- [ ] Add join-link display and copy/share affordance for owners
-- [ ] Add create join link flow with join rule and approval requirement
-- [ ] Add edit join link flow
-- [ ] Add enable/disable join link actions
-- [ ] Add join-link preview route for link opens
-- [ ] Add viewer request-join and withdraw-request actions
-- [ ] Add owner pending requests list
-- [ ] Add approve/reject request actions
-- [ ] Mark join requests as read when supported by generated API
-- [ ] Tests for preview, request, withdraw, approve, reject, and disabled/invalid links
+- [x] Add join-link display and copy/share affordance for owners
+- [x] Add create join link flow with join rule and approval requirement
+- [x] Add edit join link flow
+- [x] Add enable/disable join link actions
+- [x] Add join-link preview route for link opens
+- [x] Add viewer request-join and withdraw-request actions
+- [x] Add owner pending requests list
+- [x] Add approve/reject request actions
+- [x] Mark join requests as read when supported by generated API
+- [x] Tests for preview, request, withdraw, approve, reject, and disabled/invalid links
+
+### Notes
+
+- Added owner join-link controls to group details: display, copy, share, create,
+      edit, enable, and disable.
+- Added pending request loading in group details with approve and reject actions.
+- Added `/alerts/messages/join/:code` preview route and bsky.app join-link
+      resolution for viewer link opens.
+- Added viewer request-to-join support. If the server joins immediately and returns
+      a conversation, the preview route opens that conversation.
+- The resolved `bluesky_poptart 0.1.1` package does not generate
+      `withdrawJoinRequest` or `updateJoinRequestsRead`, so Lazurite adds narrow raw-XRPC
+      adapters for those two procedures until generated bindings are available.
+- Tests cover preview rendering, request join, invalid/disabled preview errors,
+      create/edit/enable/disable join links, pending request pagination, approve,
+      reject, withdraw, and read marking.
 
 ## M7 - Polish, Localization, And Verification
 
