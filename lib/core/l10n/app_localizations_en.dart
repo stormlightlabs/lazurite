@@ -2005,6 +2005,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messageDeleted => 'Message deleted';
 
   @override
+  String get messageGroupUpdated => 'Group updated';
+
+  @override
   String get messageLocalNotificationFallbackBody => 'sent a notification';
 
   @override

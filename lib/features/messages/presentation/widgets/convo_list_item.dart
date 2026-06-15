@@ -22,29 +22,22 @@ class ConvoListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final other = convo.members.where((m) => m.did != currentUserDid).firstOrNull;
+    final group = convo.kind?.groupConvo;
+    final isGroup = group != null;
+    final other = isGroup ? null : convo.members.where((m) => m.did != currentUserDid).firstOrNull;
     final displayName = other?.displayName;
     final handle = other?.handle ?? context.l10n.commonUnknown;
-    final fallbackName = displayName ?? handle;
-    final lastMessageText = _lastMessageText(context);
+    final title = group?.name ?? displayName ?? handle;
+    final lastMessageText = _lastMessageText(context, isGroup: isGroup);
+    final subtitle = isGroup ? _groupSubtitle(context, group, lastMessageText) : lastMessageText;
 
     return ListTile(
       onTap: onTap,
-      leading: _buildAvatar(other?.avatar, fallbackName),
+      leading: isGroup ? _buildGroupAvatar(context) : _buildAvatar(other?.avatar, title),
       title: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: ActorNameWidget(
-              displayName: displayName,
-              handle: handle,
-              displayNameStyle: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: convo.unreadCount > 0 ? FontWeight.w700 : FontWeight.normal,
-              ),
-              handleStyle: theme.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
-              uppercaseHandle: false,
-            ),
-          ),
+          Expanded(child: isGroup ? _buildGroupTitle(theme, title) : _buildDirectTitle(theme, displayName, handle)),
           if (convo.muted)
             Padding(
               padding: const EdgeInsets.only(left: 4),
@@ -62,9 +55,9 @@ class ConvoListItem extends StatelessWidget {
             ),
         ],
       ),
-      subtitle: lastMessageText != null
+      subtitle: subtitle != null
           ? Text(
-              lastMessageText,
+              subtitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -87,6 +80,29 @@ class ConvoListItem extends StatelessWidget {
     );
   }
 
+  Widget _buildDirectTitle(ThemeData theme, String? displayName, String handle) {
+    return ActorNameWidget(
+      displayName: displayName,
+      handle: handle,
+      displayNameStyle: theme.textTheme.bodyLarge?.copyWith(
+        fontWeight: convo.unreadCount > 0 ? FontWeight.w700 : FontWeight.normal,
+      ),
+      handleStyle: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+      uppercaseHandle: false,
+    );
+  }
+
+  Widget _buildGroupTitle(ThemeData theme, String title) {
+    return Text(
+      title,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: theme.textTheme.bodyLarge?.copyWith(
+        fontWeight: convo.unreadCount > 0 ? FontWeight.w700 : FontWeight.normal,
+      ),
+    );
+  }
+
   Widget _buildAvatar(String? avatarUrl, String fallbackText) {
     return ProfileAvatar(
       size: 48,
@@ -96,14 +112,29 @@ class ConvoListItem extends StatelessWidget {
     );
   }
 
-  String? _lastMessageText(BuildContext context) {
+  Widget _buildGroupAvatar(BuildContext context) {
+    return CircleAvatar(
+      radius: 24,
+      backgroundColor: context.colorScheme.secondaryContainer,
+      foregroundColor: context.colorScheme.onSecondaryContainer,
+      child: const Icon(Icons.groups_2_outlined),
+    );
+  }
+
+  String? _groupSubtitle(BuildContext context, GroupConvo group, String? lastMessageText) {
+    final memberCount = context.l10n.formatMemberCount(group.memberCount);
+    if (lastMessageText == null) return memberCount;
+    return '$memberCount · $lastMessageText';
+  }
+
+  String? _lastMessageText(BuildContext context, {required bool isGroup}) {
     final lastMessage = convo.lastMessage;
     if (lastMessage == null) return null;
 
     return lastMessage.when(
       messageView: (data) => data.text.isNotEmpty ? data.text : null,
       deletedMessageView: (_) => context.l10n.messageDeleted,
-      systemMessageView: (_) => null,
+      systemMessageView: (_) => isGroup ? context.l10n.messageGroupUpdated : null,
       unknown: (_) => null,
     );
   }

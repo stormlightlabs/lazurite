@@ -12,6 +12,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/assertion_helpers.dart';
 import '../../../helpers/connectivity_helpers.dart';
+import '../../../helpers/fixtures/messages.dart';
 
 class MockConvoRepository extends Mock implements ConvoRepository {}
 
@@ -42,6 +43,12 @@ void main() {
     muted: muted,
     unreadCount: unreadCount,
   );
+
+  ConvoView makeGroupConvo({String id = testConvoId, String name = testGroupName, ConvoStatus? status}) {
+    return ConvoView.fromJson(
+      testGroupConvoJson(id: id, name: name, extra: {if (status != null) 'status': status.toJson()}),
+    );
+  }
 
   Widget buildSubject() {
     return RepositoryProvider<String>.value(
@@ -98,6 +105,30 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ListView), findsOneWidget);
+    });
+
+    testWidgets('shows group conversations in primary tab', (tester) async {
+      when(
+        () => mockRepository.listConvos(
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer(
+        (_) async => ConvoListResult(
+          convos: [
+            makeConvo(),
+            makeGroupConvo(name: 'Release Planning'),
+          ],
+          cursor: null,
+        ),
+      );
+
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      expect(find.text('other.bsky.social'), findsOneWidget);
+      expect(find.text('Release Planning'), findsOneWidget);
+      expect(find.text('3 members · Group updated'), findsOneWidget);
     });
 
     testWidgets('shows empty state when no conversations', (tester) async {
@@ -196,6 +227,33 @@ void main() {
 
       expect(find.text('requester.bsky.social'), findsOneWidget);
       expect(find.text('No conversations yet'), findsNothing);
+    });
+
+    testWidgets('filters group requests to requests tab', (tester) async {
+      final acceptedConvo = makeConvo(id: 'accepted');
+      final requestGroup = makeGroupConvo(
+        id: 'group-request',
+        name: 'Invite Group',
+        status: const ConvoStatus.knownValue(data: KnownConvoStatus.request),
+      );
+
+      when(
+        () => mockRepository.listConvos(
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => ConvoListResult(convos: [acceptedConvo, requestGroup], cursor: null));
+
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Invite Group'), findsNothing);
+
+      await tester.tap(find.text('Requests'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Invite Group'), findsOneWidget);
+      expect(find.text('3 members · Group updated'), findsOneWidget);
     });
 
     testWidgets('shows no message requests in requests tab when none exist', (tester) async {

@@ -3685,6 +3685,12 @@ abstract class AppLocalizations {
   /// **'Message deleted'**
   String get messageDeleted;
 
+  /// Generic group conversation system update summary
+  ///
+  /// In en, this message translates to:
+  /// **'Group updated'**
+  String get messageGroupUpdated;
+
   /// Local notification body fallback for unknown notification reasons
   ///
   /// In en, this message translates to:

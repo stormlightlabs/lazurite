@@ -2850,6 +2850,10 @@
   "@messageDeleted": {
     "description": "Deleted message placeholder"
   },
+  "messageGroupUpdated": "Group updated",
+  "@messageGroupUpdated": {
+    "description": "Generic group conversation system update summary"
+  },
   "messageLocalNotificationFallbackBody": "sent a notification",
   "@messageLocalNotificationFallbackBody": {
     "description": "Local notification body fallback for unknown notification reasons"

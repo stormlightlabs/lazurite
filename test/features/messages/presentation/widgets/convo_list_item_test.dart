@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lazurite/features/messages/presentation/widgets/convo_list_item.dart';
 
+import '../../../../helpers/fixtures/messages.dart';
+
 void main() {
   const currentUserDid = 'did:plc:currentuser';
   const otherDid = 'did:plc:other';
@@ -21,6 +23,7 @@ void main() {
     int unreadCount = 0,
     UConvoViewLastMessage? lastMessage,
     List<ProfileViewBasic>? members,
+    UConvoViewKind? kind,
   }) => ConvoView(
     id: id,
     rev: 'rev-1',
@@ -28,7 +31,28 @@ void main() {
     muted: muted,
     unreadCount: unreadCount,
     lastMessage: lastMessage,
+    kind: kind,
   );
+
+  ConvoView makeGroupConvo({
+    String name = testGroupName,
+    int memberCount = 3,
+    bool muted = false,
+    int unreadCount = 2,
+    UConvoViewLastMessage? lastMessage,
+  }) {
+    return ConvoView.fromJson(
+      testGroupConvoJson(
+        name: name,
+        memberCount: memberCount,
+        extra: {
+          'muted': muted,
+          'unreadCount': unreadCount,
+          if (lastMessage != null) 'lastMessage': lastMessage.toJson(),
+        },
+      ),
+    );
+  }
 
   Widget buildSubject({required ConvoView convo, VoidCallback? onTap, VoidCallback? onMuteTap}) {
     return MaterialApp(
@@ -160,6 +184,49 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Unmute'), findsOneWidget);
+    });
+
+    testWidgets('displays group name instead of partial members', (tester) async {
+      final convo = makeGroupConvo(name: 'Release Room');
+
+      await tester.pumpWidget(buildSubject(convo: convo));
+
+      expect(find.text('Release Room'), findsOneWidget);
+      expect(find.text('Owner'), findsNothing);
+    });
+
+    testWidgets('shows group member count and system update fallback', (tester) async {
+      final convo = makeGroupConvo(memberCount: 3);
+
+      await tester.pumpWidget(buildSubject(convo: convo));
+
+      expect(find.text('3 members · Group updated'), findsOneWidget);
+    });
+
+    testWidgets('shows group member count and last message text', (tester) async {
+      final lastMsg = UConvoViewLastMessage.messageView(
+        data: MessageView(
+          id: 'msg-1',
+          rev: 'rev-1',
+          text: 'Launch notes are ready',
+          sender: const MessageViewSender(did: otherDid),
+          sentAt: DateTime.utc(2026, 3, 15),
+        ),
+      );
+      final convo = makeGroupConvo(memberCount: 4, lastMessage: lastMsg);
+
+      await tester.pumpWidget(buildSubject(convo: convo));
+
+      expect(find.text('4 members · Launch notes are ready'), findsOneWidget);
+    });
+
+    testWidgets('shows group mute icon and unread count badge', (tester) async {
+      final convo = makeGroupConvo(muted: true, unreadCount: 7);
+
+      await tester.pumpWidget(buildSubject(convo: convo));
+
+      expect(find.byIcon(Icons.volume_off), findsOneWidget);
+      expect(find.text('7'), findsOneWidget);
     });
   });
 }
