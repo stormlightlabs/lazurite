@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## v1.0.0 (Alpha 11)
+
+### Added
+
+- Group chat support
+- Tappable moderation and label badges with a label detail sheet
+  - Labeler navigation helpers and cached policy fallback for label details.
+- Automatic split-thread posting for long compose text, including scheduled
+  split-threads
+- Gallery embed rendering for feed post embeds.
+
+### Changed
+
+- Compose text length now uses Bluesky text formatting rules, including shortened
+  link handling, before submission.
+- Failed post submissions are saved as drafts with clearer error details.
+- Home feeds now deduplicate loaded posts, cap retained items, trim inactive feed
+  lists, and preserve scroll position with stable item keys.
+- Message threads show group conversation names, participant avatars, and richer
+  group-specific states.
+- App description now identifies Lazurite as a cross-platform ATmosphere client.
+- Updated Dart, Flutter, ObjectBox, Firebase, and routing dependencies.
+
+### Fixed
+
+- Long-list feed scrolling memory pressure from retaining too many inactive feed
+  items.
+
 ## v1.0.0 (Alpha 10)
 
 ### Added
@@ -108,7 +136,7 @@
 ### Added
 
 - Edit profile screen with support for updating display name, bio, images, pronouns,
-and website
+  and website
 - Display pronouns and website (with link to browser) on profile screens
 - English localization foundation and expanded localized UI coverage.
 
