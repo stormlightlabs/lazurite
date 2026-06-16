@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:bluesky_poptart/app/bsky/actor/defs.dart' as app_actor;
 import 'package:bluesky_poptart/chat/bsky/convo/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/core/l10n/app_localizations_en.dart';
 import 'package:lazurite/features/messages/bloc/group_create_cubit.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:mocktail/mocktail.dart';
@@ -31,7 +32,8 @@ void main() {
     return ConvoView.fromJson(testGroupConvoJson(id: id, name: name));
   }
 
-  GroupCreateCubit buildCubit() => GroupCreateCubit(convoRepository: repository, currentUserDid: currentUserDid);
+  GroupCreateCubit buildCubit() =>
+      GroupCreateCubit(convoRepository: repository, currentUserDid: currentUserDid, l10n: AppLocalizationsEn());
 
   group('GroupCreateCubit', () {
     blocTest<GroupCreateCubit, GroupCreateState>(

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/router/app_route_page.dart';
 import 'package:lazurite/core/router/app_route_paths.dart';
 import 'package:lazurite/core/router/app_shell.dart';
@@ -129,6 +130,7 @@ StatefulShellRoute buildAuthenticatedShellRoute({
                         create: (_) => GroupCreateCubit(
                           convoRepository: context.read<ConvoRepository>(),
                           currentUserDid: context.read<String>(),
+                          l10n: context.l10n,
                         ),
                         child: const CreateGroupScreen(),
                       ),
@@ -156,7 +158,7 @@ StatefulShellRoute buildAuthenticatedShellRoute({
                           ),
                           child: MessageThreadScreen(
                             convoId: convoId,
-                            title: args?.title ?? 'Conversation',
+                            title: args?.title ?? context.l10n.labelConversation,
                             convo: args?.convo,
                           ),
                         ),
@@ -176,6 +178,7 @@ StatefulShellRoute buildAuthenticatedShellRoute({
                                 convoRepository: context.read<ConvoRepository>(),
                                 convoId: convoId,
                                 currentUserDid: context.read<String>(),
+                                l10n: context.l10n,
                                 initialConvo: args?.convo,
                               ),
                               child: GroupDetailsScreen(convoId: convoId),

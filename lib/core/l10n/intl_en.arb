@@ -2958,6 +2958,460 @@
   "@messageThreadCopied": {
     "description": "Snackbar after copying a message thread"
   },
+  "buttonAddMember": "Add member",
+  "@buttonAddMember": {
+    "description": "Button label to add a member to a group chat"
+  },
+  "buttonCreateJoinLink": "Create join link",
+  "@buttonCreateJoinLink": {
+    "description": "Button label to create a group chat join link"
+  },
+  "buttonDisable": "Disable",
+  "@buttonDisable": {
+    "description": "Button label to disable something"
+  },
+  "buttonEnable": "Enable",
+  "@buttonEnable": {
+    "description": "Button label to enable something"
+  },
+  "buttonJoinGroup": "Join group",
+  "@buttonJoinGroup": {
+    "description": "Button label to join a group chat"
+  },
+  "buttonLeaveGroup": "Leave group",
+  "@buttonLeaveGroup": {
+    "description": "Button label to leave a group chat"
+  },
+  "buttonLoadMoreMembers": "Load more members",
+  "@buttonLoadMoreMembers": {
+    "description": "Button label to load additional group chat members"
+  },
+  "buttonLoadMoreRequests": "Load more requests",
+  "@buttonLoadMoreRequests": {
+    "description": "Button label to load additional group join requests"
+  },
+  "buttonOpenGroup": "Open group",
+  "@buttonOpenGroup": {
+    "description": "Button label to open a group conversation"
+  },
+  "buttonRename": "Rename",
+  "@buttonRename": {
+    "description": "Button label to rename something"
+  },
+  "buttonRequestToJoin": "Request to join",
+  "@buttonRequestToJoin": {
+    "description": "Button label to request access to a group chat"
+  },
+  "buttonWithdrawRequest": "Withdraw request",
+  "@buttonWithdrawRequest": {
+    "description": "Button label to withdraw a group join request"
+  },
+  "errorCouldNotRequestJoinGroup": "Could not request to join this group.",
+  "@errorCouldNotRequestJoinGroup": {
+    "description": "Error shown when requesting to join a group fails"
+  },
+  "errorCouldNotWithdrawJoinRequest": "Could not withdraw this request.",
+  "@errorCouldNotWithdrawJoinRequest": {
+    "description": "Error shown when withdrawing a group join request fails"
+  },
+  "errorFailedToLoadGroupDetails": "Failed to load group details.",
+  "@errorFailedToLoadGroupDetails": {
+    "description": "Error shown when group details fail to load"
+  },
+  "errorGroupSearchFailed": "Search failed. Try a handle or display name again.",
+  "@errorGroupSearchFailed": {
+    "description": "Error shown when searching for group member candidates fails"
+  },
+  "errorGroupCreateAccountSuspended": "This account cannot create a group chat.",
+  "@errorGroupCreateAccountSuspended": {
+    "description": "Error shown when a suspended account tries to create a group chat"
+  },
+  "errorGroupCreateBlockedActor": "A selected member cannot be invited because of a block.",
+  "@errorGroupCreateBlockedActor": {
+    "description": "Error shown when group creation includes a blocked actor"
+  },
+  "errorGroupCreateFailed": "Failed to create group. Check the selected members and try again.",
+  "@errorGroupCreateFailed": {
+    "description": "Fallback error shown when group creation fails"
+  },
+  "errorGroupCreateMissingMember": "Add at least one member.",
+  "@errorGroupCreateMissingMember": {
+    "description": "Validation error shown when creating a group without members"
+  },
+  "errorGroupCreateMissingName": "Add a group name.",
+  "@errorGroupCreateMissingName": {
+    "description": "Validation error shown when creating a group without a name"
+  },
+  "errorGroupCreateNewAccount": "New accounts cannot create group chats yet.",
+  "@errorGroupCreateNewAccount": {
+    "description": "Error shown when a new account cannot create a group chat"
+  },
+  "errorGroupCreateNotFollowedBySender": "A selected member only accepts group invites from people they follow.",
+  "@errorGroupCreateNotFollowedBySender": {
+    "description": "Error shown when a selected member does not follow the group creator"
+  },
+  "errorGroupCreateRecipientNotFound": "One of the selected accounts could not be found.",
+  "@errorGroupCreateRecipientNotFound": {
+    "description": "Error shown when a selected group member cannot be found"
+  },
+  "errorGroupCreateUserForbidsGroups": "A selected member does not allow group chat invites.",
+  "@errorGroupCreateUserForbidsGroups": {
+    "description": "Error shown when a selected member does not allow group chats"
+  },
+  "errorGroupDetailsBlockedActor": "That member cannot be added because of a block.",
+  "@errorGroupDetailsBlockedActor": {
+    "description": "Error shown when a blocked member cannot be added to a group"
+  },
+  "errorGroupDetailsInsufficientRole": "You do not have permission to change this group.",
+  "@errorGroupDetailsInsufficientRole": {
+    "description": "Error shown when the viewer lacks permission to change a group"
+  },
+  "errorGroupDetailsInvalidJoinRequest": "That join request is no longer pending.",
+  "@errorGroupDetailsInvalidJoinRequest": {
+    "description": "Error shown when acting on a stale join request"
+  },
+  "errorGroupDetailsJoinLinkDisabled": "That join link is disabled.",
+  "@errorGroupDetailsJoinLinkDisabled": {
+    "description": "Error shown when a join link is disabled"
+  },
+  "errorGroupDetailsJoinLinkNotFound": "That join link could not be found.",
+  "@errorGroupDetailsJoinLinkNotFound": {
+    "description": "Error shown when a join link cannot be found"
+  },
+  "errorGroupDetailsNotFollowedBySender": "That member only accepts group invites from people they follow.",
+  "@errorGroupDetailsNotFollowedBySender": {
+    "description": "Error shown when adding a member who does not follow the viewer"
+  },
+  "errorGroupDetailsOwnerCannotLeave": "Transfer ownership before leaving this group.",
+  "@errorGroupDetailsOwnerCannotLeave": {
+    "description": "Error shown when an owner tries to leave a group before transferring ownership"
+  },
+  "errorGroupDetailsRecipientNotFound": "That account could not be found.",
+  "@errorGroupDetailsRecipientNotFound": {
+    "description": "Error shown when a group member account cannot be found"
+  },
+  "errorGroupDetailsUpdateFailed": "Group update failed. Try again.",
+  "@errorGroupDetailsUpdateFailed": {
+    "description": "Fallback error shown when a group update fails"
+  },
+  "errorGroupDetailsUserForbidsGroups": "That member does not allow group chat invites.",
+  "@errorGroupDetailsUserForbidsGroups": {
+    "description": "Error shown when a member does not allow group chat invites"
+  },
+  "errorGroupMemberLimit": "Groups can include up to 49 invited members.",
+  "@errorGroupMemberLimit": {
+    "description": "Validation error shown when too many members are selected for a group"
+  },
+  "errorGroupOwnerAlreadyIncluded": "You are already included as the group owner.",
+  "@errorGroupOwnerAlreadyIncluded": {
+    "description": "Validation error shown when trying to add yourself to a group you own"
+  },
+  "errorJoinLinkInvalidOrDisabled": "This join link is invalid or disabled.",
+  "@errorJoinLinkInvalidOrDisabled": {
+    "description": "Error shown when a group join link cannot be previewed"
+  },
+  "formatGroupMemberLimit": "Limit {limit}",
+  "@formatGroupMemberLimit": {
+    "description": "Group chat member limit chip label",
+    "placeholders": {
+      "limit": {
+        "type": "int",
+        "example": "50"
+      }
+    }
+  },
+  "helperGroupNameCharacterLimit": "Up to 50 characters",
+  "@helperGroupNameCharacterLimit": {
+    "description": "Helper text for the group name field"
+  },
+  "hintSearchPeople": "Search people",
+  "@hintSearchPeople": {
+    "description": "Hint text for searching people"
+  },
+  "labelAddPeople": "Add people",
+  "@labelAddPeople": {
+    "description": "Section label for adding people to a group"
+  },
+  "labelAnyone": "Anyone",
+  "@labelAnyone": {
+    "description": "Join-link rule label for anyone"
+  },
+  "labelApprovalRequired": "Approval required",
+  "@labelApprovalRequired": {
+    "description": "Join-link status label indicating approval is required"
+  },
+  "labelCreateJoinLink": "Create join link",
+  "@labelCreateJoinLink": {
+    "description": "Dialog title for creating a join link"
+  },
+  "labelDisabled": "Disabled",
+  "@labelDisabled": {
+    "description": "Disabled status label"
+  },
+  "labelEditJoinLink": "Edit join link",
+  "@labelEditJoinLink": {
+    "description": "Dialog title for editing a join link"
+  },
+  "labelEnabled": "Enabled",
+  "@labelEnabled": {
+    "description": "Enabled status label"
+  },
+  "labelFollowedByOwner": "Followed by owner",
+  "@labelFollowedByOwner": {
+    "description": "Join-link rule label for people followed by the group owner"
+  },
+  "labelGroupDetails": "Group details",
+  "@labelGroupDetails": {
+    "description": "Group details screen title"
+  },
+  "labelGroupName": "Group name",
+  "@labelGroupName": {
+    "description": "Group chat name field label"
+  },
+  "labelJoinGroup": "Join group",
+  "@labelJoinGroup": {
+    "description": "Join group preview screen title"
+  },
+  "labelJoinLink": "Join link",
+  "@labelJoinLink": {
+    "description": "Group join link section label"
+  },
+  "labelNewGroup": "New group",
+  "@labelNewGroup": {
+    "description": "New group screen title"
+  },
+  "labelNoApprovalRequired": "No approval required",
+  "@labelNoApprovalRequired": {
+    "description": "Join-link status label indicating approval is not required"
+  },
+  "labelPendingRequests": "Pending requests",
+  "@labelPendingRequests": {
+    "description": "Group join requests section label"
+  },
+  "labelPeopleFollowedByOwner": "People followed by owner",
+  "@labelPeopleFollowedByOwner": {
+    "description": "Join-link dropdown option for people followed by the owner"
+  },
+  "labelRenameGroup": "Rename group",
+  "@labelRenameGroup": {
+    "description": "Dialog title for renaming a group"
+  },
+  "labelRequestPending": "Request pending",
+  "@labelRequestPending": {
+    "description": "Status label for a pending group join request"
+  },
+  "labelRequireApproval": "Require approval",
+  "@labelRequireApproval": {
+    "description": "Switch label for requiring join-link approval"
+  },
+  "labelUnknownRule": "Unknown rule",
+  "@labelUnknownRule": {
+    "description": "Fallback label for an unknown group join-link rule"
+  },
+  "labelWaitingForApproval": "Waiting for approval",
+  "@labelWaitingForApproval": {
+    "description": "Disabled button label for a pending join request"
+  },
+  "labelWhoCanUseLink": "Who can use the link",
+  "@labelWhoCanUseLink": {
+    "description": "Join-link rule field label"
+  },
+  "messageAcceptRequestBeforeReplying": "Accept the message request before replying.",
+  "@messageAcceptRequestBeforeReplying": {
+    "description": "Disabled composer reason for message requests"
+  },
+  "messageAddAtLeastOnePersonToCreateGroup": "Add at least one person to create a group.",
+  "@messageAddAtLeastOnePersonToCreateGroup": {
+    "description": "Helper text shown when a new group has no selected members"
+  },
+  "messageGroupLocked": "This group is locked.",
+  "@messageGroupLocked": {
+    "description": "Disabled composer reason for locked group chats"
+  },
+  "messageGroupPermanentlyLocked": "This group is permanently locked.",
+  "@messageGroupPermanentlyLocked": {
+    "description": "Disabled composer reason for permanently locked group chats"
+  },
+  "messageJoinLinkCopied": "Join link copied.",
+  "@messageJoinLinkCopied": {
+    "description": "Snackbar after copying a group join link"
+  },
+  "messageJoinRequestSent": "Request sent.",
+  "@messageJoinRequestSent": {
+    "description": "Status after sending a group join request"
+  },
+  "messageJoinRequestWithdrawn": "Request withdrawn.",
+  "@messageJoinRequestWithdrawn": {
+    "description": "Status after withdrawing a group join request"
+  },
+  "messageNoJoinLinkCreated": "No join link has been created.",
+  "@messageNoJoinLinkCreated": {
+    "description": "Empty state for a group with no join link"
+  },
+  "messageNoPendingJoinRequests": "No pending join requests.",
+  "@messageNoPendingJoinRequests": {
+    "description": "Empty state for a group with no pending join requests"
+  },
+  "messagePendingJoinRequestCannotWithdrawHere": "The server did not return a conversation for this request, so Lazurite cannot withdraw it from this link screen.",
+  "@messagePendingJoinRequestCannotWithdrawHere": {
+    "description": "Explanation for pending join requests that cannot be withdrawn from the join-link preview"
+  },
+  "semanticSystemMessage": "System message: {message}",
+  "@semanticSystemMessage": {
+    "description": "Accessibility label for a group system message",
+    "placeholders": {
+      "message": {
+        "type": "String",
+        "example": "A member joined the group."
+      }
+    }
+  },
+  "systemMessageGroupLocked": "The group was locked.",
+  "@systemMessageGroupLocked": {
+    "description": "System message when a group is locked"
+  },
+  "systemMessageGroupNameUpdated": "The group name was updated.",
+  "@systemMessageGroupNameUpdated": {
+    "description": "System message when a group name changes without a visible new name"
+  },
+  "systemMessageGroupPermanentlyLocked": "The group was permanently locked.",
+  "@systemMessageGroupPermanentlyLocked": {
+    "description": "System message when a group is permanently locked"
+  },
+  "systemMessageGroupRenamed": "The group was renamed to {name}.",
+  "@systemMessageGroupRenamed": {
+    "description": "System message when a group is renamed",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Book club"
+      }
+    }
+  },
+  "systemMessageGroupUnlocked": "The group was unlocked.",
+  "@systemMessageGroupUnlocked": {
+    "description": "System message when a group is unlocked"
+  },
+  "systemMessageJoinLinkCreated": "A join link was created.",
+  "@systemMessageJoinLinkCreated": {
+    "description": "System message when a join link is created"
+  },
+  "systemMessageJoinLinkDisabled": "The join link was disabled.",
+  "@systemMessageJoinLinkDisabled": {
+    "description": "System message when a join link is disabled"
+  },
+  "systemMessageJoinLinkEnabled": "The join link was enabled.",
+  "@systemMessageJoinLinkEnabled": {
+    "description": "System message when a join link is enabled"
+  },
+  "systemMessageJoinLinkUpdated": "The join link was updated.",
+  "@systemMessageJoinLinkUpdated": {
+    "description": "System message when a join link is edited"
+  },
+  "systemMessageMemberAdded": "A member was added to the group.",
+  "@systemMessageMemberAdded": {
+    "description": "System message when a member is added"
+  },
+  "systemMessageNamedMemberAdded": "{name} was added to the group.",
+  "@systemMessageNamedMemberAdded": {
+    "description": "System message when a named member is added",
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "systemMessageMemberJoined": "A member joined the group.",
+  "@systemMessageMemberJoined": {
+    "description": "System message when a member joins"
+  },
+  "systemMessageNamedMemberJoined": "{name} joined the group.",
+  "@systemMessageNamedMemberJoined": {
+    "description": "System message when a named member joins",
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "systemMessageMemberLeft": "A member left the group.",
+  "@systemMessageMemberLeft": {
+    "description": "System message when a member leaves"
+  },
+  "systemMessageNamedMemberLeft": "{name} left the group.",
+  "@systemMessageNamedMemberLeft": {
+    "description": "System message when a named member leaves",
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "systemMessageMemberRemoved": "A member was removed from the group.",
+  "@systemMessageMemberRemoved": {
+    "description": "System message when a member is removed"
+  },
+  "systemMessageNamedMemberRemoved": "{name} was removed from the group.",
+  "@systemMessageNamedMemberRemoved": {
+    "description": "System message when a named member is removed",
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "tooltipAddMember": "Add {handle}",
+  "@tooltipAddMember": {
+    "description": "Tooltip for adding a person to a group",
+    "placeholders": {
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "tooltipApproveJoinRequest": "Approve {handle}",
+  "@tooltipApproveJoinRequest": {
+    "description": "Tooltip for approving a group join request",
+    "placeholders": {
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "tooltipCopyJoinLink": "Copy join link",
+  "@tooltipCopyJoinLink": {
+    "description": "Tooltip for copying a group join link"
+  },
+  "tooltipCreateGroup": "New group",
+  "@tooltipCreateGroup": {
+    "description": "Tooltip for opening the create group screen"
+  },
+  "tooltipGroupDetails": "Group details",
+  "@tooltipGroupDetails": {
+    "description": "Tooltip for opening group details"
+  },
+  "tooltipRejectJoinRequest": "Reject {handle}",
+  "@tooltipRejectJoinRequest": {
+    "description": "Tooltip for rejecting a group join request",
+    "placeholders": {
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "tooltipRemoveMember": "Remove {handle}",
+  "@tooltipRemoveMember": {
+    "description": "Tooltip for removing a group member",
+    "placeholders": {
+      "handle": {
+        "type": "String",
+        "example": "alice.bsky.social"
+      }
+    }
+  },
+  "tooltipShareJoinLink": "Share join link",
+  "@tooltipShareJoinLink": {
+    "description": "Tooltip for sharing a group join link"
+  },
+  "validationGroupNameCharacterLimit": "Group names can be up to 50 characters.",
+  "@validationGroupNameCharacterLimit": {
+    "description": "Validation error for overly long group names"
+  },
   "messageToday": "Today",
   "@messageToday": {
     "description": "Today date section label"

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
@@ -73,7 +74,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
         final canManage = state.canManage(currentUserDid);
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Group details'),
+            title: Text(context.l10n.labelGroupDetails),
             actions: [
               if (state.isMutating)
                 const Padding(
@@ -103,13 +104,13 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                         key: const ValueKey('group_details_rename_button'),
                         onPressed: state.isMutating ? null : () => _showRenameDialog(context, group?.name ?? ''),
                         icon: const Icon(Icons.edit_outlined),
-                        label: const Text('Rename'),
+                        label: Text(context.l10n.buttonRename),
                       ),
                       OutlinedButton.icon(
                         key: const ValueKey('group_details_add_member_button'),
                         onPressed: state.isMutating ? null : () => _showAddMemberSheet(context),
                         icon: const Icon(Icons.person_add_alt),
-                        label: const Text('Add member'),
+                        label: Text(context.l10n.buttonAddMember),
                       ),
                     ],
                   ),
@@ -138,10 +139,10 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                   key: const ValueKey('group_details_leave_button'),
                   onPressed: state.isMutating ? null : context.read<GroupDetailsCubit>().leaveGroup,
                   icon: const Icon(Icons.logout),
-                  label: const Text('Leave group'),
+                  label: Text(context.l10n.buttonLeaveGroup),
                 ),
                 const SizedBox(height: 24),
-                Text('Members', style: Theme.of(context).textTheme.titleMedium),
+                Text(context.l10n.labelMembers, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 for (final member in state.members)
                   _MemberTile(
@@ -159,7 +160,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                   TextButton(
                     key: const ValueKey('group_details_load_more_button'),
                     onPressed: context.read<GroupDetailsCubit>().loadMoreMembers,
-                    child: const Text('Load more members'),
+                    child: Text(context.l10n.buttonLoadMoreMembers),
                   ),
               ],
             ),
@@ -174,20 +175,20 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
     final name = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Rename group'),
+        title: Text(context.l10n.labelRenameGroup),
         content: TextField(
           key: const ValueKey('group_details_rename_field'),
           controller: controller,
           autofocus: true,
           maxLength: 50,
-          decoration: const InputDecoration(labelText: 'Group name'),
+          decoration: InputDecoration(labelText: context.l10n.labelGroupName),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(context.l10n.buttonCancel)),
           FilledButton(
             key: const ValueKey('group_details_rename_submit'),
             onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-            child: const Text('Save'),
+            child: Text(context.l10n.buttonSave),
           ),
         ],
       ),
@@ -250,8 +251,8 @@ class _GroupSummary extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            if (memberCount != null) Chip(label: Text(memberCount == 1 ? '1 member' : '$memberCount members')),
-            if (memberLimit is int) Chip(label: Text('Limit $memberLimit')),
+            if (memberCount != null) Chip(label: Text(context.l10n.formatMemberCount(memberCount))),
+            if (memberLimit is int) Chip(label: Text(context.l10n.formatGroupMemberLimit(memberLimit))),
             if (lockStatus != null) Chip(label: Text(lockStatus)),
           ],
         ),
@@ -284,16 +285,16 @@ class _JoinLinkSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Join link', style: context.textTheme.titleMedium),
+        Text(context.l10n.labelJoinLink, style: context.textTheme.titleMedium),
         const SizedBox(height: 8),
         if (link == null) ...[
-          Text('No join link has been created.', style: context.textTheme.bodyMedium),
+          Text(context.l10n.messageNoJoinLinkCreated, style: context.textTheme.bodyMedium),
           const SizedBox(height: 8),
           OutlinedButton.icon(
             key: const ValueKey('group_details_create_join_link_button'),
             onPressed: isMutating ? null : () => onCreate(context),
             icon: const Icon(Icons.add_link),
-            label: const Text('Create join link'),
+            label: Text(context.l10n.buttonCreateJoinLink),
           ),
         ] else ...[
           SelectableText(_joinLinkUrl(link.code), style: context.textTheme.bodyMedium),
@@ -302,9 +303,13 @@ class _JoinLinkSection extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              Chip(label: Text(isEnabled ? 'Enabled' : 'Disabled')),
-              Chip(label: Text(link.requireApproval ? 'Approval required' : 'No approval required')),
-              Chip(label: Text(_joinRuleLabel(link.joinRule))),
+              Chip(label: Text(isEnabled ? context.l10n.labelEnabled : context.l10n.labelDisabled)),
+              Chip(
+                label: Text(
+                  link.requireApproval ? context.l10n.labelApprovalRequired : context.l10n.labelNoApprovalRequired,
+                ),
+              ),
+              Chip(label: Text(_joinRuleLabel(context, link.joinRule))),
             ],
           ),
           const SizedBox(height: 8),
@@ -314,13 +319,13 @@ class _JoinLinkSection extends StatelessWidget {
             children: [
               IconButton.filledTonal(
                 key: const ValueKey('group_details_copy_join_link_button'),
-                tooltip: 'Copy join link',
+                tooltip: context.l10n.tooltipCopyJoinLink,
                 onPressed: isMutating ? null : () => _copyJoinLink(context, link.code),
                 icon: const Icon(Icons.copy),
               ),
               IconButton.filledTonal(
                 key: const ValueKey('group_details_share_join_link_button'),
-                tooltip: 'Share join link',
+                tooltip: context.l10n.tooltipShareJoinLink,
                 onPressed: isMutating ? null : () => ShareHelper.shareText(context, _joinLinkUrl(link.code)),
                 icon: const Icon(Icons.ios_share),
               ),
@@ -328,7 +333,7 @@ class _JoinLinkSection extends StatelessWidget {
                 key: const ValueKey('group_details_edit_join_link_button'),
                 onPressed: isMutating ? null : () => onEdit(context, link),
                 icon: const Icon(Icons.tune),
-                label: const Text('Edit'),
+                label: Text(context.l10n.buttonEdit),
               ),
               OutlinedButton.icon(
                 key: ValueKey(
@@ -336,7 +341,7 @@ class _JoinLinkSection extends StatelessWidget {
                 ),
                 onPressed: isMutating ? null : (isEnabled ? onDisable : onEnable),
                 icon: Icon(isEnabled ? Icons.link_off : Icons.link),
-                label: Text(isEnabled ? 'Disable' : 'Enable'),
+                label: Text(isEnabled ? context.l10n.buttonDisable : context.l10n.buttonEnable),
               ),
             ],
           ),
@@ -346,10 +351,11 @@ class _JoinLinkSection extends StatelessWidget {
   }
 
   void _copyJoinLink(BuildContext context, String code) {
+    // TODO: review
     Clipboard.setData(ClipboardData(text: _joinLinkUrl(code)));
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Join link copied.'), behavior: SnackBarBehavior.floating));
+    ).showSnackBar(SnackBar(content: Text(context.l10n.messageJoinLinkCopied), behavior: SnackBarBehavior.floating));
   }
 }
 
@@ -376,10 +382,10 @@ class _JoinRequestsSection extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text('Pending requests', style: context.textTheme.titleMedium),
+      Text(context.l10n.labelPendingRequests, style: context.textTheme.titleMedium),
       const SizedBox(height: 8),
       if (requests.isEmpty && !isLoading)
-        Text('No pending join requests.', style: context.textTheme.bodyMedium)
+        Text(context.l10n.messageNoPendingJoinRequests, style: context.textTheme.bodyMedium)
       else
         for (final request in requests)
           _JoinRequestTile(
@@ -397,7 +403,7 @@ class _JoinRequestsSection extends StatelessWidget {
         TextButton(
           key: const ValueKey('group_details_load_more_join_requests_button'),
           onPressed: onLoadMore,
-          child: const Text('Load more requests'),
+          child: Text(context.l10n.buttonLoadMoreRequests),
         ),
     ],
   );
@@ -430,12 +436,12 @@ class _JoinRequestTile extends StatelessWidget {
         spacing: 4,
         children: [
           IconButton(
-            tooltip: 'Approve ${profile.handle}',
+            tooltip: context.l10n.tooltipApproveJoinRequest(profile.handle),
             onPressed: isMutating ? null : onApprove,
             icon: const Icon(Icons.check_circle_outline),
           ),
           IconButton(
-            tooltip: 'Reject ${profile.handle}',
+            tooltip: context.l10n.tooltipRejectJoinRequest(profile.handle),
             onPressed: isMutating ? null : onReject,
             icon: const Icon(Icons.cancel_outlined),
           ),
@@ -461,24 +467,27 @@ class _JoinLinkDialogState extends State<_JoinLinkDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.currentLink == null ? 'Create join link' : 'Edit join link'),
+      title: Text(widget.currentLink == null ? context.l10n.labelCreateJoinLink : context.l10n.labelEditJoinLink),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           SwitchListTile(
             key: const ValueKey('group_details_join_link_approval_switch'),
             contentPadding: EdgeInsets.zero,
-            title: const Text('Require approval'),
+            title: Text(context.l10n.labelRequireApproval),
             value: _requireApproval,
             onChanged: (value) => setState(() => _requireApproval = value),
           ),
           DropdownButtonFormField<KnownJoinRule>(
             key: const ValueKey('group_details_join_rule_field'),
             initialValue: _joinRule,
-            decoration: const InputDecoration(labelText: 'Who can use the link'),
-            items: const [
-              DropdownMenuItem(value: KnownJoinRule.followedByOwner, child: Text('People followed by owner')),
-              DropdownMenuItem(value: KnownJoinRule.anyone, child: Text('Anyone')),
+            decoration: InputDecoration(labelText: context.l10n.labelWhoCanUseLink),
+            items: [
+              DropdownMenuItem(
+                value: KnownJoinRule.followedByOwner,
+                child: Text(context.l10n.labelPeopleFollowedByOwner),
+              ),
+              DropdownMenuItem(value: KnownJoinRule.anyone, child: Text(context.l10n.labelAnyone)),
             ],
             onChanged: (value) {
               if (value != null) setState(() => _joinRule = value);
@@ -487,7 +496,7 @@ class _JoinLinkDialogState extends State<_JoinLinkDialog> {
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(context.l10n.buttonCancel)),
         FilledButton(
           key: const ValueKey('group_details_join_link_submit'),
           onPressed: () => Navigator.of(context).pop(
@@ -496,7 +505,7 @@ class _JoinLinkDialogState extends State<_JoinLinkDialog> {
               requireApproval: _requireApproval,
             ),
           ),
-          child: const Text('Save'),
+          child: Text(context.l10n.buttonSave),
         ),
       ],
     );
@@ -512,10 +521,10 @@ class _JoinLinkSettings {
 
 String _joinLinkUrl(String code) => 'https://bsky.app/messages/join/$code';
 
-String _joinRuleLabel(JoinRule joinRule) => switch (joinRule.knownValue) {
-  KnownJoinRule.anyone => 'Anyone',
-  KnownJoinRule.followedByOwner => 'Followed by owner',
-  null => joinRule.unknown ?? 'Unknown rule',
+String _joinRuleLabel(BuildContext context, JoinRule joinRule) => switch (joinRule.knownValue) {
+  KnownJoinRule.anyone => context.l10n.labelAnyone,
+  KnownJoinRule.followedByOwner => context.l10n.labelFollowedByOwner,
+  null => joinRule.unknown ?? context.l10n.labelUnknownRule,
 };
 
 class _MemberTile extends StatelessWidget {
@@ -541,7 +550,7 @@ class _MemberTile extends StatelessWidget {
       ),
       trailing: canRemove
           ? IconButton(
-              tooltip: 'Remove ${member.handle}',
+              tooltip: context.l10n.tooltipRemoveMember(member.handle),
               icon: const Icon(Icons.person_remove_outlined),
               onPressed: isMutating ? null : onRemove,
             )
@@ -603,7 +612,7 @@ class _AddMemberSheetState extends State<_AddMemberSheet> {
               controller: _controller,
               autofocus: true,
               decoration: InputDecoration(
-                hintText: 'Search people',
+                hintText: context.l10n.hintSearchPeople,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _isSearching
                     ? const Padding(
@@ -644,9 +653,9 @@ class _ErrorView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Failed to load group details.'),
+          Text(context.l10n.errorFailedToLoadGroupDetails),
           const SizedBox(height: 12),
-          FilledButton(onPressed: onRetry, child: const Text('Retry')),
+          FilledButton(onPressed: onRetry, child: Text(context.l10n.buttonRetry)),
         ],
       ),
     );

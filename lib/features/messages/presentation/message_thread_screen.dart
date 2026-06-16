@@ -1,3 +1,4 @@
+import 'package:bluesky_poptart/chat/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/chat/bsky/convo/defs.dart';
 import 'package:bluesky_poptart/chat/bsky/convo/get_messages.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
+import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/bloc/message_bloc.dart';
 import 'package:lazurite/features/messages/presentation/group_details_route_args.dart';
@@ -77,6 +79,7 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
         )
         .where((t) => t.isNotEmpty)
         .join('\n');
+    // TODO: review
     Clipboard.setData(ClipboardData(text: lines));
     ScaffoldMessenger.of(
       context,
@@ -92,23 +95,22 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
   String? _threadSubtitle(MessageState state) {
     final group = _group(state);
     if (group == null) return null;
-    final count = group.memberCount;
-    return count == 1 ? '1 member' : '$count members';
+    return context.l10n.formatMemberCount(group.memberCount);
   }
 
   String? _inputDisabledReason(MessageState state) {
     final convo = state.convo ?? widget.convo;
     final status = convo?.status?.knownValue;
     if (status == KnownConvoStatus.request) {
-      return 'Accept the message request before replying.';
+      return context.l10n.messageAcceptRequestBeforeReplying;
     }
 
     final lockStatus = _group(state)?.lockStatus.knownValue;
     if (lockStatus == KnownConvoLockStatus.lockedPermanently) {
-      return 'This group is permanently locked.';
+      return context.l10n.messageGroupPermanentlyLocked;
     }
     if (lockStatus == KnownConvoLockStatus.locked) {
-      return 'This group is locked.';
+      return context.l10n.messageGroupLocked;
     }
     return null;
   }
@@ -153,7 +155,7 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
                 children: [
                   if (convo?.kind?.groupConvo != null)
                     IconButton(
-                      tooltip: 'Group details',
+                      tooltip: context.l10n.tooltipGroupDetails,
                       icon: const Icon(Icons.info_outline),
                       onPressed: () => context.push(
                         '/alerts/messages/${widget.convoId}/details',
@@ -207,11 +209,15 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
                     }
 
                     final message = state.messages[index];
+                    final members = (state.convo ?? widget.convo)?.members ?? const <ProfileViewBasic>[];
                     return message.when(
-                      messageView: (data) =>
-                          MessageBubble(message: data, isCurrentUser: data.sender.did == currentUserDid),
+                      messageView: (data) => MessageBubble(
+                        message: data,
+                        isCurrentUser: data.sender.did == currentUserDid,
+                        senderProfile: _profileForDid(members, data.sender.did),
+                      ),
                       deletedMessageView: (data) => const DeletedMessageBubble(isCurrentUser: false),
-                      systemMessageView: (data) => _SystemMessageRow(message: data),
+                      systemMessageView: (data) => _SystemMessageRow(message: data, members: members),
                       unknown: (_) => const SizedBox.shrink(),
                     );
                   },
@@ -309,28 +315,39 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
 
 enum _ThreadAction { copyAll }
 
+ProfileViewBasic? _profileForDid(List<ProfileViewBasic> members, String did) {
+  for (final member in members) {
+    if (member.did == did) return member;
+  }
+  return null;
+}
+
 class _SystemMessageRow extends StatelessWidget {
-  const _SystemMessageRow({required this.message});
+  const _SystemMessageRow({required this.message, required this.members});
 
   final SystemMessageView message;
+  final List<ProfileViewBasic> members;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final text = _systemMessageText(context, message.data);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Center(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: Text(
-              _systemMessageText(message.data),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        child: Semantics(
+          label: context.l10n.semanticSystemMessage(text),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: context.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text(
+                text,
+                textAlign: TextAlign.center,
+                style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
+              ),
             ),
           ),
         ),
@@ -338,23 +355,49 @@ class _SystemMessageRow extends StatelessWidget {
     );
   }
 
-  String _systemMessageText(USystemMessageViewData data) {
-    if (data.systemMessageDataAddMember != null) return 'A member was added to the group.';
-    if (data.systemMessageDataRemoveMember != null) return 'A member was removed from the group.';
-    if (data.systemMessageDataMemberJoin != null) return 'A member joined the group.';
-    if (data.systemMessageDataMemberLeave != null) return 'A member left the group.';
-    if (data.systemMessageDataLockConvo != null) return 'The group was locked.';
-    if (data.systemMessageDataUnlockConvo != null) return 'The group was unlocked.';
-    if (data.systemMessageDataLockConvoPermanently != null) return 'The group was permanently locked.';
+  String _systemMessageText(BuildContext context, USystemMessageViewData data) {
+    final added = data.systemMessageDataAddMember;
+    if (added != null) {
+      final name = _displayNameForDid(added.member.did);
+      return name == null ? context.l10n.systemMessageMemberAdded : context.l10n.systemMessageNamedMemberAdded(name);
+    }
+    final removed = data.systemMessageDataRemoveMember;
+    if (removed != null) {
+      final name = _displayNameForDid(removed.member.did);
+      return name == null
+          ? context.l10n.systemMessageMemberRemoved
+          : context.l10n.systemMessageNamedMemberRemoved(name);
+    }
+    final joined = data.systemMessageDataMemberJoin;
+    if (joined != null) {
+      final name = _displayNameForDid(joined.member.did);
+      return name == null ? context.l10n.systemMessageMemberJoined : context.l10n.systemMessageNamedMemberJoined(name);
+    }
+    final left = data.systemMessageDataMemberLeave;
+    if (left != null) {
+      final name = _displayNameForDid(left.member.did);
+      return name == null ? context.l10n.systemMessageMemberLeft : context.l10n.systemMessageNamedMemberLeft(name);
+    }
+    if (data.systemMessageDataLockConvo != null) return context.l10n.systemMessageGroupLocked;
+    if (data.systemMessageDataUnlockConvo != null) return context.l10n.systemMessageGroupUnlocked;
+    if (data.systemMessageDataLockConvoPermanently != null) return context.l10n.systemMessageGroupPermanentlyLocked;
     final editGroup = data.systemMessageDataEditGroup;
     if (editGroup?.newName?.trim().isNotEmpty == true) {
-      return 'The group was renamed to ${editGroup!.newName}.';
+      return context.l10n.systemMessageGroupRenamed(editGroup!.newName!);
     }
-    if (editGroup != null) return 'The group name was updated.';
-    if (data.systemMessageDataCreateJoinLink != null) return 'A join link was created.';
-    if (data.systemMessageDataEditJoinLink != null) return 'The join link was updated.';
-    if (data.systemMessageDataEnableJoinLink != null) return 'The join link was enabled.';
-    if (data.systemMessageDataDisableJoinLink != null) return 'The join link was disabled.';
-    return 'Group updated.';
+    if (editGroup != null) return context.l10n.systemMessageGroupNameUpdated;
+    if (data.systemMessageDataCreateJoinLink != null) return context.l10n.systemMessageJoinLinkCreated;
+    if (data.systemMessageDataEditJoinLink != null) return context.l10n.systemMessageJoinLinkUpdated;
+    if (data.systemMessageDataEnableJoinLink != null) return context.l10n.systemMessageJoinLinkEnabled;
+    if (data.systemMessageDataDisableJoinLink != null) return context.l10n.systemMessageJoinLinkDisabled;
+    return context.l10n.messageGroupUpdated;
+  }
+
+  String? _displayNameForDid(String did) {
+    final profile = _profileForDid(members, did);
+    if (profile == null) return null;
+    final displayName = profile.displayName?.trim();
+    if (displayName != null && displayName.isNotEmpty) return displayName;
+    return profile.handle;
   }
 }

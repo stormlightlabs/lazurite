@@ -4,6 +4,7 @@ import 'package:bluesky_poptart/chat/bsky/group/request_join.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
@@ -54,11 +55,11 @@ class _JoinLinkPreviewScreenState extends State<JoinLinkPreviewScreen> {
       setState(() {
         _pendingConvo = convo;
         _pendingWithoutConvo = status == KnownGroupRequestJoinStatus.pending && convo == null;
-        _message = 'Request sent.';
+        _message = context.l10n.messageJoinRequestSent;
       });
     } catch (_) {
       if (mounted) {
-        setState(() => _message = 'Could not request to join this group.');
+        setState(() => _message = context.l10n.errorCouldNotRequestJoinGroup);
       }
     } finally {
       if (mounted) {
@@ -78,12 +79,12 @@ class _JoinLinkPreviewScreenState extends State<JoinLinkPreviewScreen> {
         setState(() {
           _pendingConvo = null;
           _pendingWithoutConvo = false;
-          _message = 'Request withdrawn.';
+          _message = context.l10n.messageJoinRequestWithdrawn;
         });
       }
     } catch (_) {
       if (mounted) {
-        setState(() => _message = 'Could not withdraw this request.');
+        setState(() => _message = context.l10n.errorCouldNotWithdrawJoinRequest);
       }
     } finally {
       if (mounted) {
@@ -94,12 +95,12 @@ class _JoinLinkPreviewScreenState extends State<JoinLinkPreviewScreen> {
 
   void _openConvo(ConvoView convo) => context.go(
     '/alerts/messages/${convo.id}',
-    extra: MessageThreadRouteArgs(title: convo.kind?.groupConvo?.name ?? 'Conversation', convo: convo),
+    extra: MessageThreadRouteArgs(title: convo.kind?.groupConvo?.name ?? context.l10n.labelConversation, convo: convo),
   );
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Join group')),
+    appBar: AppBar(title: Text(context.l10n.labelJoinGroup)),
     body: FutureBuilder<JoinLinkPreviewView>(
       future: _previewFuture,
       builder: (context, snapshot) {
@@ -159,7 +160,7 @@ class _JoinPreviewBody extends StatelessWidget {
         Text(preview.name, style: context.textTheme.headlineSmall),
         const SizedBox(height: 8),
         Text(
-          '${preview.memberCount} ${preview.memberCount == 1 ? 'member' : 'members'}',
+          context.l10n.formatMemberCount(preview.memberCount),
           style: context.textTheme.bodyMedium?.copyWith(color: context.colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 16),
@@ -178,14 +179,14 @@ class _JoinPreviewBody extends StatelessWidget {
             key: const ValueKey('join_link_withdraw_request_button'),
             onPressed: isRequesting ? null : () => onWithdrawRequest(withdrawConvo.id),
             icon: const Icon(Icons.undo),
-            label: const Text('Withdraw request'),
+            label: Text(context.l10n.buttonWithdrawRequest),
           )
         else if (existingConvo != null)
           FilledButton.icon(
             key: const ValueKey('join_link_open_group_button'),
             onPressed: () => onOpenConvo(existingConvo),
             icon: const Icon(Icons.forum_outlined),
-            label: const Text('Open group'),
+            label: Text(context.l10n.buttonOpenGroup),
           )
         else
           FilledButton.icon(
@@ -194,7 +195,7 @@ class _JoinPreviewBody extends StatelessWidget {
             icon: isRequesting
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.group_add_outlined),
-            label: Text(preview.requireApproval ? 'Request to join' : 'Join group'),
+            label: Text(preview.requireApproval ? context.l10n.buttonRequestToJoin : context.l10n.buttonJoinGroup),
           ),
       ],
     );
@@ -225,14 +226,11 @@ class _PendingWithoutConvoNotice extends StatelessWidget {
             children: [
               Icon(Icons.hourglass_empty, size: 18, color: context.colorScheme.onSurfaceVariant),
               const SizedBox(width: 8),
-              Text('Request pending', style: context.textTheme.titleSmall),
+              Text(context.l10n.labelRequestPending, style: context.textTheme.titleSmall),
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            'The server did not return a conversation for this request, so Lazurite cannot withdraw it from this link screen.',
-            style: context.textTheme.bodyMedium,
-          ),
+          Text(context.l10n.messagePendingJoinRequestCannotWithdrawHere, style: context.textTheme.bodyMedium),
           const SizedBox(height: 12),
           FilledButton.icon(
             key: const ValueKey('join_link_pending_without_convo_button'),
@@ -240,7 +238,7 @@ class _PendingWithoutConvoNotice extends StatelessWidget {
             icon: isRequesting
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.schedule),
-            label: const Text('Waiting for approval'),
+            label: Text(context.l10n.labelWaitingForApproval),
           ),
         ],
       ),
@@ -258,9 +256,9 @@ class _JoinPreviewError extends StatelessWidget {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text('This join link is invalid or disabled.'),
+        Text(context.l10n.errorJoinLinkInvalidOrDisabled),
         const SizedBox(height: 12),
-        FilledButton(onPressed: onRetry, child: const Text('Retry')),
+        FilledButton(onPressed: onRetry, child: Text(context.l10n.buttonRetry)),
       ],
     ),
   );

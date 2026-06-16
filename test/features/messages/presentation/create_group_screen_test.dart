@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/app_localizations_en.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
 import 'package:lazurite/features/messages/bloc/group_create_cubit.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
@@ -44,7 +45,11 @@ void main() {
           path: '/alerts/messages/new-group',
           builder: (context, state) {
             return BlocProvider(
-              create: (_) => GroupCreateCubit(convoRepository: convoRepository, currentUserDid: currentUserDid),
+              create: (_) => GroupCreateCubit(
+                convoRepository: convoRepository,
+                currentUserDid: currentUserDid,
+                l10n: AppLocalizationsEn(),
+              ),
               child: const CreateGroupScreen(),
             );
           },

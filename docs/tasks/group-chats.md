@@ -151,26 +151,62 @@
 ### Notes
 
 - Added owner join-link controls to group details: display, copy, share, create,
-      edit, enable, and disable.
+  edit, enable, and disable.
 - Added pending request loading in group details with approve and reject actions.
 - Added `/alerts/messages/join/:code` preview route and bsky.app join-link
-      resolution for viewer link opens.
+  resolution for viewer link opens.
 - Added viewer request-to-join support. If the server joins immediately and returns
-      a conversation, the preview route opens that conversation.
+  a conversation, the preview route opens that conversation.
 - The resolved `bluesky_poptart 0.1.1` package does not generate
-      `withdrawJoinRequest` or `updateJoinRequestsRead`, so Lazurite adds narrow raw-XRPC
-      adapters for those two procedures until generated bindings are available.
+  `withdrawJoinRequest` or `updateJoinRequestsRead`, so Lazurite adds narrow raw-XRPC
+  adapters for those two procedures until generated bindings are available.
 - Tests cover preview rendering, request join, invalid/disabled preview errors,
-      create/edit/enable/disable join links, pending request pagination, approve,
-      reject, withdraw, and read marking.
+  create/edit/enable/disable join links, pending request pagination, approve,
+  reject, withdraw, and read marking.
 
 ## M7 - Polish, Localization, And Verification
 
-- [ ] Add all user-facing strings to l10n files
-- [ ] Add accessibility labels for create group, member actions, join links, and system
+- [x] Add all user-facing strings to l10n files
+- [x] Add accessibility labels for create group, member actions, join links, and system
       messages
 - [ ] Ensure long group names and handles wrap cleanly on narrow screens
 - [ ] Ensure parent row taps do not conflict with member/action buttons
 - [ ] Review copy for privacy and trust boundaries around join links and group invites
-- [ ] Run `flutter analyze`
-- [ ] Run `gtimeout 1200s flutter test --reporter=failures-only`
+
+### Bugs
+
+- [x] Avatars should be rendered next to messages
+- [x] New members are showing up as "a member" not their names
+
+## M8 - DM Creation And Message Entry Points
+
+- [ ] Make group creation reachable from the actual messages tab app bar
+- [ ] Consolidate the unused `ConvoListScreen` path so message-list actions cannot
+      drift from `AlertsScreen`
+- [ ] Add a clear primary message action from profiles for starting or opening a DM
+- [ ] Add a new-DM flow from the messages tab with profile search and single-recipient selection
+- [ ] Reuse `ConvoRepository.getConvoForMembers` for direct conversation lookup/creation
+- [ ] Insert the returned direct conversation into `ConvoListBloc` before navigation
+- [ ] Navigate to `/alerts/messages/:id` with `MessageThreadRouteArgs` after DM creation
+- [ ] Hide or disable DM entry points for self, blocked accounts, blocked-by accounts, offline
+      state, and profiles with chat disabled when that state is available
+- [ ] Show actionable errors for blocked users, forbidden DMs, follow restrictions, recipient
+      not found, and network failures
+- [ ] Ensure group creation and DM creation use consistent profile search, selected-recipient,
+      and navigation patterns where practical
+- [ ] Add route/widget tests proving group creation is reachable from `/alerts/messages`
+- [ ] Add repository/bloc/widget tests for DM creation success, upsert, navigation, and
+      error states
+- [ ] Add profile-screen tests for the message action visibility and disabled states
+
+### Notes
+
+- `ConvoRepository.getConvoForMembers` already exists and calls
+  `chat.bsky.convo.getConvoForMembers`, which is the right API surface for direct
+  conversations.
+- The current group-create button is in `ConvoListScreen`, but the active
+  `/alerts/messages` route renders `AlertsScreen` with `ConvoListPane` directly. That makes the
+  implemented `/alerts/messages/new-group` route effectively hidden from normal navigation.
+- Existing direct conversations can be opened from the conversation list, but there is no visible
+  product surface for starting a new direct conversation from a profile, search result, or messages
+  tab.

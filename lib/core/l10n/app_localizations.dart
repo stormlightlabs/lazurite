@@ -3847,6 +3847,606 @@ abstract class AppLocalizations {
   /// **'Thread copied'**
   String get messageThreadCopied;
 
+  /// Button label to add a member to a group chat
+  ///
+  /// In en, this message translates to:
+  /// **'Add member'**
+  String get buttonAddMember;
+
+  /// Button label to create a group chat join link
+  ///
+  /// In en, this message translates to:
+  /// **'Create join link'**
+  String get buttonCreateJoinLink;
+
+  /// Button label to disable something
+  ///
+  /// In en, this message translates to:
+  /// **'Disable'**
+  String get buttonDisable;
+
+  /// Button label to enable something
+  ///
+  /// In en, this message translates to:
+  /// **'Enable'**
+  String get buttonEnable;
+
+  /// Button label to join a group chat
+  ///
+  /// In en, this message translates to:
+  /// **'Join group'**
+  String get buttonJoinGroup;
+
+  /// Button label to leave a group chat
+  ///
+  /// In en, this message translates to:
+  /// **'Leave group'**
+  String get buttonLeaveGroup;
+
+  /// Button label to load additional group chat members
+  ///
+  /// In en, this message translates to:
+  /// **'Load more members'**
+  String get buttonLoadMoreMembers;
+
+  /// Button label to load additional group join requests
+  ///
+  /// In en, this message translates to:
+  /// **'Load more requests'**
+  String get buttonLoadMoreRequests;
+
+  /// Button label to open a group conversation
+  ///
+  /// In en, this message translates to:
+  /// **'Open group'**
+  String get buttonOpenGroup;
+
+  /// Button label to rename something
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get buttonRename;
+
+  /// Button label to request access to a group chat
+  ///
+  /// In en, this message translates to:
+  /// **'Request to join'**
+  String get buttonRequestToJoin;
+
+  /// Button label to withdraw a group join request
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw request'**
+  String get buttonWithdrawRequest;
+
+  /// Error shown when requesting to join a group fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not request to join this group.'**
+  String get errorCouldNotRequestJoinGroup;
+
+  /// Error shown when withdrawing a group join request fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not withdraw this request.'**
+  String get errorCouldNotWithdrawJoinRequest;
+
+  /// Error shown when group details fail to load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load group details.'**
+  String get errorFailedToLoadGroupDetails;
+
+  /// Error shown when searching for group member candidates fails
+  ///
+  /// In en, this message translates to:
+  /// **'Search failed. Try a handle or display name again.'**
+  String get errorGroupSearchFailed;
+
+  /// Error shown when a suspended account tries to create a group chat
+  ///
+  /// In en, this message translates to:
+  /// **'This account cannot create a group chat.'**
+  String get errorGroupCreateAccountSuspended;
+
+  /// Error shown when group creation includes a blocked actor
+  ///
+  /// In en, this message translates to:
+  /// **'A selected member cannot be invited because of a block.'**
+  String get errorGroupCreateBlockedActor;
+
+  /// Fallback error shown when group creation fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create group. Check the selected members and try again.'**
+  String get errorGroupCreateFailed;
+
+  /// Validation error shown when creating a group without members
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one member.'**
+  String get errorGroupCreateMissingMember;
+
+  /// Validation error shown when creating a group without a name
+  ///
+  /// In en, this message translates to:
+  /// **'Add a group name.'**
+  String get errorGroupCreateMissingName;
+
+  /// Error shown when a new account cannot create a group chat
+  ///
+  /// In en, this message translates to:
+  /// **'New accounts cannot create group chats yet.'**
+  String get errorGroupCreateNewAccount;
+
+  /// Error shown when a selected member does not follow the group creator
+  ///
+  /// In en, this message translates to:
+  /// **'A selected member only accepts group invites from people they follow.'**
+  String get errorGroupCreateNotFollowedBySender;
+
+  /// Error shown when a selected group member cannot be found
+  ///
+  /// In en, this message translates to:
+  /// **'One of the selected accounts could not be found.'**
+  String get errorGroupCreateRecipientNotFound;
+
+  /// Error shown when a selected member does not allow group chats
+  ///
+  /// In en, this message translates to:
+  /// **'A selected member does not allow group chat invites.'**
+  String get errorGroupCreateUserForbidsGroups;
+
+  /// Error shown when a blocked member cannot be added to a group
+  ///
+  /// In en, this message translates to:
+  /// **'That member cannot be added because of a block.'**
+  String get errorGroupDetailsBlockedActor;
+
+  /// Error shown when the viewer lacks permission to change a group
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have permission to change this group.'**
+  String get errorGroupDetailsInsufficientRole;
+
+  /// Error shown when acting on a stale join request
+  ///
+  /// In en, this message translates to:
+  /// **'That join request is no longer pending.'**
+  String get errorGroupDetailsInvalidJoinRequest;
+
+  /// Error shown when a join link is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'That join link is disabled.'**
+  String get errorGroupDetailsJoinLinkDisabled;
+
+  /// Error shown when a join link cannot be found
+  ///
+  /// In en, this message translates to:
+  /// **'That join link could not be found.'**
+  String get errorGroupDetailsJoinLinkNotFound;
+
+  /// Error shown when adding a member who does not follow the viewer
+  ///
+  /// In en, this message translates to:
+  /// **'That member only accepts group invites from people they follow.'**
+  String get errorGroupDetailsNotFollowedBySender;
+
+  /// Error shown when an owner tries to leave a group before transferring ownership
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer ownership before leaving this group.'**
+  String get errorGroupDetailsOwnerCannotLeave;
+
+  /// Error shown when a group member account cannot be found
+  ///
+  /// In en, this message translates to:
+  /// **'That account could not be found.'**
+  String get errorGroupDetailsRecipientNotFound;
+
+  /// Fallback error shown when a group update fails
+  ///
+  /// In en, this message translates to:
+  /// **'Group update failed. Try again.'**
+  String get errorGroupDetailsUpdateFailed;
+
+  /// Error shown when a member does not allow group chat invites
+  ///
+  /// In en, this message translates to:
+  /// **'That member does not allow group chat invites.'**
+  String get errorGroupDetailsUserForbidsGroups;
+
+  /// Validation error shown when too many members are selected for a group
+  ///
+  /// In en, this message translates to:
+  /// **'Groups can include up to 49 invited members.'**
+  String get errorGroupMemberLimit;
+
+  /// Validation error shown when trying to add yourself to a group you own
+  ///
+  /// In en, this message translates to:
+  /// **'You are already included as the group owner.'**
+  String get errorGroupOwnerAlreadyIncluded;
+
+  /// Error shown when a group join link cannot be previewed
+  ///
+  /// In en, this message translates to:
+  /// **'This join link is invalid or disabled.'**
+  String get errorJoinLinkInvalidOrDisabled;
+
+  /// Group chat member limit chip label
+  ///
+  /// In en, this message translates to:
+  /// **'Limit {limit}'**
+  String formatGroupMemberLimit(int limit);
+
+  /// Helper text for the group name field
+  ///
+  /// In en, this message translates to:
+  /// **'Up to 50 characters'**
+  String get helperGroupNameCharacterLimit;
+
+  /// Hint text for searching people
+  ///
+  /// In en, this message translates to:
+  /// **'Search people'**
+  String get hintSearchPeople;
+
+  /// Section label for adding people to a group
+  ///
+  /// In en, this message translates to:
+  /// **'Add people'**
+  String get labelAddPeople;
+
+  /// Join-link rule label for anyone
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone'**
+  String get labelAnyone;
+
+  /// Join-link status label indicating approval is required
+  ///
+  /// In en, this message translates to:
+  /// **'Approval required'**
+  String get labelApprovalRequired;
+
+  /// Dialog title for creating a join link
+  ///
+  /// In en, this message translates to:
+  /// **'Create join link'**
+  String get labelCreateJoinLink;
+
+  /// Disabled status label
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get labelDisabled;
+
+  /// Dialog title for editing a join link
+  ///
+  /// In en, this message translates to:
+  /// **'Edit join link'**
+  String get labelEditJoinLink;
+
+  /// Enabled status label
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get labelEnabled;
+
+  /// Join-link rule label for people followed by the group owner
+  ///
+  /// In en, this message translates to:
+  /// **'Followed by owner'**
+  String get labelFollowedByOwner;
+
+  /// Group details screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Group details'**
+  String get labelGroupDetails;
+
+  /// Group chat name field label
+  ///
+  /// In en, this message translates to:
+  /// **'Group name'**
+  String get labelGroupName;
+
+  /// Join group preview screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Join group'**
+  String get labelJoinGroup;
+
+  /// Group join link section label
+  ///
+  /// In en, this message translates to:
+  /// **'Join link'**
+  String get labelJoinLink;
+
+  /// New group screen title
+  ///
+  /// In en, this message translates to:
+  /// **'New group'**
+  String get labelNewGroup;
+
+  /// Join-link status label indicating approval is not required
+  ///
+  /// In en, this message translates to:
+  /// **'No approval required'**
+  String get labelNoApprovalRequired;
+
+  /// Group join requests section label
+  ///
+  /// In en, this message translates to:
+  /// **'Pending requests'**
+  String get labelPendingRequests;
+
+  /// Join-link dropdown option for people followed by the owner
+  ///
+  /// In en, this message translates to:
+  /// **'People followed by owner'**
+  String get labelPeopleFollowedByOwner;
+
+  /// Dialog title for renaming a group
+  ///
+  /// In en, this message translates to:
+  /// **'Rename group'**
+  String get labelRenameGroup;
+
+  /// Status label for a pending group join request
+  ///
+  /// In en, this message translates to:
+  /// **'Request pending'**
+  String get labelRequestPending;
+
+  /// Switch label for requiring join-link approval
+  ///
+  /// In en, this message translates to:
+  /// **'Require approval'**
+  String get labelRequireApproval;
+
+  /// Fallback label for an unknown group join-link rule
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown rule'**
+  String get labelUnknownRule;
+
+  /// Disabled button label for a pending join request
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for approval'**
+  String get labelWaitingForApproval;
+
+  /// Join-link rule field label
+  ///
+  /// In en, this message translates to:
+  /// **'Who can use the link'**
+  String get labelWhoCanUseLink;
+
+  /// Disabled composer reason for message requests
+  ///
+  /// In en, this message translates to:
+  /// **'Accept the message request before replying.'**
+  String get messageAcceptRequestBeforeReplying;
+
+  /// Helper text shown when a new group has no selected members
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one person to create a group.'**
+  String get messageAddAtLeastOnePersonToCreateGroup;
+
+  /// Disabled composer reason for locked group chats
+  ///
+  /// In en, this message translates to:
+  /// **'This group is locked.'**
+  String get messageGroupLocked;
+
+  /// Disabled composer reason for permanently locked group chats
+  ///
+  /// In en, this message translates to:
+  /// **'This group is permanently locked.'**
+  String get messageGroupPermanentlyLocked;
+
+  /// Snackbar after copying a group join link
+  ///
+  /// In en, this message translates to:
+  /// **'Join link copied.'**
+  String get messageJoinLinkCopied;
+
+  /// Status after sending a group join request
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent.'**
+  String get messageJoinRequestSent;
+
+  /// Status after withdrawing a group join request
+  ///
+  /// In en, this message translates to:
+  /// **'Request withdrawn.'**
+  String get messageJoinRequestWithdrawn;
+
+  /// Empty state for a group with no join link
+  ///
+  /// In en, this message translates to:
+  /// **'No join link has been created.'**
+  String get messageNoJoinLinkCreated;
+
+  /// Empty state for a group with no pending join requests
+  ///
+  /// In en, this message translates to:
+  /// **'No pending join requests.'**
+  String get messageNoPendingJoinRequests;
+
+  /// Explanation for pending join requests that cannot be withdrawn from the join-link preview
+  ///
+  /// In en, this message translates to:
+  /// **'The server did not return a conversation for this request, so Lazurite cannot withdraw it from this link screen.'**
+  String get messagePendingJoinRequestCannotWithdrawHere;
+
+  /// Accessibility label for a group system message
+  ///
+  /// In en, this message translates to:
+  /// **'System message: {message}'**
+  String semanticSystemMessage(String message);
+
+  /// System message when a group is locked
+  ///
+  /// In en, this message translates to:
+  /// **'The group was locked.'**
+  String get systemMessageGroupLocked;
+
+  /// System message when a group name changes without a visible new name
+  ///
+  /// In en, this message translates to:
+  /// **'The group name was updated.'**
+  String get systemMessageGroupNameUpdated;
+
+  /// System message when a group is permanently locked
+  ///
+  /// In en, this message translates to:
+  /// **'The group was permanently locked.'**
+  String get systemMessageGroupPermanentlyLocked;
+
+  /// System message when a group is renamed
+  ///
+  /// In en, this message translates to:
+  /// **'The group was renamed to {name}.'**
+  String systemMessageGroupRenamed(String name);
+
+  /// System message when a group is unlocked
+  ///
+  /// In en, this message translates to:
+  /// **'The group was unlocked.'**
+  String get systemMessageGroupUnlocked;
+
+  /// System message when a join link is created
+  ///
+  /// In en, this message translates to:
+  /// **'A join link was created.'**
+  String get systemMessageJoinLinkCreated;
+
+  /// System message when a join link is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'The join link was disabled.'**
+  String get systemMessageJoinLinkDisabled;
+
+  /// System message when a join link is enabled
+  ///
+  /// In en, this message translates to:
+  /// **'The join link was enabled.'**
+  String get systemMessageJoinLinkEnabled;
+
+  /// System message when a join link is edited
+  ///
+  /// In en, this message translates to:
+  /// **'The join link was updated.'**
+  String get systemMessageJoinLinkUpdated;
+
+  /// System message when a member is added
+  ///
+  /// In en, this message translates to:
+  /// **'A member was added to the group.'**
+  String get systemMessageMemberAdded;
+
+  /// System message when a named member is added
+  ///
+  /// In en, this message translates to:
+  /// **'{name} was added to the group.'**
+  String systemMessageNamedMemberAdded(Object name);
+
+  /// System message when a member joins
+  ///
+  /// In en, this message translates to:
+  /// **'A member joined the group.'**
+  String get systemMessageMemberJoined;
+
+  /// System message when a named member joins
+  ///
+  /// In en, this message translates to:
+  /// **'{name} joined the group.'**
+  String systemMessageNamedMemberJoined(Object name);
+
+  /// System message when a member leaves
+  ///
+  /// In en, this message translates to:
+  /// **'A member left the group.'**
+  String get systemMessageMemberLeft;
+
+  /// System message when a named member leaves
+  ///
+  /// In en, this message translates to:
+  /// **'{name} left the group.'**
+  String systemMessageNamedMemberLeft(Object name);
+
+  /// System message when a member is removed
+  ///
+  /// In en, this message translates to:
+  /// **'A member was removed from the group.'**
+  String get systemMessageMemberRemoved;
+
+  /// System message when a named member is removed
+  ///
+  /// In en, this message translates to:
+  /// **'{name} was removed from the group.'**
+  String systemMessageNamedMemberRemoved(Object name);
+
+  /// Tooltip for adding a person to a group
+  ///
+  /// In en, this message translates to:
+  /// **'Add {handle}'**
+  String tooltipAddMember(String handle);
+
+  /// Tooltip for approving a group join request
+  ///
+  /// In en, this message translates to:
+  /// **'Approve {handle}'**
+  String tooltipApproveJoinRequest(String handle);
+
+  /// Tooltip for copying a group join link
+  ///
+  /// In en, this message translates to:
+  /// **'Copy join link'**
+  String get tooltipCopyJoinLink;
+
+  /// Tooltip for opening the create group screen
+  ///
+  /// In en, this message translates to:
+  /// **'New group'**
+  String get tooltipCreateGroup;
+
+  /// Tooltip for opening group details
+  ///
+  /// In en, this message translates to:
+  /// **'Group details'**
+  String get tooltipGroupDetails;
+
+  /// Tooltip for rejecting a group join request
+  ///
+  /// In en, this message translates to:
+  /// **'Reject {handle}'**
+  String tooltipRejectJoinRequest(String handle);
+
+  /// Tooltip for removing a group member
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {handle}'**
+  String tooltipRemoveMember(String handle);
+
+  /// Tooltip for sharing a group join link
+  ///
+  /// In en, this message translates to:
+  /// **'Share join link'**
+  String get tooltipShareJoinLink;
+
+  /// Validation error for overly long group names
+  ///
+  /// In en, this message translates to:
+  /// **'Group names can be up to 50 characters.'**
+  String get validationGroupNameCharacterLimit;
+
   /// Today date section label
   ///
   /// In en, this message translates to:

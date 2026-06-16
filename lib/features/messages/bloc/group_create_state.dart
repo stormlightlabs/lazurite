@@ -2,6 +2,20 @@ part of 'group_create_cubit.dart';
 
 enum GroupCreateStatus { editing, submitting, success, failure }
 
+enum GroupCreateValidationIssue {
+  missingName,
+  nameTooLong,
+  missingMember,
+  tooManyMembers;
+
+  String message(AppLocalizations l10n) => switch (this) {
+    GroupCreateValidationIssue.missingName => l10n.errorGroupCreateMissingName,
+    GroupCreateValidationIssue.nameTooLong => l10n.validationGroupNameCharacterLimit,
+    GroupCreateValidationIssue.missingMember => l10n.errorGroupCreateMissingMember,
+    GroupCreateValidationIssue.tooManyMembers => l10n.errorGroupMemberLimit,
+  };
+}
+
 const _groupCreateStateNoValue = Object();
 
 class GroupCreateMember extends Equatable {
@@ -46,23 +60,23 @@ class GroupCreateState extends Equatable {
   int get nameGraphemeCount => trimmedName.characters.length;
   bool get isSubmitting => status == GroupCreateStatus.submitting;
 
-  String? get validationError {
+  GroupCreateValidationIssue? get validationIssue {
     if (trimmedName.isEmpty) {
-      return 'Add a group name.';
+      return GroupCreateValidationIssue.missingName;
     }
     if (nameGraphemeCount > GroupCreateCubit.maxNameGraphemes) {
-      return 'Group names can be up to 50 characters.';
+      return GroupCreateValidationIssue.nameTooLong;
     }
     if (members.isEmpty) {
-      return 'Add at least one member.';
+      return GroupCreateValidationIssue.missingMember;
     }
     if (members.length > GroupCreateCubit.maxMembers) {
-      return 'Groups can include up to 49 invited members.';
+      return GroupCreateValidationIssue.tooManyMembers;
     }
     return null;
   }
 
-  bool get canCreate => !isSubmitting && validationError == null;
+  bool get canCreate => !isSubmitting && validationIssue == null;
 
   GroupCreateState copyWith({
     GroupCreateStatus? status,

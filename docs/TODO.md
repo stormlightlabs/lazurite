@@ -206,3 +206,12 @@ updated: 2026-05-23
   - Hide quote posts
 - Settings map 1:1 with account level settings in the official app
 - Known followers
+
+## Swift Package Manager
+
+These packages have warnings pop-up:
+
+- workmanager_apple
+- tflite_flutter
+- permission_handler_apple
+- objectbox_flutter_libs

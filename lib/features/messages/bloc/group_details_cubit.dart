@@ -3,6 +3,7 @@ import 'package:bluesky_poptart/chat/bsky/convo/defs.dart';
 import 'package:bluesky_poptart/chat/bsky/group/defs.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lazurite/core/l10n/app_localizations.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:poptart_core/poptart_core.dart' as atcore;
 
@@ -13,15 +14,18 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     required ConvoRepository convoRepository,
     required String convoId,
     required String currentUserDid,
+    required AppLocalizations l10n,
     ConvoView? initialConvo,
   }) : _convoRepository = convoRepository,
        _convoId = convoId,
        _currentUserDid = currentUserDid,
+       _l10n = l10n,
        super(GroupDetailsState(convo: initialConvo));
 
   final ConvoRepository _convoRepository;
   final String _convoId;
   final String _currentUserDid;
+  final AppLocalizations _l10n;
 
   Future<void> load() async {
     emit(state.copyWith(status: GroupDetailsStatus.loading, errorMessage: null));
@@ -42,7 +46,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
         await loadJoinRequests();
       }
     } catch (error) {
-      emit(state.copyWith(status: GroupDetailsStatus.error, errorMessage: 'Failed to load group details.'));
+      emit(state.copyWith(status: GroupDetailsStatus.error, errorMessage: _l10n.errorFailedToLoadGroupDetails));
     }
   }
 
@@ -84,7 +88,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
       await _convoRepository.leaveConvo(_convoId);
       emit(state.copyWith(isMutating: false, leaveSucceeded: true));
     } catch (error) {
-      emit(state.copyWith(isMutating: false, errorMessage: _groupDetailsErrorMessage(error)));
+      emit(state.copyWith(isMutating: false, errorMessage: _groupDetailsErrorMessage(error, _l10n)));
     }
   }
 
@@ -120,7 +124,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
         ),
       );
     } catch (error) {
-      emit(state.copyWith(isLoadingJoinRequests: false, errorMessage: _groupDetailsErrorMessage(error)));
+      emit(state.copyWith(isLoadingJoinRequests: false, errorMessage: _groupDetailsErrorMessage(error, _l10n)));
     }
   }
 
@@ -154,7 +158,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
       await loadJoinRequests();
       emit(state.copyWith(isMutating: false, errorMessage: null));
     } catch (error) {
-      emit(state.copyWith(isMutating: false, errorMessage: _groupDetailsErrorMessage(error)));
+      emit(state.copyWith(isMutating: false, errorMessage: _groupDetailsErrorMessage(error, _l10n)));
     }
   }
 
@@ -171,7 +175,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
             );
       emit(state.copyWith(convo: convo, isMutating: false, errorMessage: null));
     } catch (error) {
-      emit(state.copyWith(isMutating: false, errorMessage: _groupDetailsErrorMessage(error)));
+      emit(state.copyWith(isMutating: false, errorMessage: _groupDetailsErrorMessage(error, _l10n)));
     }
   }
 
@@ -192,23 +196,23 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
         ),
       );
     } catch (error) {
-      emit(state.copyWith(isMutating: false, errorMessage: _groupDetailsErrorMessage(error)));
+      emit(state.copyWith(isMutating: false, errorMessage: _groupDetailsErrorMessage(error, _l10n)));
     }
   }
 }
 
-String _groupDetailsErrorMessage(Object error) {
+String _groupDetailsErrorMessage(Object error, AppLocalizations l10n) {
   final code = error is atcore.XRPCException ? error.response.data.error : null;
   return switch (code) {
-    'InsufficientRole' => 'You do not have permission to change this group.',
-    'OwnerCannotLeave' => 'Transfer ownership before leaving this group.',
-    'BlockedActor' || 'BlockedSubject' => 'That member cannot be added because of a block.',
-    'UserForbidsGroups' => 'That member does not allow group chat invites.',
-    'NotFollowedBySender' => 'That member only accepts group invites from people they follow.',
-    'RecipientNotFound' => 'That account could not be found.',
-    'JoinLinkNotFound' => 'That join link could not be found.',
-    'JoinLinkDisabled' => 'That join link is disabled.',
-    'InvalidJoinRequest' => 'That join request is no longer pending.',
-    _ => 'Group update failed. Try again.',
+    'InsufficientRole' => l10n.errorGroupDetailsInsufficientRole,
+    'OwnerCannotLeave' => l10n.errorGroupDetailsOwnerCannotLeave,
+    'BlockedActor' || 'BlockedSubject' => l10n.errorGroupDetailsBlockedActor,
+    'UserForbidsGroups' => l10n.errorGroupDetailsUserForbidsGroups,
+    'NotFollowedBySender' => l10n.errorGroupDetailsNotFollowedBySender,
+    'RecipientNotFound' => l10n.errorGroupDetailsRecipientNotFound,
+    'JoinLinkNotFound' => l10n.errorGroupDetailsJoinLinkNotFound,
+    'JoinLinkDisabled' => l10n.errorGroupDetailsJoinLinkDisabled,
+    'InvalidJoinRequest' => l10n.errorGroupDetailsInvalidJoinRequest,
+    _ => l10n.errorGroupDetailsUpdateFailed,
   };
 }

@@ -46,7 +46,7 @@ class _ConvoListScreenState extends State<ConvoListScreen> with SingleTickerProv
         title: Text(context.l10n.labelMessages, style: context.textTheme.titleMedium),
         actions: [
           IconButton(
-            tooltip: 'New group',
+            tooltip: context.l10n.tooltipCreateGroup,
             icon: const Icon(Icons.group_add_outlined),
             onPressed: () => context.push('/alerts/messages/new-group'),
           ),

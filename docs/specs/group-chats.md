@@ -153,6 +153,40 @@ The create flow should be reachable from the messages tab. It should include:
 
 After successful creation, navigate to the new conversation thread.
 
+The visible messages tab route must expose the create action. Avoid keeping
+message-list actions on a separate screen that is not used by the active
+`/alerts/messages` route.
+
+### Creating direct messages
+
+Direct message creation should be a first-class messages feature rather than an
+implicit side effect of already having a conversation. Lazurite should support
+starting or opening a direct conversation from:
+
+- a profile action button when viewing another account
+- a new-DM action in the messages tab
+- search/member-picker results used by the new-DM flow
+
+The direct-message flow should use `chat.bsky.convo.getConvoForMembers` through
+`ConvoRepository.getConvoForMembers([did])`. The server returns the existing
+direct conversation when one already exists, or creates/returns the conversation
+for that recipient when allowed.
+
+After a successful lookup/create:
+
+- insert or replace the returned conversation in `ConvoListBloc`
+- navigate to `/alerts/messages/:id`
+- pass `MessageThreadRouteArgs` with the returned `ConvoView`
+- use the other member's display name or handle as the thread title
+
+The UI should not offer impossible actions when local state is sufficient to
+know they cannot work. Hide or disable DM entry points for the current user's
+own profile, blocked accounts, blocked-by accounts, offline state, and profiles
+with chat disabled when that profile state is available. Server errors remain
+authoritative, so the flow must still handle blocked users, forbidden DMs,
+follow restrictions, recipient-not-found errors, and network failures with
+actionable copy.
+
 ### Message thread
 
 The existing `MessageThreadScreen` should support both direct and group
@@ -231,6 +265,8 @@ Future<ConvoView> createGroup({
   required List<String> memberDids,
 });
 
+Future<ConvoView> getConvoForMembers(List<String> dids);
+
 Future<ConvoMembersResult> getConvoMembers(
   String convoId, {
   String? cursor,
@@ -250,6 +286,11 @@ generated package surface is confirmed.
 Existing `ConvoListBloc` can continue loading all conversations. Add events for
 group creation and conversation replacement after group mutations.
 
+Direct-message creation should use the same conversation replacement path after
+`getConvoForMembers` returns. A small DM creation cubit may own recipient
+selection, submission state, and protocol error mapping if the new-DM flow
+needs more state than a profile action button.
+
 For thread details, either extend `MessageBloc` with a loaded `ConvoView` or add
 a small `GroupDetailsCubit` scoped to the group details route/sheet. Keep the
 member list paginated and independent from message pagination.
@@ -263,6 +304,7 @@ Existing message route:
 Recommended additions:
 
 - `/alerts/messages/new-group`
+- `/alerts/messages/new-dm`
 - `/alerts/messages/:id/details`
 - `/alerts/messages/join/:code`
 
@@ -285,6 +327,10 @@ Add bloc/widget tests for:
 
 - group conversations in the list
 - create-group form validation
+- create-group action reachability from `/alerts/messages`
+- direct-message creation from profile action and messages-tab new-DM flow
+- direct-message creation upserts the returned conversation and navigates to the thread
+- direct-message error and disabled states
 - navigation to created group
 - group thread title and locked input
 - system message rendering

@@ -1,9 +1,9 @@
 PODS:
   - Flutter (1.0.0)
-  - ObjectBox (5.3.0-beta.4)
+  - ObjectBox (5.3.0)
   - objectbox_flutter_libs (0.0.1):
     - Flutter
-    - ObjectBox (= 5.3.0-beta.4)
+    - ObjectBox (= 5.3.0)
   - permission_handler_apple (9.3.0):
     - Flutter
   - TensorFlowLiteC (2.12.0):
@@ -58,8 +58,8 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  ObjectBox: eccb95ea2054c39d81dfa2d4ccc5f1e31187228a
-  objectbox_flutter_libs: ed1510f71602e4a0d3f2a721324e468d066fdbb9
+  ObjectBox: 2aae8ad350012cb53c6e7848064307cf68617f73
+  objectbox_flutter_libs: 42b57158b8c4869b731487f220e07d6edc6616e0
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   TensorFlowLiteC: 20785a69299185a379ba9852b6625f00afd7984a
   TensorFlowLiteSwift: 3a4928286e9e35bdd3e17970f48e53c80d25e793

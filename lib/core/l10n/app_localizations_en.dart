@@ -2086,6 +2086,330 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messageThreadCopied => 'Thread copied';
 
   @override
+  String get buttonAddMember => 'Add member';
+
+  @override
+  String get buttonCreateJoinLink => 'Create join link';
+
+  @override
+  String get buttonDisable => 'Disable';
+
+  @override
+  String get buttonEnable => 'Enable';
+
+  @override
+  String get buttonJoinGroup => 'Join group';
+
+  @override
+  String get buttonLeaveGroup => 'Leave group';
+
+  @override
+  String get buttonLoadMoreMembers => 'Load more members';
+
+  @override
+  String get buttonLoadMoreRequests => 'Load more requests';
+
+  @override
+  String get buttonOpenGroup => 'Open group';
+
+  @override
+  String get buttonRename => 'Rename';
+
+  @override
+  String get buttonRequestToJoin => 'Request to join';
+
+  @override
+  String get buttonWithdrawRequest => 'Withdraw request';
+
+  @override
+  String get errorCouldNotRequestJoinGroup => 'Could not request to join this group.';
+
+  @override
+  String get errorCouldNotWithdrawJoinRequest => 'Could not withdraw this request.';
+
+  @override
+  String get errorFailedToLoadGroupDetails => 'Failed to load group details.';
+
+  @override
+  String get errorGroupSearchFailed => 'Search failed. Try a handle or display name again.';
+
+  @override
+  String get errorGroupCreateAccountSuspended => 'This account cannot create a group chat.';
+
+  @override
+  String get errorGroupCreateBlockedActor => 'A selected member cannot be invited because of a block.';
+
+  @override
+  String get errorGroupCreateFailed => 'Failed to create group. Check the selected members and try again.';
+
+  @override
+  String get errorGroupCreateMissingMember => 'Add at least one member.';
+
+  @override
+  String get errorGroupCreateMissingName => 'Add a group name.';
+
+  @override
+  String get errorGroupCreateNewAccount => 'New accounts cannot create group chats yet.';
+
+  @override
+  String get errorGroupCreateNotFollowedBySender =>
+      'A selected member only accepts group invites from people they follow.';
+
+  @override
+  String get errorGroupCreateRecipientNotFound => 'One of the selected accounts could not be found.';
+
+  @override
+  String get errorGroupCreateUserForbidsGroups => 'A selected member does not allow group chat invites.';
+
+  @override
+  String get errorGroupDetailsBlockedActor => 'That member cannot be added because of a block.';
+
+  @override
+  String get errorGroupDetailsInsufficientRole => 'You do not have permission to change this group.';
+
+  @override
+  String get errorGroupDetailsInvalidJoinRequest => 'That join request is no longer pending.';
+
+  @override
+  String get errorGroupDetailsJoinLinkDisabled => 'That join link is disabled.';
+
+  @override
+  String get errorGroupDetailsJoinLinkNotFound => 'That join link could not be found.';
+
+  @override
+  String get errorGroupDetailsNotFollowedBySender => 'That member only accepts group invites from people they follow.';
+
+  @override
+  String get errorGroupDetailsOwnerCannotLeave => 'Transfer ownership before leaving this group.';
+
+  @override
+  String get errorGroupDetailsRecipientNotFound => 'That account could not be found.';
+
+  @override
+  String get errorGroupDetailsUpdateFailed => 'Group update failed. Try again.';
+
+  @override
+  String get errorGroupDetailsUserForbidsGroups => 'That member does not allow group chat invites.';
+
+  @override
+  String get errorGroupMemberLimit => 'Groups can include up to 49 invited members.';
+
+  @override
+  String get errorGroupOwnerAlreadyIncluded => 'You are already included as the group owner.';
+
+  @override
+  String get errorJoinLinkInvalidOrDisabled => 'This join link is invalid or disabled.';
+
+  @override
+  String formatGroupMemberLimit(int limit) {
+    return 'Limit $limit';
+  }
+
+  @override
+  String get helperGroupNameCharacterLimit => 'Up to 50 characters';
+
+  @override
+  String get hintSearchPeople => 'Search people';
+
+  @override
+  String get labelAddPeople => 'Add people';
+
+  @override
+  String get labelAnyone => 'Anyone';
+
+  @override
+  String get labelApprovalRequired => 'Approval required';
+
+  @override
+  String get labelCreateJoinLink => 'Create join link';
+
+  @override
+  String get labelDisabled => 'Disabled';
+
+  @override
+  String get labelEditJoinLink => 'Edit join link';
+
+  @override
+  String get labelEnabled => 'Enabled';
+
+  @override
+  String get labelFollowedByOwner => 'Followed by owner';
+
+  @override
+  String get labelGroupDetails => 'Group details';
+
+  @override
+  String get labelGroupName => 'Group name';
+
+  @override
+  String get labelJoinGroup => 'Join group';
+
+  @override
+  String get labelJoinLink => 'Join link';
+
+  @override
+  String get labelNewGroup => 'New group';
+
+  @override
+  String get labelNoApprovalRequired => 'No approval required';
+
+  @override
+  String get labelPendingRequests => 'Pending requests';
+
+  @override
+  String get labelPeopleFollowedByOwner => 'People followed by owner';
+
+  @override
+  String get labelRenameGroup => 'Rename group';
+
+  @override
+  String get labelRequestPending => 'Request pending';
+
+  @override
+  String get labelRequireApproval => 'Require approval';
+
+  @override
+  String get labelUnknownRule => 'Unknown rule';
+
+  @override
+  String get labelWaitingForApproval => 'Waiting for approval';
+
+  @override
+  String get labelWhoCanUseLink => 'Who can use the link';
+
+  @override
+  String get messageAcceptRequestBeforeReplying => 'Accept the message request before replying.';
+
+  @override
+  String get messageAddAtLeastOnePersonToCreateGroup => 'Add at least one person to create a group.';
+
+  @override
+  String get messageGroupLocked => 'This group is locked.';
+
+  @override
+  String get messageGroupPermanentlyLocked => 'This group is permanently locked.';
+
+  @override
+  String get messageJoinLinkCopied => 'Join link copied.';
+
+  @override
+  String get messageJoinRequestSent => 'Request sent.';
+
+  @override
+  String get messageJoinRequestWithdrawn => 'Request withdrawn.';
+
+  @override
+  String get messageNoJoinLinkCreated => 'No join link has been created.';
+
+  @override
+  String get messageNoPendingJoinRequests => 'No pending join requests.';
+
+  @override
+  String get messagePendingJoinRequestCannotWithdrawHere =>
+      'The server did not return a conversation for this request, so Lazurite cannot withdraw it from this link screen.';
+
+  @override
+  String semanticSystemMessage(String message) {
+    return 'System message: $message';
+  }
+
+  @override
+  String get systemMessageGroupLocked => 'The group was locked.';
+
+  @override
+  String get systemMessageGroupNameUpdated => 'The group name was updated.';
+
+  @override
+  String get systemMessageGroupPermanentlyLocked => 'The group was permanently locked.';
+
+  @override
+  String systemMessageGroupRenamed(String name) {
+    return 'The group was renamed to $name.';
+  }
+
+  @override
+  String get systemMessageGroupUnlocked => 'The group was unlocked.';
+
+  @override
+  String get systemMessageJoinLinkCreated => 'A join link was created.';
+
+  @override
+  String get systemMessageJoinLinkDisabled => 'The join link was disabled.';
+
+  @override
+  String get systemMessageJoinLinkEnabled => 'The join link was enabled.';
+
+  @override
+  String get systemMessageJoinLinkUpdated => 'The join link was updated.';
+
+  @override
+  String get systemMessageMemberAdded => 'A member was added to the group.';
+
+  @override
+  String systemMessageNamedMemberAdded(Object name) {
+    return '$name was added to the group.';
+  }
+
+  @override
+  String get systemMessageMemberJoined => 'A member joined the group.';
+
+  @override
+  String systemMessageNamedMemberJoined(Object name) {
+    return '$name joined the group.';
+  }
+
+  @override
+  String get systemMessageMemberLeft => 'A member left the group.';
+
+  @override
+  String systemMessageNamedMemberLeft(Object name) {
+    return '$name left the group.';
+  }
+
+  @override
+  String get systemMessageMemberRemoved => 'A member was removed from the group.';
+
+  @override
+  String systemMessageNamedMemberRemoved(Object name) {
+    return '$name was removed from the group.';
+  }
+
+  @override
+  String tooltipAddMember(String handle) {
+    return 'Add $handle';
+  }
+
+  @override
+  String tooltipApproveJoinRequest(String handle) {
+    return 'Approve $handle';
+  }
+
+  @override
+  String get tooltipCopyJoinLink => 'Copy join link';
+
+  @override
+  String get tooltipCreateGroup => 'New group';
+
+  @override
+  String get tooltipGroupDetails => 'Group details';
+
+  @override
+  String tooltipRejectJoinRequest(String handle) {
+    return 'Reject $handle';
+  }
+
+  @override
+  String tooltipRemoveMember(String handle) {
+    return 'Remove $handle';
+  }
+
+  @override
+  String get tooltipShareJoinLink => 'Share join link';
+
+  @override
+  String get validationGroupNameCharacterLimit => 'Group names can be up to 50 characters.';
+
+  @override
   String get messageToday => 'Today';
 
   @override

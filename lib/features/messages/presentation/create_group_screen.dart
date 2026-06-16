@@ -2,6 +2,7 @@ import 'package:bluesky_poptart/app/bsky/actor/defs.dart' as app_actor;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lazurite/core/l10n/l10n.dart';
 import 'package:lazurite/core/logging/app_logger.dart';
 import 'package:lazurite/core/theme/theme_extensions.dart';
 import 'package:lazurite/features/messages/bloc/convo_list_bloc.dart';
@@ -85,7 +86,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       }
       setState(() {
         _searchResults = const [];
-        _searchError = 'Search failed. Try a handle or display name again.';
+        _searchError = context.l10n.errorGroupSearchFailed;
       });
     } finally {
       if (mounted && requestId == _searchRequestId) {
@@ -133,7 +134,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('New group'),
+            title: Text(context.l10n.labelNewGroup),
             actions: [
               if (state.isSubmitting)
                 const Padding(
@@ -144,7 +145,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 TextButton(
                   key: const ValueKey('create_group_submit_button'),
                   onPressed: state.canCreate ? _onCreatePressed : null,
-                  child: const Text('Create'),
+                  child: Text(context.l10n.buttonCreate),
                 ),
             ],
           ),
@@ -159,8 +160,8 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                   textCapitalization: TextCapitalization.sentences,
                   maxLength: GroupCreateCubit.maxNameGraphemes,
                   decoration: InputDecoration(
-                    labelText: 'Group name',
-                    helperText: 'Up to 50 characters',
+                    labelText: context.l10n.labelGroupName,
+                    helperText: context.l10n.helperGroupNameCharacterLimit,
                     errorText: _nameError(state),
                     border: const OutlineInputBorder(),
                   ),
@@ -172,7 +173,10 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                   onRemoved: (did) => context.read<GroupCreateCubit>().memberRemoved(did),
                 ),
                 const SizedBox(height: 18),
-                Text('Add people', style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                Text(
+                  context.l10n.labelAddPeople,
+                  style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 8),
                 TextField(
                   key: const ValueKey('create_group_member_search_field'),
@@ -180,7 +184,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                   enabled: !state.isSubmitting,
                   textInputAction: TextInputAction.search,
                   decoration: InputDecoration(
-                    hintText: 'Search people',
+                    hintText: context.l10n.hintSearchPeople,
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchSuffix(state),
                     border: const OutlineInputBorder(),
@@ -200,7 +204,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 if (state.members.isEmpty) ...[
                   const SizedBox(height: 16),
                   Text(
-                    'Add at least one person to create a group.',
+                    context.l10n.messageAddAtLeastOnePersonToCreateGroup,
                     style: context.textTheme.bodySmall?.copyWith(color: context.colorScheme.onSurfaceVariant),
                   ),
                 ],
@@ -216,7 +220,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     if (state.trimmedName.isEmpty || state.nameGraphemeCount <= GroupCreateCubit.maxNameGraphemes) {
       return null;
     }
-    return 'Group names can be up to 50 characters.';
+    return context.l10n.validationGroupNameCharacterLimit;
   }
 
   Widget? _searchSuffix(GroupCreateState state) {
@@ -230,7 +234,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       return null;
     }
     return IconButton(
-      tooltip: 'Clear search',
+      tooltip: context.l10n.tooltipClearSearch,
       icon: const Icon(Icons.clear),
       onPressed: () {
         _searchRequestId += 1;
@@ -315,7 +319,7 @@ class _SearchResults extends StatelessWidget {
               trailing: selectedDids.contains(profile.did)
                   ? Icon(Icons.check_circle, color: context.colorScheme.primary)
                   : IconButton(
-                      tooltip: 'Add ${profile.handle}',
+                      tooltip: context.l10n.tooltipAddMember(profile.handle),
                       icon: const Icon(Icons.add_circle_outline),
                       onPressed: onSelected == null ? null : () => onSelected!(profile),
                     ),

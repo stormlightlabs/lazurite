@@ -3,6 +3,7 @@ import 'package:bluesky_poptart/chat/bsky/actor/defs.dart';
 import 'package:bluesky_poptart/chat/bsky/convo/defs.dart';
 import 'package:bluesky_poptart/chat/bsky/group/defs.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lazurite/core/l10n/app_localizations_en.dart';
 import 'package:lazurite/features/messages/bloc/group_details_cubit.dart';
 import 'package:lazurite/features/messages/data/convo_repository.dart';
 import 'package:mocktail/mocktail.dart';
@@ -40,8 +41,12 @@ void main() {
     );
   }
 
-  GroupDetailsCubit buildCubit() =>
-      GroupDetailsCubit(convoRepository: repository, convoId: testConvoId, currentUserDid: currentUserDid);
+  GroupDetailsCubit buildCubit() => GroupDetailsCubit(
+    convoRepository: repository,
+    convoId: testConvoId,
+    currentUserDid: currentUserDid,
+    l10n: AppLocalizationsEn(),
+  );
 
   group('GroupDetailsCubit', () {
     blocTest<GroupDetailsCubit, GroupDetailsState>(

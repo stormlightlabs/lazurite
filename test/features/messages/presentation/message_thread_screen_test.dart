@@ -44,8 +44,14 @@ void main() {
     int memberCount = 4,
     String lockStatus = 'unlocked',
     String status = 'accepted',
+    List<Map<String, Object?>>? members,
   }) {
-    final json = testGroupConvoJson(id: id, name: name, memberCount: memberCount);
+    final json = testGroupConvoJson(
+      id: id,
+      name: name,
+      memberCount: memberCount,
+      extra: members == null ? const {} : {'members': members},
+    );
     final kind = Map<String, Object?>.from(json['kind']! as Map<String, Object?>);
     kind['lockStatus'] = lockStatus;
     return ConvoView.fromJson({...json, 'kind': kind, 'status': status});
@@ -224,6 +230,31 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('A member joined the group.'), findsOneWidget);
+    });
+
+    testWidgets('resolves group system message member names from conversation members', (tester) async {
+      final messages = [makeSystemMessage(testGroupSystemMessageJson(memberDid: testMemberDid))];
+      final convo = makeGroupConvo(
+        members: [
+          testChatProfileJson(did: currentUserDid, handle: 'me.bsky.social', displayName: 'Me'),
+          testChatProfileJson(did: testMemberDid, handle: 'member.bsky.social', displayName: 'New Member'),
+        ],
+      );
+
+      when(
+        () => mockRepository.getMessages(
+          any(),
+          cursor: any(named: 'cursor'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => MessageListResult(messages: messages, cursor: null));
+      when(() => mockRepository.updateRead(any())).thenAnswer((_) async {});
+
+      await tester.pumpWidget(buildSubject(convo: convo));
+      await tester.pumpAndSettle();
+
+      expect(find.text('New Member joined the group.'), findsOneWidget);
+      expect(find.text('A member joined the group.'), findsNothing);
     });
 
     testWidgets('current user message is right-aligned', (tester) async {
